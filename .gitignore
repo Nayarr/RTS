@@ -4,6 +4,7 @@ legacy/
 # Dépendances et builds
 node_modules/
 dist/
+dev-dist/
 coverage/
 *.tsbuildinfo
 
@@ -28,3 +29,6 @@ test-results/
 .DS_Store
 Thumbs.db
 *.log
+
+# Outils locaux (aperçu Claude Code)
+.claude/

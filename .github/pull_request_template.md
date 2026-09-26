@@ -5,11 +5,13 @@
 ## Changements
 
 <!-- Liste des modifications principales -->
+
 -
 
 ## Tests
 
 <!-- Comment c'est vérifié : tests ajoutés / modifiés, vérifications manuelles -->
+
 -
 
 ## Checklist

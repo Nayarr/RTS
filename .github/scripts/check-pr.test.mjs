@@ -24,13 +24,25 @@ Les techniciens doivent pouvoir signer.
 `;
 
 test('titres conformes', () => {
-  for (const title of ['feat(devis): signature en ligne', 'fix: arrondi TVA', 'ci(database): tests pgTAP', 'feat!: refonte auth']) {
+  for (const title of [
+    'feat(devis): signature en ligne',
+    'fix: arrondi TVA',
+    'ci(database): tests pgTAP',
+    'feat!: refonte auth',
+  ]) {
     assert.deepEqual(checkTitle(title), [], title);
   }
 });
 
 test('titres refusés', () => {
-  for (const title of ['Signature en ligne', 'feature: x', 'feat(Devis): majuscule', 'feat: ', 'fix:sans espace', '']) {
+  for (const title of [
+    'Signature en ligne',
+    'feature: x',
+    'feat(Devis): majuscule',
+    'feat: ',
+    'fix:sans espace',
+    '',
+  ]) {
     assert.equal(checkTitle(title).length, 1, title);
   }
 });
