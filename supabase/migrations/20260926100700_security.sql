@@ -224,6 +224,10 @@ as $$
     where r.id = p_repair_order_id and r.technician_id = public.current_technician_id());
 $$;
 
+-- Supabase accorde par défaut l'exécution des nouvelles fonctions à anon :
+-- chaque fonction créée après le verrouillage global est donc révoquée explicitement.
+revoke execute on function public.can_tech_edit_repair_order(uuid), public.can_read_repair_order(uuid)
+  from public, anon;
 grant execute on function public.can_tech_edit_repair_order(uuid), public.can_read_repair_order(uuid) to authenticated;
 
 create policy inspections_select on public.inspections for select to authenticated

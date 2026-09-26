@@ -1,0 +1,10 @@
+# Fins de ligne Unix dans le dépôt (la CI tourne sous Linux)
+* text=auto eol=lf
+
+# Fichiers binaires
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
+*.woff2 binary

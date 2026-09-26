@@ -31,3 +31,18 @@ npx supabase db reset    # recrée la base et applique toutes les migrations
 npx supabase test db     # lance les tests de la base
 npx supabase db lint     # vérifie le schéma
 ```
+
+## Contribuer
+
+- **Une feature = une branche**, fusionnée dans `main` par pull request.
+- **Titre de PR** en [Conventional Commits](https://www.conventionalcommits.org/fr/) :
+  `feat(devis): signature en ligne`, `fix: arrondi TVA`, `ci(database): …`
+- **Description de PR** : remplir le modèle ([`.github/pull_request_template.md`](.github/pull_request_template.md)),
+  toutes les sections et la checklist.
+
+## Intégration continue
+
+| Workflow | Déclenchement | Vérifie |
+|---|---|---|
+| **Base de données** | PR vers `main`, push sur `main` | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP |
+| **Conventions de PR** | Ouverture / modification d'une PR | Titre Conventional Commits, description conforme au modèle |

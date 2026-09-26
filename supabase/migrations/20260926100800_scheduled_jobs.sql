@@ -153,6 +153,10 @@ begin
 end;
 $$;
 
+-- Tâches internes : exécutées uniquement par pg_cron, jamais depuis l'API.
+revoke execute on function public.generate_alerts(), public.purge_clock_photos()
+  from public, anon, authenticated;
+
 -- Planification (pg_cron). Heures en UTC.
 do $$
 begin
