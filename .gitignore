@@ -1,0 +1,30 @@
+# Ancienne application : conservée en local uniquement (référence), jamais versionnée
+legacy/
+
+# Dépendances et builds
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Variables d'environnement : ne JAMAIS committer de secrets
+.env
+.env.*
+!.env.example
+
+# Supabase (fichiers locaux du CLI)
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# Tests end-to-end
+playwright-report/
+test-results/
+
+# Éditeurs / système
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log

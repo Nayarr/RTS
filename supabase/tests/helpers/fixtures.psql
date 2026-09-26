@@ -1,0 +1,72 @@
+-- =============================================================================
+-- Jeu de données de test commun (inclus par chaque fichier de test via \ir).
+-- Tout est créé dans la transaction du test puis annulé (rollback).
+-- =============================================================================
+
+-- Comptes de test
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000d1', 'direction@test.fr'),
+  ('00000000-0000-0000-0000-0000000000e1', 'reception@test.fr'),
+  ('00000000-0000-0000-0000-0000000000a1', 'tech.alice@test.fr'),
+  ('00000000-0000-0000-0000-0000000000b1', 'tech.bruno@test.fr'),
+  ('00000000-0000-0000-0000-0000000000c1', 'borne@test.fr');
+
+insert into public.profiles (id, email, full_name, role) values
+  ('00000000-0000-0000-0000-0000000000d1', 'direction@test.fr', 'Direction', 'direction'),
+  ('00000000-0000-0000-0000-0000000000e1', 'reception@test.fr', 'Réception', 'reception'),
+  ('00000000-0000-0000-0000-0000000000a1', 'tech.alice@test.fr', 'Alice', 'technician'),
+  ('00000000-0000-0000-0000-0000000000b1', 'tech.bruno@test.fr', 'Bruno', 'technician'),
+  ('00000000-0000-0000-0000-0000000000c1', 'borne@test.fr', 'Borne', 'kiosk');
+
+insert into public.technicians (id, profile_id, display_name, legacy_email) values
+  ('10000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'Alice', 'tech.alice@test.fr'),
+  ('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'Bruno', 'tech.bruno@test.fr');
+
+-- Référentiels
+insert into public.clients (id, name, billing_address, siren, email) values
+  ('20000000-0000-0000-0000-000000000001', 'Transports Dupont', '1 rue du Test, 75000 Paris', '123456789', 'compta@dupont.fr'),
+  ('20000000-0000-0000-0000-000000000002', 'Logistique Martin', null, null, null);
+
+insert into public.vehicles (id, plate, client_id, vehicle_type) values
+  ('30000000-0000-0000-0000-000000000001', 'AB-123-CD', '20000000-0000-0000-0000-000000000001', 'pl'),
+  ('30000000-0000-0000-0000-000000000002', 'EF-456-GH', '20000000-0000-0000-0000-000000000001', 'remorque'),
+  ('30000000-0000-0000-0000-000000000003', 'IJ-789-KL', '20000000-0000-0000-0000-000000000002', 'vul');
+
+insert into public.suppliers (id, name) values ('40000000-0000-0000-0000-000000000001', 'Pièces Poids Lourds');
+
+-- Se connecter en tant qu'un utilisateur (claims JWT + rôle Postgres « authenticated »).
+create or replace function pg_temp.act_as(p_user_id uuid)
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', p_user_id, 'role', 'authenticated')::text, true);
+  execute 'set local role authenticated';
+end;
+$$;
+
+-- Visiteur anonyme (client qui ouvre un lien public).
+create or replace function pg_temp.act_as_anon()
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  execute 'set local role anon';
+end;
+$$;
+
+-- Fichier fictif (normalement créé par l'Edge Function d'upload).
+create or replace function pg_temp.fake_file(p_category public.file_category)
+returns uuid
+language sql
+security definer
+as $$
+  insert into public.files (storage_key, category, mime_type, size_bytes)
+  values ('test/' || gen_random_uuid(), p_category, 'image/jpeg', 1000)
+  returning id;
+$$;
+
+grant execute on function pg_temp.act_as(uuid), pg_temp.act_as_anon(), pg_temp.fake_file(public.file_category)
+  to authenticated, anon, service_role;
