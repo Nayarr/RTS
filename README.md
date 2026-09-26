@@ -80,7 +80,3 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
   Configuration dans [`vercel.json`](vercel.json) (routes de l'appli, cache, en-têtes de sécurité).
   Variables à définir dans Vercel : `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
 - **Production : o2switch** (plus tard).
-| Workflow              | Déclenchement                     | Vérifie                                                      |
-| --------------------- | --------------------------------- | ------------------------------------------------------------ |
-| **Base de données**   | PR vers `main`, push sur `main`   | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP |
-| **Conventions de PR** | Ouverture / modification d'une PR | Titre Conventional Commits, description conforme au modèle   |
