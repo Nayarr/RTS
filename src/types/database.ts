@@ -3509,6 +3509,16 @@ export type Database = {
       };
     };
     Functions: {
+      admin_register_account: {
+        Args: {
+          p_email: string;
+          p_full_name: string;
+          p_role: Database['public']['Enums']['app_role'];
+          p_technician?: Json;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       apply_package_keywords: { Args: { p_repair_order_id: string }; Returns: string[] };
       assert_direction: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_office: { Args: Record<PropertyKey, never>; Returns: undefined };
@@ -3517,6 +3527,7 @@ export type Database = {
       build_quote_from_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
       can_read_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
       can_tech_edit_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
+      clear_technician_pin: { Args: { p_technician_id: string }; Returns: undefined };
       complete_repair_order: {
         Args: { p_quote_needed?: boolean; p_repair_order_id: string };
         Returns: {
@@ -3739,6 +3750,13 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      technician_pin_status: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          set_at: string;
+          technician_id: string;
+        }[];
       };
       update_vehicle_deadlines: {
         Args: { p_patch: Json; p_repair_order_id: string };
