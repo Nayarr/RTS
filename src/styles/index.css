@@ -1,0 +1,118 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Polices auto-hébergées (pas d'appel à Google Fonts : conformité RGPD) */
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow/600.css';
+@import '@fontsource/barlow/700.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Thème RTS : vert de la marque (#137017), neutres « atelier », sombre possible.
+   Variables au format shadcn/ui : les composants s'y adaptent automatiquement.
+   --------------------------------------------------------------------------- */
+:root {
+  --radius: 0.5rem;
+
+  --background: #f4f5f4;
+  --foreground: #1c1d1f;
+  --card: #ffffff;
+  --card-foreground: #1c1d1f;
+  --popover: #ffffff;
+  --popover-foreground: #1c1d1f;
+  --primary: #137017;
+  --primary-foreground: #ffffff;
+  --secondary: #e8eae8;
+  --secondary-foreground: #1c1d1f;
+  --muted: #eceeec;
+  --muted-foreground: #5b5e63;
+  --accent: #e3efe3;
+  --accent-foreground: #0d4f10;
+  --destructive: #b23a32;
+  --destructive-foreground: #ffffff;
+  --warning: #c98a00;
+  --success: #2a6b52;
+  --border: #dcdfdc;
+  --input: #cfd3cf;
+  --ring: #137017;
+}
+
+.dark {
+  --background: #141517;
+  --foreground: #edeae2;
+  --card: #1b1c1e;
+  --card-foreground: #edeae2;
+  --popover: #1b1c1e;
+  --popover-foreground: #edeae2;
+  --primary: #2e9a33;
+  --primary-foreground: #ffffff;
+  --secondary: #26282b;
+  --secondary-foreground: #edeae2;
+  --muted: #232427;
+  --muted-foreground: #afaca3;
+  --accent: #1f3322;
+  --accent-foreground: #cfe8d0;
+  --destructive: #e06a61;
+  --destructive-foreground: #1b1c1e;
+  --warning: #f2b705;
+  --success: #3e9975;
+  --border: #2f3134;
+  --input: #3a3d41;
+  --ring: #2e9a33;
+}
+
+@theme inline {
+  --font-sans: 'Barlow', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Barlow Condensed', 'Barlow', ui-sans-serif, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    /* Encoche / barre d'accueil des téléphones en mode appli installée */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+}

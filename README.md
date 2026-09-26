@@ -16,21 +16,47 @@ dans `legacy/` comme référence fonctionnelle ; elle n'est pas versionnée.
 ## Structure
 
 ```
+src/
+  app/         Coquille de l'appli : routeur, mise en page, pages génériques
+  features/    Un dossier par domaine métier (auth, ...) : écrans, appels API, schémas, tests
+  components/  Composants partagés (ui/ = composants shadcn/ui générés)
+  lib/         Client Supabase, variables d'environnement, utilitaires
+  types/       Types TypeScript générés depuis la base (npm run db:types)
+e2e/           Tests end-to-end Playwright
 supabase/
   migrations/  Schéma de la base (tables, fonctions métier, RLS, tâches planifiées)
   tests/       Tests pgTAP de la base
+  seed.sql     Comptes et données de développement (local uniquement)
 ```
 
-## Base de données en local
+## Démarrer en local
 
 Prérequis : Node.js 22+, Docker.
 
 ```bash
-npx supabase start       # démarre Supabase en local
-npx supabase db reset    # recrée la base et applique toutes les migrations
-npx supabase test db     # lance les tests de la base
-npx supabase db lint     # vérifie le schéma
+npm install
+npx supabase start               # Supabase local (base + authentification)
+cp .env.example .env.local       # puis renseigner la clé affichée par `npx supabase status`
+npm run dev                      # http://localhost:5173
 ```
+
+Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
+`direction@rts.local`, `reception@rts.local`, `alice@rts.local` et `bruno@rts.local` (techniciens),
+`borne@rts.local` (borne de pointage).
+
+## Commandes utiles
+
+| Commande                | Rôle                                                  |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run lint`          | ESLint                                                |
+| `npm run typecheck`     | Vérification TypeScript                               |
+| `npm run format:check`  | Formatage Prettier                                    |
+| `npm test`              | Tests unitaires (Vitest)                              |
+| `npm run test:e2e`      | Tests end-to-end (Playwright, Supabase local démarré) |
+| `npm run db:types`      | Régénère `src/types/database.ts` après une migration  |
+| `npx supabase db reset` | Recrée la base locale : migrations + `seed.sql`       |
+| `npx supabase test db`  | Tests pgTAP de la base                                |
+| `npx supabase db lint`  | Lint du schéma                                        |
 
 ## Contribuer
 
@@ -42,7 +68,7 @@ npx supabase db lint     # vérifie le schéma
 
 ## Intégration continue
 
-| Workflow | Déclenchement | Vérifie |
-|---|---|---|
-| **Base de données** | PR vers `main`, push sur `main` | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP |
-| **Conventions de PR** | Ouverture / modification d'une PR | Titre Conventional Commits, description conforme au modèle |
+| Workflow              | Déclenchement                     | Vérifie                                                      |
+| --------------------- | --------------------------------- | ------------------------------------------------------------ |
+| **Base de données**   | PR vers `main`, push sur `main`   | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP |
+| **Conventions de PR** | Ouverture / modification d'une PR | Titre Conventional Commits, description conforme au modèle   |
