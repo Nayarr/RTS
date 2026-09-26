@@ -1,0 +1,39 @@
+# Conventions de PR : titre en Conventional Commits et description conforme au
+# modèle .github/pull_request_template.md (sections remplies, checklist cochée).
+# Se relance automatiquement quand le titre ou la description sont modifiés.
+#
+# Sécurité : le titre et la description sont lus depuis le fichier d'événement
+# par le script Node, jamais interpolés dans une commande shell.
+name: Conventions de PR
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+concurrency:
+  group: pr-conventions-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Titre et description
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Tests du vérificateur
+        run: node --test ".github/scripts/*.test.mjs"
+
+      - name: Vérifier le titre et la description
+        run: node .github/scripts/check-pr.mjs

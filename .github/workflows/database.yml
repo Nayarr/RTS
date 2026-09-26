@@ -1,0 +1,45 @@
+# Base de données : lint du schéma + tests pgTAP sur une base Supabase jetable.
+# Tourne à chaque PR vers main (sans filtre de chemins, pour pouvoir être rendu
+# obligatoire dans la protection de branche) et à chaque push sur main.
+name: Base de données
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: database-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Lint et tests pgTAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer le CLI Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+
+      - name: Démarrer Postgres et appliquer toutes les migrations depuis zéro
+        run: supabase db start
+
+      - name: Lint du schéma (fonctions, types, SQL)
+        run: supabase db lint --level warning --fail-on warning
+
+      - name: Tests pgTAP (métier, sécurité, garde-fous)
+        run: supabase test db
+
+      - name: Arrêter Supabase
+        if: always()
+        run: supabase stop --no-backup
