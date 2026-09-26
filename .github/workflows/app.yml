@@ -1,0 +1,117 @@
+# Application : qualité du code, tests unitaires, build, puis tests end-to-end
+# contre une base Supabase locale jetable (vraie connexion avec les comptes du seed).
+name: Application
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+  SUPABASE_CLI_VERSION: 2.118.0
+
+jobs:
+  quality:
+    name: Lint, types, tests unitaires et build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Formatage (Prettier)
+        run: npm run format:check
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Types (TypeScript)
+        run: npm run typecheck
+
+      - name: Tests unitaires (Vitest)
+        run: npm test
+
+      - name: Build de production
+        run: npm run build
+        env:
+          # Valeurs factices : le build ne contacte pas Supabase.
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_build_only
+
+  e2e:
+    name: Types de la base à jour et tests end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Installer le CLI Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Démarrer Supabase (base, authentification, API) avec le seed de test
+        run: >
+          supabase start
+          -x studio,imgproxy,vector,logflare,supavisor,edge-runtime,realtime,storage-api,postgres-meta,mailpit
+
+      - name: Types TypeScript à jour avec le schéma
+        run: |
+          npm run db:types
+          git diff --exit-code src/types/database.ts || {
+            echo "::error title=Types obsolètes::src/types/database.ts ne correspond plus aux migrations. Lance « npm run db:types » et committe le résultat."
+            exit 1
+          }
+
+      - name: Configurer l'appli sur la base locale
+        run: |
+          supabase status -o json | jq -r '"VITE_SUPABASE_URL=\(.API_URL)", "VITE_SUPABASE_PUBLISHABLE_KEY=\(.PUBLISHABLE_KEY)"' >> "$GITHUB_ENV"
+
+      - name: Installer Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests end-to-end (desktop + mobile)
+        run: npm run test:e2e
+
+      - name: Rapport Playwright en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      - name: Arrêter Supabase
+        if: always()
+        run: supabase stop --no-backup
