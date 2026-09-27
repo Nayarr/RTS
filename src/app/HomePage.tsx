@@ -1,13 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
+import { KioskPage } from '@/features/kiosk/KioskPage';
 import { TechHomePage } from '@/features/workshop/TechHomePage';
 
-/** Accueil : liste des OR pour le technicien ; accueil provisoire pour les autres profils. */
+/** Accueil : liste des OR pour le technicien, borne de pointage ; accueil provisoire pour le bureau. */
 export function HomePage() {
   const { data: profile } = useProfile();
   if (!profile) return null;
   if (profile.role === 'technician') return <TechHomePage />;
+  if (profile.role === 'kiosk') return <KioskPage />;
 
   return (
     <div className="space-y-6">
