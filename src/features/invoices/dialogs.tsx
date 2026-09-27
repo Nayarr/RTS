@@ -1,0 +1,269 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { TriangleAlert } from 'lucide-react';
+import { z } from 'zod';
+import { FormField } from '@/components/FormField';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { todayIso } from '@/features/repair-orders/schemas';
+import { decimalField, decimalText, decimalValue, formatEuro } from '@/lib/numbers';
+import type { CreditNoteInput, PaymentInput } from './api';
+import { PAYMENT_METHODS } from './domain';
+
+/** Confirmation de l'émission définitive, avec les points à vérifier. */
+export function IssueDialog({
+  warnings,
+  totalTtc,
+  pending,
+  onConfirm,
+  onClose,
+}: {
+  warnings: string[];
+  totalTtc: number;
+  pending: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Émettre définitivement cette facture ?</DialogTitle>
+          <DialogDescription>
+            Total {formatEuro(totalTtc)} TTC. Une fois émise, elle ne pourra plus être modifiée : une
+            correction passera par un avoir.
+          </DialogDescription>
+        </DialogHeader>
+        {warnings.length > 0 && (
+          <Alert variant="destructive">
+            <TriangleAlert />
+            <AlertDescription>Attention : {warnings.join(', ')}.</AlertDescription>
+          </Alert>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button disabled={pending} onClick={onConfirm}>
+            {pending ? 'Émission…' : 'Émettre la facture'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------- Paiement
+
+const paymentSchema = (balance: number) =>
+  z.object({
+    amount: decimalField({ required: true, positive: true }).refine(
+      (value) => (decimalValue(value) ?? 0) <= balance + 0.001,
+      `Au plus le reste dû (${formatEuro(balance)})`,
+    ),
+    method: z.enum(['bank_transfer', 'check', 'card', 'cash', 'bill_of_exchange', 'direct_debit']),
+    paid_on: z.string().min(1, 'Indique la date'),
+    note: z.string().trim().max(200),
+  });
+type PaymentValues = z.infer<ReturnType<typeof paymentSchema>>;
+
+export function PaymentDialog({
+  number,
+  totalTtc,
+  balance,
+  pending,
+  onSubmit,
+  onClose,
+}: {
+  number: string;
+  totalTtc: number;
+  balance: number;
+  pending: boolean;
+  onSubmit: (input: PaymentInput) => void;
+  onClose: () => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PaymentValues>({
+    resolver: zodResolver(paymentSchema(balance)),
+    defaultValues: { amount: decimalText(balance), method: 'bank_transfer', paid_on: todayIso(), note: '' },
+  });
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Paiement</DialogTitle>
+          <DialogDescription>
+            Facture {number} — TTC {formatEuro(totalTtc)} — reste dû : <strong>{formatEuro(balance)}</strong>
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          id="payment-form"
+          noValidate
+          className="space-y-4"
+          onSubmit={handleSubmit((values) =>
+            onSubmit({
+              amount_ttc: decimalValue(values.amount) ?? 0,
+              method: values.method,
+              paid_on: values.paid_on,
+              note: values.note || null,
+            }),
+          )}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              id="payment-amount"
+              label="Montant TTC (€)"
+              inputMode="decimal"
+              error={errors.amount?.message}
+              {...register('amount')}
+            />
+            <FormField
+              id="payment-date"
+              label="Date"
+              type="date"
+              error={errors.paid_on?.message}
+              {...register('paid_on')}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="payment-method">Mode</Label>
+            <select
+              id="payment-method"
+              className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+              {...register('method')}
+            >
+              {Object.entries(PAYMENT_METHODS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <FormField
+            id="payment-note"
+            label="Référence (facultatif)"
+            placeholder="N° de chèque, référence du virement…"
+            {...register('note')}
+          />
+        </form>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" form="payment-form" disabled={pending}>
+            Enregistrer le paiement
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------- Avoir
+
+const creditNoteSchema = z.object({
+  amount: decimalField({ required: true, positive: true }),
+  vat_rate: decimalField({ required: true }),
+  reason: z.string().trim().min(1, 'Indique le motif').max(500),
+});
+type CreditNoteValues = z.infer<typeof creditNoteSchema>;
+
+export function CreditNoteDialog({
+  number,
+  suggestedHt,
+  vatRate,
+  pending,
+  onSubmit,
+  onClose,
+}: {
+  number: string;
+  suggestedHt: number;
+  vatRate: number;
+  pending: boolean;
+  onSubmit: (input: CreditNoteInput) => void;
+  onClose: () => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CreditNoteValues>({
+    resolver: zodResolver(creditNoteSchema),
+    defaultValues: { amount: decimalText(suggestedHt), vat_rate: decimalText(vatRate), reason: '' },
+  });
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Générer un avoir</DialogTitle>
+          <DialogDescription>
+            L’avoir sera rattaché à la facture {number}. Il ne pourra plus être modifié.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          id="credit-note-form"
+          noValidate
+          className="space-y-4"
+          onSubmit={handleSubmit((values) =>
+            onSubmit({
+              amount_ht: decimalValue(values.amount) ?? 0,
+              vat_rate: decimalValue(values.vat_rate) ?? 0,
+              reason: values.reason,
+            }),
+          )}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              id="credit-note-amount"
+              label="Montant HT à créditer (€)"
+              inputMode="decimal"
+              error={errors.amount?.message}
+              {...register('amount')}
+            />
+            <FormField
+              id="credit-note-vat"
+              label="TVA (%)"
+              inputMode="decimal"
+              error={errors.vat_rate?.message}
+              {...register('vat_rate')}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="credit-note-reason">Motif</Label>
+            <textarea
+              id="credit-note-reason"
+              rows={3}
+              className="w-full rounded-md border bg-transparent px-3 py-2 text-base"
+              placeholder="Ex : erreur de facturation, retour pièce, geste commercial…"
+              aria-invalid={errors.reason ? true : undefined}
+              {...register('reason')}
+            />
+            {errors.reason && <p className="text-sm text-destructive">{errors.reason.message}</p>}
+          </div>
+        </form>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" form="credit-note-form" disabled={pending}>
+            Générer l’avoir
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

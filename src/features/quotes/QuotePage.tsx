@@ -6,14 +6,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StoredImage } from '@/features/files/StoredImage';
 import { formatDate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
-import { formatEuro } from '@/lib/numbers';
-import type { QuoteLine } from './api';
-import { computeTotals, isQuoteLocked } from './domain';
-import { AddLineButtons } from './editor/AddLineButtons';
+import { AddLineButtons } from '@/features/documents/AddLineButtons';
+import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
+import { addQuoteLine, deleteQuoteLine, updateQuoteLine, type NewQuoteLine, type QuoteLine } from './api';
+import { computeTotals, isQuoteLocked, nextPosition } from './domain';
 import { QuoteActions } from './editor/QuoteActions';
-import { QuoteLineRow } from './editor/QuoteLineRow';
-import { useQuote } from './hooks';
+import { useQuote, useQuoteMutation } from './hooks';
 import { QuoteStatusBadge } from './QuoteStatusBadge';
+
+/** Ligne du devis : enregistrement et suppression immédiats. */
+function QuoteLineItem({ line, locked }: { line: QuoteLine; locked: boolean }) {
+  const update = useQuoteMutation((patch: LinePatch) => updateQuoteLine(line.id, patch), null);
+  const remove = useQuoteMutation(() => deleteQuoteLine(line.id), 'Ligne supprimée');
+  return (
+    <LineRow
+      line={{ ...line, hours: line.estimated_hours }}
+      locked={locked}
+      onSave={(patch) => update.mutate(patch)}
+      onDelete={() => remove.mutate(undefined)}
+      deleting={remove.isPending}
+    />
+  );
+}
 
 function LinesSection({
   title,
@@ -29,19 +43,13 @@ function LinesSection({
   return (
     <section aria-label={title} className="space-y-1">
       <h3 className="text-sm font-bold tracking-wide text-primary uppercase">{title}</h3>
-      <div className="hidden grid-cols-[1fr_6.5rem_4.5rem_4.5rem_6.5rem_2.25rem] gap-2 border-b pb-1 text-xs text-muted-foreground md:grid">
-        <span>Prestation / pièce</span>
-        <span className="text-right">Prix unit. HT</span>
-        <span className="text-right">Qté</span>
-        <span className="text-right">Remise %</span>
-        <span className="text-right">Net HT</span>
-      </div>
+      <LineColumns />
       {lines.length === 0 ? (
         <p className="py-3 text-sm text-muted-foreground">{empty}</p>
       ) : (
         <ul>
           {lines.map((line) => (
-            <QuoteLineRow key={line.id} line={line} locked={locked} />
+            <QuoteLineItem key={line.id} line={line} locked={locked} />
           ))}
         </ul>
       )}
@@ -54,6 +62,7 @@ export function QuotePage() {
   const { id = '' } = useParams();
   const detail = useQuote(id);
   const settings = useSettings();
+  const addLine = useQuoteMutation((line: NewQuoteLine) => addQuoteLine(id, line), null);
 
   if (detail.isPending) return <p className="text-muted-foreground">Chargement…</p>;
   if (detail.isError) return <p className="text-destructive">Impossible de charger ce devis.</p>;
@@ -68,7 +77,7 @@ export function QuotePage() {
     );
   }
 
-  const { quote, lines } = detail.data;
+  const { quote, lines, laborRate, clientDiscount } = detail.data;
   const locked = isQuoteLocked(quote);
   const done = lines.filter((line) => line.section === 'done');
   const planned = lines.filter((line) => line.section === 'planned');
@@ -142,25 +151,23 @@ export function QuotePage() {
               empty="Aucune ligne : ajoute une prestation, un forfait ou une pièce."
             />
             {!locked && (
-              <AddLineButtons detail={detail.data} vatRate={settings.data?.company.default_vat_rate ?? 20} />
+              <AddLineButtons
+                vehicleType={quote.vehicle_type}
+                laborRate={laborRate}
+                onAdd={({ hours, ...line }) =>
+                  addLine.mutateAsync({
+                    section: 'planned',
+                    position: nextPosition(lines, 'planned'),
+                    vat_rate: settings.data?.company.default_vat_rate ?? 20,
+                    discount_percent: line.line_type === 'text' ? 0 : clientDiscount,
+                    estimated_hours: hours ?? null,
+                    ...line,
+                  })
+                }
+              />
             )}
 
-            <dl className="ml-auto w-full max-w-xs space-y-1 text-right text-sm" aria-label="Totaux">
-              <div className="flex justify-between gap-4">
-                <dt>Total HT</dt>
-                <dd className="font-semibold tabular-nums">{formatEuro(totals.ht)}</dd>
-              </div>
-              {totals.rates.map(({ rate, amount }) => (
-                <div key={rate} className="flex justify-between gap-4">
-                  <dt>TVA ({String(rate).replace('.', ',')} %)</dt>
-                  <dd className="tabular-nums">{formatEuro(amount)}</dd>
-                </div>
-              ))}
-              <div className="flex justify-between gap-4 border-t pt-1 text-base">
-                <dt>Total TTC</dt>
-                <dd className="font-bold tabular-nums">{formatEuro(totals.ttc)}</dd>
-              </div>
-            </dl>
+            <TotalsList totals={totals} />
           </CardContent>
         </Card>
 

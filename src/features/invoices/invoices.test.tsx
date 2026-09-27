@@ -1,0 +1,342 @@
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import { fetchProfile } from '@/features/auth/api';
+import type * as AuthApi from '@/features/auth/api';
+import type { RepairOrderOverview } from '@/features/repair-orders/api';
+import { fetchSettings, type Settings } from '@/features/settings/api';
+import type * as SettingsApi from '@/features/settings/api';
+import { fakeSession, renderRoutes } from '@/test/render';
+import {
+  addCreditNote,
+  addInvoiceLine,
+  addPayment,
+  buildInvoiceDraft,
+  fetchInvoice,
+  fetchInvoices,
+  fetchRepairOrderInvoices,
+  issueInvoice,
+  updateInvoiceLine,
+  type InvoiceDetail,
+  type InvoiceLine,
+  type InvoiceOverview,
+} from './api';
+import type * as InvoicesApi from './api';
+import { balanceHt, issueWarnings, mainVatRate } from './domain';
+import { InvoicePage } from './InvoicePage';
+import { InvoicesPage } from './InvoicesPage';
+import { RepairOrderInvoiceCard } from './RepairOrderInvoiceCard';
+
+vi.mock('@/features/auth/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof AuthApi>()),
+  fetchProfile: vi.fn(),
+}));
+vi.mock('@/features/settings/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof SettingsApi>()),
+  fetchSettings: vi.fn(),
+}));
+vi.mock('./api', async (importOriginal) => ({
+  ...(await importOriginal<typeof InvoicesApi>()),
+  fetchInvoices: vi.fn(),
+  fetchInvoice: vi.fn(),
+  fetchRepairOrderInvoices: vi.fn(),
+  buildInvoiceDraft: vi.fn(),
+  addInvoiceLine: vi.fn(),
+  updateInvoiceLine: vi.fn(),
+  issueInvoice: vi.fn(),
+  addPayment: vi.fn(),
+  addCreditNote: vi.fn(),
+}));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
+const invoice = (overrides: Partial<InvoiceOverview> = {}): InvoiceOverview =>
+  ({
+    id: 'i1',
+    number: null,
+    status: 'draft',
+    client_id: 'c1',
+    client_name: 'Transports Martin',
+    client_address: null,
+    client_siren: null,
+    vehicle_label: 'GH-512-RT',
+    mileage: 184320,
+    service_date: null,
+    issued_at: null,
+    due_date: null,
+    created_at: '2026-09-27T10:00:00Z',
+    total_ht: 600,
+    total_vat: 120,
+    total_ttc: 720,
+    paid_ttc: null,
+    credited_ttc: null,
+    balance_due: null,
+    payment_status: null,
+    repair_order_ids: ['ro1'],
+    repair_order_numbers: ['OR00001'],
+    ...overrides,
+  }) as InvoiceOverview;
+
+const issued = (overrides: Partial<InvoiceOverview> = {}) =>
+  invoice({
+    status: 'issued',
+    number: 'F11887',
+    issued_at: '2026-09-27T10:00:00Z',
+    due_date: '2026-10-27',
+    paid_ttc: 0,
+    credited_ttc: 0,
+    balance_due: 720,
+    payment_status: 'pending',
+    ...overrides,
+  });
+
+const line = (overrides: Partial<InvoiceLine> = {}): InvoiceLine =>
+  ({
+    id: 'l1',
+    invoice_id: 'i1',
+    position: 100,
+    line_type: 'labor',
+    description: 'Remplacement disques',
+    unit_price: 90,
+    quantity: 3,
+    discount_percent: 0,
+    vat_rate: 20,
+    billed_hours: 3,
+    ...overrides,
+  }) as InvoiceLine;
+
+function mockCommon() {
+  vi.mocked(fetchProfile).mockResolvedValue({
+    id: 'u1',
+    email: 'direction@test.fr',
+    full_name: 'Direction',
+    role: 'direction',
+    is_active: true,
+    created_at: '2026-09-27T00:00:00Z',
+    updated_at: '2026-09-27T00:00:00Z',
+  });
+  vi.mocked(fetchSettings).mockResolvedValue({ company: { default_vat_rate: 20 } } as Settings);
+}
+
+function setupInvoice(detail: Partial<InvoiceDetail> = {}) {
+  mockCommon();
+  vi.mocked(fetchInvoice).mockResolvedValue({
+    invoice: invoice(),
+    lines: [
+      line(),
+      line({
+        id: 'l2',
+        position: 3000,
+        line_type: 'part',
+        description: 'Disques',
+        unit_price: 165,
+        quantity: 2,
+      }),
+    ],
+    payments: [],
+    creditNotes: [],
+    client: { name: 'Transports Martin', billing_address: null, siren: null, email: null },
+    vehicleType: 'pl',
+    laborRate: 90,
+    clientDiscount: 5,
+    ...detail,
+  });
+  return renderRoutes(
+    [
+      { path: '/factures/:id', element: <InvoicePage /> },
+      { path: '/factures', element: <h1>Liste</h1> },
+    ],
+    { initialPath: '/factures/i1', auth: { session: fakeSession() } },
+  );
+}
+
+describe('règles de facturation', () => {
+  it('points à vérifier avant l’émission (comme l’ancienne appli)', () => {
+    const client = { name: 'X', billing_address: null, siren: '', email: null };
+    expect(issueWarnings([line(), line({ id: 'l2', unit_price: null })], client)).toEqual([
+      '1 ligne sans prix',
+      'adresse du client manquante',
+      'SIREN du client manquant',
+    ]);
+    expect(
+      issueWarnings(
+        [
+          line(),
+          line({ id: 't', line_type: 'text', unit_price: null }),
+          line({ id: 'p', line_type: 'package', unit_price: null }),
+        ],
+        { name: 'X', billing_address: '1 rue A', siren: '123456789', email: null },
+      ),
+    ).toEqual([]);
+  });
+
+  it('avoir proposé : reste dû en HT, au taux de TVA principal', () => {
+    expect(balanceHt(issued({ balance_due: 360 }))).toBe(300);
+    expect(
+      mainVatRate(
+        [line({ vat_rate: 5.5, unit_price: 10, quantity: 1 }), line({ id: 'b', vat_rate: 20 })],
+        20,
+      ),
+    ).toBe(20);
+    expect(mainVatRate([], 20)).toBe(20);
+  });
+});
+
+describe('liste des factures', () => {
+  it('à encaisser par défaut, filtres, recherche et reste à encaisser', async () => {
+    mockCommon();
+    vi.mocked(fetchInvoices).mockResolvedValue([
+      issued(),
+      issued({ id: 'i2', number: 'F11888', payment_status: 'paid', balance_due: 0, client_name: 'Dupont' }),
+      issued({
+        id: 'i3',
+        number: 'F11889',
+        payment_status: 'overdue',
+        balance_due: 100,
+        client_name: 'Logistique Nord',
+        vehicle_label: 'EF-456-GH',
+      }),
+      invoice({ id: 'i4', client_name: 'Brouillon SA' }),
+    ]);
+    renderRoutes([{ path: '/factures', element: <InvoicesPage /> }], {
+      initialPath: '/factures',
+      auth: { session: fakeSession() },
+    });
+    expect(await screen.findByText(/Transports Martin/)).toBeInTheDocument();
+    expect(screen.queryByText(/Dupont/)).toBeNull();
+    expect(screen.queryByText(/Brouillon SA/)).toBeNull();
+    expect(screen.getByText(/Reste à encaisser/)).toHaveTextContent(/820,00\s€/);
+
+    await userEvent.click(screen.getByRole('button', { name: /^En retard/ }));
+    expect(screen.getByText(/Logistique Nord/)).toBeInTheDocument();
+    expect(screen.queryByText(/Transports Martin/)).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: /^Toutes/ }));
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher une facture' }), 'ef456');
+    expect(screen.getByText(/Logistique Nord/)).toBeInTheDocument();
+    expect(screen.queryByText(/Dupont/)).toBeNull();
+  });
+});
+
+describe('brouillon de facture', () => {
+  it('modification d’une ligne et main d’œuvre ajoutée à l’OR', async () => {
+    vi.mocked(updateInvoiceLine).mockResolvedValue();
+    vi.mocked(addInvoiceLine).mockResolvedValue();
+    setupInvoice();
+    const [price] = await screen.findAllByRole('textbox', { name: 'Prix unit. HT' });
+    await userEvent.clear(price!);
+    await userEvent.type(price!, '95');
+    await userEvent.tab();
+    expect(updateInvoiceLine).toHaveBeenCalledWith('l1', { unit_price: 95 });
+
+    await userEvent.click(screen.getByRole('button', { name: /Ajouter de la main d’œuvre/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Main d’œuvre' });
+    await userEvent.type(within(dialog).getByLabelText('Prestation'), 'Géométrie');
+    await userEvent.type(within(dialog).getByLabelText('Temps (heures)'), '1');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(addInvoiceLine).toHaveBeenCalledWith('i1', {
+        repair_order_id: 'ro1',
+        position: 3001,
+        vat_rate: 20,
+        discount_percent: 5,
+        billed_hours: 1,
+        line_type: 'labor',
+        description: 'Géométrie',
+        quantity: 1,
+        unit_price: 90,
+        labor_category: 'pl',
+      }),
+    );
+  });
+
+  it('émission après confirmation, avec les points à vérifier', async () => {
+    vi.mocked(issueInvoice).mockResolvedValue('F11887');
+    setupInvoice();
+    await userEvent.click(await screen.findByRole('button', { name: /Émettre la facture/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Émettre définitivement cette facture ?' });
+    expect(dialog).toHaveTextContent('adresse du client manquante, SIREN du client manquant');
+    expect(dialog).toHaveTextContent(/720,00\s€ TTC/);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Émettre la facture' }));
+    await waitFor(() => expect(issueInvoice).toHaveBeenCalledWith('i1'));
+  });
+});
+
+describe('facture émise', () => {
+  it('figée ; paiement plafonné au reste dû', async () => {
+    vi.mocked(addPayment).mockResolvedValue();
+    setupInvoice({ invoice: issued({ balance_due: 320, paid_ttc: 400, payment_status: 'partial' }) });
+    expect(await screen.findByText(/Facture émise : elle ne se modifie plus/)).toBeInTheDocument();
+    expect(screen.getAllByRole('textbox', { name: 'Prix unit. HT' })[0]).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Ajouter une ligne/ })).toBeNull();
+    expect(screen.getByLabelText('Solde')).toHaveTextContent(/Reste dû\s*320,00\s€/);
+
+    await userEvent.click(screen.getByRole('button', { name: /Enregistrer un paiement/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Paiement' });
+    const amount = within(dialog).getByLabelText('Montant TTC (€)');
+    expect(amount).toHaveValue('320');
+    await userEvent.clear(amount);
+    await userEvent.type(amount, '500');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer le paiement' }));
+    expect(await within(dialog).findByText(/Au plus le reste dû/)).toBeInTheDocument();
+    expect(addPayment).not.toHaveBeenCalled();
+
+    await userEvent.clear(amount);
+    await userEvent.type(amount, '150,50');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Mode'), 'check');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer le paiement' }));
+    await waitFor(() =>
+      expect(addPayment).toHaveBeenCalledWith('i1', {
+        amount_ttc: 150.5,
+        method: 'check',
+        paid_on: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) as string,
+        note: null,
+      }),
+    );
+  });
+
+  it('avoir : motif obligatoire, montant et TVA proposés', async () => {
+    vi.mocked(addCreditNote).mockResolvedValue({ id: 'cn1', number: 'AV1' } as Awaited<
+      ReturnType<typeof addCreditNote>
+    >);
+    setupInvoice({ invoice: issued({ balance_due: 360 }) });
+    await userEvent.click(await screen.findByRole('button', { name: /Générer un avoir/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Générer un avoir' });
+    expect(within(dialog).getByLabelText('Montant HT à créditer (€)')).toHaveValue('300');
+    expect(within(dialog).getByLabelText('TVA (%)')).toHaveValue('20');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Générer l’avoir' }));
+    expect(await within(dialog).findByText('Indique le motif')).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByLabelText('Motif'), 'Geste commercial');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Générer l’avoir' }));
+    await waitFor(() =>
+      expect(addCreditNote).toHaveBeenCalledWith('i1', {
+        amount_ht: 300,
+        vat_rate: 20,
+        reason: 'Geste commercial',
+      }),
+    );
+  });
+});
+
+describe('facturation depuis la fiche OR', () => {
+  it('« Facturer » prépare le brouillon et l’ouvre', async () => {
+    vi.mocked(fetchRepairOrderInvoices).mockResolvedValue([]);
+    vi.mocked(buildInvoiceDraft).mockResolvedValue('i1');
+    mockCommon();
+    renderRoutes(
+      [
+        {
+          path: '/or/:id',
+          element: (
+            <RepairOrderInvoiceCard order={{ id: 'ro1', status: 'to_invoice' } as RepairOrderOverview} />
+          ),
+        },
+        { path: '/factures/:id', element: <h1>Brouillon ouvert</h1> },
+      ],
+      { initialPath: '/or/ro1', auth: { session: fakeSession() } },
+    );
+    expect(await screen.findByText('OR validé : la facture est à faire.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^Facturer$/ }));
+    expect(buildInvoiceDraft).toHaveBeenCalledWith(['ro1']);
+    expect(await screen.findByRole('heading', { name: 'Brouillon ouvert' })).toBeInTheDocument();
+  });
+});

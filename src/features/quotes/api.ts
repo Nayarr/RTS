@@ -5,7 +5,6 @@ export type QuoteStatus = Enums<'quote_status'>;
 export type QuoteSection = Enums<'quote_section'>;
 export type VehicleType = Enums<'vehicle_type'>;
 export type QuoteLine = Tables<'quote_lines'>;
-export type ServicePackage = Tables<'service_packages'>;
 
 type OverviewRow = Tables<'v_quotes_overview'>;
 type Guaranteed = 'id' | 'status' | 'vehicle_type' | 'created_at' | 'total_ht' | 'total_vat' | 'total_ttc';
@@ -75,16 +74,6 @@ export async function fetchQuote(id: string): Promise<QuoteDetail | null> {
     laborRate: rate.data,
     clientDiscount: client.data?.discount_percent ?? 0,
   };
-}
-
-export async function fetchServicePackages(): Promise<ServicePackage[]> {
-  const { data, error } = await supabase
-    .from('service_packages')
-    .select('*')
-    .eq('is_active', true)
-    .order('name');
-  if (error) throw error;
-  return data;
 }
 
 // ---------------------------------------------------------------- Devis
