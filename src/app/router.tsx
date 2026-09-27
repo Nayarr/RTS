@@ -5,6 +5,7 @@ import { RequireAuth } from '@/features/auth/RequireAuth';
 import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
+import { PublicDocumentPage } from '@/features/public/PublicDocumentPage';
 import { NewQuotePage } from '@/features/quotes/NewQuotePage';
 import { QuotePage } from '@/features/quotes/QuotePage';
 import { QuotesPage } from '@/features/quotes/QuotesPage';
@@ -22,6 +23,8 @@ import { NotFoundPage } from './NotFoundPage';
 export const routes: RouteObject[] = [
   { path: '/connexion', element: <LoginPage /> },
   { path: '/mot-de-passe/nouveau', element: <NewPasswordPage /> },
+  // Lien envoyé au client (devis à signer) : sans compte.
+  { path: '/d/:token', element: <PublicDocumentPage /> },
   {
     element: <RequireAuth />,
     children: [

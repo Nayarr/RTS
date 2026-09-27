@@ -22,8 +22,8 @@ import {
   toNewRepairOrderInput,
   type NewRepairOrderValues,
 } from './schemas';
-import { SignaturePad } from './SignaturePad';
-import { useSignaturePad } from './use-signature-pad';
+import { SignaturePad } from '@/components/SignaturePad';
+import { useSignaturePad } from '@/components/use-signature-pad';
 
 const UNASSIGNED = 'none';
 

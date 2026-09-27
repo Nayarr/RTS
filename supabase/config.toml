@@ -439,3 +439,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/files/deno.json"
 entrypoint = "./functions/files/index.ts"
+
+[functions.quote-response]
+enabled = true
+# Page publique du devis : pas de compte, clé publique de l'appli vérifiée dans la fonction
+# (withSupabase({ auth: "publishable" })).
+verify_jwt = false
+import_map = "./functions/quote-response/deno.json"
+entrypoint = "./functions/quote-response/index.ts"

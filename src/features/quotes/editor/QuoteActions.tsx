@@ -24,6 +24,7 @@ import {
 } from '../api';
 import { useQuoteMutation } from '../hooks';
 import { useQuotePdf } from '../use-quote-pdf';
+import { ShareQuoteButton } from './ShareQuoteButton';
 
 type Confirm = 'accepted' | 'refused' | 'delete' | null;
 
@@ -111,6 +112,7 @@ export function QuoteActions({ quote, hasLines }: { quote: QuoteOverview; hasLin
         <Button disabled={!hasLines || pdf.generate.isPending} onClick={() => pdf.generate.mutate(undefined)}>
           <FileDown /> {pdf.generate.isPending ? 'Génération…' : 'Générer le PDF'}
         </Button>
+        {!answered && <ShareQuoteButton quote={quote} disabled={!hasLines} />}
         {!answered && quote.status !== 'sent' && (
           <Button
             variant="outline"

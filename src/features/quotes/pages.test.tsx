@@ -17,7 +17,10 @@ import {
   createRepairOrderFromQuote,
   fetchQuote,
   fetchQuotes,
+  fetchClientContact,
   setQuoteResponse,
+  shareQuote,
+  updateClientContact,
   updateQuoteLine,
   type QuoteDetail,
   type QuoteLine,
@@ -53,6 +56,9 @@ vi.mock('./api', async (importOriginal) => ({
   addQuoteLine: vi.fn(),
   updateQuoteLine: vi.fn(),
   setQuoteResponse: vi.fn(),
+  shareQuote: vi.fn(),
+  fetchClientContact: vi.fn(),
+  updateClientContact: vi.fn(),
   createRepairOrderFromQuote: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -104,7 +110,16 @@ function mockData(detail?: Partial<QuoteDetail>) {
     created_at: '2026-09-27T00:00:00Z',
     updated_at: '2026-09-27T00:00:00Z',
   });
-  vi.mocked(fetchSettings).mockResolvedValue({ company: { default_vat_rate: 20 } } as Settings);
+  vi.mocked(fetchSettings).mockResolvedValue({
+    company: {
+      default_vat_rate: 20,
+      legal_name: 'RAPID TRUCK SERVICE',
+      address_line: '19 rue Gaston Monmousseau',
+      postal_code: '95190',
+      city: 'Goussainville',
+      email: 'atelier@rapidtruckservice.fr',
+    },
+  } as Settings);
   vi.mocked(fetchQuote).mockResolvedValue({
     quote: quote(),
     lines: [line()],
@@ -217,6 +232,38 @@ describe('éditeur de devis', () => {
         unit_price: 90,
         labor_category: 'pl',
       }),
+    );
+  });
+
+  it('envoi du lien à signer : message prêt, coordonnées du client gardées', async () => {
+    vi.mocked(shareQuote).mockResolvedValue('b'.repeat(64));
+    vi.mocked(fetchClientContact).mockResolvedValue({ email: null, phone: '0612345678' });
+    vi.mocked(updateClientContact).mockResolvedValue();
+    setup('/devis/q1');
+    vi.mocked(fetchQuote).mockResolvedValue({
+      quote: quote({ number: 'DV00012', status: 'sent' }),
+      lines: [line()],
+      laborRate: 90,
+      clientDiscount: 10,
+    });
+    await userEvent.click(await screen.findByRole('button', { name: /Envoyer au client/ }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Devis DV00012 prêt à envoyer' });
+    expect(shareQuote).toHaveBeenCalledWith('q1');
+    expect(within(dialog).getByLabelText('Lien')).toHaveValue(
+      `${window.location.origin}/d/${'b'.repeat(64)}`,
+    );
+    expect(dialog).toHaveTextContent('À envoyer depuis atelier@rapidtruckservice.fr');
+
+    await userEvent.type(within(dialog).getByLabelText('E-mail du client'), 'compta@martin.fr');
+    await userEvent.tab();
+    expect(updateClientContact).toHaveBeenCalledWith('c1', {
+      email: 'compta@martin.fr',
+      phone: '0612345678',
+    });
+    expect(within(dialog).getByRole('link', { name: /Envoyer par e-mail/ })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^mailto:compta@martin\.fr\?subject=Devis%20DV00012/),
     );
   });
 

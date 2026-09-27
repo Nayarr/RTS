@@ -20,5 +20,11 @@ export function useSignaturePad() {
     [isEmpty],
   );
 
-  return { canvasRef, isEmpty, setIsEmpty, clear, toBlob };
+  /** Signature en data URL PNG (envoyée telle quelle par la page publique du devis). */
+  const toDataUrl = useCallback(
+    () => (canvasRef.current && !isEmpty ? canvasRef.current.toDataURL('image/png') : null),
+    [isEmpty],
+  );
+
+  return { canvasRef, isEmpty, setIsEmpty, clear, toBlob, toDataUrl };
 }
