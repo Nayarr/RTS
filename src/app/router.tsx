@@ -8,6 +8,7 @@ import { RepairOrderPage } from '@/features/repair-orders/RepairOrderPage';
 import { RepairOrdersPage } from '@/features/repair-orders/RepairOrdersPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TeamPage } from '@/features/team/TeamPage';
+import { TechRepairOrderPage } from '@/features/workshop/TechRepairOrderPage';
 import { AppLayout } from './AppLayout';
 import { HomePage } from './HomePage';
 import { NotFoundPage } from './NotFoundPage';
@@ -30,6 +31,10 @@ export const routes: RouteObject[] = [
               { path: '/or/nouveau', element: <NewRepairOrderPage /> },
               { path: '/or/:id', element: <RepairOrderPage /> },
             ],
+          },
+          {
+            element: <RequireRole roles={['technician']} />,
+            children: [{ path: '/atelier/or/:id', element: <TechRepairOrderPage /> }],
           },
           {
             element: <RequireRole roles={['direction']} />,

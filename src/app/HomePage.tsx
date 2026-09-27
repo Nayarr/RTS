@@ -1,11 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
+import { TechHomePage } from '@/features/workshop/TechHomePage';
 
-/** Accueil provisoire : sera remplacé par le tableau de bord / la liste technicien. */
+/** Accueil : liste des OR pour le technicien ; accueil provisoire pour les autres profils. */
 export function HomePage() {
   const { data: profile } = useProfile();
   if (!profile) return null;
+  if (profile.role === 'technician') return <TechHomePage />;
 
   return (
     <div className="space-y-6">
