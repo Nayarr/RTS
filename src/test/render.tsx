@@ -32,7 +32,7 @@ interface RenderOptions {
 export function renderRoutes(routes: RouteObject[], { initialPath = '/', auth }: RenderOptions = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] });
-  const authState: AuthState = { session: null, isLoading: false, ...auth };
+  const authState: AuthState = { session: null, isLoading: false, signedOut: false, ...auth };
 
   const wrapper = (children: ReactNode) => (
     <QueryClientProvider client={queryClient}>

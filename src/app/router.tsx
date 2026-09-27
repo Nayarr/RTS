@@ -2,6 +2,8 @@ import { createBrowserRouter, type RouteObject } from 'react-router';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { NewPasswordPage } from '@/features/auth/NewPasswordPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
+import { RequireRole } from '@/features/auth/RequireRole';
+import { TeamPage } from '@/features/team/TeamPage';
 import { AppLayout } from './AppLayout';
 import { HomePage } from './HomePage';
 import { NotFoundPage } from './NotFoundPage';
@@ -15,7 +17,13 @@ export const routes: RouteObject[] = [
     children: [
       {
         element: <AppLayout />,
-        children: [{ index: true, element: <HomePage /> }],
+        children: [
+          { index: true, element: <HomePage /> },
+          {
+            element: <RequireRole roles={['direction']} />,
+            children: [{ path: '/equipe', element: <TeamPage /> }],
+          },
+        ],
       },
     ],
   },

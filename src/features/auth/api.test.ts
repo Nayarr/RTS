@@ -9,6 +9,12 @@ describe('authErrorMessage', () => {
     );
   });
 
+  it('compte désactivé par la direction', () => {
+    expect(authErrorMessage(new AuthError('User is banned', 400, 'user_banned'))).toBe(
+      'Ce compte est désactivé. Contacte la direction.',
+    );
+  });
+
   it('trop de tentatives', () => {
     expect(authErrorMessage(new AuthError('Too many requests', 429))).toBe(
       'Trop de tentatives. Réessaie dans quelques minutes.',

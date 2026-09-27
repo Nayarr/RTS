@@ -10,12 +10,16 @@ import { useProfile } from './useProfile';
  * (Les droits réels sont appliqués côté base par le RLS : ceci ne sert qu'à l'interface.)
  */
 export function RequireAuth() {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, signedOut } = useAuth();
   const location = useLocation();
   const profile = useProfile();
 
   if (isLoading) return <FullPageMessage />;
-  if (!session) return <Navigate to="/connexion" replace state={{ from: location.pathname }} />;
+  if (!session) {
+    // Page demandée mémorisée pour y revenir après connexion, sauf après une déconnexion :
+    // le compte suivant ne doit pas être renvoyé sur l'écran de quelqu'un d'autre.
+    return <Navigate to="/connexion" replace state={signedOut ? null : { from: location.pathname }} />;
+  }
   if (profile.isPending) return <FullPageMessage />;
 
   if (profile.isError) {
