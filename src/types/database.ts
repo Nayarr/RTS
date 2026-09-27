@@ -297,6 +297,13 @@ export type Database = {
             referencedColumns: ['quote_id'];
           },
           {
+            foreignKeyName: 'client_messages_quote_id_fkey';
+            columns: ['quote_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_quotes_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'client_messages_repair_order_id_fkey';
             columns: ['repair_order_id'];
             isOneToOne: false;
@@ -1905,6 +1912,13 @@ export type Database = {
             referencedColumns: ['quote_id'];
           },
           {
+            foreignKeyName: 'quote_lines_quote_id_fkey';
+            columns: ['quote_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_quotes_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'quote_lines_source_ro_line_id_fkey';
             columns: ['source_ro_line_id'];
             isOneToOne: false;
@@ -2288,6 +2302,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_quote_totals';
             referencedColumns: ['quote_id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_origin_quote_fk';
+            columns: ['origin_quote_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_quotes_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'repair_orders_origin_repair_order_id_fkey';
@@ -3343,6 +3364,140 @@ export type Database = {
         };
         Relationships: [];
       };
+      v_quotes_overview: {
+        Row: {
+          accepted_at: string | null;
+          accepted_by_name: string | null;
+          client_id: string | null;
+          client_name: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          id: string | null;
+          issued_at: string | null;
+          legacy_id: string | null;
+          merged_into_repair_order_id: string | null;
+          notes: string | null;
+          number: string | null;
+          plate: string | null;
+          public_token: string | null;
+          refused_at: string | null;
+          repair_order_id: string | null;
+          repair_order_number: string | null;
+          response_processed_at: string | null;
+          resulting_repair_order_id: string | null;
+          resulting_repair_order_number: string | null;
+          sent_at: string | null;
+          signature_file_id: string | null;
+          status: Database['public']['Enums']['quote_status'] | null;
+          total_ht: number | null;
+          total_ttc: number | null;
+          total_vat: number | null;
+          updated_at: string | null;
+          valid_until: string | null;
+          vehicle_id: string | null;
+          vehicle_type: Database['public']['Enums']['vehicle_type'] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'quotes_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_merged_into_repair_order_id_fkey';
+            columns: ['merged_into_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_merged_into_repair_order_id_fkey';
+            columns: ['merged_into_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'quotes_merged_into_repair_order_id_fkey';
+            columns: ['merged_into_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'quotes_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_resulting_repair_order_id_fkey';
+            columns: ['resulting_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_resulting_repair_order_id_fkey';
+            columns: ['resulting_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'quotes_resulting_repair_order_id_fkey';
+            columns: ['resulting_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_signature_file_id_fkey';
+            columns: ['signature_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'quotes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       v_repair_order_time: {
         Row: {
           repair_order_id: string | null;
@@ -3448,6 +3603,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_quote_totals';
             referencedColumns: ['quote_id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_origin_quote_fk';
+            columns: ['origin_quote_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_quotes_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'repair_orders_origin_repair_order_id_fkey';
@@ -3583,6 +3745,44 @@ export type Database = {
       confirm_file_upload: {
         Args: { p_file_id: string; p_mime_type: string; p_size_bytes: number; p_user_id: string };
         Returns: undefined;
+      };
+      create_quote: {
+        Args: {
+          p_client_name: string;
+          p_plate?: string;
+          p_vehicle_type?: Database['public']['Enums']['vehicle_type'];
+        };
+        Returns: {
+          accepted_at: string | null;
+          accepted_by_name: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          issued_at: string | null;
+          legacy_id: string | null;
+          merged_into_repair_order_id: string | null;
+          notes: string | null;
+          number: string | null;
+          public_token: string | null;
+          refused_at: string | null;
+          repair_order_id: string | null;
+          response_processed_at: string | null;
+          resulting_repair_order_id: string | null;
+          sent_at: string | null;
+          signature_file_id: string | null;
+          status: Database['public']['Enums']['quote_status'];
+          updated_at: string;
+          valid_until: string | null;
+          vehicle_id: string | null;
+          vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'quotes';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       create_repair_order: {
         Args: {
@@ -3760,6 +3960,40 @@ export type Database = {
         Returns: number;
       };
       set_kiosk_exit_code: { Args: { p_code: string }; Returns: undefined };
+      set_quote_response: {
+        Args: { p_quote_id: string; p_status: Database['public']['Enums']['quote_status'] };
+        Returns: {
+          accepted_at: string | null;
+          accepted_by_name: string | null;
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          issued_at: string | null;
+          legacy_id: string | null;
+          merged_into_repair_order_id: string | null;
+          notes: string | null;
+          number: string | null;
+          public_token: string | null;
+          refused_at: string | null;
+          repair_order_id: string | null;
+          response_processed_at: string | null;
+          resulting_repair_order_id: string | null;
+          sent_at: string | null;
+          signature_file_id: string | null;
+          status: Database['public']['Enums']['quote_status'];
+          updated_at: string;
+          valid_until: string | null;
+          vehicle_id: string | null;
+          vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'quotes';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       set_technician_pin: { Args: { p_pin: string; p_technician_id: string }; Returns: undefined };
       share_client_portal: { Args: { p_client_id: string }; Returns: string };
       share_invoice: { Args: { p_invoice_id: string }; Returns: string };

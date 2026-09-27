@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
+import { RepairOrderQuotesCard } from '@/features/quotes/RepairOrderQuotesCard';
 import { ConsumablesCard } from './detail/ConsumablesCard';
 import { DirectionCard } from './detail/DirectionCard';
 import { HistoryCard } from './detail/HistoryCard';
@@ -80,6 +81,7 @@ export function RepairOrderPage() {
         </div>
         <div className="space-y-5">
           <TimeCard order={order} loadedAt={detail.dataUpdatedAt} showComparison={isDirection} />
+          <RepairOrderQuotesCard order={order} />
           <OfficeInfoForm order={order} />
           <HistoryCard repairOrderId={order.id} />
           {isDirection && <DirectionCard order={order} />}
