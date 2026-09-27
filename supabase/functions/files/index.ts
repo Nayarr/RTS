@@ -11,7 +11,7 @@
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
-import { contentDisposition, ObjectStorage, storageConfigFromEnv } from './storage.ts';
+import { contentDisposition, ObjectStorage, storageConfigFromEnv } from '../_shared/storage.ts';
 
 z.config(z.locales.fr()); // messages de validation en français
 

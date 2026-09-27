@@ -1,4 +1,5 @@
 // Accès au stockage objet compatible S3 (Cloudflare R2 en production, versitygw en local / CI).
+// Partagé par les fonctions « files » et « quote-response ».
 import { AwsClient } from 'aws4fetch';
 
 export interface StorageConfig {
@@ -95,6 +96,16 @@ export class ObjectStorage {
       size: Number(response.headers.get('content-length') ?? 0),
       contentType: response.headers.get('content-type'),
     };
+  }
+
+  /** Envoi direct par la fonction (petits fichiers reçus par elle, ex. signature d'un devis en ligne). */
+  async put(bucket: string, key: string, body: Uint8Array<ArrayBuffer>, contentType: string): Promise<void> {
+    const response = await this.#client.fetch(this.#endpoint + objectPath(bucket, key), {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body,
+    });
+    if (!response.ok) throw new Error(`PUT ${response.status}`);
   }
 
   async delete(bucket: string, key: string): Promise<void> {

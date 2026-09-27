@@ -3,6 +3,7 @@ import { ArrowLeft, Lock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StoredImage } from '@/features/files/StoredImage';
 import { formatDate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
 import { formatEuro } from '@/lib/numbers';
@@ -174,7 +175,19 @@ export function QuotePage() {
             <CardContent className="space-y-1 text-sm text-muted-foreground">
               <p>Créé le {formatDate(quote.created_at)}</p>
               {quote.sent_at && <p>Envoyé le {formatDate(quote.sent_at)}</p>}
-              {quote.accepted_at && <p>Accepté le {formatDate(quote.accepted_at)}</p>}
+              {quote.accepted_at && (
+                <p>
+                  Accepté le {formatDate(quote.accepted_at)}
+                  {quote.accepted_by_name && ` en ligne par ${quote.accepted_by_name}`}
+                </p>
+              )}
+              {quote.signature_file_id && (
+                <StoredImage
+                  fileId={quote.signature_file_id}
+                  alt="Signature du client"
+                  className="h-20 w-48 border bg-white object-contain"
+                />
+              )}
               {quote.refused_at && <p>Refusé le {formatDate(quote.refused_at)}</p>}
             </CardContent>
           </Card>
