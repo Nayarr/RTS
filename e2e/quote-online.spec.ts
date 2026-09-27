@@ -135,5 +135,5 @@ test('le client refuse le devis en ligne', async ({ page, browser }, testInfo) =
 
 test('un lien inconnu n’affiche rien', async ({ page }) => {
   await page.goto(`/d/${'0'.repeat(64)}`);
-  await expect(page.getByText('Ce devis est introuvable ou le lien a expiré.')).toBeVisible();
+  await expect(page.getByText('Ce document est introuvable ou le lien a expiré.')).toBeVisible();
 });

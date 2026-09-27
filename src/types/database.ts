@@ -3406,11 +3406,13 @@ export type Database = {
           id: string | null;
           issued_at: string | null;
           last_paid_on: string | null;
+          last_reminder_at: string | null;
           mileage: number | null;
           number: string | null;
           paid_ttc: number | null;
           payment_status: string | null;
           public_token: string | null;
+          reminders_count: number | null;
           repair_order_ids: string[] | null;
           repair_order_numbers: string[] | null;
           service_date: string | null;
@@ -4020,6 +4022,21 @@ export type Database = {
         Returns: Json;
       };
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
+      record_invoice_reminder: {
+        Args: { p_invoice_id: string };
+        Returns: {
+          id: string;
+          invoice_id: string;
+          sent_at: string;
+          sent_by: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'invoice_reminders';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       register_file: {
         Args: {
           p_bucket: string;

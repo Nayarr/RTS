@@ -35,6 +35,7 @@ import { CreditNoteDialog, IssueDialog, PaymentDialog } from './dialogs';
 import { balanceHt, issueWarnings, mainVatRate, PAYMENT_METHODS } from './domain';
 import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
+import { ShareInvoiceButtons } from './ShareInvoiceButtons';
 
 type Dialog = 'issue' | 'payment' | 'credit' | 'rebuild' | 'delete' | null;
 
@@ -125,6 +126,7 @@ function IssuedPanel({
               <Wallet /> Enregistrer un paiement
             </Button>
           )}
+          <ShareInvoiceButtons invoice={invoice} />
           {credited < invoice.total_ttc - 0.01 && (
             <Button variant="outline" onClick={() => onDialog('credit')}>
               <FileMinus /> Générer un avoir
@@ -159,6 +161,12 @@ function IssuedPanel({
               <dd className="tabular-nums">{formatEuro(balance)}</dd>
             </div>
           </dl>
+          {invoice.reminders_count > 0 && (
+            <p className="text-muted-foreground">
+              {invoice.reminders_count} relance{invoice.reminders_count > 1 ? 's' : ''}, la dernière le{' '}
+              {formatDate(invoice.last_reminder_at)}
+            </p>
+          )}
           {payments.length > 0 && (
             <ul aria-label="Paiements" className="divide-y">
               {payments.map((payment) => (

@@ -18,7 +18,8 @@ type Guaranteed =
   | 'total_vat'
   | 'total_ttc'
   | 'repair_order_ids'
-  | 'repair_order_numbers';
+  | 'repair_order_numbers'
+  | 'reminders_count';
 
 /** Facture (brouillon ou émise) avec totaux, reste dû et OR concernés. */
 export type InvoiceOverview = Omit<OverviewRow, Guaranteed | 'payment_status'> & {
@@ -242,4 +243,19 @@ export async function addCreditNote(invoiceId: string, input: CreditNoteInput): 
     .single();
   if (error) throw error;
   return data;
+}
+
+// ---------------------------------------------------------------- Envoi et relances
+
+/** Lien de consultation en ligne d'une facture émise. Renvoie le jeton. */
+export async function shareInvoice(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('share_invoice', { p_invoice_id: id });
+  if (error) throw error;
+  return data;
+}
+
+/** Relance tracée (date, auteur, historique des OR). */
+export async function recordInvoiceReminder(id: string) {
+  const { error } = await supabase.rpc('record_invoice_reminder', { p_invoice_id: id });
+  if (error) throw error;
 }

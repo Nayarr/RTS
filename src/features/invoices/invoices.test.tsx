@@ -16,13 +16,22 @@ import {
   fetchInvoices,
   fetchRepairOrderInvoices,
   issueInvoice,
+  recordInvoiceReminder,
+  shareInvoice,
   updateInvoiceLine,
   type InvoiceDetail,
   type InvoiceLine,
   type InvoiceOverview,
 } from './api';
 import type * as InvoicesApi from './api';
-import { balanceHt, issueWarnings, mainVatRate } from './domain';
+import {
+  balanceHt,
+  invoiceShareMessage,
+  invoicesCsvRows,
+  isOverdue,
+  issueWarnings,
+  mainVatRate,
+} from './domain';
 import { InvoicePage } from './InvoicePage';
 import { InvoicesPage } from './InvoicesPage';
 import { RepairOrderInvoiceCard } from './RepairOrderInvoiceCard';
@@ -46,6 +55,13 @@ vi.mock('./api', async (importOriginal) => ({
   issueInvoice: vi.fn(),
   addPayment: vi.fn(),
   addCreditNote: vi.fn(),
+  shareInvoice: vi.fn(),
+  recordInvoiceReminder: vi.fn(),
+}));
+vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  fetchClientContact: vi.fn().mockResolvedValue({ email: 'compta@martin.fr', phone: null }),
+  updateClientContact: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -114,7 +130,16 @@ function mockCommon() {
     created_at: '2026-09-27T00:00:00Z',
     updated_at: '2026-09-27T00:00:00Z',
   });
-  vi.mocked(fetchSettings).mockResolvedValue({ company: { default_vat_rate: 20 } } as Settings);
+  vi.mocked(fetchSettings).mockResolvedValue({
+    company: {
+      default_vat_rate: 20,
+      legal_name: 'RAPID TRUCK SERVICE',
+      address_line: '19 rue Gaston Monmousseau',
+      postal_code: '95190',
+      city: 'Goussainville',
+      email: 'atelier@rapidtruckservice.fr',
+    },
+  } as Settings);
 }
 
 function setupInvoice(detail: Partial<InvoiceDetail> = {}) {
@@ -167,6 +192,58 @@ describe('règles de facturation', () => {
         { name: 'X', billing_address: '1 rue A', siren: '123456789', email: null },
       ),
     ).toEqual([]);
+  });
+
+  it('relance proposée pour une facture échue non soldée', () => {
+    expect(isOverdue({ due_date: '2026-09-20', balance_due: 100 }, '2026-09-27')).toBe(true);
+    expect(isOverdue({ due_date: '2026-09-27', balance_due: 100 }, '2026-09-27')).toBe(false);
+    expect(isOverdue({ due_date: '2026-09-20', balance_due: 0 }, '2026-09-27')).toBe(false);
+  });
+
+  it('messages d’envoi et de relance (textes de l’ancienne appli)', () => {
+    const company = {
+      legal_name: 'RAPID TRUCK SERVICE',
+      address_line: '19 rue Gaston Monmousseau',
+      postal_code: '95190',
+      city: 'Goussainville',
+      email: 'atelier@rapidtruckservice.fr',
+    };
+    const sent = issued({ issued_at: '2026-08-23T10:00:00Z', due_date: '2026-09-22', balance_due: 124 });
+    const share = invoiceShareMessage(sent, 'https://app/d/x', company, false);
+    expect(share.subject).toBe('Facture F11887 — RAPID TRUCK SERVICE');
+    expect(share.body).toContain(
+      "d'un montant de 720,00 € TTC (véhicule GH-512-RT), à régler avant le 22/09/2026 :",
+    );
+    const reminder = invoiceShareMessage(sent, 'https://app/d/x', company, true);
+    expect(reminder.subject).toBe('Relance — Facture F11887 — RAPID TRUCK SERVICE');
+    expect(reminder.body).toContain(
+      'la facture F11887 du 23/08/2026 (véhicule GH-512-RT), arrivée à échéance le 22/09/2026, reste impayée pour un montant de 124,00 € TTC.',
+    );
+    expect(reminder.sms).toBe(
+      'Relance : Facture F11887 RAPID TRUCK SERVICE (124,00 € TTC) : https://app/d/x',
+    );
+  });
+
+  it('export CSV pour la comptabilité', () => {
+    const { headers, rows } = invoicesCsvRows([
+      issued({ paid_ttc: 400, credited_ttc: 60, balance_due: 260, payment_status: 'partial' }),
+    ]);
+    expect(headers).toContain('Reste dû');
+    expect(rows[0]).toEqual([
+      'F11887',
+      '27/09/2026',
+      '27/10/2026',
+      'Transports Martin',
+      'GH-512-RT',
+      'OR00001',
+      600,
+      120,
+      720,
+      400,
+      60,
+      260,
+      'Partiellement payée',
+    ]);
   });
 
   it('avoir proposé : reste dû en HT, au taux de TVA principal', () => {
@@ -313,6 +390,43 @@ describe('facture émise', () => {
         vat_rate: 20,
         reason: 'Geste commercial',
       }),
+    );
+  });
+});
+
+describe('envoi et relance', () => {
+  it('envoi : lien de consultation, sans relance tant que la facture n’est pas échue', async () => {
+    vi.mocked(shareInvoice).mockResolvedValue('c'.repeat(64));
+    setupInvoice({ invoice: issued({ due_date: '2999-01-01' }) });
+    expect(await screen.findByRole('button', { name: /Envoyer au client/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Relancer/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /Envoyer au client/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Envoyer la facture F11887' });
+    expect(within(dialog).getByLabelText('Lien', { exact: true })).toHaveValue(
+      `${window.location.origin}/d/${'c'.repeat(64)}`,
+    );
+    expect(within(dialog).getByLabelText('E-mail du client')).toHaveValue('compta@martin.fr');
+    expect(recordInvoiceReminder).not.toHaveBeenCalled();
+  });
+
+  it('relance d’une facture échue : enregistrée, message de relance prêt', async () => {
+    vi.mocked(shareInvoice).mockResolvedValue('c'.repeat(64));
+    vi.mocked(recordInvoiceReminder).mockResolvedValue();
+    setupInvoice({
+      invoice: issued({
+        due_date: '2026-01-01',
+        balance_due: 324,
+        reminders_count: 1,
+        last_reminder_at: '2026-09-20T10:00:00Z',
+      }),
+    });
+    expect(await screen.findByText(/1 relance, la dernière le 20\/09\/2026/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Relancer/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Relancer la facture F11887' });
+    expect(recordInvoiceReminder).toHaveBeenCalledWith('i1');
+    expect(within(dialog).getByRole('link', { name: /Envoyer par e-mail/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('subject=Relance%20%E2%80%94%20Facture%20F11887'),
     );
   });
 });

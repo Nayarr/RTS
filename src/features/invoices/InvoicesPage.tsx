@@ -1,15 +1,19 @@
 import { useMemo, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
-import { Layers, Search } from 'lucide-react';
+import { Download, Layers, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useProfile } from '@/features/auth/useProfile';
 import { formatDate, normalizeKey } from '@/features/repair-orders/constants';
+import { todayIso } from '@/features/repair-orders/schemas';
+import { downloadFile, toCsv } from '@/lib/csv';
 import { formatEuro } from '@/lib/numbers';
 import { useIsDesktop } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
 import type { InvoiceOverview } from './api';
+import { invoicesCsvRows } from './domain';
 import { GroupedInvoiceDialog } from './GroupedInvoiceDialog';
 import { useCreditNotes, useInvoices } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
@@ -76,6 +80,8 @@ function DocumentTabs() {
 
 function InvoiceList() {
   const invoices = useInvoices();
+  const { data: profile } = useProfile();
+  const isDirection = profile?.role === 'direction';
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>('to_collect');
@@ -182,11 +188,29 @@ function InvoiceList() {
           Aucune facture correspondante.
         </p>
       )}
-      {list.length > 0 && toCollect > 0 && (
-        <p className="text-sm">
-          Reste à encaisser sur cette liste :{' '}
-          <strong className="tabular-nums">{formatEuro(toCollect)}</strong> TTC
-        </p>
+      {list.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm">
+            {toCollect > 0 && (
+              <>
+                Reste à encaisser sur cette liste :{' '}
+                <strong className="tabular-nums">{formatEuro(toCollect)}</strong> TTC
+              </>
+            )}
+          </p>
+          {isDirection && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const { headers, rows } = invoicesCsvRows(list);
+                downloadFile(toCsv(headers, rows), `factures-${todayIso()}.csv`);
+              }}
+            >
+              <Download /> Export CSV
+            </Button>
+          )}
+        </div>
       )}
 
       {list.length > 0 &&

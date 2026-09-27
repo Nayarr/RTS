@@ -36,11 +36,40 @@ export interface PublicQuote {
   totals: { total_ht: number; total_vat: number; total_ttc: number };
 }
 
+export interface PublicInvoiceLine {
+  line_type: string;
+  description: string;
+  unit_price: number | null;
+  quantity: number;
+  discount_percent: number;
+  vat_rate: number;
+  net_ht: number;
+}
+
+export interface PublicInvoice {
+  type: 'invoice';
+  company: PublicCompany;
+  number: string;
+  issued_at: string;
+  service_date: string | null;
+  due_date: string;
+  client_name: string;
+  client_address: string | null;
+  vehicle_label: string | null;
+  mileage: number | null;
+  lines: PublicInvoiceLine[];
+  totals: { total_ht: number; total_vat: number; total_ttc: number };
+  balance_due: number | null;
+  legal_mentions: string[] | null;
+}
+
+export type PublicDocument = PublicQuote | PublicInvoice | { type: 'portal' };
+
 /** Document ouvert par le client avec le lien reçu (sans compte). null si le lien est inconnu. */
-export async function fetchPublicDocument(token: string): Promise<PublicQuote | { type: string } | null> {
+export async function fetchPublicDocument(token: string): Promise<PublicDocument | null> {
   const { data, error } = await supabase.rpc('public_get_document', { p_token: token });
   if (error) throw error;
-  return data as PublicQuote | { type: string } | null;
+  return data as PublicDocument | null;
 }
 
 export type QuoteResponse = {
