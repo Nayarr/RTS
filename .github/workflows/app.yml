@@ -106,10 +106,10 @@ jobs:
         with:
           version: ${{ env.SUPABASE_CLI_VERSION }}
 
-      - name: Démarrer Supabase (base, authentification, API, Edge Functions) avec le seed de test
+      - name: Démarrer Supabase (base, authentification, API, Realtime, Edge Functions) avec le seed de test
         run: >
           supabase start
-          -x studio,imgproxy,vector,logflare,supavisor,realtime,storage-api,postgres-meta,mailpit
+          -x studio,imgproxy,vector,logflare,supavisor,storage-api,postgres-meta,mailpit
 
       - name: Démarrer le stockage de fichiers local (compatible S3, remplace R2)
         run: npm run storage:start
