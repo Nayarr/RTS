@@ -1,5 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router';
 import {
+  CalendarClock,
+  CalendarDays,
   FileText,
   House,
   LogOut,
@@ -28,6 +30,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Accueil', icon: House, roles: ['direction', 'reception', 'technician', 'kiosk'] },
   { to: '/or', label: 'Ordres de réparation', icon: Wrench, roles: ['direction', 'reception'] },
+  { to: '/planning', label: 'Planning', icon: CalendarDays, roles: ['direction', 'reception'] },
+  { to: '/rendez-vous', label: 'Rendez-vous', icon: CalendarClock, roles: ['direction', 'reception'] },
   { to: '/devis', label: 'Devis', icon: FileText, roles: ['direction', 'reception'] },
   { to: '/factures', label: 'Facturation', icon: Receipt, roles: ['direction', 'reception'] },
   { to: '/stock', label: 'Stock', icon: Package, roles: ['direction'] },

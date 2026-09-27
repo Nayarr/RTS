@@ -255,6 +255,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'client_messages_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_appointments_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'client_messages_client_id_fkey';
             columns: ['client_id'];
             isOneToOne: false;
@@ -2297,6 +2304,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'repair_orders_appointment_fk';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_appointments_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'repair_orders_client_id_fkey';
             columns: ['client_id'];
             isOneToOne: false;
@@ -3226,6 +3240,104 @@ export type Database = {
       };
     };
     Views: {
+      v_appointments_overview: {
+        Row: {
+          client_id: string | null;
+          client_name: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          end_time: string | null;
+          id: string | null;
+          legacy_id: string | null;
+          maintenance_contract_id: string | null;
+          plate: string | null;
+          reason: string | null;
+          reminder_sent_at: string | null;
+          repair_order_id: string | null;
+          repair_order_number: string | null;
+          scheduled_date: string | null;
+          start_time: string | null;
+          status: Database['public']['Enums']['appointment_status'] | null;
+          technician_color: string | null;
+          technician_id: string | null;
+          technician_name: string | null;
+          updated_at: string | null;
+          vehicle_id: string | null;
+          vehicle_type: Database['public']['Enums']['vehicle_type'] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'appointments_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'maintenance_contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contract_vehicle_status';
+            referencedColumns: ['contract_id'];
+          },
+          {
+            foreignKeyName: 'appointments_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'appointments_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_technician_id_fkey';
+            columns: ['technician_id'];
+            isOneToOne: false;
+            referencedRelation: 'technicians';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'appointments_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       v_contract_vehicle_status: {
         Row: {
           appointment_planned: boolean | null;
@@ -3644,6 +3756,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'repair_orders_appointment_fk';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_appointments_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'repair_orders_client_id_fkey';
             columns: ['client_id'];
             isOneToOne: false;
@@ -4057,6 +4176,44 @@ export type Database = {
       required_photo_labels: {
         Args: { p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: string[];
+      };
+      save_appointment: {
+        Args: {
+          p_client_name: string;
+          p_end_time?: string;
+          p_id?: string;
+          p_plate: string;
+          p_reason?: string;
+          p_scheduled_date: string;
+          p_start_time: string;
+          p_technician_id?: string;
+          p_vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        Returns: {
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          end_time: string | null;
+          id: string;
+          legacy_id: string | null;
+          maintenance_contract_id: string | null;
+          reason: string | null;
+          reminder_sent_at: string | null;
+          repair_order_id: string | null;
+          scheduled_date: string;
+          start_time: string;
+          status: Database['public']['Enums']['appointment_status'];
+          technician_id: string | null;
+          updated_at: string;
+          vehicle_id: string | null;
+          vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'appointments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       set_consumable_stock: {
         Args: { p_consumable_id: string; p_note?: string; p_quantity: number };

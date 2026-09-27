@@ -7,6 +7,8 @@ import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
 import { InvoicePage } from '@/features/invoices/InvoicePage';
 import { InvoicesPage } from '@/features/invoices/InvoicesPage';
+import { AppointmentsPage } from '@/features/planning/AppointmentsPage';
+import { PlanningPage } from '@/features/planning/PlanningPage';
 import { PublicDocumentPage } from '@/features/public/PublicDocumentPage';
 import { NewQuotePage } from '@/features/quotes/NewQuotePage';
 import { QuotePage } from '@/features/quotes/QuotePage';
@@ -40,6 +42,8 @@ export const routes: RouteObject[] = [
               { path: '/or', element: <RepairOrdersPage /> },
               { path: '/or/nouveau', element: <NewRepairOrderPage /> },
               { path: '/or/:id', element: <RepairOrderPage /> },
+              { path: '/planning', element: <PlanningPage /> },
+              { path: '/rendez-vous', element: <AppointmentsPage /> },
               { path: '/devis', element: <QuotesPage /> },
               { path: '/devis/nouveau', element: <NewQuotePage /> },
               { path: '/devis/:id', element: <QuotePage /> },

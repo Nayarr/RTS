@@ -11,7 +11,8 @@ import { sendLinks, type ContactValues, type SendLinkMessage } from '@/lib/send-
 interface SendLinkDialogProps {
   title: string;
   intro: string;
-  link: string;
+  /** Lien de consultation ; absent pour un simple message (rappel de rendez-vous). */
+  link?: string | undefined;
   message: SendLinkMessage;
   /** Adresse d'envoi conseillée (celle de l'atelier). */
   senderEmail: string | null;
@@ -21,7 +22,7 @@ interface SendLinkDialogProps {
 }
 
 /**
- * Envoi d'un lien au client (devis à signer, facture) : l'appli prépare le message,
+ * Envoi d'un lien ou d'un message au client (devis à signer, facture, rappel) : l'appli prépare le message,
  * la messagerie de l'atelier l'envoie (comme l'ancienne appli).
  */
 export function SendLinkDialog({
@@ -75,10 +76,12 @@ export function SendLinkDialog({
             onBlur={save}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="send-link">Lien</Label>
-          <Input id="send-link" readOnly value={link} className="h-11" onFocus={(e) => e.target.select()} />
-        </div>
+        {link && (
+          <div className="space-y-2">
+            <Label htmlFor="send-link">Lien</Label>
+            <Input id="send-link" readOnly value={link} className="h-11" onFocus={(e) => e.target.select()} />
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           <Button asChild>
             <a href={links.mailto} onClick={save}>
@@ -97,17 +100,19 @@ export function SendLinkDialog({
               </a>
             </Button>
           </div>
-          <Button
-            variant="outline"
-            onClick={() =>
-              void navigator.clipboard.writeText(link).then(
-                () => toast.success('Lien copié'),
-                () => toast.error('Copie impossible : sélectionne le lien ci-dessus'),
-              )
-            }
-          >
-            <Copy /> Copier le lien
-          </Button>
+          {link && (
+            <Button
+              variant="outline"
+              onClick={() =>
+                void navigator.clipboard.writeText(link).then(
+                  () => toast.success('Lien copié'),
+                  () => toast.error('Copie impossible : sélectionne le lien ci-dessus'),
+                )
+              }
+            >
+              <Copy /> Copier le lien
+            </Button>
+          )}
           <Button variant="ghost" asChild>
             <a href={links.sms} onClick={save}>
               <MessageSquare /> Envoyer par SMS (depuis un téléphone)
