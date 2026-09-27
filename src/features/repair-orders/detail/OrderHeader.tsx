@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StoredImage } from '@/features/files/StoredImage';
@@ -26,7 +26,14 @@ export function OrderHeader({ order }: { order: RepairOrderOverview }) {
               {order.client_name ?? 'Client non renseigné'} · {VEHICLE_TYPES[order.vehicle_type]}
             </p>
           </div>
-          <StatusBadge status={order.status} className="px-3 py-1 text-sm" />
+          <div className="flex flex-wrap items-center gap-2">
+            {(order.parts_pending_count ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-destructive px-3 py-1 text-sm font-semibold text-destructive">
+                <Package className="size-4" /> Attente pièces ({order.parts_pending_count})
+              </span>
+            )}
+            <StatusBadge status={order.status} className="px-3 py-1 text-sm" />
+          </div>
         </div>
 
         <p className="text-base whitespace-pre-line">{order.requested_work}</p>

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { RoLine } from '../api';
 import { formatHours } from '../constants';
 
-const TYPE_LABELS: Partial<Record<RoLine['line_type'], string>> = { package: 'Forfait', part: 'Pièce' };
+const TYPE_LABELS: Partial<Record<RoLine['line_type'], string>> = { package: 'Forfait' };
 
 function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
   if (lines.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
@@ -32,8 +32,9 @@ function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
   );
 }
 
-/** Travaux effectués et travaux / pièces à prévoir (saisis par le technicien). */
-export function LinesCard({ lines }: { lines: RoLine[] }) {
+/** Travaux effectués et à prévoir (saisis par le technicien) ; les pièces ont leur propre carte. */
+export function LinesCard({ lines: allLines }: { lines: RoLine[] }) {
+  const lines = allLines.filter((line) => line.line_type !== 'part');
   return (
     <Card>
       <CardHeader>

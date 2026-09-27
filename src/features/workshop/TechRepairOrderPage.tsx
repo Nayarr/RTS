@@ -14,6 +14,7 @@ import { seenKey } from './hooks';
 import { DeadlinesSection } from './order/DeadlinesSection';
 import { FinishSection } from './order/FinishSection';
 import { InspectionEditor } from './order/InspectionEditor';
+import { PartsSection } from './order/PartsSection';
 import { PhotosSection } from './order/PhotosSection';
 import { TimerSection } from './order/TimerSection';
 import { usePhotoCapture } from './order/use-photo-capture';
@@ -104,6 +105,7 @@ export function TechRepairOrderPage() {
       />
       <DeadlinesSection repairOrderId={order.id} vehicleId={order.vehicle_id} locked={locked} />
       <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
+      <PartsSection lines={lines} />
       {!locked && <FinishSection repairOrderId={order.id} />}
     </div>
   );
