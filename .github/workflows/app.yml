@@ -1,5 +1,5 @@
-# Application : qualité du code, tests unitaires, build, puis tests end-to-end
-# contre une base Supabase locale jetable (vraie connexion avec les comptes du seed).
+# Application : qualité du code, tests unitaires, build, Edge Functions (Deno), puis tests
+# end-to-end contre un Supabase local jetable (vraie connexion avec les comptes du seed).
 name: Application
 
 on:
@@ -19,6 +19,7 @@ permissions:
 env:
   NODE_VERSION: 22
   SUPABASE_CLI_VERSION: 2.118.0
+  DENO_VERSION: v2.x
 
 jobs:
   quality:
@@ -57,6 +58,31 @@ jobs:
           VITE_SUPABASE_URL: http://127.0.0.1:54321
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_build_only
 
+  functions:
+    name: Edge Functions (format, lint, types)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Formatage (deno fmt, même style que Prettier)
+        run: deno fmt --check --single-quote --line-width=110 supabase/functions
+
+      - name: Lint et vérification des types de chaque fonction
+        run: |
+          for dir in supabase/functions/*/; do
+            echo "::group::${dir}"
+            deno lint --config "${dir}deno.json" "${dir}"
+            deno check --config "${dir}deno.json" "${dir}index.ts"
+            echo "::endgroup::"
+          done
+
   e2e:
     name: Types de la base à jour et tests end-to-end
     runs-on: ubuntu-latest
@@ -79,10 +105,10 @@ jobs:
         with:
           version: ${{ env.SUPABASE_CLI_VERSION }}
 
-      - name: Démarrer Supabase (base, authentification, API) avec le seed de test
+      - name: Démarrer Supabase (base, authentification, API, Edge Functions) avec le seed de test
         run: >
           supabase start
-          -x studio,imgproxy,vector,logflare,supavisor,edge-runtime,realtime,storage-api,postgres-meta,mailpit
+          -x studio,imgproxy,vector,logflare,supavisor,realtime,storage-api,postgres-meta,mailpit
 
       - name: Types TypeScript à jour avec le schéma
         run: |
