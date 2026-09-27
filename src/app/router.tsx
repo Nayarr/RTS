@@ -5,6 +5,8 @@ import { RequireAuth } from '@/features/auth/RequireAuth';
 import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
+import { InvoicePage } from '@/features/invoices/InvoicePage';
+import { InvoicesPage } from '@/features/invoices/InvoicesPage';
 import { PublicDocumentPage } from '@/features/public/PublicDocumentPage';
 import { NewQuotePage } from '@/features/quotes/NewQuotePage';
 import { QuotePage } from '@/features/quotes/QuotePage';
@@ -41,6 +43,9 @@ export const routes: RouteObject[] = [
               { path: '/devis', element: <QuotesPage /> },
               { path: '/devis/nouveau', element: <NewQuotePage /> },
               { path: '/devis/:id', element: <QuotePage /> },
+              { path: '/factures', element: <InvoicesPage /> },
+              { path: '/factures/avoirs', element: <InvoicesPage /> },
+              { path: '/factures/:id', element: <InvoicePage /> },
             ],
           },
           {

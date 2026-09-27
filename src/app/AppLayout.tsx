@@ -1,5 +1,15 @@
 import { Link, NavLink, Outlet } from 'react-router';
-import { FileText, House, LogOut, Package, Settings, Users, Wrench, type LucideIcon } from 'lucide-react';
+import {
+  FileText,
+  House,
+  LogOut,
+  Package,
+  Receipt,
+  Settings,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import { Brand } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/features/auth/api';
@@ -19,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Accueil', icon: House, roles: ['direction', 'reception', 'technician', 'kiosk'] },
   { to: '/or', label: 'Ordres de réparation', icon: Wrench, roles: ['direction', 'reception'] },
   { to: '/devis', label: 'Devis', icon: FileText, roles: ['direction', 'reception'] },
+  { to: '/factures', label: 'Facturation', icon: Receipt, roles: ['direction', 'reception'] },
   { to: '/stock', label: 'Stock', icon: Package, roles: ['direction'] },
   { to: '/equipe', label: 'Équipe', icon: Users, roles: ['direction'] },
   { to: '/reglages', label: 'Réglages', icon: Settings, roles: ['direction'] },

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { repairOrdersKey } from '@/features/repair-orders/hooks';
-import { fetchQuote, fetchQuotes, fetchRepairOrderQuotes, fetchServicePackages } from './api';
+import { fetchQuote, fetchQuotes, fetchRepairOrderQuotes } from './api';
 
 export const quotesKey = ['quotes'] as const;
 export const quoteKey = (id: string) => ['quotes', id] as const;
@@ -19,10 +19,6 @@ export function useRepairOrderQuotes(repairOrderId: string) {
     queryKey: [...quotesKey, 'repair-order', repairOrderId],
     queryFn: () => fetchRepairOrderQuotes(repairOrderId),
   });
-}
-
-export function useServicePackages() {
-  return useQuery({ queryKey: ['service-packages'], queryFn: fetchServicePackages, staleTime: 5 * 60_000 });
 }
 
 const errorMessage = (error: unknown) =>

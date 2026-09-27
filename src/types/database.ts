@@ -283,6 +283,13 @@ export type Database = {
             referencedColumns: ['invoice_id'];
           },
           {
+            foreignKeyName: 'client_messages_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'client_messages_quote_id_fkey';
             columns: ['quote_id'];
             isOneToOne: false;
@@ -725,6 +732,13 @@ export type Database = {
             referencedColumns: ['invoice_id'];
           },
           {
+            foreignKeyName: 'credit_notes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'credit_notes_pdf_file_id_fkey';
             columns: ['pdf_file_id'];
             isOneToOne: false;
@@ -968,6 +982,13 @@ export type Database = {
             referencedColumns: ['invoice_id'];
           },
           {
+            foreignKeyName: 'invoice_lines_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'invoice_lines_package_id_fkey';
             columns: ['package_id'];
             isOneToOne: false;
@@ -1081,6 +1102,13 @@ export type Database = {
             referencedColumns: ['invoice_id'];
           },
           {
+            foreignKeyName: 'invoice_reminders_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'invoice_reminders_sent_by_fkey';
             columns: ['sent_by'];
             isOneToOne: false;
@@ -1123,6 +1151,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_invoice_totals';
             referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'invoice_repair_orders_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'invoice_repair_orders_repair_order_id_fkey';
@@ -1713,6 +1748,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_invoice_totals';
             referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'payments_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'payments_recorded_by_fkey';
@@ -3306,6 +3348,13 @@ export type Database = {
             referencedColumns: ['invoice_id'];
           },
           {
+            foreignKeyName: 'invoice_lines_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'invoice_lines_repair_order_id_fkey';
             columns: ['repair_order_id'];
             isOneToOne: false;
@@ -3343,6 +3392,43 @@ export type Database = {
           total_vat: number | null;
         };
         Relationships: [];
+      };
+      v_invoices_overview: {
+        Row: {
+          balance_due: number | null;
+          client_address: string | null;
+          client_id: string | null;
+          client_name: string | null;
+          client_siren: string | null;
+          created_at: string | null;
+          credited_ttc: number | null;
+          due_date: string | null;
+          id: string | null;
+          issued_at: string | null;
+          last_paid_on: string | null;
+          mileage: number | null;
+          number: string | null;
+          paid_ttc: number | null;
+          payment_status: string | null;
+          public_token: string | null;
+          repair_order_ids: string[] | null;
+          repair_order_numbers: string[] | null;
+          service_date: string | null;
+          status: Database['public']['Enums']['invoice_status'] | null;
+          total_ht: number | null;
+          total_ttc: number | null;
+          total_vat: number | null;
+          vehicle_label: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invoices_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       v_monthly_revenue: {
         Row: {
