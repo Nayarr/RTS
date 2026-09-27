@@ -1,13 +1,14 @@
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { pickDirty } from '@/lib/forms';
 import { FormField } from '@/components/FormField';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { updateAppSettings, type AppSettings } from './api';
 import { useSaveSettings } from './hooks';
-import { pickDirty, workshopSchema, workshopToForm, type WorkshopValues } from './schemas';
-import { SectionCard } from './SectionCard';
+import { workshopSchema, workshopToForm, type WorkshopValues } from './schemas';
+import { SectionCard } from '@/components/SectionCard';
 
 const TIME_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
   { name: 'workday_start', label: 'Ouverture' },

@@ -2,7 +2,7 @@ import type { FormEventHandler, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-/** Section de réglages : un formulaire, enregistré d'un bloc. */
+/** Section de formulaire enregistrée d’un bloc (réglages, fiche OR…). */
 export function SectionCard({
   id,
   title,

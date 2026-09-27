@@ -3,6 +3,9 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { NewPasswordPage } from '@/features/auth/NewPasswordPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { RequireRole } from '@/features/auth/RequireRole';
+import { NewRepairOrderPage } from '@/features/repair-orders/NewRepairOrderPage';
+import { RepairOrderPage } from '@/features/repair-orders/RepairOrderPage';
+import { RepairOrdersPage } from '@/features/repair-orders/RepairOrdersPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TeamPage } from '@/features/team/TeamPage';
 import { AppLayout } from './AppLayout';
@@ -20,6 +23,14 @@ export const routes: RouteObject[] = [
         element: <AppLayout />,
         children: [
           { index: true, element: <HomePage /> },
+          {
+            element: <RequireRole roles={['direction', 'reception']} />,
+            children: [
+              { path: '/or', element: <RepairOrdersPage /> },
+              { path: '/or/nouveau', element: <NewRepairOrderPage /> },
+              { path: '/or/:id', element: <RepairOrderPage /> },
+            ],
+          },
           {
             element: <RequireRole roles={['direction']} />,
             children: [

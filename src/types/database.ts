@@ -3526,6 +3526,10 @@ export type Database = {
         Returns: string;
       };
       apply_package_keywords: { Args: { p_repair_order_id: string }; Returns: string[] };
+      assert_confirmed_file: {
+        Args: { p_category: Database['public']['Enums']['file_category']; p_file_id: string };
+        Returns: undefined;
+      };
       assert_direction: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_office: { Args: Record<PropertyKey, never>; Returns: undefined };
       assign_quote_number: { Args: { p_mark_sent?: boolean; p_quote_id: string }; Returns: string };
@@ -3579,6 +3583,55 @@ export type Database = {
       confirm_file_upload: {
         Args: { p_file_id: string; p_mime_type: string; p_size_bytes: number; p_user_id: string };
         Returns: undefined;
+      };
+      create_repair_order: {
+        Args: {
+          p_client_name: string;
+          p_mileage?: number;
+          p_planned_date?: string;
+          p_planned_end?: string;
+          p_planned_start?: string;
+          p_plate: string;
+          p_requested_work: string;
+          p_signature_file_id?: string;
+          p_technician_id?: string;
+          p_vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        Returns: {
+          appointment_id: string | null;
+          assignment_changed_at: string;
+          client_id: string | null;
+          completed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_signature_file_id: string | null;
+          id: string;
+          intervention_type: Database['public']['Enums']['intervention_type'];
+          legacy_id: string | null;
+          maintenance_contract_id: string | null;
+          mileage: number | null;
+          number: string;
+          origin_quote_id: string | null;
+          origin_repair_order_id: string | null;
+          planned_date: string | null;
+          planned_end: string | null;
+          planned_start: string | null;
+          requested_work: string;
+          roadside_address: string | null;
+          roadside_km: number | null;
+          roadside_travel_hours: number | null;
+          status: Database['public']['Enums']['repair_order_status'];
+          technician_id: string | null;
+          updated_at: string;
+          vehicle_id: string;
+          vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'repair_orders';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       create_repair_order_from_appointment: { Args: { p_appointment_id: string }; Returns: string };
       create_repair_order_from_quote: {

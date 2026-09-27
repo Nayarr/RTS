@@ -1,10 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { pickDirty } from '@/lib/forms';
 import { FormField } from '@/components/FormField';
 import { updateCompanySettings, type CompanySettings } from './api';
 import { useSaveSettings } from './hooks';
-import { companyFromForm, companySchema, companyToForm, pickDirty, type CompanyValues } from './schemas';
-import { SectionCard } from './SectionCard';
+import { companyFromForm, companySchema, companyToForm, type CompanyValues } from './schemas';
+import { SectionCard } from '@/components/SectionCard';
 
 /** Coordonnées légales imprimées sur les devis et factures. */
 export function CompanyForm({ company }: { company: CompanySettings }) {
