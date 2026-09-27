@@ -4,6 +4,7 @@ import { CalendarClock, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
+import { MyLeaveSection } from '@/features/leave/MyLeaveSection';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { formatDate, formatDuration } from '@/features/repair-orders/constants';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
@@ -113,6 +114,8 @@ export function TechHomePage() {
           )}
         </div>
       )}
+
+      <MyLeaveSection />
     </div>
   );
 }

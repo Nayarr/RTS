@@ -4080,6 +4080,32 @@ export type Database = {
         Returns: Database['public']['Enums']['app_role'];
       };
       current_technician_id: { Args: Record<PropertyKey, never>; Returns: string };
+      decide_leave_request: {
+        Args: { p_approve: boolean; p_id: string };
+        Returns: {
+          comment: string | null;
+          created_at: string;
+          created_by: string | null;
+          decided_at: string | null;
+          decided_by: string | null;
+          ends_on: string;
+          id: string;
+          is_deleted: boolean;
+          leave_type: Database['public']['Enums']['leave_type'];
+          legacy_id: string | null;
+          starts_on: string;
+          status: Database['public']['Enums']['leave_status'];
+          technician_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'leave_requests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      delete_leave_request: { Args: { p_id: string }; Returns: undefined };
       ensure_supplier: { Args: { p_name: string }; Returns: string };
       expire_pending_files: { Args: Record<PropertyKey, never>; Returns: number };
       file_max_bytes: { Args: { p_category: Database['public']['Enums']['file_category'] }; Returns: number };
@@ -4242,6 +4268,37 @@ export type Database = {
         SetofOptions: {
           from: '*';
           to: 'appointments';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      save_leave_request: {
+        Args: {
+          p_comment?: string;
+          p_ends_on: string;
+          p_leave_type: Database['public']['Enums']['leave_type'];
+          p_starts_on: string;
+          p_technician_id?: string;
+        };
+        Returns: {
+          comment: string | null;
+          created_at: string;
+          created_by: string | null;
+          decided_at: string | null;
+          decided_by: string | null;
+          ends_on: string;
+          id: string;
+          is_deleted: boolean;
+          leave_type: Database['public']['Enums']['leave_type'];
+          legacy_id: string | null;
+          starts_on: string;
+          status: Database['public']['Enums']['leave_status'];
+          technician_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'leave_requests';
           isOneToOne: true;
           isSetofReturn: false;
         };

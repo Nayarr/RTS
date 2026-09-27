@@ -8,9 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFileUrls } from '@/features/files/hooks';
-import { addDays, dayLabel, LEAVE_LABELS } from '@/features/planning/domain';
+import { LEAVE_LABELS } from '@/features/leave/domain';
+import { addDays, dayLabel } from '@/features/planning/domain';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
+import { AttendanceTabs } from './AttendanceTabs';
 import { deleteManualClockEvent, updatePhotoRetention, type ClockEvent, type TechnicianDay } from './api';
 import { ClockPhotoDialog, ExitCodeDialog, ManualClockDialog } from './dialogs';
 import { clockTime, formatHoursMinutes, formatLate, workedSeconds } from './domain';
@@ -52,6 +54,8 @@ export function AttendancePage() {
           <Plus /> Correction manuelle
         </Button>
       </div>
+
+      <AttendanceTabs />
 
       <div className="flex flex-wrap items-end gap-2">
         <Button

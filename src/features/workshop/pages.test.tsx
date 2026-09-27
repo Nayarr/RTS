@@ -41,6 +41,11 @@ vi.mock('./api', async (importOriginal) => ({
   updateLine: vi.fn(),
   completeRepairOrder: vi.fn(),
 }));
+// Congés du technicien (section de l'accueil) : aucun.
+vi.mock('@/features/leave/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  fetchLeaveRequests: vi.fn().mockResolvedValue([]),
+}));
 vi.mock('@/features/files/hooks', () => ({ useFileUrls: () => ({ data: {}, isPending: false }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 

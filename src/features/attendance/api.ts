@@ -1,6 +1,7 @@
 import { updateAppSettings } from '@/features/settings/api';
 import { supabase } from '@/lib/supabase';
 import type { Database, Tables } from '@/types/database';
+import { monthDays, type AttendanceDayRow, type LeaveRange } from './timesheet';
 
 export type ClockEvent = Tables<'clock_events'>;
 export type ClockEventType = Database['public']['Enums']['clock_event_type'];
@@ -115,3 +116,51 @@ export async function setKioskExitCode(code: string) {
 
 export const updatePhotoRetention = (months: number) =>
   updateAppSettings({ clock_photo_retention_months: months });
+
+export interface TimesheetData {
+  technicians: { id: string; display_name: string }[];
+  days: AttendanceDayRow[];
+  leaves: LeaveRange[];
+}
+
+/** Pointages journaliers et absences validées du mois « AAAA-MM ». */
+export async function fetchTimesheet(month: string): Promise<TimesheetData> {
+  const days = monthDays(month);
+  const from = days[0] ?? `${month}-01`;
+  const to = days[days.length - 1] ?? from;
+  const [technicians, attendance, leaves] = await Promise.all([
+    supabase
+      .from('technicians')
+      .select('id, display_name')
+      .eq('is_active', true)
+      .order('sort_order')
+      .order('display_name'),
+    supabase.from('v_daily_attendance').select('*').gte('work_date', from).lte('work_date', to),
+    supabase
+      .from('leave_requests')
+      .select('technician_id, starts_on, ends_on')
+      .eq('status', 'approved')
+      .eq('is_deleted', false)
+      .lte('starts_on', to)
+      .gte('ends_on', from),
+  ]);
+  for (const result of [technicians, attendance, leaves]) if (result.error) throw result.error;
+  return {
+    technicians: technicians.data ?? [],
+    days: (attendance.data ?? []).flatMap((row) =>
+      row.technician_id && row.work_date
+        ? [
+            {
+              technician_id: row.technician_id,
+              work_date: row.work_date,
+              worked_seconds: row.worked_seconds ?? 0,
+              overtime_seconds: row.overtime_seconds ?? 0,
+              late_minutes: row.late_minutes ?? 0,
+              anomalies: row.anomalies ?? 0,
+            },
+          ]
+        : [],
+    ),
+    leaves: leaves.data ?? [],
+  };
+}

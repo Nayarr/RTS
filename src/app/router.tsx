@@ -3,8 +3,10 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { NewPasswordPage } from '@/features/auth/NewPasswordPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { AttendancePage } from '@/features/attendance/AttendancePage';
+import { TimesheetPage } from '@/features/attendance/TimesheetPage';
 import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
+import { LeavePage } from '@/features/leave/LeavePage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
 import { InvoicePage } from '@/features/invoices/InvoicePage';
 import { InvoicesPage } from '@/features/invoices/InvoicesPage';
@@ -62,6 +64,11 @@ export const routes: RouteObject[] = [
             children: [
               { path: '/equipe', element: <TeamPage /> },
               { path: '/pointages', element: <AttendancePage /> },
+              { path: '/pointages/conges', element: <LeavePage /> },
+              { path: '/pointages/releve', element: <TimesheetPage /> },
+              // Liens des alertes (cloche)
+              { path: '/equipe/conges', element: <Navigate to="/pointages/conges" replace /> },
+              { path: '/equipe/pointages', element: <Navigate to="/pointages" replace /> },
               { path: '/reglages', element: <SettingsPage /> },
               { path: '/stock', element: <Navigate to="/stock/consommables" replace /> },
               { path: '/stock/consommables', element: <ConsumablesPage /> },
