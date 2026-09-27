@@ -1,10 +1,11 @@
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { pickDirty } from '@/lib/forms';
 import { FormField } from '@/components/FormField';
 import { updateLaborRates, type LaborRate } from './api';
 import { useSaveSettings } from './hooks';
-import { laborRatesSchema, laborRatesToForm, pickDirty, type LaborRatesValues } from './schemas';
-import { SectionCard } from './SectionCard';
+import { laborRatesSchema, laborRatesToForm, type LaborRatesValues } from './schemas';
+import { SectionCard } from '@/components/SectionCard';
 
 /** Taux horaires HT par catégorie de véhicule / travaux. */
 export function LaborRatesForm({ rates }: { rates: LaborRate[] }) {

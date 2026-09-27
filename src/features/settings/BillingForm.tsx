@@ -1,12 +1,13 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { pickDirty } from '@/lib/forms';
 import { FormField } from '@/components/FormField';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { updateCompanySettings, type CompanySettings } from './api';
 import { useSaveSettings } from './hooks';
-import { billingFromForm, billingSchema, billingToForm, pickDirty, type BillingValues } from './schemas';
-import { SectionCard } from './SectionCard';
+import { billingFromForm, billingSchema, billingToForm, type BillingValues } from './schemas';
+import { SectionCard } from '@/components/SectionCard';
 
 /** TVA par défaut, délais et mentions légales des factures. */
 export function BillingForm({ company }: { company: CompanySettings }) {

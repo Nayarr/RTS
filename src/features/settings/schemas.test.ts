@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { pickDirty } from '@/lib/forms';
 import {
   billingFromForm,
   billingSchema,
   companyFromForm,
   companySchema,
-  pickDirty,
   workshopSchema,
   type CompanyValues,
   type WorkshopValues,

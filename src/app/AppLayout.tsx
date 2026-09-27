@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router';
-import { House, LogOut, Settings, Users, type LucideIcon } from 'lucide-react';
+import { House, LogOut, Settings, Users, Wrench, type LucideIcon } from 'lucide-react';
 import { Brand } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/features/auth/api';
@@ -17,6 +17,7 @@ interface NavItem {
 /** Navigation principale : chaque rôle ne voit que ses écrans. */
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Accueil', icon: House, roles: ['direction', 'reception', 'technician', 'kiosk'] },
+  { to: '/or', label: 'Ordres de réparation', icon: Wrench, roles: ['direction', 'reception'] },
   { to: '/equipe', label: 'Équipe', icon: Users, roles: ['direction'] },
   { to: '/reglages', label: 'Réglages', icon: Settings, roles: ['direction'] },
 ];
