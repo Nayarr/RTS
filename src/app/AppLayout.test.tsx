@@ -10,6 +10,12 @@ vi.mock('@/features/auth/api', async (importOriginal) => ({
   ...(await importOriginal<typeof AuthApi>()),
   fetchProfile: vi.fn(),
 }));
+// Cloche du bureau : aucune alerte.
+vi.mock('@/features/alerts/api', () => ({
+  fetchMyNotifications: vi.fn().mockResolvedValue([]),
+  markNotificationsRead: vi.fn(),
+  subscribeToNotifications: () => () => {},
+}));
 
 const profile = (role: Profile['role']): Profile => ({
   id: '00000000-0000-0000-0000-0000000000d1',

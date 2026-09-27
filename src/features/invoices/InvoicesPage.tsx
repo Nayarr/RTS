@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router';
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { Download, Layers, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,7 +84,10 @@ function InvoiceList() {
   const isDirection = profile?.role === 'direction';
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<Filter>('to_collect');
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<Filter>(
+    () => FILTERS.find(({ value }) => value === params.get('filtre'))?.value ?? 'to_collect',
+  );
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
