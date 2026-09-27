@@ -381,8 +381,15 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+# Secrets des Edge Functions en LOCAL uniquement (jamais envoyés en production, où ils sont
+# définis par « supabase secrets set »). Stockage objet local : conteneur versitygw lancé par
+# « npm run storage:start » sur le réseau Docker de Supabase (compatible S3, comme R2).
+[edge_runtime.secrets]
+R2_ENDPOINT = "http://rts-storage:7070"
+R2_PUBLIC_ENDPOINT = "http://127.0.0.1:9000"
+R2_ACCESS_KEY_ID = "rts-local-access"
+R2_SECRET_ACCESS_KEY = "rts-local-secret-key"
+R2_BUCKET = "rts-atelier"
 
 [analytics]
 enabled = true
@@ -425,3 +432,10 @@ entrypoint = "./functions/admin-users/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/admin-users/*.html" ]
+
+[functions.files]
+enabled = true
+# Le jeton de l'appelant est vérifié dans la fonction elle-même (withSupabase({ auth: "user" })).
+verify_jwt = false
+import_map = "./functions/files/deno.json"
+entrypoint = "./functions/files/index.ts"

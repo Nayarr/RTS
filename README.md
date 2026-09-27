@@ -18,12 +18,13 @@ dans `legacy/` comme référence fonctionnelle ; elle n'est pas versionnée.
 ```
 src/
   app/         Coquille de l'appli : routeur, mise en page, pages génériques
-  features/    Un dossier par domaine métier (auth, ...) : écrans, appels API, schémas, tests
+  features/    Un dossier par domaine métier (auth, team, files, ...) : écrans, appels API, schémas, tests
   components/  Composants partagés (ui/ = composants shadcn/ui générés)
   lib/         Client Supabase, variables d'environnement, utilitaires
   types/       Types TypeScript générés depuis la base (npm run db:types)
 e2e/           Tests end-to-end Playwright
 supabase/
+  functions/   Edge Functions (admin-users : comptes ; files : fichiers R2)
   migrations/  Schéma de la base (tables, fonctions métier, RLS, tâches planifiées)
   tests/       Tests pgTAP de la base
   seed.sql     Comptes et données de développement (local uniquement)
@@ -35,7 +36,8 @@ Prérequis : Node.js 22+, Docker.
 
 ```bash
 npm install
-npx supabase start               # Supabase local (base + authentification)
+npx supabase start               # Supabase local (base, authentification, Edge Functions)
+npm run storage:start            # stockage de fichiers local compatible S3 (remplace R2)
 cp .env.example .env.local       # puis renseigner la clé affichée par `npx supabase status`
 npm run dev                      # http://localhost:5173
 ```
@@ -46,17 +48,18 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
 
 ## Commandes utiles
 
-| Commande                | Rôle                                                  |
-| ----------------------- | ----------------------------------------------------- |
-| `npm run lint`          | ESLint                                                |
-| `npm run typecheck`     | Vérification TypeScript                               |
-| `npm run format:check`  | Formatage Prettier                                    |
-| `npm test`              | Tests unitaires (Vitest)                              |
-| `npm run test:e2e`      | Tests end-to-end (Playwright, Supabase local démarré) |
-| `npm run db:types`      | Régénère `src/types/database.ts` après une migration  |
-| `npx supabase db reset` | Recrée la base locale : migrations + `seed.sql`       |
-| `npx supabase test db`  | Tests pgTAP de la base                                |
-| `npx supabase db lint`  | Lint du schéma                                        |
+| Commande                | Rôle                                                                   |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `npm run lint`          | ESLint                                                                 |
+| `npm run typecheck`     | Vérification TypeScript                                                |
+| `npm run format:check`  | Formatage Prettier                                                     |
+| `npm test`              | Tests unitaires (Vitest)                                               |
+| `npm run test:e2e`      | Tests end-to-end (Playwright, Supabase et stockage local démarrés)     |
+| `npm run storage:start` | Stockage local compatible S3 sur le port 9000 (après `supabase start`) |
+| `npm run db:types`      | Régénère `src/types/database.ts` après une migration                   |
+| `npx supabase db reset` | Recrée la base locale : migrations + `seed.sql`                        |
+| `npx supabase test db`  | Tests pgTAP de la base                                                 |
+| `npx supabase db lint`  | Lint du schéma                                                         |
 
 ## Contribuer
 
@@ -79,4 +82,9 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
 - **Recette : Vercel** (intégration GitHub) — un aperçu par PR, la production à chaque fusion sur `main`.
   Configuration dans [`vercel.json`](vercel.json) (routes de l'appli, cache, en-têtes de sécurité).
   Variables à définir dans Vercel : `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
+- **Fichiers : Cloudflare R2**. Le navigateur envoie et lit les fichiers directement dans R2 avec
+  des URL signées fournies par l'Edge Function `files`. Secrets de la fonction (jamais dans le code) :
+  `R2_ENDPOINT` (`https://<id-de-compte>.r2.cloudflarestorage.com`), `R2_BUCKET`, `R2_ACCESS_KEY_ID`,
+  `R2_SECRET_ACCESS_KEY`, définis par `npx supabase secrets set`. Le bucket doit autoriser en CORS
+  l'origine de l'appli (méthodes `GET`, `PUT`, en-tête `Content-Type`).
 - **Production : o2switch** (plus tard).

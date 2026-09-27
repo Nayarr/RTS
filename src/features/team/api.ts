@@ -1,23 +1,10 @@
-import { FunctionsHttpError } from '@supabase/supabase-js';
+import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 import type { AppRole } from '@/features/auth/roles';
 import type { CreateAccountInput, TeamMember, TechnicianSettings } from './types';
 
-/** Appelle l'Edge Function admin-users et remonte son message d'erreur en français. */
-async function invokeAdminUsers<T>(body: Record<string, unknown>): Promise<T> {
-  const response = await supabase.functions.invoke<T>('admin-users', { body });
-  const error: unknown = response.error;
-  if (error) {
-    if (error instanceof FunctionsHttpError) {
-      const payload = (await (error.context as Response).json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      throw new Error(payload?.error ?? 'Opération impossible');
-    }
-    throw new Error('Serveur injoignable : vérifie ta connexion internet');
-  }
-  return response.data as T;
-}
+/** Appelle l'Edge Function admin-users (gestion des comptes, clé secrète côté serveur). */
+const invokeAdminUsers = <T>(body: Record<string, unknown>) => invokeFunction<T>('admin-users', body);
 
 export async function fetchTeam(): Promise<TeamMember[]> {
   const [profiles, technicians, pins] = await Promise.all([
