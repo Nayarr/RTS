@@ -2,10 +2,13 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { fetchFileUrls, uploadFile, type FileCategory } from './api';
 import { compressImage } from './image';
 
-/** Envoi d'un fichier (photos compressées au préalable). Renvoie l'identifiant du fichier. */
-export function useUploadFile(category: FileCategory) {
+/**
+ * Envoi d'un fichier ; les photos sont compressées au préalable, sauf `compress: false`
+ * (logo : on garde le PNG et sa transparence). Renvoie l'identifiant du fichier.
+ */
+export function useUploadFile(category: FileCategory, { compress = true } = {}) {
   return useMutation({
-    mutationFn: async (file: File) => uploadFile(await compressImage(file), { category }),
+    mutationFn: async (file: File) => uploadFile(compress ? await compressImage(file) : file, { category }),
   });
 }
 

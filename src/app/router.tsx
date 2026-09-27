@@ -3,6 +3,7 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { NewPasswordPage } from '@/features/auth/NewPasswordPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { RequireRole } from '@/features/auth/RequireRole';
+import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TeamPage } from '@/features/team/TeamPage';
 import { AppLayout } from './AppLayout';
 import { HomePage } from './HomePage';
@@ -21,7 +22,10 @@ export const routes: RouteObject[] = [
           { index: true, element: <HomePage /> },
           {
             element: <RequireRole roles={['direction']} />,
-            children: [{ path: '/equipe', element: <TeamPage /> }],
+            children: [
+              { path: '/equipe', element: <TeamPage /> },
+              { path: '/reglages', element: <SettingsPage /> },
+            ],
           },
         ],
       },

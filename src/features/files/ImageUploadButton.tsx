@@ -16,14 +16,17 @@ export function ImageUploadButton({
   onUploaded,
   children = 'Ajouter une photo',
   variant = 'outline',
+  compress = true,
 }: {
   category: FileCategory;
   onUploaded: (fileId: string) => void;
   children?: ReactNode;
   variant?: 'default' | 'outline' | 'secondary';
+  /** false : fichier envoyé tel quel (logo PNG avec transparence). */
+  compress?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
-  const upload = useUploadFile(category);
+  const upload = useUploadFile(category, { compress });
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
