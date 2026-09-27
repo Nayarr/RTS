@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import { useLocation } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { fakeSession, renderRoutes } from '@/test/render';
 import { fetchProfile } from './api';
@@ -12,9 +13,20 @@ vi.mock('./api', async (importOriginal) => ({
   signOut: vi.fn(),
 }));
 
+function LoginScreen() {
+  const { state } = useLocation() as { state: { from?: string } | null };
+  return <p>Écran de connexion{state?.from && ` (retour vers ${state.from})`}</p>;
+}
+
 const routes = [
-  { path: '/connexion', element: <p>Écran de connexion</p> },
-  { element: <RequireAuth />, children: [{ path: '/', element: <p>Contenu protégé</p> }] },
+  { path: '/connexion', element: <LoginScreen /> },
+  {
+    element: <RequireAuth />,
+    children: [
+      { path: '/', element: <p>Contenu protégé</p> },
+      { path: '/equipe', element: <p>Écran Équipe</p> },
+    ],
+  },
 ];
 
 const profile = (overrides: Partial<Profile> = {}): Profile => ({
@@ -31,6 +43,16 @@ const profile = (overrides: Partial<Profile> = {}): Profile => ({
 describe('RequireAuth', () => {
   it('redirige vers la connexion sans session', async () => {
     renderRoutes(routes);
+    expect(await screen.findByText(/^Écran de connexion/)).toBeInTheDocument();
+  });
+
+  it('mémorise la page demandée pour y revenir après connexion', async () => {
+    renderRoutes(routes, { initialPath: '/equipe' });
+    expect(await screen.findByText('Écran de connexion (retour vers /equipe)')).toBeInTheDocument();
+  });
+
+  it('ne mémorise pas la page quittée après une déconnexion', async () => {
+    renderRoutes(routes, { initialPath: '/equipe', auth: { signedOut: true } });
     expect(await screen.findByText('Écran de connexion')).toBeInTheDocument();
   });
 

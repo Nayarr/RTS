@@ -5,6 +5,8 @@ export interface AuthState {
   session: Session | null;
   /** true tant que la session enregistrée sur l'appareil n'a pas été relue. */
   isLoading: boolean;
+  /** true si la session vient de se terminer (déconnexion) pendant cette visite. */
+  signedOut: boolean;
 }
 
 export const AuthContext = createContext<AuthState | null>(null);

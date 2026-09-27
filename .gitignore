@@ -32,3 +32,6 @@ Thumbs.db
 
 # Outils locaux (aperçu Claude Code)
 .claude/
+
+# Lockfile Deno local (format non lu par l'edge runtime Supabase ; versions figées dans deno.json)
+supabase/functions/**/deno.lock
