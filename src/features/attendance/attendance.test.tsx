@@ -33,23 +33,22 @@ vi.mock('@/features/files/api', async (importOriginal) => ({
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-const event = (overrides: Partial<ClockEvent>): ClockEvent =>
-  ({
-    id: 'e1',
-    technician_id: 't1',
-    event_type: 'in',
-    occurred_at: '2026-09-21T06:57:00Z',
-    work_date: '2026-09-21',
-    source: 'kiosk',
-    photo_file_id: 'f1',
-    photo_purged_at: null,
-    during_leave_type: null,
-    reason: null,
-    entered_by: null,
-    legacy_id: null,
-    created_at: '2026-09-21T06:57:00Z',
-    ...overrides,
-  });
+const event = (overrides: Partial<ClockEvent>): ClockEvent => ({
+  id: 'e1',
+  technician_id: 't1',
+  event_type: 'in',
+  occurred_at: '2026-09-21T06:57:00Z',
+  work_date: '2026-09-21',
+  source: 'kiosk',
+  photo_file_id: 'f1',
+  photo_purged_at: null,
+  during_leave_type: null,
+  reason: null,
+  entered_by: null,
+  legacy_id: null,
+  created_at: '2026-09-21T06:57:00Z',
+  ...overrides,
+});
 
 const DAY: TechnicianDay[] = [
   {
