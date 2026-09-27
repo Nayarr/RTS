@@ -37,6 +37,9 @@ vi.mock('./api', async (importOriginal) => ({
   updateRepairOrder: vi.fn(),
   deleteRepairOrder: vi.fn(),
 }));
+vi.mock('./supplies-api', () => ({
+  fetchSupplies: vi.fn().mockResolvedValue({ subcontracts: [], consumables: [], partSuppliers: {} }),
+}));
 vi.mock('@/features/files/hooks', () => ({
   useFileUrl: () => ({ url: undefined, isPending: false, isError: false }),
   useFileUrls: () => ({ data: {}, isPending: false }),

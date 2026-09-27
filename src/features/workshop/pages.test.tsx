@@ -77,6 +77,7 @@ const line = (overrides: Partial<RoLine>): RoLine =>
     estimated_hours: null,
     estimate_is_minimum: false,
     standard_hours: null,
+    quantity: 1,
     ...overrides,
   }) as RoLine;
 
@@ -171,6 +172,28 @@ describe('fiche OR technicien', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: /Oui, établir un devis/ }));
     await waitFor(() => expect(completeRepairOrder).toHaveBeenCalledWith('ro1', true));
     expect(await screen.findByRole('heading', { name: 'Mes ordres de réparation' })).toBeInTheDocument();
+  });
+
+  it('pièces prévues par le bureau : état de commande, sans prix ni édition', async () => {
+    setup('/atelier/or/ro1', {
+      order: order(),
+      lines: [
+        line({
+          id: 'p1',
+          line_type: 'part',
+          description: 'Plaquettes avant',
+          unit_price: 138,
+          order_status: 'received',
+        }),
+      ],
+    });
+    const parts = (await screen.findByRole('heading', { name: 'Pièces' })).closest<HTMLElement>(
+      '[data-slot="card"]',
+    )!;
+    expect(within(parts).getByText('Plaquettes avant')).toBeInTheDocument();
+    expect(within(parts).getByText('Reçue')).toBeInTheDocument();
+    expect(within(parts).queryByText(/138/)).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Description de la tâche' })).toBeNull();
   });
 
   it('OR terminé : consultation seulement', async () => {

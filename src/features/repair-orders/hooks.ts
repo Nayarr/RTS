@@ -8,6 +8,7 @@ import {
   findVehicleByPlate,
   searchClients,
 } from './api';
+import { fetchSupplies } from './supplies-api';
 
 export const repairOrdersKey = ['repair-orders'] as const;
 export const repairOrderKey = (id: string) => ['repair-orders', id] as const;
@@ -21,6 +22,15 @@ export function useRepairOrders() {
 
 export function useRepairOrder(id: string) {
   return useQuery({ queryKey: repairOrderKey(id), queryFn: () => fetchRepairOrder(id), ...LIVE });
+}
+
+/** Pièces (fournisseurs), sous-traitance et consommables : rechargés avec la fiche. */
+export function useRepairOrderSupplies(id: string) {
+  return useQuery({
+    queryKey: [...repairOrderKey(id), 'supplies'],
+    queryFn: () => fetchSupplies(id),
+    ...LIVE,
+  });
 }
 
 export function useRepairOrderEvents(id: string, enabled: boolean) {

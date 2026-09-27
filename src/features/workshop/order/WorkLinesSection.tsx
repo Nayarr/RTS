@@ -37,7 +37,6 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
           }}
         />
         {line.line_type === 'package' && <Badge variant="secondary">Forfait</Badge>}
-        {line.line_type === 'part' && <Badge variant="secondary">Pièce</Badge>}
       </div>
       <select
         aria-label="Temps estimé"
@@ -134,14 +133,14 @@ export function WorkLinesSection({
         <LineGroup
           title="Travaux effectués"
           kind="done"
-          lines={lines.filter((line) => line.kind === 'done')}
+          lines={lines.filter((line) => line.kind === 'done' && line.line_type !== 'part')}
           locked={locked}
           repairOrderId={repairOrderId}
         />
         <LineGroup
           title="Pièces / réparations à prévoir (devis)"
           kind="planned"
-          lines={lines.filter((line) => line.kind === 'planned')}
+          lines={lines.filter((line) => line.kind === 'planned' && line.line_type !== 'part')}
           locked={locked}
           repairOrderId={repairOrderId}
         />
