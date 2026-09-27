@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
-import { fetchPublicDocument, respondToQuote, type PublicQuote } from './api';
+import { fetchPublicDocument, respondToQuote, type PublicInvoice, type PublicQuote } from './api';
 import type * as PublicApi from './api';
 import { PublicDocumentPage } from './PublicDocumentPage';
 
@@ -79,7 +79,7 @@ const quote = (overrides: Partial<PublicQuote> = {}): PublicQuote => ({
   ...overrides,
 });
 
-const setup = (document: PublicQuote | null) => {
+const setup = (document: PublicQuote | PublicInvoice | null) => {
   vi.mocked(fetchPublicDocument).mockResolvedValue(document);
   return renderRoutes([{ path: '/d/:token', element: <PublicDocumentPage /> }], {
     initialPath: `/d/${TOKEN}`,
@@ -170,6 +170,56 @@ describe('devis en ligne (client, sans compte)', () => {
     second.unmount();
 
     setup(null);
-    expect(await screen.findByText('Ce devis est introuvable ou le lien a expiré.')).toBeInTheDocument();
+    expect(await screen.findByText('Ce document est introuvable ou le lien a expiré.')).toBeInTheDocument();
+  });
+});
+
+describe('facture en ligne (client, sans compte)', () => {
+  const invoice = (overrides: Partial<PublicInvoice> = {}): PublicInvoice => ({
+    type: 'invoice',
+    company: quote().company,
+    number: 'F11887',
+    issued_at: '2026-09-27T10:00:00Z',
+    service_date: '2026-09-26',
+    due_date: '2026-10-27',
+    client_name: 'Transports Martin',
+    client_address: '1 rue du Test, 95190 Goussainville',
+    vehicle_label: 'GH-512-RT',
+    mileage: 184320,
+    lines: [
+      {
+        line_type: 'labor',
+        description: 'Remplacement disques',
+        unit_price: 90,
+        quantity: 3,
+        discount_percent: 0,
+        vat_rate: 20,
+        net_ht: 270,
+      },
+    ],
+    totals: { total_ht: 270, total_vat: 54, total_ttc: 324 },
+    balance_due: 124,
+    legal_mentions: ['TVA sur les encaissements.'],
+    ...overrides,
+  });
+
+  it('facture, reste dû, mentions légales, impression', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+    setup(invoice());
+    expect(await screen.findByRole('heading', { name: 'FACTURE' })).toBeInTheDocument();
+    expect(screen.getByText(/F11887/)).toBeInTheDocument();
+    expect(screen.getByText(/1 rue du Test/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Facture à régler avant le 27\/10\/2026 — reste dû : 124,00\s€/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('TVA sur les encaissements.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'J’accepte ce devis' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /Imprimer/ }));
+    expect(print).toHaveBeenCalled();
+  });
+
+  it('facture soldée', async () => {
+    setup(invoice({ balance_due: 0 }));
+    expect(await screen.findByText(/Facture réglée/)).toBeInTheDocument();
   });
 });

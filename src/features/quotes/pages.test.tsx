@@ -7,6 +7,8 @@ import { fetchActiveTechnicians } from '@/features/repair-orders/api';
 import type * as RoApi from '@/features/repair-orders/api';
 import { fetchSettings, type Settings } from '@/features/settings/api';
 import type * as SettingsApi from '@/features/settings/api';
+import { fetchClientContact, updateClientContact } from '@/features/documents/client-contact';
+import type * as ContactApi from '@/features/documents/client-contact';
 import { fakeSession, renderRoutes } from '@/test/render';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import {
@@ -17,10 +19,8 @@ import {
   createRepairOrderFromQuote,
   fetchQuote,
   fetchQuotes,
-  fetchClientContact,
   setQuoteResponse,
   shareQuote,
-  updateClientContact,
   updateQuoteLine,
   type QuoteDetail,
   type QuoteLine,
@@ -57,9 +57,12 @@ vi.mock('./api', async (importOriginal) => ({
   updateQuoteLine: vi.fn(),
   setQuoteResponse: vi.fn(),
   shareQuote: vi.fn(),
+  createRepairOrderFromQuote: vi.fn(),
+}));
+vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
+  ...(await importOriginal<typeof ContactApi>()),
   fetchClientContact: vi.fn(),
   updateClientContact: vi.fn(),
-  createRepairOrderFromQuote: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 

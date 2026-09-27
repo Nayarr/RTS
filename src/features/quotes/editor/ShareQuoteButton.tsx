@@ -4,15 +4,13 @@ import { toast } from 'sonner';
 import { SendLinkDialog } from '@/components/SendLinkDialog';
 import type { ContactValues, SendLinkMessage } from '@/lib/send-links';
 import { Button } from '@/components/ui/button';
-import { fetchSettings } from '@/features/settings/api';
 import {
   fetchClientContact,
-  fetchQuote,
   publicDocumentUrl,
-  shareQuote,
   updateClientContact,
-  type QuoteOverview,
-} from '../api';
+} from '@/features/documents/client-contact';
+import { fetchSettings } from '@/features/settings/api';
+import { fetchQuote, shareQuote, type QuoteOverview } from '../api';
 import { quoteShareMessage } from '../domain';
 import { useQuoteMutation } from '../hooks';
 

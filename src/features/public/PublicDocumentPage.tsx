@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, Printer, XCircle } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SignaturePad } from '@/components/SignaturePad';
 import { useSignaturePad } from '@/components/use-signature-pad';
@@ -10,9 +10,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate } from '@/features/repair-orders/constants';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
-import { fetchPublicDocument, respondToQuote, type PublicQuote, type PublicQuoteLine } from './api';
+import {
+  fetchPublicDocument,
+  respondToQuote,
+  type PublicCompany,
+  type PublicInvoice,
+  type PublicQuote,
+  type PublicQuoteLine,
+} from './api';
 
-function LinesTable({ lines, title }: { lines: PublicQuoteLine[]; title: string }) {
+type TableLine = Pick<
+  PublicQuoteLine,
+  'description' | 'unit_price' | 'quantity' | 'discount_percent' | 'net_ht'
+> & {
+  line_type: string;
+};
+
+function LinesTable({ lines, title }: { lines: TableLine[]; title: string }) {
   if (lines.length === 0) return null;
   return (
     <section className="space-y-1">
@@ -138,6 +152,55 @@ function ResponseForm({ token }: { token: string }) {
   );
 }
 
+function DocumentHeader({
+  company,
+  title,
+  children,
+}: {
+  company: PublicCompany;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <img src="/icons/icon-192.png" alt="" className="size-14" />
+        <div>
+          <p className="text-base font-bold">{company.legal_name}</p>
+          <p className="text-xs text-neutral-600">
+            {company.address_line}, {company.postal_code} {company.city}
+            {company.siret && ` — SIRET ${company.siret}`}
+            {company.email && ` — ${company.email}`}
+          </p>
+        </div>
+      </div>
+      <div className="ml-auto text-right">
+        <h1 className="text-3xl font-extrabold text-[#137017]">{title}</h1>
+        {children}
+      </div>
+    </header>
+  );
+}
+
+function DocumentTotals({ totals }: { totals: { total_ht: number; total_vat: number; total_ttc: number } }) {
+  return (
+    <dl className="mt-5 ml-auto max-w-xs space-y-1 text-right" aria-label="Totaux">
+      <div className="flex justify-between gap-4">
+        <dt>Total HT</dt>
+        <dd className="font-semibold tabular-nums">{formatEuro(totals.total_ht)}</dd>
+      </div>
+      <div className="flex justify-between gap-4">
+        <dt>TVA</dt>
+        <dd className="tabular-nums">{formatEuro(totals.total_vat)}</dd>
+      </div>
+      <div className="flex justify-between gap-4 text-lg">
+        <dt>Total TTC</dt>
+        <dd className="font-bold tabular-nums">{formatEuro(totals.total_ttc)}</dd>
+      </div>
+    </dl>
+  );
+}
+
 function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) {
   const { company } = quote;
   const done = quote.lines.filter((line) => line.section === 'done');
@@ -145,29 +208,15 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
 
   return (
     <article className="rounded-lg bg-white p-5 text-neutral-900 shadow-sm sm:p-8">
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <img src="/icons/icon-192.png" alt="" className="size-14" />
-          <div>
-            <p className="text-base font-bold">{company.legal_name}</p>
-            <p className="text-xs text-neutral-600">
-              {company.address_line}, {company.postal_code} {company.city}
-              {company.siret && ` — SIRET ${company.siret}`}
-              {company.email && ` — ${company.email}`}
-            </p>
-          </div>
-        </div>
-        <div className="text-right">
-          <h1 className="text-3xl font-extrabold text-[#137017]">DEVIS</h1>
-          <p className="text-neutral-600">
-            {quote.number}
-            {quote.issued_at && ` — ${formatDate(quote.issued_at)}`}
-          </p>
-          {quote.valid_until && (
-            <p className="text-xs text-neutral-600">Valable jusqu’au {formatDate(quote.valid_until)}</p>
-          )}
-        </div>
-      </header>
+      <DocumentHeader company={company} title="DEVIS">
+        <p className="text-neutral-600">
+          {quote.number}
+          {quote.issued_at && ` — ${formatDate(quote.issued_at)}`}
+        </p>
+        {quote.valid_until && (
+          <p className="text-xs text-neutral-600">Valable jusqu’au {formatDate(quote.valid_until)}</p>
+        )}
+      </DocumentHeader>
 
       <p>
         <strong>Client :</strong> {quote.client_name ?? '—'}
@@ -178,20 +227,7 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
       <LinesTable lines={done} title={done.length ? 'Travaux déjà effectués' : ''} />
       <LinesTable lines={planned} title={done.length ? 'Travaux à prévoir' : ''} />
 
-      <dl className="mt-5 ml-auto max-w-xs space-y-1 text-right" aria-label="Totaux">
-        <div className="flex justify-between gap-4">
-          <dt>Total HT</dt>
-          <dd className="font-semibold tabular-nums">{formatEuro(quote.totals.total_ht)}</dd>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt>TVA</dt>
-          <dd className="tabular-nums">{formatEuro(quote.totals.total_vat)}</dd>
-        </div>
-        <div className="flex justify-between gap-4 text-lg">
-          <dt>Total TTC</dt>
-          <dd className="font-bold tabular-nums">{formatEuro(quote.totals.total_ttc)}</dd>
-        </div>
-      </dl>
+      <DocumentTotals totals={quote.totals} />
 
       {quote.status === 'accepted' && (
         <p className="mt-6 flex items-center gap-2 rounded-md bg-[#e3f3e7] p-4 font-bold">
@@ -215,6 +251,65 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
   );
 }
 
+/** Facture consultée en ligne : imprimable ou enregistrable en PDF depuis le navigateur. */
+function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
+  const balance = invoice.balance_due ?? 0;
+  return (
+    <article className="rounded-lg bg-white p-5 text-neutral-900 shadow-sm sm:p-8 print:p-0 print:shadow-none">
+      <DocumentHeader company={invoice.company} title="FACTURE">
+        <p className="text-neutral-600">
+          {invoice.number} — {formatDate(invoice.issued_at)}
+        </p>
+        <p className="text-xs text-neutral-600">Échéance le {formatDate(invoice.due_date)}</p>
+      </DocumentHeader>
+
+      <div className="flex flex-wrap justify-between gap-4">
+        <p>
+          <strong>Véhicule :</strong> {invoice.vehicle_label ?? '—'}
+          {invoice.mileage !== null && ` — ${invoice.mileage.toLocaleString('fr-FR')} km`}
+          {invoice.service_date && (
+            <>
+              <br />
+              <strong>Date de la prestation :</strong> {formatDate(invoice.service_date)}
+            </>
+          )}
+        </p>
+        <div className="min-w-56 rounded-md border p-3">
+          <p className="font-bold">{invoice.client_name}</p>
+          {invoice.client_address && <p className="text-sm whitespace-pre-line">{invoice.client_address}</p>}
+        </div>
+      </div>
+
+      <LinesTable lines={invoice.lines} title="" />
+      <DocumentTotals totals={invoice.totals} />
+
+      {balance > 0.01 ? (
+        <p className="mt-6 rounded-md bg-[#eef3fb] p-4 font-bold">
+          Facture à régler avant le {formatDate(invoice.due_date)}
+          {balance < invoice.totals.total_ttc - 0.01 && ` — reste dû : ${formatEuro(balance)}`}. Merci de
+          votre confiance.
+        </p>
+      ) : (
+        <p className="mt-6 flex items-center gap-2 rounded-md bg-[#e3f3e7] p-4 font-bold">
+          <CheckCircle2 className="size-5 shrink-0 text-[#2A6B52]" /> Facture réglée. Merci de votre
+          confiance.
+        </p>
+      )}
+
+      {invoice.legal_mentions && invoice.legal_mentions.length > 0 && (
+        <div className="mt-6 space-y-1 border-t pt-3 text-xs text-neutral-600">
+          {invoice.legal_mentions.map((mention) => (
+            <p key={mention}>{mention}</p>
+          ))}
+        </div>
+      )}
+      <Button variant="outline" className="mt-5 print:hidden" onClick={() => window.print()}>
+        <Printer /> Imprimer / enregistrer en PDF
+      </Button>
+    </article>
+  );
+}
+
 /** Page publique ouverte avec le lien reçu par e-mail ou SMS (sans compte). */
 export function PublicDocumentPage() {
   const { token = '' } = useParams();
@@ -223,14 +318,16 @@ export function PublicDocumentPage() {
     queryFn: () => fetchPublicDocument(token),
   });
 
+  const data = document.data;
   let content;
-  if (document.isPending) content = <p>Chargement du devis…</p>;
-  else if (document.isError) content = <p>Impossible de charger le devis. Réessayez dans un instant.</p>;
-  else if (document.data?.type !== 'quote') content = <p>Ce devis est introuvable ou le lien a expiré.</p>;
-  else content = <QuoteDocument quote={document.data as PublicQuote} token={token} />;
+  if (document.isPending) content = <p>Chargement du document…</p>;
+  else if (document.isError) content = <p>Impossible de charger le document. Réessayez dans un instant.</p>;
+  else if (data?.type === 'quote') content = <QuoteDocument quote={data} token={token} />;
+  else if (data?.type === 'invoice') content = <InvoiceDocument invoice={data} />;
+  else content = <p>Ce document est introuvable ou le lien a expiré.</p>;
 
   return (
-    <div className="min-h-dvh bg-[#eef0ee] px-3 py-5">
+    <div className="min-h-dvh bg-[#eef0ee] px-3 py-5 print:bg-white print:p-0">
       <main className="mx-auto max-w-[820px]">{content}</main>
     </div>
   );
