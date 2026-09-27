@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router';
-import { House, LogOut, Users, type LucideIcon } from 'lucide-react';
+import { House, LogOut, Settings, Users, type LucideIcon } from 'lucide-react';
 import { Brand } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/features/auth/api';
@@ -18,6 +18,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Accueil', icon: House, roles: ['direction', 'reception', 'technician', 'kiosk'] },
   { to: '/equipe', label: 'Équipe', icon: Users, roles: ['direction'] },
+  { to: '/reglages', label: 'Réglages', icon: Settings, roles: ['direction'] },
 ];
 
 /** Coquille de l'appli connectée : en-tête, navigation, contenu de la page. */

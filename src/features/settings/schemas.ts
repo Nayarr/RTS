@@ -1,0 +1,194 @@
+import { z } from 'zod';
+import type { AppSettings, CompanySettings, LaborRate } from './api';
+
+/**
+ * Ne garde que les champs modifiés dans le formulaire : deux personnes qui enregistrent
+ * en même temps des champs différents n'écrasent pas le travail de l'autre.
+ */
+export function pickDirty<T extends object>(values: T, dirty: Partial<Record<keyof T, unknown>> | undefined) {
+  return Object.fromEntries(
+    Object.entries(values).filter(([key]) => Boolean(dirty?.[key as keyof T])),
+  ) as Partial<T>;
+}
+
+const digits = (value: string) => value.replace(/\s/g, '');
+const optionalText = z.string().trim().max(200);
+const toNull = (value: string) => (value === '' ? null : value);
+
+const number = (message: string) => z.number({ error: message }).refine(Number.isFinite, message);
+const money = number('Montant attendu').min(0, 'Montant positif attendu');
+
+// ---------------------------------------------------------------- Entreprise
+
+export const companySchema = z.object({
+  legal_name: z.string().trim().min(1, 'Indique la raison sociale').max(120),
+  legal_form: optionalText,
+  share_capital: optionalText,
+  address_line: z.string().trim().min(1, 'Indique l’adresse').max(200),
+  postal_code: z
+    .string()
+    .trim()
+    .regex(/^\d{5}$/, 'Code postal à 5 chiffres'),
+  city: z.string().trim().min(1, 'Indique la ville').max(100),
+  email: z.union([z.literal(''), z.email('Adresse e-mail invalide')]),
+  phone: optionalText,
+  siren: z
+    .string()
+    .trim()
+    .refine((v) => v === '' || /^\d{9}$/.test(digits(v)), 'SIREN à 9 chiffres'),
+  siret: z
+    .string()
+    .trim()
+    .refine((v) => v === '' || /^\d{14}$/.test(digits(v)), 'SIRET à 14 chiffres'),
+  vat_number: z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === '' || /^[A-Z]{2}[0-9A-Z]{2,13}$/.test(digits(v).toUpperCase()),
+      'N° de TVA invalide',
+    ),
+  rcs: optionalText,
+});
+export type CompanyValues = z.infer<typeof companySchema>;
+
+export const companyToForm = (c: CompanySettings): CompanyValues => ({
+  legal_name: c.legal_name,
+  legal_form: c.legal_form ?? '',
+  share_capital: c.share_capital ?? '',
+  address_line: c.address_line,
+  postal_code: c.postal_code,
+  city: c.city,
+  email: c.email ?? '',
+  phone: c.phone ?? '',
+  siren: c.siren ?? '',
+  siret: c.siret ?? '',
+  vat_number: c.vat_number ?? '',
+  rcs: c.rcs ?? '',
+});
+
+export const companyFromForm = (v: CompanyValues) => ({
+  ...v,
+  legal_form: toNull(v.legal_form),
+  share_capital: toNull(v.share_capital),
+  email: toNull(v.email.toLowerCase()),
+  phone: toNull(v.phone),
+  siren: toNull(v.siren),
+  siret: toNull(v.siret),
+  vat_number: toNull(digits(v.vat_number).toUpperCase()),
+  rcs: toNull(v.rcs),
+});
+
+// ---------------------------------------------------------------- Facturation
+
+export const billingSchema = z.object({
+  default_vat_rate: number('Taux attendu').min(0, 'Taux entre 0 et 100').max(100, 'Taux entre 0 et 100'),
+  payment_terms_days: number('Nombre de jours attendu')
+    .int('Nombre entier')
+    .min(0)
+    .max(365, '365 jours maximum'),
+  quote_validity_days: number('Nombre de jours attendu')
+    .int('Nombre entier')
+    .min(1, '1 jour minimum')
+    .max(365),
+  /** Une mention par ligne. */
+  invoice_legal_mentions: z.string().max(5000),
+});
+export type BillingValues = z.infer<typeof billingSchema>;
+
+export const billingToForm = (c: CompanySettings): BillingValues => ({
+  default_vat_rate: c.default_vat_rate,
+  payment_terms_days: c.payment_terms_days,
+  quote_validity_days: c.quote_validity_days,
+  invoice_legal_mentions: c.invoice_legal_mentions.join('\n'),
+});
+
+export const billingFromForm = (v: BillingValues) => ({
+  ...v,
+  invoice_legal_mentions: v.invoice_legal_mentions
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean),
+});
+
+// ---------------------------------------------------------------- Taux horaires
+
+export const laborRatesSchema = z.object({
+  rates: z.array(
+    z.object({
+      category: z.enum(['pl', 'vul', 'remorque', 'tolerie']),
+      label: z.string().trim().min(1, 'Indique le libellé').max(40),
+      labor_line_label: z.string().trim().min(1, 'Indique le libellé sur les documents').max(120),
+      hourly_rate: money,
+    }),
+  ),
+});
+export type LaborRatesValues = z.infer<typeof laborRatesSchema>;
+
+export const laborRatesToForm = (rates: LaborRate[]): LaborRatesValues => ({
+  rates: rates.map(({ category, label, labor_line_label, hourly_rate }) => ({
+    category,
+    label,
+    labor_line_label,
+    hourly_rate,
+  })),
+});
+
+// ---------------------------------------------------------------- Atelier
+
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide');
+const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+const hours = number('Nombre d’heures attendu').min(0).max(24, '24 h maximum');
+
+export const workshopSchema = z
+  .object({
+    workday_start: time,
+    lunch_start: time,
+    friday_lunch_start: time,
+    lunch_end: time,
+    workday_end: time,
+    overtime_start: time,
+    expected_arrival: time,
+    late_tolerance: time,
+    daily_hours: hours,
+    friday_hours: hours,
+    roadside_flat_fee: money,
+    roadside_price_per_km: money,
+    roadside_travel_hourly_rate: money,
+    clock_photo_retention_months: z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]),
+    label_scan_enabled: z.boolean(),
+  })
+  .superRefine((v, ctx) => {
+    const order: [keyof typeof v, keyof typeof v, string][] = [
+      ['workday_start', 'lunch_start', 'La pause doit commencer après l’ouverture'],
+      ['lunch_start', 'lunch_end', 'La pause doit finir après son début'],
+      ['lunch_end', 'workday_end', 'La fermeture doit suivre la pause'],
+      ['workday_end', 'overtime_start', 'Les heures sup. commencent après la fermeture'],
+      ['expected_arrival', 'late_tolerance', 'La tolérance doit suivre l’heure d’arrivée'],
+    ];
+    for (const [before, after, message] of order) {
+      if (minutes(String(v[after])) < minutes(String(v[before])))
+        ctx.addIssue({ code: 'custom', path: [after], message });
+    }
+  });
+export type WorkshopValues = z.infer<typeof workshopSchema>;
+
+const hhmm = (t: string) => t.slice(0, 5);
+
+export const workshopToForm = (a: AppSettings): WorkshopValues => ({
+  workday_start: hhmm(a.workday_start),
+  lunch_start: hhmm(a.lunch_start),
+  friday_lunch_start: hhmm(a.friday_lunch_start),
+  lunch_end: hhmm(a.lunch_end),
+  workday_end: hhmm(a.workday_end),
+  overtime_start: hhmm(a.overtime_start),
+  expected_arrival: hhmm(a.expected_arrival),
+  late_tolerance: hhmm(a.late_tolerance),
+  daily_hours: a.daily_hours,
+  friday_hours: a.friday_hours,
+  roadside_flat_fee: a.roadside_flat_fee,
+  roadside_price_per_km: a.roadside_price_per_km,
+  roadside_travel_hourly_rate: a.roadside_travel_hourly_rate,
+  clock_photo_retention_months:
+    a.clock_photo_retention_months as WorkshopValues['clock_photo_retention_months'],
+  label_scan_enabled: a.label_scan_enabled,
+});
