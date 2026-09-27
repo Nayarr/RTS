@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { parisDayOfPreviousMonth } from './support/dates';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -125,10 +126,7 @@ test('la direction saisit une absence puis la supprime', async ({ page }, testIn
 
 test('relevé d’heures du mois et export CSV pour la paie', async ({ page }, testInfo) => {
   const name = `Relevé ${suffix(testInfo)}`;
-  const firstOfMonth = new Date();
-  firstOfMonth.setDate(1);
-  firstOfMonth.setMonth(firstOfMonth.getMonth() - 1);
-  const day = iso(new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth(), 3));
+  const day = parisDayOfPreviousMonth(3);
   const month = day.slice(0, 7);
 
   const client = await directionClient();
