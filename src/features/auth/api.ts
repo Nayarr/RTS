@@ -6,6 +6,7 @@ import type { Profile } from './roles';
 export function authErrorMessage(error: unknown): string {
   if (error instanceof AuthError) {
     if (error.code === 'invalid_credentials') return 'Identifiants incorrects.';
+    if (error.code === 'user_banned') return 'Ce compte est désactivé. Contacte la direction.';
     if (error.code === 'over_request_rate_limit' || error.status === 429)
       return 'Trop de tentatives. Réessaie dans quelques minutes.';
     if (error.code === 'weak_password') return 'Mot de passe trop faible.';
