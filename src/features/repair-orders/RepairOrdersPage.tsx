@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,7 +64,10 @@ export function RepairOrdersPage() {
   const orders = useRepairOrders();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<Filter>('active');
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<Filter>(
+    () => FILTERS.find(({ value }) => value === params.get('filtre'))?.value ?? 'active',
+  );
   const [search, setSearch] = useState('');
 
   const list = useMemo(

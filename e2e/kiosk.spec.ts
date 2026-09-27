@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { parisDay } from './support/dates';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -101,9 +102,7 @@ test('le technicien pointe à la borne ; la direction voit la présence et la ph
 test('la direction corrige un oubli de badge puis supprime la correction', async ({ page }, testInfo) => {
   const name = `Oubli ${suffix(testInfo)}`;
   await createTechnician(name);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const date = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+  const date = parisDay(-1);
 
   await loginAs(page, 'direction@rts.local');
   await page.goto(`/pointages?date=${date}`);

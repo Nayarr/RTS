@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { isSunday, parisDay } from './support/dates';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -17,12 +18,10 @@ async function loginAs(page: Page, email: string) {
 const suffix = (testInfo: TestInfo) =>
   `${testInfo.project.name.includes('mobile') ? 'M' : 'D'}${String(Date.now()).slice(-7)}`;
 
-/** Jour local « AAAA-MM-JJ » dans `days` jours, jamais un dimanche (atelier fermé). */
+/** Jour « AAAA-MM-JJ » (Paris) dans `days` jours, jamais un dimanche (atelier fermé). */
 function workday(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  if (date.getDay() === 0) date.setDate(date.getDate() + 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const day = parisDay(days);
+  return isSunday(day) ? parisDay(days + 1) : day;
 }
 
 async function receptionClient() {
@@ -109,9 +108,7 @@ test('un OR est placé au planning d’un technicien', async ({ page }, testInfo
 test('rappel du rendez-vous de demain', async ({ page }, testInfo) => {
   const id = suffix(testInfo);
   const plate = `RAP${id}`;
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const date = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+  const date = parisDay(1);
   const client = await receptionClient();
   const { error } = await client.rpc('save_appointment', {
     p_client_name: `Client rappel ${id}`,

@@ -109,7 +109,7 @@ test('devis sans OR : demande de prix, refus puis réouverture, transformation e
 }, testInfo) => {
   const plate = uniquePlate('S', testInfo.project.name);
   await loginAs(page, 'reception@rts.local');
-  await page.getByRole('link', { name: 'Devis' }).click();
+  await page.getByRole('link', { name: 'Devis', exact: true }).click();
   await page.getByRole('link', { name: 'Nouveau devis' }).click();
   await page.getByLabel('Client').fill(`Client ${plate}`);
   await page.getByLabel('Immatriculation (facultatif)').fill(plate);

@@ -1574,6 +1574,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'notification_reads_notification_id_fkey';
+            columns: ['notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_my_notifications';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'notification_reads_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
@@ -3555,6 +3562,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      v_my_notifications: {
+        Row: {
+          body: string | null;
+          created_at: string | null;
+          dedupe_key: string | null;
+          id: string | null;
+          link: string | null;
+          read_at: string | null;
+          recipient_profile_id: string | null;
+          recipient_role: Database['public']['Enums']['app_role'] | null;
+          repair_order_id: string | null;
+          title: string | null;
+          type: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_recipient_profile_id_fkey';
+            columns: ['recipient_profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'notifications_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       v_quote_totals: {
         Row: {
           quote_id: string | null;
@@ -4184,6 +4236,7 @@ export type Database = {
       next_document_number: { Args: { p_key: string }; Returns: string };
       normalize_key: { Args: { p_value: string }; Returns: string };
       normalize_match_text: { Args: { p_text: string }; Returns: string };
+      office_dashboard: { Args: Record<PropertyKey, never>; Returns: Json };
       package_fits_vehicle: {
         Args: {
           p_category: Database['public']['Enums']['labor_category'];

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Brand } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
+import { AlertsBell } from '@/features/alerts/AlertsBell';
 import { signOut } from '@/features/auth/api';
 import { ROLE_LABELS, type AppRole } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
@@ -55,6 +56,7 @@ export function AppLayout() {
           </Link>
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{profile?.full_name}</span>
+            {(profile?.role === 'direction' || profile?.role === 'reception') && <AlertsBell />}
             <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Se déconnecter">
               <LogOut />
             </Button>
