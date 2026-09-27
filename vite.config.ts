@@ -37,6 +37,8 @@ export default defineConfig({
         // (autre domaine) ne passent jamais par le cache du service worker.
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        // Après une mise en ligne, les fichiers de l'ancienne version sont retirés du cache.
+        cleanupOutdatedCaches: true,
       },
     }),
   ],
