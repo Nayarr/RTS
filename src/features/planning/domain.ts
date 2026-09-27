@@ -1,17 +1,10 @@
 import type { CompanySettings } from '@/features/settings/api';
+import { LEAVE_LABELS, type LeaveType } from '@/features/leave/domain';
 import type { SendLinkMessage } from '@/lib/send-links';
 import type { Database } from '@/types/database';
 
 export type PlanningView = 'semaine' | 'jour';
-export type LeaveType = Database['public']['Enums']['leave_type'];
 export type RestGroup = Database['public']['Enums']['rest_group'];
-
-export const LEAVE_LABELS: Record<LeaveType, string> = {
-  paid_leave: 'Congés payés',
-  sick: 'Maladie',
-  training: 'Formation',
-  other: 'Autre absence',
-};
 
 const DAY_NAMES = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 

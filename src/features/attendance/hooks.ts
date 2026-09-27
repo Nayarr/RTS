@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { fetchAttendanceDay, fetchKioskSettings } from './api';
+import { fetchAttendanceDay, fetchKioskSettings, fetchTimesheet } from './api';
 
 export const attendanceKey = ['attendance'] as const;
 
@@ -11,6 +11,10 @@ export function useAttendanceDay(date: string) {
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
   });
+}
+
+export function useTimesheet(month: string) {
+  return useQuery({ queryKey: [...attendanceKey, 'timesheet', month], queryFn: () => fetchTimesheet(month) });
 }
 
 export function useKioskSettings() {
