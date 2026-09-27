@@ -3643,6 +3643,7 @@ export type Database = {
         Returns: Database['public']['Enums']['app_role'];
       };
       current_technician_id: { Args: Record<PropertyKey, never>; Returns: string };
+      ensure_supplier: { Args: { p_name: string }; Returns: string };
       expire_pending_files: { Args: Record<PropertyKey, never>; Returns: number };
       file_max_bytes: { Args: { p_category: Database['public']['Enums']['file_category'] }; Returns: number };
       file_mime_allowed: {
@@ -3753,6 +3754,10 @@ export type Database = {
       required_photo_labels: {
         Args: { p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: string[];
+      };
+      set_consumable_stock: {
+        Args: { p_consumable_id: string; p_note?: string; p_quantity: number };
+        Returns: number;
       };
       set_kiosk_exit_code: { Args: { p_code: string }; Returns: undefined };
       set_technician_pin: { Args: { p_pin: string; p_technician_id: string }; Returns: undefined };
