@@ -47,3 +47,23 @@ join new_users u on u.id = a.id;
 insert into public.technicians (profile_id, display_name, color) values
   ('5eed0000-0000-0000-0000-000000000003', 'Alice', '#2A6B52'),
   ('5eed0000-0000-0000-0000-000000000004', 'Bruno', '#4750B5');
+
+-- Catalogues (stock de départ passé par le journal des mouvements)
+insert into public.suppliers (id, name) values
+  ('41000000-0000-0000-0000-000000000001', 'PL Pièces 95'),
+  ('41000000-0000-0000-0000-000000000002', 'Rectif Service');
+
+insert into public.consumables (id, name, unit, sale_price, purchase_price, alert_threshold) values
+  ('91000000-0000-0000-0000-000000000001', 'Huile moteur 10W40', 'L', 6.50, 3.20, 40),
+  ('91000000-0000-0000-0000-000000000002', 'AdBlue', 'L', 1.20, 0.45, 100),
+  ('91000000-0000-0000-0000-000000000003', 'Liquide de refroidissement', 'L', 4.80, 2.10, null);
+
+insert into public.consumable_movements (consumable_id, quantity, reason, note) values
+  ('91000000-0000-0000-0000-000000000001', 208, 'restock', 'Stock de départ'),
+  ('91000000-0000-0000-0000-000000000002', 60, 'restock', 'Stock de départ'),
+  ('91000000-0000-0000-0000-000000000003', 50, 'restock', 'Stock de départ');
+
+insert into public.parts (designation, brand, manufacturer_ref, oem_ref, supplier_id, purchase_price, sale_price) values
+  ('Plaquettes de frein avant (jeu)', 'Knorr-Bremse', 'K-II37', '81508206095', '41000000-0000-0000-0000-000000000001', 92.00, 138.00),
+  ('Filtre à huile', 'Mann-Filter', 'HU 12 140 x', '51055040108', '41000000-0000-0000-0000-000000000001', 21.50, 32.00),
+  ('Disque de frein arrière', 'SBP', '02-MA010', '81508030037', '41000000-0000-0000-0000-000000000001', 118.00, 165.00);
