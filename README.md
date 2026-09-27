@@ -71,11 +71,11 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
 
 ## Intégration continue
 
-| Workflow              | Déclenchement                     | Vérifie                                                                                                                                                                                                    |
-| --------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Base de données**   | PR vers `main`, push sur `main`   | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP                                                                                                                                               |
-| **Conventions de PR** | Ouverture / modification d'une PR | Titre Conventional Commits, description conforme au modèle                                                                                                                                                 |
-| **Application**       | PR vers `main`, push sur `main`   | Formatage, lint, types, tests unitaires, build ; Edge Functions (`deno fmt`, `lint`, `check`) ; types de la base à jour ; tests end-to-end (desktop + mobile) sur Supabase local, Edge Functions comprises |
+| Workflow              | Déclenchement                     | Vérifie                                                                                                                                                                                                                                  |
+| --------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Base de données**   | PR vers `main`, push sur `main`   | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP                                                                                                                                                                             |
+| **Conventions de PR** | Ouverture / modification d'une PR | Titre Conventional Commits, description conforme au modèle                                                                                                                                                                               |
+| **Application**       | PR vers `main`, push sur `main`   | Formatage, lint, types, tests unitaires, build ; Edge Functions (`deno fmt`, `lint`, `check`, `test`) ; types de la base à jour ; tests end-to-end (desktop + mobile) sur Supabase local, Edge Functions et stockage de fichiers compris |
 
 ## Déploiement
 
