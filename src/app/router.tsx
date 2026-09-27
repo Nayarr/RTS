@@ -5,6 +5,9 @@ import { RequireAuth } from '@/features/auth/RequireAuth';
 import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
+import { NewQuotePage } from '@/features/quotes/NewQuotePage';
+import { QuotePage } from '@/features/quotes/QuotePage';
+import { QuotesPage } from '@/features/quotes/QuotesPage';
 import { NewRepairOrderPage } from '@/features/repair-orders/NewRepairOrderPage';
 import { RepairOrderPage } from '@/features/repair-orders/RepairOrderPage';
 import { RepairOrdersPage } from '@/features/repair-orders/RepairOrdersPage';
@@ -32,6 +35,9 @@ export const routes: RouteObject[] = [
               { path: '/or', element: <RepairOrdersPage /> },
               { path: '/or/nouveau', element: <NewRepairOrderPage /> },
               { path: '/or/:id', element: <RepairOrderPage /> },
+              { path: '/devis', element: <QuotesPage /> },
+              { path: '/devis/nouveau', element: <NewQuotePage /> },
+              { path: '/devis/:id', element: <QuotePage /> },
             ],
           },
           {

@@ -54,6 +54,10 @@ vi.mock('@/features/files/hooks', () => ({
   useFileUrl: () => ({ url: undefined, isPending: false, isError: false }),
   useFileUrls: () => ({ data: {}, isPending: false }),
 }));
+vi.mock('@/features/quotes/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  fetchRepairOrderQuotes: vi.fn().mockResolvedValue([]),
+}));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const order = (overrides: Partial<RepairOrderOverview> = {}) =>
