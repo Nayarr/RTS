@@ -755,8 +755,10 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           mime_type: string;
+          original_name: string | null;
           size_bytes: number | null;
           storage_key: string;
+          uploaded_at: string | null;
           uploaded_by: string | null;
         };
         Insert: {
@@ -766,8 +768,10 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           mime_type: string;
+          original_name?: string | null;
           size_bytes?: number | null;
           storage_key: string;
+          uploaded_at?: string | null;
           uploaded_by?: string | null;
         };
         Update: {
@@ -777,8 +781,10 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           mime_type?: string;
+          original_name?: string | null;
           size_bytes?: number | null;
           storage_key?: string;
+          uploaded_at?: string | null;
           uploaded_by?: string | null;
         };
         Relationships: [
@@ -3527,6 +3533,10 @@ export type Database = {
       build_quote_from_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
       can_read_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
       can_tech_edit_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
+      can_upload_file: {
+        Args: { p_category: Database['public']['Enums']['file_category'] };
+        Returns: boolean;
+      };
       clear_technician_pin: { Args: { p_technician_id: string }; Returns: undefined };
       complete_repair_order: {
         Args: { p_quote_needed?: boolean; p_repair_order_id: string };
@@ -3566,6 +3576,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      confirm_file_upload: {
+        Args: { p_file_id: string; p_mime_type: string; p_size_bytes: number; p_user_id: string };
+        Returns: undefined;
+      };
       create_repair_order_from_appointment: { Args: { p_appointment_id: string }; Returns: string };
       create_repair_order_from_quote: {
         Args: { p_quote_id: string; p_technician_id?: string };
@@ -3576,6 +3590,12 @@ export type Database = {
         Returns: Database['public']['Enums']['app_role'];
       };
       current_technician_id: { Args: Record<PropertyKey, never>; Returns: string };
+      expire_pending_files: { Args: Record<PropertyKey, never>; Returns: number };
+      file_max_bytes: { Args: { p_category: Database['public']['Enums']['file_category'] }; Returns: number };
+      file_mime_allowed: {
+        Args: { p_category: Database['public']['Enums']['file_category']; p_mime_type: string };
+        Returns: boolean;
+      };
       generate_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       inspection_wear_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
@@ -3660,6 +3680,19 @@ export type Database = {
         Returns: Json;
       };
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
+      register_file: {
+        Args: {
+          p_bucket: string;
+          p_category: Database['public']['Enums']['file_category'];
+          p_mime_type: string;
+          p_original_name?: string;
+          p_size_bytes: number;
+        };
+        Returns: {
+          file_id: string;
+          storage_key: string;
+        }[];
+      };
       repair_order_status_label: {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };
         Returns: string;

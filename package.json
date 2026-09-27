@@ -17,6 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "storage:start": "node scripts/storage.mjs start",
+    "storage:stop": "node scripts/storage.mjs stop",
     "db:types": "supabase gen types typescript --local --schema public > src/types/database.ts && prettier --write src/types/database.ts"
   },
   "dependencies": {

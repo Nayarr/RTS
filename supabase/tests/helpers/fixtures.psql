@@ -63,8 +63,8 @@ returns uuid
 language sql
 security definer
 as $$
-  insert into public.files (storage_key, category, mime_type, size_bytes)
-  values ('test/' || gen_random_uuid(), p_category, 'image/jpeg', 1000)
+  insert into public.files (storage_key, category, mime_type, size_bytes, uploaded_at)
+  values ('test/' || gen_random_uuid(), p_category, 'image/jpeg', 1000, now())
   returning id;
 $$;
 
