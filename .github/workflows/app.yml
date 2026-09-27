@@ -59,7 +59,7 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_build_only
 
   functions:
-    name: Edge Functions (format, lint, types)
+    name: Edge Functions (format, lint, types, tests)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -74,12 +74,13 @@ jobs:
       - name: Formatage (deno fmt, même style que Prettier)
         run: deno fmt --check --single-quote --line-width=110 supabase/functions
 
-      - name: Lint et vérification des types de chaque fonction
+      - name: Lint, types et tests de chaque fonction
         run: |
           for dir in supabase/functions/*/; do
             echo "::group::${dir}"
             deno lint --config "${dir}deno.json" "${dir}"
-            deno check --config "${dir}deno.json" "${dir}index.ts"
+            deno check --config "${dir}deno.json" "${dir}"
+            deno test --config "${dir}deno.json" --permit-no-files "${dir}"
             echo "::endgroup::"
           done
 
@@ -110,6 +111,9 @@ jobs:
           supabase start
           -x studio,imgproxy,vector,logflare,supavisor,realtime,storage-api,postgres-meta,mailpit
 
+      - name: Démarrer le stockage de fichiers local (compatible S3, remplace R2)
+        run: npm run storage:start
+
       - name: Types TypeScript à jour avec le schéma
         run: |
           npm run db:types
@@ -138,6 +142,8 @@ jobs:
             test-results/
           retention-days: 7
 
-      - name: Arrêter Supabase
+      - name: Arrêter Supabase et le stockage local
         if: always()
-        run: supabase stop --no-backup
+        run: |
+          npm run storage:stop
+          supabase stop --no-backup
