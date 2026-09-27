@@ -3884,6 +3884,36 @@ export type Database = {
       };
     };
     Functions: {
+      add_manual_clock_event: {
+        Args: {
+          p_event_type: Database['public']['Enums']['clock_event_type'];
+          p_reason: string;
+          p_technician_id: string;
+          p_time: string;
+          p_work_date: string;
+        };
+        Returns: {
+          created_at: string;
+          during_leave_type: Database['public']['Enums']['leave_type'] | null;
+          entered_by: string | null;
+          event_type: Database['public']['Enums']['clock_event_type'];
+          id: string;
+          legacy_id: string | null;
+          occurred_at: string;
+          photo_file_id: string | null;
+          photo_purged_at: string | null;
+          reason: string | null;
+          source: Database['public']['Enums']['clock_source'];
+          technician_id: string;
+          work_date: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'clock_events';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       admin_register_account: {
         Args: {
           p_email: string;
@@ -4067,6 +4097,7 @@ export type Database = {
       is_system_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       issue_invoice: { Args: { p_invoice_id: string }; Returns: string };
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
+      kiosk_exit_code_is_set: { Args: Record<PropertyKey, never>; Returns: boolean };
       kiosk_too_many_attempts: { Args: Record<PropertyKey, never>; Returns: boolean };
       labor_rate_for: {
         Args: { p_client_id: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };

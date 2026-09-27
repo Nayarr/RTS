@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { NewPasswordPage } from '@/features/auth/NewPasswordPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
+import { AttendancePage } from '@/features/attendance/AttendancePage';
 import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
@@ -60,6 +61,7 @@ export const routes: RouteObject[] = [
             element: <RequireRole roles={['direction']} />,
             children: [
               { path: '/equipe', element: <TeamPage /> },
+              { path: '/pointages', element: <AttendancePage /> },
               { path: '/reglages', element: <SettingsPage /> },
               { path: '/stock', element: <Navigate to="/stock/consommables" replace /> },
               { path: '/stock/consommables', element: <ConsumablesPage /> },

@@ -54,6 +54,8 @@ export default defineConfig({
     css: false,
     // Valeurs factices : les tests unitaires n'appellent jamais Supabase (modules simulés).
     env: {
+      // Heures affichées comme à l'atelier, quel que soit le fuseau de la machine (CI en UTC).
+      TZ: 'Europe/Paris',
       VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
       VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_0000000000',
     },
