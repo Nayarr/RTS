@@ -40,3 +40,45 @@ export async function fetchTreasury(): Promise<TreasuryOverview> {
   if (error) throw error;
   return data as unknown as TreasuryOverview;
 }
+
+type Nullable<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null };
+
+/** Client absent possible (OR sans client) ; les types générés ne le disent pas. */
+export type ProfitabilityRow = Nullable<
+  Database['public']['Functions']['profitability_report']['Returns'][number],
+  'client_id'
+>;
+
+/** Présence, précision et délai absents sans pointage ni OR facturé sur la période. */
+export type TechnicianPerformanceRow = Nullable<
+  Database['public']['Functions']['technician_performance']['Returns'][number],
+  'color' | 'presence_hours' | 'estimate_deviation_percent' | 'average_lead_days'
+>;
+
+export interface DateRange {
+  from: string | null;
+  to: string | null;
+}
+
+/** Rentabilité par client et véhicule (OR facturés sur la période). */
+export async function fetchProfitability({ from, to }: DateRange): Promise<ProfitabilityRow[]> {
+  const { data, error } = await supabase.rpc('profitability_report', {
+    p_from: from ?? undefined,
+    p_to: to ?? undefined,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Chiffres des techniciens actifs sur la période. */
+export async function fetchTechnicianPerformance({
+  from,
+  to,
+}: DateRange): Promise<TechnicianPerformanceRow[]> {
+  const { data, error } = await supabase.rpc('technician_performance', {
+    p_from: from ?? undefined,
+    p_to: to ?? undefined,
+  });
+  if (error) throw error;
+  return data;
+}

@@ -4603,6 +4603,17 @@ export type Database = {
       generate_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       inspection_wear_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
+      invoiced_ro_lines: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          billed_hours: number;
+          issued_at: string;
+          labor_ht: number;
+          parts_ht: number;
+          parts_margin_ht: number;
+          repair_order_id: string;
+        }[];
+      };
       is_direction: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_migration_context: { Args: Record<PropertyKey, never>; Returns: boolean };
@@ -4692,6 +4703,22 @@ export type Database = {
         Returns: boolean;
       };
       paris_date: { Args: { p_at: string }; Returns: string };
+      profitability_report: {
+        Args: { p_from?: string; p_to?: string };
+        Returns: {
+          billed_hours: number;
+          client_id: string;
+          client_name: string;
+          client_unpaid_ttc: number;
+          labor_ht: number;
+          parts_ht: number;
+          parts_margin_ht: number;
+          plate: string;
+          ro_count: number;
+          vehicle_id: string;
+          worked_hours: number;
+        }[];
+      };
       public_get_document: { Args: { p_token: string }; Returns: Json };
       public_respond_quote: {
         Args: { p_accept: boolean; p_signature_file_id?: string; p_signer_name: string; p_token: string };
@@ -4956,6 +4983,21 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      technician_performance: {
+        Args: { p_from?: string; p_to?: string };
+        Returns: {
+          average_lead_days: number;
+          billed_hours: number;
+          color: string;
+          estimate_deviation_percent: number;
+          labor_ht: number;
+          name: string;
+          presence_hours: number;
+          ro_count: number;
+          technician_id: string;
+          worked_hours: number;
+        }[];
       };
       technician_pin_status: {
         Args: Record<PropertyKey, never>;
