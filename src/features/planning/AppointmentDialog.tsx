@@ -31,7 +31,13 @@ import {
 } from './api';
 import { appointmentReminderMessage } from './domain';
 import { usePlanningMutation } from './hooks';
-import { appointmentFromForm, appointmentSchema, appointmentToForm, type AppointmentValues } from './schemas';
+import {
+  appointmentFromForm,
+  appointmentSchema,
+  appointmentToForm,
+  type AppointmentPreset,
+  type AppointmentValues,
+} from './schemas';
 
 const selectClass = 'h-11 w-full rounded-md border bg-transparent px-3 text-base';
 
@@ -45,7 +51,7 @@ interface AppointmentDialogProps {
   /** Rendez-vous ouvert, ou `null` pour en prendre un nouveau. */
   appointment: Appointment | null;
   /** Date (et technicien) proposés pour un nouveau rendez-vous. */
-  preset?: { date?: string; technician_id?: string };
+  preset?: AppointmentPreset | undefined;
   onClose: () => void;
 }
 

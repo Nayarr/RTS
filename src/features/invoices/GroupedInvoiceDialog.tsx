@@ -19,11 +19,19 @@ import { useBillableOrders, useInvoiceMutation } from './hooks';
 const READY = ['work_done', 'to_invoice'];
 
 /** Facture groupée : plusieurs OR d'un même client sur une seule facture. */
-export function GroupedInvoiceDialog({ onClose }: { onClose: () => void }) {
+export function GroupedInvoiceDialog({
+  clientId: initialClientId = '',
+  onClose,
+}: {
+  /** Client présélectionné (depuis sa fiche). */
+  clientId?: string;
+  onClose: () => void;
+}) {
   const navigate = useNavigate();
   const orders = useBillableOrders(true);
-  const [clientId, setClientId] = useState('');
-  const [selected, setSelected] = useState<string[]>([]);
+  const [clientId, setClientId] = useState(initialClientId);
+  /** `null` : sélection par défaut (OR prêts à facturer) tant que rien n'a été coché. */
+  const [picked, setPicked] = useState<string[] | null>(null);
 
   const clients = useMemo(() => {
     const byClient = new Map<string, { name: string; orders: BillableOrder[] }>();
@@ -37,6 +45,9 @@ export function GroupedInvoiceDialog({ onClose }: { onClose: () => void }) {
       .sort(([, a], [, b]) => a.name.localeCompare(b.name, 'fr'));
   }, [orders.data]);
   const clientOrders = clients.find(([id]) => id === clientId)?.[1].orders ?? [];
+  const selected =
+    picked ?? clientOrders.filter((order) => READY.includes(order.status)).map((order) => order.id);
+  const setSelected = (update: (current: string[]) => string[]) => setPicked(update(selected));
 
   const build = useInvoiceMutation(async () => {
     const id = await buildInvoiceDraft(selected);
@@ -63,10 +74,8 @@ export function GroupedInvoiceDialog({ onClose }: { onClose: () => void }) {
                 className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
                 value={clientId}
                 onChange={(event) => {
-                  const id = event.target.value;
-                  setClientId(id);
-                  const list = clients.find(([key]) => key === id)?.[1].orders ?? [];
-                  setSelected(list.filter((order) => READY.includes(order.status)).map((order) => order.id));
+                  setClientId(event.target.value);
+                  setPicked(null);
                 }}
               >
                 <option value="">— Choisir —</option>

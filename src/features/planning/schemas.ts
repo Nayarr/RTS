@@ -36,13 +36,22 @@ export const appointmentSchema = z
   });
 export type AppointmentValues = z.infer<typeof appointmentSchema>;
 
+/** Valeurs proposées pour un nouveau rendez-vous (case du planning, fiche véhicule…). */
+export interface AppointmentPreset {
+  date?: string;
+  technician_id?: string;
+  client_name?: string;
+  plate?: string;
+  vehicle_type?: Appointment['vehicle_type'];
+}
+
 export const appointmentToForm = (
   appointment: Appointment | null,
-  preset: { date?: string; technician_id?: string } = {},
+  preset: AppointmentPreset = {},
 ): AppointmentValues => ({
-  client_name: appointment?.client_name ?? '',
-  plate: appointment?.plate ?? '',
-  vehicle_type: appointment?.vehicle_type ?? 'pl',
+  client_name: appointment?.client_name ?? preset.client_name ?? '',
+  plate: appointment?.plate ?? preset.plate ?? '',
+  vehicle_type: appointment?.vehicle_type ?? preset.vehicle_type ?? 'pl',
   scheduled_date: appointment?.scheduled_date ?? preset.date ?? todayIso(),
   start_time: shortTime(appointment?.start_time) || '09:00',
   end_time: appointment ? shortTime(appointment.end_time) : '10:00',
