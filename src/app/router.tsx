@@ -26,6 +26,8 @@ import { QuotesPage } from '@/features/quotes/QuotesPage';
 import { NewRepairOrderPage } from '@/features/repair-orders/NewRepairOrderPage';
 import { RepairOrderPage } from '@/features/repair-orders/RepairOrderPage';
 import { RepairOrdersPage } from '@/features/repair-orders/RepairOrdersPage';
+import { StatisticsPage } from '@/features/reporting/StatisticsPage';
+import { TreasuryPage } from '@/features/reporting/TreasuryPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TeamPage } from '@/features/team/TeamPage';
 import { WarrantiesPage } from '@/features/warranties/WarrantiesPage';
@@ -89,6 +91,9 @@ export const routes: RouteObject[] = [
               { path: '/stock/consommables', element: <ConsumablesPage /> },
               { path: '/stock/pieces', element: <PartsPage /> },
               { path: '/stock/forfaits', element: <PackagesPage /> },
+              { path: '/pilotage', element: <Navigate to="/pilotage/statistiques" replace /> },
+              { path: '/pilotage/statistiques', element: <StatisticsPage /> },
+              { path: '/pilotage/tresorerie', element: <TreasuryPage /> },
             ],
           },
         ],

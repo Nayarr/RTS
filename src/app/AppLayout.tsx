@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router';
 import {
   CalendarClock,
+  ChartColumn,
   CalendarDays,
   Clock,
   Contact,
@@ -42,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/garanties', label: 'Garanties', icon: Undo2, roles: ['direction', 'reception'] },
   { to: '/pointages', label: 'Pointages', icon: Clock, roles: ['direction'] },
   { to: '/stock', label: 'Stock', icon: Package, roles: ['direction'] },
+  { to: '/pilotage', label: 'Pilotage', icon: ChartColumn, roles: ['direction'] },
   { to: '/equipe', label: 'Équipe', icon: Users, roles: ['direction'] },
   { to: '/reglages', label: 'Réglages', icon: Settings, roles: ['direction'] },
 ];

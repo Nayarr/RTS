@@ -4668,6 +4668,18 @@ export type Database = {
         Args: { p_quote_id: string; p_repair_order_id: string };
         Returns: undefined;
       };
+      monthly_statistics: {
+        Args: { p_months?: number };
+        Returns: {
+          credit_notes_ht: number;
+          invoice_count: number;
+          labor_ht: number;
+          month: string;
+          parts_ht: number;
+          parts_margin_ht: number;
+          total_ht: number;
+        }[];
+      };
       next_document_number: { Args: { p_key: string }; Returns: string };
       normalize_key: { Args: { p_value: string }; Returns: string };
       normalize_match_text: { Args: { p_text: string }; Returns: string };
@@ -4952,6 +4964,7 @@ export type Database = {
           technician_id: string;
         }[];
       };
+      treasury_overview: { Args: Record<PropertyKey, never>; Returns: Json };
       update_vehicle_deadlines: {
         Args: { p_patch: Json; p_repair_order_id: string };
         Returns: {
