@@ -7,6 +7,8 @@ import type { Profile } from '@/features/auth/roles';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { fetchActiveTechnicians } from '@/features/repair-orders/api';
 import type * as RepairOrdersApi from '@/features/repair-orders/api';
+import { addDays } from '@/features/planning/domain';
+import { todayIso } from '@/features/repair-orders/schemas';
 import { fakeSession, renderRoutes } from '@/test/render';
 import {
   deleteClient,
@@ -94,8 +96,9 @@ const vehicle = (overrides: Partial<VehicleOverview> = {}): VehicleOverview =>
     model: 'T 480',
     vin: null,
     first_registration_date: null,
-    ct_due_date: '2026-10-10',
-    tailgate_due_date: '2026-09-20',
+    // Relatives à aujourd'hui : l'écran compte les jours depuis la date du jour
+    ct_due_date: addDays(todayIso(), 12),
+    tailgate_due_date: addDays(todayIso(), -8),
     registration_doc_file_id: null,
     notes: null,
     created_at: '2025-01-01T00:00:00Z',
@@ -313,13 +316,14 @@ describe('clients et véhicules : écrans', () => {
     expect(within(history).getByText('Vidange moteur • Filtre à huile')).toBeInTheDocument();
 
     await userEvent.clear(screen.getByLabelText('Contrôle hayon'));
-    await userEvent.type(screen.getByLabelText('Contrôle hayon'), '2027-09-20');
+    const nextYear = addDays(todayIso(), 365);
+    await userEvent.type(screen.getByLabelText('Contrôle hayon'), nextYear);
     expect(screen.getByText('OK')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
       expect(updateVehicle).toHaveBeenCalledWith(
         'v1',
-        expect.objectContaining({ tailgate_due_date: '2027-09-20' }),
+        expect.objectContaining({ tailgate_due_date: nextYear }),
       ),
     );
 
