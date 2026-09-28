@@ -117,3 +117,41 @@ export async function deletePart(id: string) {
   if (error) throw error;
   if (!data.length) throw new Error('Suppression réservée à la direction');
 }
+
+// ---------------------------------------------------------------- Forfaits
+
+export type ServicePackage = Tables<'service_packages'>;
+
+export async function fetchPackages(): Promise<ServicePackage[]> {
+  const { data, error } = await supabase
+    .from('service_packages')
+    .select('*')
+    .eq('is_active', true)
+    .order('name');
+  if (error) throw error;
+  return data;
+}
+
+export type PackageInput = Pick<
+  TablesInsert<'service_packages'>,
+  'name' | 'category' | 'standard_hours' | 'price' | 'details' | 'keywords' | 'trigger_fields'
+>;
+
+export async function savePackage(id: string | null, input: PackageInput) {
+  const { data, error } = id
+    ? await supabase.from('service_packages').update(input).eq('id', id).select('id')
+    : await supabase.from('service_packages').insert(input).select('id');
+  if (error) throw error;
+  if (!data.length) throw new Error('Forfaits modifiables par la direction seulement');
+}
+
+/** Retire un forfait : archivé, pour que les OR, devis et factures qui l'utilisent gardent leur lien. */
+export async function removePackage(id: string) {
+  const { data, error } = await supabase
+    .from('service_packages')
+    .update({ is_active: false })
+    .eq('id', id)
+    .select('id');
+  if (error) throw error;
+  if (!data.length) throw new Error('Suppression réservée à la direction');
+}

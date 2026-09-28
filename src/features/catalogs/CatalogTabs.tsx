@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 const TABS = [
   { to: '/stock/consommables', label: 'Consommables' },
   { to: '/stock/pieces', label: 'Catalogue pièces' },
+  { to: '/stock/forfaits', label: 'Forfaits' },
 ];
 
 /** Onglets des catalogues (une URL par onglet : lien direct depuis les alertes de stock). */
