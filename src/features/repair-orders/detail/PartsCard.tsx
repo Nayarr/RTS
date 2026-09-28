@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { WarrantyDialog } from '@/features/warranties/WarrantyDialog';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
 import type { RoLine } from '../api';
 import { useRepairOrderMutation } from '../hooks';
@@ -18,12 +19,14 @@ function PartRow({
   editable,
   onEdit,
   onDelete,
+  onReturn,
 }: {
   line: RoLine;
   supplierName: string | undefined;
   editable: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onReturn: () => void;
 }) {
   const status = line.order_status ?? 'to_order';
   const setStatus = useRepairOrderMutation(
@@ -45,6 +48,14 @@ function PartRow({
         </p>
       </div>
       <span className="font-semibold tabular-nums">{formatEuro(partLineTotal(line))}</span>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={`Déclarer un retour : ${firstLine(line.description)}`}
+        onClick={onReturn}
+      >
+        <Undo2 /> Retour
+      </Button>
       <select
         aria-label={`Commande : ${firstLine(line.description)}`}
         className="h-9 rounded-md border-2 bg-transparent px-2 text-sm font-semibold disabled:opacity-70"
@@ -99,6 +110,7 @@ export function PartsCard({
   const parts = lines.filter((line) => line.line_type === 'part');
   const [editing, setEditing] = useState<RoLine | 'new' | null>(null);
   const [deleting, setDeleting] = useState<RoLine | null>(null);
+  const [returning, setReturning] = useState<RoLine | null>(null);
   const remove = useRepairOrderMutation((line: RoLine) => deletePartLine(line.id), 'Pièce retirée');
   const nextPosition =
     Math.max(-1, ...lines.filter((line) => line.kind === 'done').map((line) => line.position)) + 1;
@@ -123,6 +135,7 @@ export function PartsCard({
                 editable={editable}
                 onEdit={() => setEditing(line)}
                 onDelete={() => setDeleting(line)}
+                onReturn={() => setReturning(line)}
               />
             ))}
           </ul>
@@ -155,6 +168,20 @@ export function PartsCard({
           supplierName={editing === 'new' ? null : (partSuppliers[editing.id] ?? null)}
           nextPosition={nextPosition}
           onClose={() => setEditing(null)}
+        />
+      )}
+      {returning && (
+        <WarrantyDialog
+          claim={null}
+          roLineId={returning.id}
+          preset={{
+            part_name: firstLine(returning.description),
+            brand: returning.brand,
+            supplier_name: partSuppliers[returning.id] ?? '',
+            reference: returning.manufacturer_ref ?? returning.oem_ref,
+            amount_ht: returning.purchase_price,
+          }}
+          onClose={() => setReturning(null)}
         />
       )}
       <ConfirmDialog

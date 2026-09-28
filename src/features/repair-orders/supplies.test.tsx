@@ -5,6 +5,8 @@ import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
 import { fetchConsumables, fetchParts, type Consumable, type Part } from '@/features/catalogs/api';
 import type * as CatalogApi from '@/features/catalogs/api';
+import { saveWarrantyClaim } from '@/features/warranties/api';
+import type * as WarrantiesApi from '@/features/warranties/api';
 import { fakeSession, renderRoutes } from '@/test/render';
 import {
   fetchActiveTechnicians,
@@ -61,6 +63,10 @@ vi.mock('@/features/invoices/api', async (importOriginal) => ({
 vi.mock('@/features/quotes/api', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   fetchRepairOrderQuotes: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('@/features/warranties/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof WarrantiesApi>()),
+  saveWarrantyClaim: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -266,6 +272,33 @@ describe('fiche OR : pièces', () => {
         part_id: 'p1',
         order_status: 'to_order',
       }),
+    );
+  });
+
+  it('retour d’une pièce au fournisseur, même sur un OR facturé', async () => {
+    vi.mocked(saveWarrantyClaim).mockResolvedValue();
+    setup({ overrides: { status: 'invoiced' }, lines: [{ ...partLine, manufacturer_ref: 'K1234' }] });
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Déclarer un retour : Plaquettes avant' }),
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Nouveau retour / garantie' });
+    await userEvent.type(within(dialog).getByLabelText('Motif du retour'), 'Défaut');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(saveWarrantyClaim).toHaveBeenCalledWith(
+        null,
+        {
+          part_name: 'Plaquettes avant',
+          brand: 'Knorr-Bremse',
+          supplier_name: 'PL Pièces 95',
+          reference: 'K1234',
+          amount_ht: 46,
+          reason: 'Défaut',
+          status: 'to_return',
+          notes: null,
+        },
+        'l1',
+      ),
     );
   });
 

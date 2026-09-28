@@ -4256,6 +4256,110 @@ export type Database = {
           },
         ];
       };
+      v_warranty_claims: {
+        Row: {
+          amount_ht: number | null;
+          brand: string | null;
+          client_id: string | null;
+          client_name: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          id: string | null;
+          legacy_id: string | null;
+          notes: string | null;
+          part_name: string | null;
+          reason: string | null;
+          reference: string | null;
+          repair_order_id: string | null;
+          repair_order_number: string | null;
+          ro_line_id: string | null;
+          status: Database['public']['Enums']['warranty_status'] | null;
+          supplier_id: string | null;
+          supplier_name: string | null;
+          updated_at: string | null;
+          vehicle_id: string | null;
+          vehicle_plate: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'warranty_claims_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_ro_line_id_fkey';
+            columns: ['ro_line_id'];
+            isOneToOne: false;
+            referencedRelation: 'ro_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_supplier_id_fkey';
+            columns: ['supplier_id'];
+            isOneToOne: false;
+            referencedRelation: 'suppliers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
       add_manual_clock_event: {
