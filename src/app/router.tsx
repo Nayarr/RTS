@@ -8,6 +8,11 @@ import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { LeavePage } from '@/features/leave/LeavePage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
+import { ClientPage } from '@/features/customers/ClientPage';
+import { ClientsPage } from '@/features/customers/ClientsPage';
+import { DeadlinesPage } from '@/features/customers/DeadlinesPage';
+import { VehiclePage } from '@/features/customers/VehiclePage';
+import { VehiclesPage } from '@/features/customers/VehiclesPage';
 import { InvoicePage } from '@/features/invoices/InvoicePage';
 import { InvoicesPage } from '@/features/invoices/InvoicesPage';
 import { AppointmentsPage } from '@/features/planning/AppointmentsPage';
@@ -47,6 +52,11 @@ export const routes: RouteObject[] = [
               { path: '/or/:id', element: <RepairOrderPage /> },
               { path: '/planning', element: <PlanningPage /> },
               { path: '/rendez-vous', element: <AppointmentsPage /> },
+              { path: '/clients', element: <ClientsPage /> },
+              { path: '/clients/:id', element: <ClientPage /> },
+              { path: '/vehicules', element: <VehiclesPage /> },
+              { path: '/vehicules/echeances', element: <DeadlinesPage /> },
+              { path: '/vehicules/:id', element: <VehiclePage /> },
               { path: '/devis', element: <QuotesPage /> },
               { path: '/devis/nouveau', element: <NewQuotePage /> },
               { path: '/devis/:id', element: <QuotePage /> },

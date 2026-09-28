@@ -133,6 +133,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'appointments_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'appointments_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -187,6 +194,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_vehicle_deadlines';
             referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'appointments_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'appointments_vehicle_id_fkey';
@@ -266,6 +280,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'client_messages_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
             referencedColumns: ['id'];
           },
           {
@@ -1280,6 +1301,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'invoices_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'invoices_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -1491,6 +1519,13 @@ export type Database = {
             foreignKeyName: 'maintenance_contract_vehicles_vehicle_id_fkey';
             columns: ['vehicle_id'];
             isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'maintenance_contract_vehicles_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
             referencedRelation: 'vehicles';
             referencedColumns: ['id'];
           },
@@ -1545,6 +1580,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'maintenance_contracts_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
             referencedColumns: ['id'];
           },
         ];
@@ -2075,6 +2117,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'quotes_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'quotes_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -2157,6 +2206,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_vehicle_deadlines';
             referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'quotes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'quotes_vehicle_id_fkey';
@@ -2325,6 +2381,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'repair_orders_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'repair_orders_contract_fk';
             columns: ['maintenance_contract_id'];
             isOneToOne: false;
@@ -2407,6 +2470,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_vehicle_deadlines';
             referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'repair_orders_vehicle_id_fkey';
@@ -3113,6 +3183,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'vehicles_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'vehicles_registration_doc_file_id_fkey';
             columns: ['registration_doc_file_id'];
             isOneToOne: false;
@@ -3188,6 +3265,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'warranty_claims_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'warranty_claims_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -3240,6 +3324,13 @@ export type Database = {
             foreignKeyName: 'warranty_claims_vehicle_id_fkey';
             columns: ['vehicle_id'];
             isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'warranty_claims_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
             referencedRelation: 'vehicles';
             referencedColumns: ['id'];
           },
@@ -3278,6 +3369,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
             referencedColumns: ['id'];
           },
           {
@@ -3340,10 +3438,42 @@ export type Database = {
             foreignKeyName: 'appointments_vehicle_id_fkey';
             columns: ['vehicle_id'];
             isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'appointments_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
             referencedRelation: 'vehicles';
             referencedColumns: ['id'];
           },
         ];
+      };
+      v_clients_overview: {
+        Row: {
+          balance_due: number | null;
+          billing_address: string | null;
+          created_at: string | null;
+          discount_percent: number | null;
+          email: string | null;
+          hourly_rate: number | null;
+          id: string | null;
+          last_visit: string | null;
+          legacy_key: string | null;
+          name: string | null;
+          name_key: string | null;
+          notes: string | null;
+          orders_count: number | null;
+          overdue_invoices_count: number | null;
+          phone: string | null;
+          portal_token: string | null;
+          revenue_ht: number | null;
+          siren: string | null;
+          updated_at: string | null;
+          vehicles_count: number | null;
+        };
+        Relationships: [];
       };
       v_contract_vehicle_status: {
         Row: {
@@ -3370,6 +3500,13 @@ export type Database = {
             foreignKeyName: 'maintenance_contract_vehicles_vehicle_id_fkey';
             columns: ['vehicle_id'];
             isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'maintenance_contract_vehicles_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
             referencedRelation: 'vehicles';
             referencedColumns: ['id'];
           },
@@ -3378,6 +3515,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'maintenance_contracts_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
             referencedColumns: ['id'];
           },
         ];
@@ -3426,6 +3570,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
             referencedColumns: ['id'];
           },
         ];
@@ -3501,6 +3652,13 @@ export type Database = {
             referencedRelation: 'clients';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'invoices_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
         ];
       };
       v_invoice_totals: {
@@ -3547,6 +3705,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
             referencedColumns: ['id'];
           },
         ];
@@ -3658,6 +3823,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'quotes_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'quotes_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -3745,6 +3917,13 @@ export type Database = {
             foreignKeyName: 'quotes_vehicle_id_fkey';
             columns: ['vehicle_id'];
             isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quotes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
             referencedRelation: 'vehicles';
             referencedColumns: ['id'];
           },
@@ -3819,6 +3998,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
             referencedColumns: ['id'];
           },
           {
@@ -3909,6 +4095,13 @@ export type Database = {
             foreignKeyName: 'repair_orders_vehicle_id_fkey';
             columns: ['vehicle_id'];
             isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
             referencedRelation: 'vehicles';
             referencedColumns: ['id'];
           },
@@ -3930,6 +4123,59 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicles_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      v_vehicles_overview: {
+        Row: {
+          brand: string | null;
+          client_id: string | null;
+          client_name: string | null;
+          created_at: string | null;
+          ct_due_date: string | null;
+          first_registration_date: string | null;
+          id: string | null;
+          last_mileage: number | null;
+          last_visit: string | null;
+          model: string | null;
+          notes: string | null;
+          orders_count: number | null;
+          plate: string | null;
+          plate_key: string | null;
+          registration_doc_file_id: string | null;
+          tailgate_due_date: string | null;
+          updated_at: string | null;
+          vehicle_type: Database['public']['Enums']['vehicle_type'] | null;
+          vin: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vehicles_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicles_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicles_registration_doc_file_id_fkey';
+            columns: ['registration_doc_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
             referencedColumns: ['id'];
           },
         ];

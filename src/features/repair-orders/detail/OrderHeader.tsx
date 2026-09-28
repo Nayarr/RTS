@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { AlertTriangle, CheckCircle2, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,9 +22,20 @@ export function OrderHeader({ order }: { order: RepairOrderOverview }) {
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold tracking-wide">{order.plate}</h1>
+            <h1 className="text-3xl font-bold tracking-wide">
+              <Link to={`/vehicules/${order.vehicle_id}`} className="hover:underline" title="Fiche véhicule">
+                {order.plate}
+              </Link>
+            </h1>
             <p className="text-muted-foreground">
-              {order.client_name ?? 'Client non renseigné'} · {VEHICLE_TYPES[order.vehicle_type]}
+              {order.client_id && order.client_name ? (
+                <Link to={`/clients/${order.client_id}`} className="hover:underline" title="Fiche client">
+                  {order.client_name}
+                </Link>
+              ) : (
+                'Client non renseigné'
+              )}{' '}
+              · {VEHICLE_TYPES[order.vehicle_type]}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
