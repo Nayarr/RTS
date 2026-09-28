@@ -28,6 +28,7 @@ import { RepairOrderPage } from '@/features/repair-orders/RepairOrderPage';
 import { RepairOrdersPage } from '@/features/repair-orders/RepairOrdersPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TeamPage } from '@/features/team/TeamPage';
+import { WarrantiesPage } from '@/features/warranties/WarrantiesPage';
 import { TechRepairOrderPage } from '@/features/workshop/TechRepairOrderPage';
 import { AppLayout } from './AppLayout';
 import { HomePage } from './HomePage';
@@ -66,6 +67,7 @@ export const routes: RouteObject[] = [
               { path: '/factures', element: <InvoicesPage /> },
               { path: '/factures/avoirs', element: <InvoicesPage /> },
               { path: '/factures/:id', element: <InvoicePage /> },
+              { path: '/garanties', element: <WarrantiesPage /> },
             ],
           },
           {
