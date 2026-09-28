@@ -54,7 +54,12 @@ test('une saisie invalide est signalée et rien n’est enregistré', async ({ p
   await expect(page.getByLabel('Fin de pause')).toHaveValue('14:00');
 });
 
-test('le logo est envoyé dans le stockage et affiché', async ({ page }) => {
+test('le logo est envoyé dans le stockage et affiché', async ({ page }, testInfo) => {
+  // Le logo est unique pour l'entreprise (une seule ligne company_settings) : si desktop et
+  // mobile l'envoient en parallèle, l'enregistrement de l'un remplace le logo affiché chez
+  // l'autre (changement de src en cours de vérification). Un seul projet suffit ici.
+  test.skip(testInfo.project.name.includes('mobile'), 'Logo partagé entre projets : testé sur desktop');
+
   await loginAs(page, 'direction@rts.local');
   await page.goto('/reglages');
   await page
@@ -64,6 +69,8 @@ test('le logo est envoyé dans le stockage et affiché', async ({ page }) => {
   await expect(page.getByText('Logo enregistré')).toBeVisible();
   const logo = page.getByRole('img', { name: 'Logo de l’entreprise', exact: true });
   await expect(logo).toHaveAttribute('src', /X-Amz-Signature=/);
-  await expect(logo).toHaveJSProperty('complete', true);
-  expect(await logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+  // Chargement terminé et image décodée, lus ensemble pour ne pas mélanger deux src.
+  await expect
+    .poll(() => logo.evaluate((img: HTMLImageElement) => (img.complete ? img.naturalWidth : -1)))
+    .toBe(1);
 });
