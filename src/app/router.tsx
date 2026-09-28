@@ -7,6 +7,7 @@ import { TimesheetPage } from '@/features/attendance/TimesheetPage';
 import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { LeavePage } from '@/features/leave/LeavePage';
+import { PackagesPage } from '@/features/catalogs/PackagesPage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
 import { ContractsPage } from '@/features/contracts/ContractsPage';
 import { ClientPage } from '@/features/customers/ClientPage';
@@ -85,6 +86,7 @@ export const routes: RouteObject[] = [
               { path: '/stock', element: <Navigate to="/stock/consommables" replace /> },
               { path: '/stock/consommables', element: <ConsumablesPage /> },
               { path: '/stock/pieces', element: <PartsPage /> },
+              { path: '/stock/forfaits', element: <PackagesPage /> },
             ],
           },
         ],

@@ -1,12 +1,18 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { fetchConsumables, fetchParts } from './api';
+import { fetchConsumables, fetchPackages, fetchParts } from './api';
 
 export const consumablesKey = ['consumables'] as const;
 export const partsKey = ['parts'] as const;
+/** Même clé que la liste des forfaits proposés dans les devis et factures. */
+export const packagesKey = ['service-packages'] as const;
 
 export function useConsumables() {
   return useQuery({ queryKey: consumablesKey, queryFn: fetchConsumables });
+}
+
+export function usePackages() {
+  return useQuery({ queryKey: [...packagesKey, 'catalog'], queryFn: fetchPackages });
 }
 
 export function useParts(search: string) {
