@@ -145,7 +145,7 @@ declare
   v_contract public.maintenance_contracts;
   v_plate text;
   v_ids record;
-  v_vehicle_ids uuid[] := '{}';
+  v_vehicle_ids uuid[] := array[]::uuid[];
 begin
   perform public.assert_office();
 
