@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 const TABS = [
   { to: '/pilotage/statistiques', label: 'Statistiques' },
   { to: '/pilotage/tresorerie', label: 'Trésorerie' },
+  { to: '/pilotage/rentabilite', label: 'Rentabilité' },
+  { to: '/pilotage/performance', label: 'Performance' },
 ];
 
 /** Onglets du pilotage (direction). */
