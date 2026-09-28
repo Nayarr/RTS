@@ -72,7 +72,13 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
   });
 
   const save = usePlanningMutation(
-    (values: AppointmentValues) => saveAppointment(appointment?.id ?? null, appointmentFromForm(values)),
+    (values: AppointmentValues) =>
+      saveAppointment(appointment?.id ?? null, {
+        ...appointmentFromForm(values),
+        ...(preset?.maintenance_contract_id
+          ? { maintenance_contract_id: preset.maintenance_contract_id }
+          : {}),
+      }),
     'Rendez-vous enregistré',
   );
   const convert = usePlanningMutation(

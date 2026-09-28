@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { cn } from '@/lib/utils';
 
-/** Onglets clients / véhicules / échéances. */
+/** Onglets clients / véhicules / échéances / contrats d'entretien. */
 export function CustomersTabs() {
   const tab = (to: string, label: string) => (
     <NavLink
@@ -24,6 +24,7 @@ export function CustomersTabs() {
       {tab('/clients', 'Clients')}
       {tab('/vehicules', 'Véhicules')}
       {tab('/vehicules/echeances', 'Échéances')}
+      {tab('/contrats', 'Contrats')}
     </nav>
   );
 }

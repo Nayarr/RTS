@@ -44,6 +44,7 @@ export function usePlanningMutation<TArgs, TData = unknown>(
         queryClient.invalidateQueries({ queryKey: planningKey }),
         queryClient.invalidateQueries({ queryKey: appointmentsKey }),
         queryClient.invalidateQueries({ queryKey: repairOrdersKey }),
+        queryClient.invalidateQueries({ queryKey: ['contracts'] }),
       ]);
     },
     onError: (error) => toast.error(errorMessage(error)),

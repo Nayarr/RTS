@@ -8,6 +8,7 @@ import { RequireRole } from '@/features/auth/RequireRole';
 import { ConsumablesPage } from '@/features/catalogs/ConsumablesPage';
 import { LeavePage } from '@/features/leave/LeavePage';
 import { PartsPage } from '@/features/catalogs/PartsPage';
+import { ContractsPage } from '@/features/contracts/ContractsPage';
 import { ClientPage } from '@/features/customers/ClientPage';
 import { ClientsPage } from '@/features/customers/ClientsPage';
 import { DeadlinesPage } from '@/features/customers/DeadlinesPage';
@@ -57,6 +58,7 @@ export const routes: RouteObject[] = [
               { path: '/vehicules', element: <VehiclesPage /> },
               { path: '/vehicules/echeances', element: <DeadlinesPage /> },
               { path: '/vehicules/:id', element: <VehiclePage /> },
+              { path: '/contrats', element: <ContractsPage /> },
               { path: '/devis', element: <QuotesPage /> },
               { path: '/devis/nouveau', element: <NewQuotePage /> },
               { path: '/devis/:id', element: <QuotePage /> },
