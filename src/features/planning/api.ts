@@ -111,6 +111,8 @@ export interface AppointmentInput {
   end_time: string | null;
   reason: string;
   technician_id: string | null;
+  /** Entretien prévu par un contrat : l'OR créé à l'arrivée du véhicule lui sera rattaché. */
+  maintenance_contract_id?: string | null;
 }
 
 export async function saveAppointment(id: string | null, input: AppointmentInput) {
@@ -124,6 +126,7 @@ export async function saveAppointment(id: string | null, input: AppointmentInput
     p_end_time: input.end_time ?? undefined,
     p_reason: input.reason,
     p_technician_id: input.technician_id ?? undefined,
+    p_maintenance_contract_id: input.maintenance_contract_id ?? undefined,
   });
   if (error) throw error;
   return data;

@@ -43,6 +43,8 @@ export interface AppointmentPreset {
   client_name?: string;
   plate?: string;
   vehicle_type?: Appointment['vehicle_type'];
+  reason?: string;
+  maintenance_contract_id?: string;
 }
 
 export const appointmentToForm = (
@@ -55,7 +57,7 @@ export const appointmentToForm = (
   scheduled_date: appointment?.scheduled_date ?? preset.date ?? todayIso(),
   start_time: shortTime(appointment?.start_time) || '09:00',
   end_time: appointment ? shortTime(appointment.end_time) : '10:00',
-  reason: appointment?.reason ?? '',
+  reason: appointment?.reason ?? preset.reason ?? '',
   technician_id: appointment?.technician_id ?? preset.technician_id ?? '',
 });
 

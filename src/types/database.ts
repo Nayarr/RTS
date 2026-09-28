@@ -161,6 +161,13 @@ export type Database = {
             referencedColumns: ['contract_id'];
           },
           {
+            foreignKeyName: 'appointments_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contracts_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'appointments_repair_order_id_fkey';
             columns: ['repair_order_id'];
             isOneToOne: false;
@@ -1336,6 +1343,13 @@ export type Database = {
             referencedColumns: ['contract_id'];
           },
           {
+            foreignKeyName: 'invoices_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contracts_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'invoices_pdf_file_id_fkey';
             columns: ['pdf_file_id'];
             isOneToOne: false;
@@ -1507,6 +1521,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_contract_vehicle_status';
             referencedColumns: ['contract_id'];
+          },
+          {
+            foreignKeyName: 'maintenance_contract_vehicles_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contracts_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'maintenance_contract_vehicles_vehicle_id_fkey';
@@ -2400,6 +2421,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'v_contract_vehicle_status';
             referencedColumns: ['contract_id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_contract_fk';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contracts_overview';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'repair_orders_created_by_fkey';
@@ -3400,6 +3428,13 @@ export type Database = {
             referencedColumns: ['contract_id'];
           },
           {
+            foreignKeyName: 'appointments_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contracts_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'appointments_repair_order_id_fkey';
             columns: ['repair_order_id'];
             isOneToOne: false;
@@ -3510,6 +3545,40 @@ export type Database = {
             referencedRelation: 'vehicles';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'maintenance_contracts_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'maintenance_contracts_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      v_contracts_overview: {
+        Row: {
+          client_id: string | null;
+          client_name: string | null;
+          created_at: string | null;
+          ended_on: string | null;
+          frequency_km: number | null;
+          frequency_months: number | null;
+          id: string | null;
+          is_active: boolean | null;
+          legacy_id: string | null;
+          monthly_price_ht: number | null;
+          service_description: string | null;
+          starts_on: string | null;
+          updated_at: string | null;
+          vehicles: Json | null;
+        };
+        Relationships: [
           {
             foreignKeyName: 'maintenance_contracts_client_id_fkey';
             columns: ['client_id'];
@@ -4022,6 +4091,13 @@ export type Database = {
             referencedColumns: ['contract_id'];
           },
           {
+            foreignKeyName: 'repair_orders_contract_fk';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contracts_overview';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'repair_orders_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -4230,6 +4306,7 @@ export type Database = {
       assert_direction: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_office: { Args: Record<PropertyKey, never>; Returns: undefined };
       assign_quote_number: { Args: { p_mark_sent?: boolean; p_quote_id: string }; Returns: string };
+      build_contract_invoice_draft: { Args: { p_contract_id: string; p_month?: string }; Returns: string };
       build_invoice_draft: { Args: { p_repair_order_ids: string[] }; Returns: string };
       build_quote_from_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
       can_read_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
@@ -4404,6 +4481,14 @@ export type Database = {
         };
       };
       delete_leave_request: { Args: { p_id: string }; Returns: undefined };
+      ensure_client_and_vehicle: {
+        Args: {
+          p_client_name: string;
+          p_plate: string;
+          p_vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        Returns: Record<string, unknown>;
+      };
       ensure_supplier: { Args: { p_name: string }; Returns: string };
       expire_pending_files: { Args: Record<PropertyKey, never>; Returns: number };
       file_max_bytes: { Args: { p_category: Database['public']['Enums']['file_category'] }; Returns: number };
@@ -4538,6 +4623,7 @@ export type Database = {
           p_client_name: string;
           p_end_time?: string;
           p_id?: string;
+          p_maintenance_contract_id?: string;
           p_plate: string;
           p_reason?: string;
           p_scheduled_date: string;
@@ -4598,6 +4684,38 @@ export type Database = {
         SetofOptions: {
           from: '*';
           to: 'leave_requests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      save_maintenance_contract: {
+        Args: {
+          p_client_name: string;
+          p_frequency_km?: number;
+          p_frequency_months?: number;
+          p_id?: string;
+          p_monthly_price_ht?: number;
+          p_plates: string[];
+          p_service_description: string;
+          p_starts_on?: string;
+        };
+        Returns: {
+          client_id: string;
+          created_at: string;
+          ended_on: string | null;
+          frequency_km: number | null;
+          frequency_months: number | null;
+          id: string;
+          is_active: boolean;
+          legacy_id: string | null;
+          monthly_price_ht: number | null;
+          service_description: string;
+          starts_on: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'maintenance_contracts';
           isOneToOne: true;
           isSetofReturn: false;
         };
