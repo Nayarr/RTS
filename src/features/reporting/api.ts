@@ -82,3 +82,43 @@ export async function fetchTechnicianPerformance({
   if (error) throw error;
   return data;
 }
+
+export interface MonthlyReportFigures {
+  revenue_ht: number;
+  labor_ht: number;
+  parts_ht: number;
+  parts_margin_ht: number;
+  credit_notes_ht: number;
+  invoice_count: number;
+  collected_ttc: number;
+  outstanding_ttc: number;
+  overdue_ttc: number;
+  repair_orders_opened: number;
+  quotes_accepted: number;
+}
+
+export interface MonthlyReport {
+  month: string;
+  figures: MonthlyReportFigures;
+  overdue_invoices: {
+    invoice_id: string;
+    number: string;
+    client_name: string;
+    issued_at: string;
+    balance_due: number;
+  }[];
+  deadlines: {
+    plate: string;
+    client_name: string | null;
+    kind: 'ct' | 'tailgate';
+    due_date: string;
+    days_left: number;
+  }[];
+}
+
+/** Chiffres clés du mois, factures en retard et échéances proches (month : un jour du mois). */
+export async function fetchMonthlyReport(month: string): Promise<MonthlyReport> {
+  const { data, error } = await supabase.rpc('monthly_report', { p_month: month });
+  if (error) throw error;
+  return data as unknown as MonthlyReport;
+}

@@ -33,6 +33,18 @@ export function periodRange(period: Period, today: string): DateRange {
   }
 }
 
+/** Mois précédent (« 2026-08 » le 29/09/2026), comme l'ancienne appli. */
+export function previousMonth(today: string) {
+  const [year, month] = [Number(today.slice(0, 4)), Number(today.slice(5, 7))];
+  return new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 7);
+}
+
+/** Premier jour du mois suivant (borne exclusive). */
+export const nextMonthStart = (month: string) => {
+  const [year, m] = [Number(month.slice(0, 4)), Number(month.slice(5, 7))];
+  return new Date(Date.UTC(year, m, 1)).toISOString().slice(0, 10);
+};
+
 // ---------------------------------------------------------------- Rentabilité
 
 export interface ProfitabilityFigures {
