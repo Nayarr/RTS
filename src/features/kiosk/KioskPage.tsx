@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Delete, Settings } from 'lucide-react';
 import { FormField } from '@/components/FormField';
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { signOut } from '@/features/auth/api';
 import { uploadFile } from '@/features/files/api';
+import { setTvMode } from '@/features/workshop-board/domain';
 import { cn } from '@/lib/utils';
 import { fetchCompanyName, kioskClock, verifyExitCode } from './api';
 import {
@@ -192,18 +194,25 @@ export function KioskPage() {
   );
 }
 
-/** Sortie de la borne : code de sortie choisi par la direction, puis déconnexion. */
+/** Sortie de la borne : code de sortie choisi par la direction, puis déconnexion ou écran télé. */
 function ExitDialog({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [pending, setPending] = useState(false);
 
-  const submit = async (event: FormEvent) => {
+  /** « Quitter » : déconnexion ; « Écran atelier (télé) » : la borne devient la télé de l'atelier. */
+  const submit = async (event: FormEvent, target: 'sign-out' | 'tv' = 'sign-out') => {
     event.preventDefault();
     setPending(true);
     try {
       if (await verifyExitCode(code)) {
-        await signOut();
+        if (target === 'tv') {
+          setTvMode(true);
+          void navigate('/tele', { replace: true });
+        } else {
+          await signOut();
+        }
         return;
       }
       setError('Code incorrect');
@@ -237,6 +246,13 @@ function ExitDialog({ onClose }: { onClose: () => void }) {
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Annuler
+          </Button>
+          <Button
+            variant="outline"
+            disabled={pending || code.length < 4}
+            onClick={(event) => void submit(event, 'tv')}
+          >
+            Écran atelier (télé)
           </Button>
           <Button type="submit" form="kiosk-exit" disabled={pending || code.length < 4}>
             Quitter

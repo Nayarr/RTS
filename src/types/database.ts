@@ -5041,6 +5041,7 @@ export type Database = {
         };
       };
       verify_kiosk_exit_code: { Args: { p_code: string }; Returns: boolean };
+      workshop_board: { Args: Record<PropertyKey, never>; Returns: Json };
     };
     Enums: {
       app_role: 'direction' | 'reception' | 'technician' | 'kiosk';

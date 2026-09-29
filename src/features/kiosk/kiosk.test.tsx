@@ -5,6 +5,7 @@ import { signOut } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
 import { uploadFile } from '@/features/files/api';
 import type * as FilesApi from '@/features/files/api';
+import { isTvMode, setTvMode } from '@/features/workshop-board/domain';
 import { renderRoutes } from '@/test/render';
 import { fetchCompanyName, kioskClock, verifyExitCode } from './api';
 import type * as KioskApi from './api';
@@ -167,5 +168,20 @@ describe('borne : écran', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Quitter' }));
     await waitFor(() => expect(signOut).toHaveBeenCalled());
     expect(verifyExitCode).toHaveBeenLastCalledWith('9753');
+  });
+
+  it('la borne devient l’écran atelier (télé) avec le même code', async () => {
+    vi.mocked(verifyExitCode).mockResolvedValue(true);
+    renderRoutes([
+      { path: '/', element: <KioskPage /> },
+      { path: '/tele', element: <h1>Télé</h1> },
+    ]);
+    await userEvent.click(await screen.findByRole('button', { name: 'Quitter la borne' }));
+    await userEvent.type(screen.getByLabelText('Code de sortie'), '9753');
+    await userEvent.click(screen.getByRole('button', { name: 'Écran atelier (télé)' }));
+    expect(await screen.findByRole('heading', { name: 'Télé' })).toBeInTheDocument();
+    expect(isTvMode()).toBe(true);
+    expect(signOut).not.toHaveBeenCalled();
+    setTvMode(false);
   });
 });

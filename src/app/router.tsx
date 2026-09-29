@@ -33,6 +33,8 @@ import { TreasuryPage } from '@/features/reporting/TreasuryPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TeamPage } from '@/features/team/TeamPage';
 import { WarrantiesPage } from '@/features/warranties/WarrantiesPage';
+import { LiveWorkshopPage } from '@/features/workshop-board/LiveWorkshopPage';
+import { TvPage } from '@/features/workshop-board/TvPage';
 import { TechRepairOrderPage } from '@/features/workshop/TechRepairOrderPage';
 import { AppLayout } from './AppLayout';
 import { HomePage } from './HomePage';
@@ -47,6 +49,11 @@ export const routes: RouteObject[] = [
   {
     element: <RequireAuth />,
     children: [
+      // Écran atelier (télé) : plein écran, sans menu ; sur la borne ou un poste de la direction.
+      {
+        element: <RequireRole roles={['direction', 'kiosk']} />,
+        children: [{ path: '/tele', element: <TvPage /> }],
+      },
       {
         element: <AppLayout />,
         children: [
@@ -72,6 +79,7 @@ export const routes: RouteObject[] = [
               { path: '/factures/avoirs', element: <InvoicesPage /> },
               { path: '/factures/:id', element: <InvoicePage /> },
               { path: '/garanties', element: <WarrantiesPage /> },
+              { path: '/atelier-en-direct', element: <LiveWorkshopPage /> },
             ],
           },
           {
