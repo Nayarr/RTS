@@ -4,6 +4,7 @@ import {
   CalendarClock,
   ChartColumn,
   CalendarDays,
+  CircleHelp,
   Clock,
   Contact,
   FileText,
@@ -49,6 +50,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/pilotage', label: 'Pilotage', icon: ChartColumn, roles: ['direction'] },
   { to: '/equipe', label: 'Équipe', icon: Users, roles: ['direction'] },
   { to: '/reglages', label: 'Réglages', icon: Settings, roles: ['direction'] },
+  { to: '/aide', label: 'Aide', icon: CircleHelp, roles: ['direction', 'reception', 'technician'] },
 ];
 
 /** Coquille de l'appli connectée : en-tête, navigation, contenu de la page. */
