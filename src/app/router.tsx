@@ -33,6 +33,7 @@ import { TreasuryPage } from '@/features/reporting/TreasuryPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { TeamPage } from '@/features/team/TeamPage';
 import { WarrantiesPage } from '@/features/warranties/WarrantiesPage';
+import { HelpPage } from '@/features/help/HelpPage';
 import { LiveWorkshopPage } from '@/features/workshop-board/LiveWorkshopPage';
 import { TvPage } from '@/features/workshop-board/TvPage';
 import { TechRepairOrderPage } from '@/features/workshop/TechRepairOrderPage';
@@ -81,6 +82,10 @@ export const routes: RouteObject[] = [
               { path: '/garanties', element: <WarrantiesPage /> },
               { path: '/atelier-en-direct', element: <LiveWorkshopPage /> },
             ],
+          },
+          {
+            element: <RequireRole roles={['direction', 'reception', 'technician']} />,
+            children: [{ path: '/aide', element: <HelpPage /> }],
           },
           {
             element: <RequireRole roles={['technician']} />,
