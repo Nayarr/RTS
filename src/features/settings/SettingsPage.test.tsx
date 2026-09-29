@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
 import { fetchSettings, updateCompanySettings, updateLaborRates, type Settings } from './api';
 import type * as SettingsApi from './api';
+import { downloadBackup } from './backup';
+import type * as BackupApi from './backup';
 import { SettingsPage } from './SettingsPage';
 
 vi.mock('./api', async (importOriginal) => ({
@@ -16,6 +18,10 @@ vi.mock('./api', async (importOriginal) => ({
 vi.mock('@/features/files/hooks', () => ({
   useFileUrl: () => ({ url: undefined, isPending: false, isError: false }),
   useUploadFile: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+vi.mock('./backup', async (importOriginal) => ({
+  ...(await importOriginal<typeof BackupApi>()),
+  downloadBackup: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -68,13 +74,14 @@ const settings: Settings = {
     rest_reference_monday: null,
     clock_photo_retention_months: 3,
     label_scan_enabled: false,
+    last_backup_at: null,
     updated_at: '2026-09-28T00:00:00Z',
   },
 };
 
-const renderSettings = () => {
+const renderSettings = (initialPath = '/reglages') => {
   vi.mocked(fetchSettings).mockResolvedValue(settings);
-  return renderRoutes([{ path: '/reglages', element: <SettingsPage /> }], { initialPath: '/reglages' });
+  return renderRoutes([{ path: '/reglages', element: <SettingsPage /> }], { initialPath });
 };
 
 describe('SettingsPage', () => {
@@ -125,5 +132,20 @@ describe('SettingsPage', () => {
     await userEvent.type(await screen.findByLabelText('Téléphone'), '0102030405');
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Modification réservée à la direction'));
+  });
+
+  it('sauvegarde : ouverte depuis l’alerte, téléchargement puis confirmation', async () => {
+    vi.mocked(downloadBackup).mockResolvedValue({
+      app: 'RTS Atelier',
+      format: 1,
+      exported_at: '2026-09-29T08:00:00Z',
+      schema_version: '20261019090000',
+      tables: { clients: [{}, {}], invoices: [{}] },
+    });
+    renderSettings('/reglages?onglet=sauvegarde');
+    expect(await screen.findByText('Aucune sauvegarde pour l’instant')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Télécharger la sauvegarde' }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Sauvegarde téléchargée (3 lignes)'));
+    expect(fetchSettings).toHaveBeenCalledTimes(2); // date de la dernière sauvegarde rechargée
   });
 });

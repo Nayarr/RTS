@@ -12,6 +12,7 @@ export type Database = {
           friday_lunch_start: string;
           id: boolean;
           label_scan_enabled: boolean;
+          last_backup_at: string | null;
           late_tolerance: string;
           lunch_end: string;
           lunch_start: string;
@@ -32,6 +33,7 @@ export type Database = {
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
+          last_backup_at?: string | null;
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
@@ -52,6 +54,7 @@ export type Database = {
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
+          last_backup_at?: string | null;
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
@@ -4410,6 +4413,8 @@ export type Database = {
       assert_direction: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_office: { Args: Record<PropertyKey, never>; Returns: undefined };
       assign_quote_number: { Args: { p_mark_sent?: boolean; p_quote_id: string }; Returns: string };
+      backup_excluded_tables: { Args: Record<PropertyKey, never>; Returns: string[] };
+      backup_reminder: { Args: Record<PropertyKey, never>; Returns: number };
       build_contract_invoice_draft: { Args: { p_contract_id: string; p_month?: string }; Returns: string };
       build_invoice_draft: { Args: { p_repair_order_ids: string[] }; Returns: string };
       build_quote_from_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
@@ -4599,6 +4604,7 @@ export type Database = {
       };
       ensure_supplier: { Args: { p_name: string }; Returns: string };
       expire_pending_files: { Args: Record<PropertyKey, never>; Returns: number };
+      export_backup: { Args: Record<PropertyKey, never>; Returns: Json };
       file_max_bytes: { Args: { p_category: Database['public']['Enums']['file_category'] }; Returns: number };
       file_mime_allowed: {
         Args: { p_category: Database['public']['Enums']['file_category']; p_mime_type: string };
