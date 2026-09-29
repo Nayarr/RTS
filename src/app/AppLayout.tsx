@@ -22,6 +22,7 @@ import { AlertsBell } from '@/features/alerts/AlertsBell';
 import { signOut } from '@/features/auth/api';
 import { ROLE_LABELS, type AppRole } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
+import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -62,7 +63,12 @@ export function AppLayout() {
           </Link>
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{profile?.full_name}</span>
-            {(profile?.role === 'direction' || profile?.role === 'reception') && <AlertsBell />}
+            {(profile?.role === 'direction' || profile?.role === 'reception') && (
+              <>
+                <GlobalSearch />
+                <AlertsBell />
+              </>
+            )}
             <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Se déconnecter">
               <LogOut />
             </Button>

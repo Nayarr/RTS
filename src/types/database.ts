@@ -4602,6 +4602,7 @@ export type Database = {
       };
       generate_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
+      global_search: { Args: { p_query: string }; Returns: Json };
       inspection_wear_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
       invoiced_ro_lines: {
         Args: { p_from: string; p_to: string };
