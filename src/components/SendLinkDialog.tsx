@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { Copy, Mail, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { FormField } from '@/components/FormField';
@@ -39,7 +39,7 @@ export function SendLinkDialog({
   onClose,
 }: SendLinkDialogProps) {
   const [contact, setContact] = useState(initial);
-  const links = sendLinks(message, contact);
+  const links = sendLinks(message, contact, senderEmail);
   const save = () => {
     if (contact.email.trim() !== initial.email.trim() || contact.phone.trim() !== initial.phone.trim()) {
       onContactSave(contact);
@@ -48,6 +48,17 @@ export function SendLinkDialog({
   const send = (channel: 'email' | 'sms') => () => {
     save();
     onSend?.(channel, contact);
+  };
+  /** Comme l'ancienne appli : confirmation avant d'ouvrir la messagerie sans adresse du client. */
+  const sendByEmailApp = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      !contact.email.trim() &&
+      !window.confirm('Aucun e-mail client renseigné. Ouvrir quand même la messagerie ?')
+    ) {
+      event.preventDefault();
+      return;
+    }
+    send('email')();
   };
 
   return (
@@ -91,7 +102,7 @@ export function SendLinkDialog({
         )}
         <div className="flex flex-col gap-2">
           <Button asChild>
-            <a href={links.mailto} onClick={send('email')}>
+            <a href={links.mailto} onClick={sendByEmailApp}>
               <Mail /> Envoyer par e-mail (messagerie de l’ordinateur)
             </a>
           </Button>
