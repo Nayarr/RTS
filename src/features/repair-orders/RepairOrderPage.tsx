@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { RepairOrderInvoiceCard } from '@/features/invoices/RepairOrderInvoiceCard';
 import { RepairOrderQuotesCard } from '@/features/quotes/RepairOrderQuotesCard';
+import { ClientMessagesCard } from './detail/ClientMessagesCard';
 import { ConsumablesCard } from './detail/ConsumablesCard';
 import { DirectionCard } from './detail/DirectionCard';
 import { HistoryCard } from './detail/HistoryCard';
@@ -84,6 +85,7 @@ export function RepairOrderPage() {
           <TimeCard order={order} loadedAt={detail.dataUpdatedAt} showComparison={isDirection} />
           <RepairOrderInvoiceCard order={order} />
           <RepairOrderQuotesCard order={order} />
+          <ClientMessagesCard order={order} />
           <OfficeInfoForm order={order} />
           <HistoryCard repairOrderId={order.id} />
           {isDirection && <DirectionCard order={order} />}

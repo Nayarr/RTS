@@ -18,6 +18,8 @@ interface SendLinkDialogProps {
   senderEmail: string | null;
   contact: ContactValues;
   onContactSave: (contact: ContactValues) => void;
+  /** Appelé quand l'envoi part par e-mail ou par SMS (traçabilité). */
+  onSend?: ((channel: 'email' | 'sms', contact: ContactValues) => void) | undefined;
   onClose: () => void;
 }
 
@@ -33,6 +35,7 @@ export function SendLinkDialog({
   senderEmail,
   contact: initial,
   onContactSave,
+  onSend,
   onClose,
 }: SendLinkDialogProps) {
   const [contact, setContact] = useState(initial);
@@ -41,6 +44,10 @@ export function SendLinkDialog({
     if (contact.email.trim() !== initial.email.trim() || contact.phone.trim() !== initial.phone.trim()) {
       onContactSave(contact);
     }
+  };
+  const send = (channel: 'email' | 'sms') => () => {
+    save();
+    onSend?.(channel, contact);
   };
 
   return (
@@ -84,18 +91,18 @@ export function SendLinkDialog({
         )}
         <div className="flex flex-col gap-2">
           <Button asChild>
-            <a href={links.mailto} onClick={save}>
+            <a href={links.mailto} onClick={send('email')}>
               <Mail /> Envoyer par e-mail (messagerie de l’ordinateur)
             </a>
           </Button>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" asChild>
-              <a href={links.gmail} target="_blank" rel="noreferrer" onClick={save}>
+              <a href={links.gmail} target="_blank" rel="noreferrer" onClick={send('email')}>
                 Ouvrir dans Gmail
               </a>
             </Button>
             <Button variant="outline" asChild>
-              <a href={links.outlook} target="_blank" rel="noreferrer" onClick={save}>
+              <a href={links.outlook} target="_blank" rel="noreferrer" onClick={send('email')}>
                 Ouvrir dans Outlook web
               </a>
             </Button>
@@ -114,7 +121,7 @@ export function SendLinkDialog({
             </Button>
           )}
           <Button variant="ghost" asChild>
-            <a href={links.sms} onClick={save}>
+            <a href={links.sms} onClick={send('sms')}>
               <MessageSquare /> Envoyer par SMS (depuis un téléphone)
             </a>
           </Button>

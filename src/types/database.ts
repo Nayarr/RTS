@@ -4420,6 +4420,10 @@ export type Database = {
         Returns: boolean;
       };
       clear_technician_pin: { Args: { p_technician_id: string }; Returns: undefined };
+      client_message_label: {
+        Args: { p_type: Database['public']['Enums']['client_message_type'] };
+        Returns: string;
+      };
       complete_repair_order: {
         Args: { p_quote_needed?: boolean; p_repair_order_id: string };
         Returns: {
