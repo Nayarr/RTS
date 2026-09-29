@@ -1,13 +1,13 @@
 # Base de données : lint du schéma + tests pgTAP sur une base Supabase jetable.
 # Tourne à chaque PR vers main (sans filtre de chemins, pour pouvoir être rendu
-# obligatoire dans la protection de branche) et à chaque push sur main.
+# obligatoire dans la protection de branche).
 name: Base de données
 
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  # Pas de relance à chaque push sur main : le code a déjà été testé dans sa PR
+  # (fusionnée avec main). Relance manuelle possible (« Run workflow »).
   workflow_dispatch:
 
 concurrency:
