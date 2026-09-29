@@ -22,6 +22,7 @@ import { Brand } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 import { AlertsBell } from '@/features/alerts/AlertsBell';
 import { signOut } from '@/features/auth/api';
+import { PushBanner } from '@/features/push/PushBanner';
 import { ROLE_LABELS, type AppRole } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
@@ -113,6 +114,7 @@ export function AppLayout() {
         )}
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
+        {profile && profile.role !== 'kiosk' && <PushBanner />}
         <Outlet />
       </main>
     </div>

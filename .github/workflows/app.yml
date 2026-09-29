@@ -132,6 +132,8 @@ jobs:
       - name: Configurer l'appli sur la base locale
         run: |
           supabase status -o json | jq -r '"VITE_SUPABASE_URL=\(.API_URL)", "VITE_SUPABASE_PUBLISHABLE_KEY=\(.PUBLISHABLE_KEY)"' >> "$GITHUB_ENV"
+          # Clé publique VAPID de développement (supabase/config.toml) : notifications push en e2e.
+          echo "VITE_VAPID_PUBLIC_KEY=$(sed -n 's/^VAPID_PUBLIC_KEY = "\(.*\)"$/\1/p' supabase/config.toml)" >> "$GITHUB_ENV"
 
       - name: Installer Chromium (Playwright)
         run: npx playwright install --with-deps chromium

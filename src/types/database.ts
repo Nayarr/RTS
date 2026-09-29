@@ -1878,6 +1878,50 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_outbox: {
+        Row: {
+          attempts: number;
+          body: string | null;
+          created_at: string;
+          id: string;
+          link: string | null;
+          profile_id: string;
+          sent_at: string | null;
+          tag: string | null;
+          title: string;
+        };
+        Insert: {
+          attempts?: number;
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          link?: string | null;
+          profile_id: string;
+          sent_at?: string | null;
+          tag?: string | null;
+          title: string;
+        };
+        Update: {
+          attempts?: number;
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          link?: string | null;
+          profile_id?: string;
+          sent_at?: string | null;
+          tag?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'push_outbox_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       push_subscriptions: {
         Row: {
           auth_key: string;
@@ -4427,6 +4471,7 @@ export type Database = {
         Args: { p_category: Database['public']['Enums']['file_category'] };
         Returns: boolean;
       };
+      claim_push_batch: { Args: { p_limit?: number }; Returns: Json };
       clear_technician_pin: { Args: { p_technician_id: string }; Returns: undefined };
       client_message_label: {
         Args: { p_type: Database['public']['Enums']['client_message_type'] };
@@ -4597,6 +4642,7 @@ export type Database = {
         };
       };
       delete_leave_request: { Args: { p_id: string }; Returns: undefined };
+      dispatch_push: { Args: Record<PropertyKey, never>; Returns: number };
       ensure_client_and_vehicle: {
         Args: {
           p_client_name: string;
@@ -4729,6 +4775,10 @@ export type Database = {
         Returns: boolean;
       };
       paris_date: { Args: { p_at: string }; Returns: string };
+      profiles_with_roles: {
+        Args: { p_roles: Database['public']['Enums']['app_role'][] };
+        Returns: string[];
+      };
       profitability_report: {
         Args: { p_from?: string; p_to?: string };
         Returns: {
@@ -4752,6 +4802,10 @@ export type Database = {
       };
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
       purge_files: { Args: Record<PropertyKey, never>; Returns: number };
+      queue_push: {
+        Args: { p_body?: string; p_link?: string; p_profile_ids: string[]; p_tag?: string; p_title: string };
+        Returns: number;
+      };
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
         Returns: {
@@ -4767,6 +4821,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      record_push_results: {
+        Args: { p_delivered: string[]; p_gone: string[]; p_retry: string[] };
+        Returns: undefined;
+      };
       register_file: {
         Args: {
           p_bucket: string;
@@ -4779,6 +4837,10 @@ export type Database = {
           file_id: string;
           storage_key: string;
         }[];
+      };
+      register_push_subscription: {
+        Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent?: string };
+        Returns: undefined;
       };
       repair_order_status_label: {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };
@@ -4891,6 +4953,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      send_test_push: { Args: Record<PropertyKey, never>; Returns: undefined };
       set_consumable_stock: {
         Args: { p_consumable_id: string; p_note?: string; p_quantity: number };
         Returns: number;

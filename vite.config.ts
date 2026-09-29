@@ -42,6 +42,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         // Après une mise en ligne, les fichiers de l'ancienne version sont retirés du cache.
         cleanupOutdatedCaches: true,
+        // Réception et affichage des notifications push (public/push-sw.js).
+        importScripts: ['push-sw.js'],
       },
     }),
   ],
@@ -78,6 +80,8 @@ export default defineConfig({
       TZ: 'Europe/Paris',
       VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
       VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_0000000000',
+      VITE_VAPID_PUBLIC_KEY:
+        'BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
     },
     coverage: {
       provider: 'v8',

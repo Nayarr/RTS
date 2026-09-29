@@ -8,6 +8,11 @@ import { z } from 'zod';
 const envSchema = z.object({
   VITE_SUPABASE_URL: z.url({ message: 'VITE_SUPABASE_URL doit être une URL' }),
   VITE_SUPABASE_PUBLISHABLE_KEY: z.string().min(20, 'VITE_SUPABASE_PUBLISHABLE_KEY est manquante'),
+  // Facultative : sans elle, l'activation des notifications push n'est pas proposée.
+  VITE_VAPID_PUBLIC_KEY: z
+    .string()
+    .optional()
+    .transform((key) => key?.trim() || undefined),
 });
 
 const parsed = envSchema.safeParse(import.meta.env);
