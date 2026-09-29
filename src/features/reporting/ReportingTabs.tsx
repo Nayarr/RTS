@@ -1,5 +1,9 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { MonthlyReportDialog } from './MonthlyReportDialog';
 
 const TABS = [
   { to: '/pilotage/statistiques', label: 'Statistiques' },
@@ -34,13 +38,20 @@ export function ReportingTabs() {
 
 /** En-tête commun des écrans de pilotage. */
 export function ReportingHeader() {
+  const [reportOpen, setReportOpen] = useState(false);
   return (
     <>
-      <div>
-        <h1 className="text-3xl font-bold">Pilotage</h1>
-        <p className="text-muted-foreground">Chiffre d’affaires, marges et encaissements.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Pilotage</h1>
+          <p className="text-muted-foreground">Chiffre d’affaires, marges et encaissements.</p>
+        </div>
+        <Button size="lg" variant="outline" onClick={() => setReportOpen(true)}>
+          <FileText /> Rapport mensuel
+        </Button>
       </div>
       <ReportingTabs />
+      {reportOpen && <MonthlyReportDialog onClose={() => setReportOpen(false)} />}
     </>
   );
 }

@@ -4679,6 +4679,7 @@ export type Database = {
         Args: { p_quote_id: string; p_repair_order_id: string };
         Returns: undefined;
       };
+      monthly_report: { Args: { p_month: string }; Returns: Json };
       monthly_statistics: {
         Args: { p_months?: number };
         Returns: {
