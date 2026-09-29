@@ -46,4 +46,14 @@ describe('envoi d’un lien au client', () => {
     );
     expect(links.sms).toBe('sms:0612345678?body=Votre%20devis%20%3A%20https%3A%2F%2Fapp%2Fd%2Fx');
   });
+
+  it('Gmail s’ouvre sur le compte de l’atelier (comme l’ancienne appli)', () => {
+    const message = { subject: 'Devis', body: 'Bonjour', sms: 'Bonjour' };
+    const contact = { email: 'client@exemple.fr', phone: '' };
+    expect(sendLinks(message, contact, ' atelier@rapidtruckservice.fr ').gmail).toMatch(
+      /^https:\/\/mail\.google\.com\/mail\/\?authuser=atelier%40rapidtruckservice\.fr&view=cm&fs=1&to=client%40exemple\.fr/,
+    );
+    expect(sendLinks(message, contact, null).gmail).not.toContain('authuser');
+    expect(sendLinks(message, contact, '').gmail).not.toContain('authuser');
+  });
 });
