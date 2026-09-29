@@ -63,7 +63,32 @@ export interface PublicInvoice {
   legal_mentions: string[] | null;
 }
 
-export type PublicDocument = PublicQuote | PublicInvoice | { type: 'portal' };
+export interface PublicPortal {
+  type: 'portal';
+  company: PublicCompany;
+  client_name: string;
+  generated_at: string;
+  vehicles: {
+    plate: string;
+    in_workshop: boolean;
+    status_label: string;
+    since: string | null;
+    ct_due_date: string | null;
+    tailgate_due_date: string | null;
+  }[];
+  quotes: { number: string | null; vehicle_plate: string | null; token: string }[];
+  invoices: {
+    number: string;
+    issued_at: string;
+    vehicle_label: string | null;
+    total_ttc: number;
+    balance_due: number;
+    payment_status: 'paid' | 'pending' | 'partial' | 'overdue';
+    token: string;
+  }[];
+}
+
+export type PublicDocument = PublicQuote | PublicInvoice | PublicPortal;
 
 /** Document ouvert par le client avec le lien reçu (sans compte). null si le lien est inconnu. */
 export async function fetchPublicDocument(token: string): Promise<PublicDocument | null> {
