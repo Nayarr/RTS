@@ -5,8 +5,8 @@ name: Application
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  # Pas de relance à chaque push sur main : le code a déjà été testé dans sa PR
+  # (fusionnée avec main). Relance manuelle possible (« Run workflow »).
   workflow_dispatch:
 
 concurrency:
