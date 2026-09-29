@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet, useNavigation } from 'react-router';
 import {
   Activity,
   CalendarClock,
@@ -58,6 +58,8 @@ export function AppLayout() {
   const { data: profile } = useProfile();
   const items = profile ? NAV_ITEMS.filter((item) => item.roles.includes(profile.role)) : [];
 
+  const navigation = useNavigation();
+
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur">
@@ -100,6 +102,14 @@ export function AppLayout() {
               </NavLink>
             ))}
           </nav>
+        )}
+        {/* Écran en cours de chargement (première ouverture) : fine barre sous le menu. */}
+        {navigation.state === 'loading' && (
+          <div
+            role="progressbar"
+            aria-label="Chargement de l’écran"
+            className="absolute inset-x-0 bottom-0 h-0.5 animate-pulse bg-primary"
+          />
         )}
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
