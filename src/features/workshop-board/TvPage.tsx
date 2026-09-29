@@ -100,7 +100,7 @@ export function TvPage() {
   const expected = board.data ? expectedVehicles(board.data) : '';
 
   return (
-    <div className="flex min-h-dvh flex-col gap-4 bg-[#0d0d0d] p-5 text-white">
+    <div className="flex min-h-dvh flex-col gap-4 overflow-x-hidden bg-[#0d0d0d] p-5 text-white">
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-wide uppercase">
@@ -117,7 +117,7 @@ export function TvPage() {
 
       {board.isError && <p className="text-xl text-red-300">Connexion perdue : nouvel essai dans 30 s…</p>}
 
-      <div className="grid flex-1 auto-cols-fr grid-flow-col gap-3">
+      <div className="grid flex-1 auto-cols-[minmax(13rem,1fr)] grid-flow-col gap-3 overflow-x-auto">
         {columns.map((column) => (
           <section key={column.id} aria-label={column.name} className="flex min-w-0 flex-col gap-2">
             <h2
