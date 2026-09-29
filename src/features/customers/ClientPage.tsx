@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useProfile } from '@/features/auth/useProfile';
 import { GroupedInvoiceDialog } from '@/features/invoices/GroupedInvoiceDialog';
+import { ClientPortalButtons } from './ClientPortalButtons';
 import { InvoiceStatusBadge } from '@/features/invoices/PaymentStatusBadge';
 import { QuoteStatusBadge } from '@/features/quotes/QuoteStatusBadge';
 import { formatDate } from '@/features/repair-orders/constants';
@@ -74,6 +75,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ClientPortalButtons clientId={client.id} clientName={client.name} />
           {billable.length > 1 && (
             <Button onClick={() => setGrouping(true)}>
               <Receipt /> Facture groupée ({billable.length} OR)

@@ -4767,6 +4767,7 @@ export type Database = {
         Args: { p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: string[];
       };
+      reset_client_portal: { Args: { p_client_id: string }; Returns: string };
       save_appointment: {
         Args: {
           p_client_name: string;
