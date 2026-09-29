@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { repairOrderKey, repairOrdersKey } from '@/features/repair-orders/hooks';
 import { fetchMyRepairOrders, fetchSeen, fetchVehicleDeadlines } from './api';
@@ -39,10 +39,17 @@ export function useWorkshopMutation<TArgs, TData = unknown>(
   repairOrderId: string,
   mutationFn: (args: TArgs) => Promise<TData>,
   successMessage?: string,
+  { offlineMessage }: { offlineMessage?: string } = {},
 ) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn,
+    // Par défaut, sans réseau l'action attend son retour puis part toute seule.
+    // Avec offlineMessage (heure prise par le serveur, ex. badgeage) : refusée tout de suite.
+    ...(offlineMessage && { networkMode: 'always' as const }),
+    mutationFn: (args: TArgs) => {
+      if (offlineMessage && !onlineManager.isOnline()) return Promise.reject(new Error(offlineMessage));
+      return mutationFn(args);
+    },
     onSuccess: () => {
       if (successMessage) toast.success(successMessage);
     },
