@@ -2,7 +2,12 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { onlineManager, QueryClient, QueryClientProvider, type Query } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { accountStorage, indexedDbStorage, shouldPersistQuery } from '@/lib/offline-cache';
+import {
+  accountStorage,
+  createOfflinePersister,
+  indexedDbStorage,
+  shouldPersistQuery,
+} from '@/lib/offline-cache';
 import { OfflineBanner } from './OfflineBanner';
 
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
@@ -75,5 +80,20 @@ describe('cache gardé sur l’appareil', () => {
     get.mockClear();
     await expect(accountStorage.getItem('rts-query-cache')).resolves.toBeNull();
     expect(get).not.toHaveBeenCalled();
+  });
+
+  it('relu seulement au démarrage sans réseau (sinon, données du serveur)', async () => {
+    vi.stubGlobal('indexedDB', {});
+    const get = vi.spyOn(indexedDbStorage, 'getItem').mockResolvedValue(null);
+    getSession.mockResolvedValue({ data: { session: { user: { id: 'alice' } } } });
+    try {
+      await expect(createOfflinePersister(() => true)?.restoreClient()).resolves.toBeUndefined();
+      expect(get).not.toHaveBeenCalled();
+
+      await createOfflinePersister(() => false)?.restoreClient();
+      expect(get).toHaveBeenCalledWith('rts-query-cache:alice');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

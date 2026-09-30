@@ -34,10 +34,14 @@ export function applicationServerKey(base64Url: string): Uint8Array<ArrayBuffer>
   return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 }
 
-/** Service worker de l'appli ; null s'il n'est pas actif (mode développement). */
-async function registration(): Promise<ServiceWorkerRegistration | null> {
+/**
+ * Service worker de l'appli ; null s'il n'est pas actif (mode développement).
+ * À la toute première ouverture, son installation (fichiers mis en cache) peut prendre
+ * plusieurs secondes sur un téléphone lent : l'activation l'attend plus longtemps.
+ */
+async function registration(waitMs = 5000): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null;
-  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), waitMs));
   return Promise.race([navigator.serviceWorker.ready, timeout]);
 }
 
@@ -55,7 +59,7 @@ export async function enablePush(): Promise<boolean> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return false;
 
-  const reg = await registration();
+  const reg = await registration(20_000);
   if (!reg) throw new Error('Service worker indisponible : recharge l’appli puis réessaie');
   const subscription =
     (await reg.pushManager.getSubscription()) ??
