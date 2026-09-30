@@ -88,7 +88,7 @@ test('le technicien active les notifications ; la déconnexion les coupe sur cet
   await expect(banner).toContainText('Active les notifications');
 
   await banner.getByRole('button', { name: 'Activer les notifications' }).click();
-  await expect(page.getByText('Notifications activées sur cet appareil')).toBeVisible();
+  await expect(page.getByText('Notifications activées sur cet appareil')).toBeVisible({ timeout: 25_000 }); // 1re ouverture : installation du service worker
   await expect(banner).toHaveCount(0);
   await expect
     .poll(() => subscribedEndpoints('bruno@rts.local'))
