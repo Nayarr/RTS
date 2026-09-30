@@ -1,5 +1,5 @@
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import type { Query } from '@tanstack/react-query';
+import { onlineManager, type Query } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -75,10 +75,22 @@ export const accountStorage = {
   },
 };
 
-/** Persistance du cache ; null si le navigateur n'a pas d'IndexedDB (tests, navigateur très ancien). */
-export function createOfflinePersister() {
+/**
+ * Persistance du cache ; null si le navigateur n'a pas d'IndexedDB (tests, navigateur très ancien).
+ * Le cache n'est relu qu'au démarrage SANS réseau : avec le réseau, les écrans partent des
+ * données du serveur (un formulaire rempli avec d'anciennes valeurs ne se mettrait pas à jour).
+ */
+export function createOfflinePersister(isOnline: () => boolean = () => onlineManager.isOnline()) {
   if (typeof indexedDB === 'undefined') return null;
-  return createAsyncStoragePersister({ storage: accountStorage, key: CACHE_KEY, throttleTime: 2000 });
+  const persister = createAsyncStoragePersister({
+    storage: accountStorage,
+    key: CACHE_KEY,
+    throttleTime: 2000,
+  });
+  return {
+    ...persister,
+    restoreClient: () => (isOnline() ? Promise.resolve(undefined) : persister.restoreClient()),
+  };
 }
 
 /** À la déconnexion (session encore ouverte) : le cache du compte est effacé de l'appareil. */
