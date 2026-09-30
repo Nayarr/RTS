@@ -1,6 +1,7 @@
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { forgetPushSubscription } from '@/features/push/push';
+import { forgetOfflineCache } from '@/lib/offline-cache';
 import type { Profile } from './roles';
 
 /** Message d'erreur compréhensible par l'utilisateur. */
@@ -25,6 +26,8 @@ export async function signIn(email: string, password: string) {
 export async function signOut() {
   // Appareil partagé : plus de notifications pour le compte qui se déconnecte.
   await forgetPushSubscription().catch(() => undefined);
+  // Données gardées pour le hors-ligne : effacées de l'appareil.
+  await forgetOfflineCache().catch(() => undefined);
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }

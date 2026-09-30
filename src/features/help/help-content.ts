@@ -158,6 +158,11 @@ export const FAQ: HelpQuestion[] = [
       'Sur chaque téléphone, touche « Activer les notifications » dans le bandeau en haut de l’écran et accepte. Sur iPhone, installe d’abord l’appli (Partager, puis « Sur l’écran d’accueil ») et ouvre-la depuis l’icône. Si tu les as refusées, réautorise-les dans les réglages du navigateur. Se déconnecter coupe les notifications sur cet appareil.',
   },
   {
+    question: 'Plus de réseau à l’atelier',
+    answer:
+      'Un bandeau orange « Hors connexion » s’affiche en bas. Les écrans déjà ouverts restent consultables et tes modifications (lignes, fiche de contrôle, kilométrage…) partent toutes seules au retour du réseau : garde l’appli ouverte. Le badgeage et le pointage à la borne ont besoin du réseau (l’heure est celle du serveur).',
+  },
+  {
     question: 'L’appli n’affiche pas la dernière version',
     answer: 'Ferme l’appli et rouvre-la. Si besoin, recharge la page une deuxième fois.',
   },

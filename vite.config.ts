@@ -9,6 +9,10 @@ import { VitePWA } from 'vite-plugin-pwa';
 const vendor = (packages: string) => new RegExp(`node_modules[\\\\/](${packages})[\\\\/]`);
 
 export default defineConfig({
+  define: {
+    // Version mise en ligne : le cache hors ligne d'une version précédente n'est jamais relu.
+    __BUILD_ID__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     tailwindcss(),

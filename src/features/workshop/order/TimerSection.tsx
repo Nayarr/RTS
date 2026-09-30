@@ -36,7 +36,13 @@ export function TimerSection({
     (value: number | null) => updateMileage(order.id, value),
     'Kilométrage enregistré',
   );
-  const toggle = useWorkshopMutation(order.id, () => (running ? stopTimer(order.id) : startTimer(order.id)));
+  // L'heure du badgeage est celle du serveur : jamais mise en attente hors connexion.
+  const toggle = useWorkshopMutation(
+    order.id,
+    () => (running ? stopTimer(order.id) : startTimer(order.id)),
+    undefined,
+    { offlineMessage: 'Hors connexion : le badgeage a besoin du réseau, réessaie dès qu’il revient' },
+  );
 
   const missing = [
     ...(order.mileage === null ? ['le kilométrage'] : []),

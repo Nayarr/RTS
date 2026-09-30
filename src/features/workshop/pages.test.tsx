@@ -1,5 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { onlineManager } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
@@ -141,6 +143,24 @@ describe('fiche OR technicien', () => {
     setup('/atelier/or/ro1', { order: order({ mileage: 184320, missing_photo_labels: [] }) });
     await userEvent.click(await screen.findByRole('button', { name: /Démarrer le badgeage/ }));
     expect(startTimer).toHaveBeenCalledWith('ro1');
+  });
+
+  it('hors connexion : le badgeage est refusé tout de suite (heure prise par le serveur)', async () => {
+    setup('/atelier/or/ro1', { order: order({ mileage: 184320, missing_photo_labels: [] }) });
+    const start = await screen.findByRole('button', { name: /Démarrer le badgeage/ });
+    vi.mocked(startTimer).mockClear();
+    onlineManager.setOnline(false);
+    try {
+      await userEvent.click(start);
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith(
+          'Hors connexion : le badgeage a besoin du réseau, réessaie dès qu’il revient',
+        ),
+      );
+      expect(startTimer).not.toHaveBeenCalled();
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   it('fiche de contrôle : un choix est enregistré automatiquement', async () => {
