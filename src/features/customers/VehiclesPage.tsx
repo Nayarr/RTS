@@ -62,11 +62,11 @@ export function VehiclesPage() {
         </p>
       )}
 
-      <ul className="grid gap-2 md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {list.map((vehicle) => {
           const ct = deadlineStatus(vehicle.ct_due_date, today);
           return (
-            <li key={vehicle.id}>
+            <li key={vehicle.id} className="min-w-0">
               <Link
                 to={`/vehicules/${vehicle.id}`}
                 className="block h-full rounded-lg border bg-card p-4 transition hover:bg-muted"
