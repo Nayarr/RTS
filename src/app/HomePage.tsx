@@ -1,9 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { Navigate } from 'react-router';
+import { LoaderCircle } from 'lucide-react';
 import { useProfile } from '@/features/auth/useProfile';
-import { OfficeDashboardPage } from '@/features/dashboard/OfficeDashboardPage';
-import { KioskPage } from '@/features/kiosk/KioskPage';
 import { isTvMode } from '@/features/workshop-board/domain';
-import { TechHomePage } from '@/features/workshop/TechHomePage';
+
+// Chaque accueil est chargé seulement pour le profil concerné.
+const OfficeDashboardPage = lazy(() =>
+  import('@/features/dashboard/OfficeDashboardPage').then((m) => ({ default: m.OfficeDashboardPage })),
+);
+const KioskPage = lazy(() => import('@/features/kiosk/KioskPage').then((m) => ({ default: m.KioskPage })));
+const TechHomePage = lazy(() =>
+  import('@/features/workshop/TechHomePage').then((m) => ({ default: m.TechHomePage })),
+);
 
 /** Accueil selon le profil : tableau de bord du bureau, OR du technicien, borne de pointage (ou télé). */
 export function HomePage() {
@@ -13,7 +21,19 @@ export function HomePage() {
   if ((profile.role === 'kiosk' || profile.role === 'direction') && isTvMode()) {
     return <Navigate to="/tele" replace />;
   }
-  if (profile.role === 'technician') return <TechHomePage />;
-  if (profile.role === 'kiosk') return <KioskPage />;
-  return <OfficeDashboardPage />;
+  return (
+    <Suspense
+      fallback={
+        <LoaderCircle className="mx-auto mt-16 size-8 animate-spin text-primary" aria-label="Chargement" />
+      }
+    >
+      {profile.role === 'technician' ? (
+        <TechHomePage />
+      ) : profile.role === 'kiosk' ? (
+        <KioskPage />
+      ) : (
+        <OfficeDashboardPage />
+      )}
+    </Suspense>
+  );
 }

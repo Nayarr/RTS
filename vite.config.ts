@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+/** Modules d'un paquet de node_modules (chemins Windows ou Unix). */
+const vendor = (packages: string) => new RegExp(`node_modules[\\\\/](${packages})[\\\\/]`);
+
 export default defineConfig({
   plugins: [
     react(),
@@ -42,6 +45,23 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Bibliothèques rangées dans des fichiers à part : elles changent rarement, le navigateur
+        // et le service worker les gardent en cache d'une mise en ligne à l'autre.
+        codeSplitting: {
+          groups: [
+            { name: 'react', test: vendor('react|react-dom|scheduler|react-router'), priority: 30 },
+            { name: 'supabase', test: vendor('@supabase'), priority: 20 },
+            { name: 'query', test: vendor('@tanstack'), priority: 20 },
+            { name: 'forms', test: vendor('zod|react-hook-form|@hookform'), priority: 20 },
+            { name: 'ui', test: vendor('radix-ui|@radix-ui|@floating-ui|lucide-react|sonner'), priority: 10 },
+          ],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
