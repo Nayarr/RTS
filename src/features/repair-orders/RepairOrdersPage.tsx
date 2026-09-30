@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Plus, Search } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
+import { PageHeader } from '@/app/PageHeader';
+import { FilterChips, Pager, SearchField, TableFooterBar } from '@/components/ListControls';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useIsDesktop } from '@/lib/use-media-query';
-import { cn } from '@/lib/utils';
+import { usePagination } from '@/lib/use-pagination';
 import type { RepairOrderOverview } from './api';
 import {
   formatDate,
@@ -20,12 +20,18 @@ import { StatusBadge } from './StatusBadge';
 
 type Filter = 'active' | 'all' | 'parts' | RepairOrderStatus;
 
-const FILTERS: { value: Filter; label: string }[] = [
+const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'active', label: 'En cours de traitement' },
-  ...STATUS_ORDER.map((status) => ({ value: status, label: STATUS_META[status].label })),
-  { value: 'parts', label: 'Pièces en attente' },
+  ...STATUS_ORDER.map((status) => ({
+    value: status,
+    label: STATUS_META[status].label,
+    color: STATUS_META[status].color,
+  })),
+  { value: 'parts', label: 'Pièces en attente', color: '#B5453A' },
   { value: 'all', label: 'Tous' },
 ];
+
+const PAGE_SIZE = 20;
 
 function matchesFilter(order: RepairOrderOverview, filter: Filter) {
   if (filter === 'active') return order.status !== 'invoiced';
@@ -47,16 +53,18 @@ function matchesSearch(order: RepairOrderOverview, search: string) {
 }
 
 function Technician({ order }: { order: RepairOrderOverview }) {
-  if (!order.technician_name) return <span className="text-muted-foreground">Non assigné</span>;
+  const color = order.technician_name ? (order.technician_color ?? '#6B7280') : '#9aa0a6';
   return (
-    <span className="inline-flex items-center gap-2">
-      <span
-        className="size-2.5 rounded-full"
-        style={{ backgroundColor: order.technician_color ?? '#6B7280' }}
-      />
-      {order.technician_name}
+    <span className="who">
+      <span className="tdot" style={{ '--c': color } as CSSProperties} />
+      {order.technician_name ?? <span className="muted">Non assigné</span>}
     </span>
   );
+}
+
+function PartsBadge({ order }: { order: RepairOrderOverview }) {
+  if (!order.parts_pending_count) return null;
+  return <span className="badge s-bad h-6 text-xs">Attente pièces ({order.parts_pending_count})</span>;
 }
 
 /** Tableau de bord des OR (bureau) : filtres par statut, recherche, accès à la fiche. */
@@ -80,132 +88,149 @@ export function RepairOrdersPage() {
       FILTERS.map(({ value }) => [value, all.filter((o) => matchesFilter(o, value)).length]),
     );
   }, [orders.data]);
+  const pages = usePagination(list, PAGE_SIZE, `${filter}|${search}`);
+  const running = list.some((order) => order.running_since);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Ordres de réparation</h1>
-          <p className="text-muted-foreground">Suivi des véhicules à l’atelier.</p>
-        </div>
-        <Button size="lg" asChild>
-          <Link to="/or/nouveau">
-            <Plus /> Nouvel OR
-          </Link>
-        </Button>
-      </div>
+    <>
+      <PageHeader
+        crumbs={[{ label: 'Atelier' }, { label: 'Ordres de réparation' }]}
+        title="Ordres de réparation"
+        actions={
+          <>
+            <span className="sub hidden md:inline">Suivi des véhicules à l’atelier</span>
+            <Button asChild>
+              <Link to="/or/nouveau">
+                <Plus /> Nouvel OR
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
-      <div className="space-y-3">
-        <div className="relative max-w-md">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
+      <div className="col gap-4">
+        <div className="toolbar flex-wrap">
+          <SearchField
             aria-label="Rechercher un OR"
             placeholder="Plaque, client, technicien, n° d’OR…"
-            className="h-11 pl-9 text-base"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
+          {orders.isSuccess && <span className="muted text-[13px]">{list.length} OR affichés</span>}
         </div>
-        <div role="group" aria-label="Filtrer par statut" className="flex gap-2 overflow-x-auto pb-1">
-          {FILTERS.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={filter === value}
-              onClick={() => setFilter(value)}
-              className={cn(
-                'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition',
-                filter === value ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted',
-              )}
-            >
-              {label} <span className="opacity-70">{counts[value] ?? 0}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+        <FilterChips
+          label="Filtrer par statut"
+          value={filter}
+          onChange={setFilter}
+          options={FILTERS.map((option) => ({ ...option, count: counts[option.value] ?? 0 }))}
+        />
 
-      {orders.isPending && <p className="text-muted-foreground">Chargement…</p>}
-      {orders.isError && <p className="text-destructive">Impossible de charger les OR.</p>}
-      {orders.isSuccess && list.length === 0 && (
-        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-          Aucun ordre de réparation ne correspond.
-        </p>
-      )}
+        {orders.isPending && <p className="text-muted-foreground">Chargement…</p>}
+        {orders.isError && <p className="text-destructive">Impossible de charger les OR.</p>}
+        {orders.isSuccess && list.length === 0 && (
+          <p className="empty">Aucun ordre de réparation ne correspond.</p>
+        )}
 
-      {list.length > 0 &&
-        (isDesktop ? (
-          <div className="rounded-lg border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Véhicule</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Technicien</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Temps</TableHead>
-                  <TableHead>Créé le</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {list.map((order) => (
-                  <TableRow
-                    key={order.id}
-                    className="cursor-pointer"
-                    onClick={() => void navigate(`/or/${order.id}`)}
-                  >
-                    <TableCell>
-                      <Link to={`/or/${order.id}`} className="font-semibold hover:underline">
-                        {order.plate}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">{order.number}</div>
-                    </TableCell>
-                    <TableCell>{order.client_name ?? '—'}</TableCell>
-                    <TableCell>
-                      <Technician order={order} />
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={order.status} />
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {order.running_since && <span className="mr-1 text-warning">●</span>}
-                      {formatDuration(order.worked_seconds)}
-                    </TableCell>
-                    <TableCell>{formatDate(order.created_at)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {list.map((order) => (
-              <li key={order.id}>
-                <Link
-                  to={`/or/${order.id}`}
-                  className="block rounded-lg border bg-card p-4 transition hover:bg-muted"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-lg font-bold">{order.plate}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.client_name ?? 'Client non renseigné'}
+        {list.length > 0 &&
+          (isDesktop ? (
+            <div className="card tbl-wrap overflow-x-auto!">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Véhicule</th>
+                    <th>Client</th>
+                    <th>Technicien</th>
+                    <th>Statut</th>
+                    <th className="r">Temps</th>
+                    <th>Créé le</th>
+                    <th className="w-12">
+                      <span className="sr-only">Ouvrir</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pages.items.map((order) => (
+                    <tr
+                      key={order.id}
+                      className="cursor-pointer"
+                      onClick={() => void navigate(`/or/${order.id}`)}
+                    >
+                      <td>
+                        <Link to={`/or/${order.id}`} className="c2">
+                          <b className="plate">{order.plate}</b>
+                          <span>{order.number}</span>
+                        </Link>
+                      </td>
+                      <td>{order.client_name ?? '—'}</td>
+                      <td>
+                        <Technician order={order} />
+                      </td>
+                      <td>
+                        <span className="row gap-1.5">
+                          <StatusBadge status={order.status} />
+                          <PartsBadge order={order} />
+                        </span>
+                      </td>
+                      <td className="r num">
+                        {order.running_since && <span className="warn-t mr-1.5">●</span>}
+                        {formatDuration(order.worked_seconds)}
+                      </td>
+                      <td className="num">{formatDate(order.created_at)}</td>
+                      <td>
+                        <Link
+                          to={`/or/${order.id}`}
+                          className="ibtn sm ghost"
+                          aria-label={`Ouvrir la fiche ${order.number}`}
+                          tabIndex={-1}
+                        >
+                          <ChevronRight className="i s" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <TableFooterBar
+                pager={<Pager page={pages.page} pageCount={pages.pageCount} onChange={pages.setPage} />}
+              >
+                {pages.shown} sur {pages.total}
+                {running && (
+                  <>
+                    {' · '}
+                    <span className="warn-t">●</span> chrono en cours
+                  </>
+                )}
+              </TableFooterBar>
+            </div>
+          ) : (
+            <>
+              <ul className="col gap-3">
+                {pages.items.map((order) => (
+                  <li key={order.id}>
+                    <Link to={`/or/${order.id}`} className="card col gap-2 px-4 py-3.5 hover:bg-hover">
+                      <div className="row between items-start">
+                        <div className="col gap-0">
+                          <span className="plate text-xl">{order.plate}</span>
+                          <span className="hint">{order.client_name ?? 'Client non renseigné'}</span>
+                        </div>
+                        <StatusBadge status={order.status} />
                       </div>
-                    </div>
-                    <StatusBadge status={order.status} />
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-sm">{order.requested_work}</p>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <Technician order={order} />
-                    <span className="text-muted-foreground">
-                      {order.number} · {formatDuration(order.worked_seconds)}
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ))}
-    </div>
+                      <p className="line-clamp-2">{order.requested_work}</p>
+                      <div className="row between wrap gap-2 text-[13px]">
+                        <Technician order={order} />
+                        <span className="muted">
+                          {order.number} · {formatDuration(order.worked_seconds)}
+                        </span>
+                      </div>
+                      <PartsBadge order={order} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Pager page={pages.page} pageCount={pages.pageCount} onChange={pages.setPage} />
+            </>
+          ))}
+      </div>
+    </>
   );
 }

@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { globalSearch } from './api';
@@ -115,15 +114,18 @@ export function GlobalSearch() {
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
+      <button
+        type="button"
+        className="side-search cursor-pointer text-left"
         aria-label="Rechercher"
         aria-keyshortcuts="Control+K"
         onClick={() => setOpen(true)}
       >
-        <Search /> <span className="hidden sm:inline">Rechercher</span>
-      </Button>
+        <Search className="size-4" />
+        <span className="grow">Rechercher…</span>
+        <span className="kbd">Ctrl</span>
+        <span className="kbd">K</span>
+      </button>
       {open && <SearchDialog onClose={() => setOpen(false)} />}
     </>
   );

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useProfile } from '@/features/auth/useProfile';
 import { formatDateTime } from '@/features/repair-orders/constants';
@@ -34,20 +33,15 @@ export function AlertsBell() {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative"
+      <button
+        type="button"
+        className="ibtn"
         aria-label={unread.length ? `Alertes (${unread.length} non lues)` : 'Alertes'}
         onClick={open}
       >
-        <Bell />
-        {unread.length > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-white">
-            {unread.length > 99 ? '99+' : unread.length}
-          </span>
-        )}
-      </Button>
+        <Bell className="i" />
+        {unread.length > 0 && <span className="pip">{unread.length > 99 ? '99+' : unread.length}</span>}
+      </button>
       <Dialog open={openedUnread !== null} onOpenChange={(value) => !value && setOpenedUnread(null)}>
         <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>

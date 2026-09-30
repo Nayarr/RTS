@@ -8,6 +8,7 @@
 @import '@fontsource/barlow/700.css';
 @import '@fontsource/barlow-condensed/600.css';
 @import '@fontsource/barlow-condensed/700.css';
+@import './rts.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -39,6 +40,11 @@
   --border: #dcdfdc;
   --input: #cfd3cf;
   --ring: #137017;
+  --primary-hover: #0f5c13;
+  --head: #f7f8f7;
+  --hover: #f3f5f3;
+  --shadow: 0 1px 2px rgba(20, 30, 20, 0.05);
+  --pop: 0 16px 40px rgba(20, 30, 20, 0.16);
 }
 
 .dark {
@@ -63,6 +69,11 @@
   --border: #2f3134;
   --input: #3a3d41;
   --ring: #2e9a33;
+  --primary-hover: #35ad3a;
+  --head: #202124;
+  --hover: #232427;
+  --shadow: none;
+  --pop: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
@@ -90,6 +101,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-head: var(--head);
+  --color-hover: var(--hover);
+  --color-primary-hover: var(--primary-hover);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -104,8 +118,16 @@
   html {
     -webkit-tap-highlight-color: transparent;
   }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background font-sans text-foreground antialiased;
+    font-size: 14px;
+    line-height: 1.4;
     /* Encoche / barre d'accueil des téléphones en mode appli installée */
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
@@ -114,5 +136,9 @@
   h2,
   h3 {
     @apply font-display tracking-tight;
+  }
+  /* Icônes en trait fin, comme la maquette */
+  svg.lucide {
+    stroke-width: 1.8;
   }
 }
