@@ -2361,6 +2361,7 @@ export type Database = {
           planned_date: string | null;
           planned_end: string | null;
           planned_start: string | null;
+          pre_quote_work_settled_at: string | null;
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
@@ -2390,6 +2391,7 @@ export type Database = {
           planned_date?: string | null;
           planned_end?: string | null;
           planned_start?: string | null;
+          pre_quote_work_settled_at?: string | null;
           requested_work?: string;
           roadside_address?: string | null;
           roadside_km?: number | null;
@@ -2419,6 +2421,7 @@ export type Database = {
           planned_date?: string | null;
           planned_end?: string | null;
           planned_start?: string | null;
+          pre_quote_work_settled_at?: string | null;
           requested_work?: string;
           roadside_address?: string | null;
           roadside_km?: number | null;
@@ -4498,6 +4501,7 @@ export type Database = {
           planned_date: string | null;
           planned_end: string | null;
           planned_start: string | null;
+          pre_quote_work_settled_at: string | null;
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
@@ -4589,6 +4593,7 @@ export type Database = {
           planned_date: string | null;
           planned_end: string | null;
           planned_start: string | null;
+          pre_quote_work_settled_at: string | null;
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
@@ -4726,6 +4731,7 @@ export type Database = {
           planned_date: string | null;
           planned_end: string | null;
           planned_start: string | null;
+          pre_quote_work_settled_at: string | null;
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
@@ -4775,6 +4781,17 @@ export type Database = {
         Returns: boolean;
       };
       paris_date: { Args: { p_at: string }; Returns: string };
+      pre_quote_work: { Args: { p_repair_order_id: string }; Returns: Json };
+      pre_quote_work_alerts: { Args: Record<PropertyKey, never>; Returns: number };
+      pre_quote_work_lines: {
+        Args: { p_repair_order_id: string };
+        Returns: {
+          description: string;
+          hours: number;
+          id: string;
+          suggested_price: number;
+        }[];
+      };
       profiles_with_roles: {
         Args: { p_roles: Database['public']['Enums']['app_role'][] };
         Returns: string[];
@@ -4994,6 +5011,7 @@ export type Database = {
         };
       };
       set_technician_pin: { Args: { p_pin: string; p_technician_id: string }; Returns: undefined };
+      settle_pre_quote_work: { Args: { p_decisions: Json; p_repair_order_id: string }; Returns: Json };
       share_client_portal: { Args: { p_client_id: string }; Returns: string };
       share_invoice: { Args: { p_invoice_id: string }; Returns: string };
       share_quote: { Args: { p_quote_id: string }; Returns: string };
@@ -5058,6 +5076,7 @@ export type Database = {
           planned_date: string | null;
           planned_end: string | null;
           planned_start: string | null;
+          pre_quote_work_settled_at: string | null;
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
