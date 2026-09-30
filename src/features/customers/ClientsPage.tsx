@@ -86,11 +86,11 @@ export function ClientsPage() {
         </p>
       )}
 
-      <ul className="grid gap-2 md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {list.map((client) => {
           const since = daysSince(client.last_visit);
           return (
-            <li key={client.id}>
+            <li key={client.id} className="min-w-0">
               <Link
                 to={`/clients/${client.id}`}
                 className="block h-full rounded-lg border bg-card p-4 transition hover:bg-muted"

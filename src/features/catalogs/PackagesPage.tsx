@@ -39,9 +39,9 @@ export function PackagesPage() {
         </p>
       )}
 
-      <ul className="grid gap-3 md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {(packages.data ?? []).map((pkg) => (
-          <li key={pkg.id}>
+          <li key={pkg.id} className="min-w-0">
             <article
               aria-label={pkg.name}
               className="flex h-full flex-col gap-2 rounded-lg border bg-card p-4"

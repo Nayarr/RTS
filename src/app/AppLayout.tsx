@@ -81,10 +81,11 @@ export function AppLayout() {
             </Button>
           </div>
         </div>
+        {/* Téléphone : menu qui défile ; ordinateur : sur deux lignes si besoin, rien de caché. */}
         {items.length > 1 && (
           <nav
             aria-label="Navigation principale"
-            className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2"
+            className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2 lg:flex-wrap lg:overflow-visible"
           >
             {items.map(({ to, label, icon: Icon }) => (
               <NavLink
