@@ -29,6 +29,7 @@ import {
   invoiceShareMessage,
   invoicesCsvRows,
   isOverdue,
+  issueBlockers,
   issueWarnings,
   mainVatRate,
 } from './domain';
@@ -179,9 +180,11 @@ describe('règles de facturation', () => {
     const client = { name: 'X', billing_address: null, siren: '', email: null };
     expect(issueWarnings([line(), line({ id: 'l2', unit_price: null })], client)).toEqual([
       '1 ligne sans prix',
-      'adresse du client manquante',
       'SIREN du client manquant',
     ]);
+    // Adresse de facturation : mention obligatoire, elle bloque l'émission
+    expect(issueBlockers(client)).toHaveLength(1);
+    expect(issueBlockers({ ...client, billing_address: '1 rue A' })).toEqual([]);
     expect(
       issueWarnings(
         [
@@ -326,12 +329,23 @@ describe('brouillon de facture', () => {
     );
   });
 
-  it('émission après confirmation, avec les points à vérifier', async () => {
-    vi.mocked(issueInvoice).mockResolvedValue('F11887');
+  it('sans adresse du client : émission bloquée', async () => {
+    vi.mocked(issueInvoice).mockClear();
     setupInvoice();
     await userEvent.click(await screen.findByRole('button', { name: /Émettre la facture/ }));
     const dialog = screen.getByRole('dialog', { name: 'Émettre définitivement cette facture ?' });
-    expect(dialog).toHaveTextContent('adresse du client manquante, SIREN du client manquant');
+    expect(dialog).toHaveTextContent('Renseigne l’adresse de facturation du client');
+    expect(within(dialog).getByRole('button', { name: 'Émettre la facture' })).toBeDisabled();
+  });
+
+  it('émission après confirmation, avec les points à vérifier', async () => {
+    vi.mocked(issueInvoice).mockResolvedValue('F11887');
+    setupInvoice({
+      client: { name: 'Transports Martin', billing_address: '1 rue A', siren: null, email: null },
+    });
+    await userEvent.click(await screen.findByRole('button', { name: /Émettre la facture/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Émettre définitivement cette facture ?' });
+    expect(dialog).toHaveTextContent('SIREN du client manquant');
     expect(dialog).toHaveTextContent(/720,00\s€ TTC/);
     await userEvent.click(within(dialog).getByRole('button', { name: 'Émettre la facture' }));
     await waitFor(() => expect(issueInvoice).toHaveBeenCalledWith('i1'));
