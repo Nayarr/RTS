@@ -153,6 +153,11 @@ export const FAQ: HelpQuestion[] = [
       'L’appli prépare le message, c’est ta messagerie qui l’envoie. Sur le poste du bureau, mets l’adresse de l’atelier comme compte par défaut (Outlook ou Mail), ou utilise « Ouvrir dans Gmail » : il s’ouvre sur le compte de l’atelier.',
   },
   {
+    question: 'Je ne reçois pas les notifications',
+    answer:
+      'Sur chaque téléphone, touche « Activer les notifications » dans le bandeau en haut de l’écran et accepte. Sur iPhone, installe d’abord l’appli (Partager, puis « Sur l’écran d’accueil ») et ouvre-la depuis l’icône. Si tu les as refusées, réautorise-les dans les réglages du navigateur. Se déconnecter coupe les notifications sur cet appareil.',
+  },
+  {
     question: 'L’appli n’affiche pas la dernière version',
     answer: 'Ferme l’appli et rouvre-la. Si besoin, recharge la page une deuxième fois.',
   },

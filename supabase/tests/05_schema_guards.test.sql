@@ -10,7 +10,8 @@ select plan(7);
 -- uniquement par les fonctions métier).
 create temporary table locked_tables (name text primary key);
 insert into locked_tables values
-  ('technician_pins'), ('kiosk_secrets'), ('kiosk_failed_attempts'), ('document_sequences');
+  ('technician_pins'), ('kiosk_secrets'), ('kiosk_failed_attempts'), ('document_sequences'),
+  ('push_outbox');
 
 select is_empty(
   $$ select tablename from pg_tables where schemaname = 'public' and not rowsecurity $$,

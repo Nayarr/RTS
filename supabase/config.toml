@@ -392,6 +392,11 @@ R2_SECRET_ACCESS_KEY = "rts-local-secret-key"
 R2_BUCKET = "rts-atelier"
 # Secret des tâches planifiées (même valeur que cron_secret dans Vault, voir seed.sql).
 CRON_SECRET = "rts-local-cron-secret-0000"
+# Clés VAPID de DÉVELOPPEMENT (notifications push en local / CI uniquement ; la clé publique
+# est aussi dans VITE_VAPID_PUBLIC_KEY). En production : node scripts/vapid-keys.mjs.
+VAPID_PUBLIC_KEY = "BD4XAtz_Ase2a7UL4sOHFOtMQ1zSl9YLwBOiaAYWWR89iLHmLozqZ_syqdW2eu22avBhAQfyOV3m9b6qEXJE9q4"
+VAPID_PRIVATE_KEY = "zXkwrVBF08Rj_urkJrPSy_U1YqFYILuNCWcB79fDi98"
+VAPID_SUBJECT = "mailto:atelier@rts.local"
 
 [analytics]
 enabled = true
@@ -448,6 +453,13 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/files-purge/deno.json"
 entrypoint = "./functions/files-purge/index.ts"
+
+[functions.push-send]
+enabled = true
+# Appelée par la base dès qu'une notification est en file : secret partagé vérifié dans la fonction.
+verify_jwt = false
+import_map = "./functions/push-send/deno.json"
+entrypoint = "./functions/push-send/index.ts"
 
 [functions.quote-response]
 enabled = true
