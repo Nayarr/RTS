@@ -63,35 +63,36 @@ export function LiveWorkshopPage() {
         </p>
       )}
 
-      <ul className="grid gap-3 md:grid-cols-2">
+      {/* Colonnes jamais plus larges que l'écran : le texte long est tronqué dans la carte. */}
+      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {list.map((order) => {
           const meta = STATUS_META[order.status];
           return (
-            <li key={order.id}>
+            <li key={order.id} className="min-w-0">
               <Link
                 to={`/or/${order.id}`}
                 aria-label={`${order.plate} — ${order.number}`}
                 className="block space-y-1 rounded-lg border bg-card p-4 transition hover:bg-muted/50"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <strong className="text-lg">{order.plate}</strong>
-                  <span className="text-sm font-bold" style={{ color: meta.color }}>
+                  <strong className="min-w-0 truncate text-lg">{order.plate}</strong>
+                  <span className="shrink-0 text-sm font-bold" style={{ color: meta.color }}>
                     {meta.label}
                   </span>
                 </div>
-                <p>
+                <p className="truncate">
                   {order.client_name ?? '—'} — Technicien :{' '}
                   <span className="font-medium">{order.technician_name ?? '—'}</span>
                 </p>
                 <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   {order.running_since ? (
-                    <span className="inline-flex items-center gap-1 font-semibold text-warning">
+                    <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-warning">
                       <Clock className="size-4" /> Badgeage en cours
                     </span>
                   ) : (
                     formatDuration(order.worked_seconds)
                   )}
-                  {order.requested_work && <span className="truncate">— {order.requested_work}</span>}
+                  {order.requested_work && <span className="min-w-0 truncate">— {order.requested_work}</span>}
                 </p>
               </Link>
             </li>
