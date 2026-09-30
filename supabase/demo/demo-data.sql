@@ -21,6 +21,14 @@ as $$
                     json_build_object('sub', p_profile, 'role', 'authenticated')::text, false);
 $$;
 
+-- Premier jour ouvré (lundi à vendredi) à partir d'une date.
+create or replace function pg_temp.demo_workday(p_day date)
+returns date
+language sql
+as $$
+  select p_day + case extract(isodow from p_day)::integer when 6 then 2 when 7 then 1 else 0 end;
+$$;
+
 do $demo$
 declare
   c_direction constant uuid := '5eed0000-0000-0000-0000-000000000001';
@@ -272,16 +280,16 @@ begin
 
   -- ------------------------------------------------------------------ Rendez-vous
   perform public.save_appointment(p_client_name => 'Logistique Bernard', p_plate => 'GL-304-ZD', p_vehicle_type => 'pl',
-    p_scheduled_date => v_today + 1, p_start_time => '09:00', p_end_time => '11:00',
+    p_scheduled_date => pg_temp.demo_workday(v_today + 1), p_start_time => '09:00', p_end_time => '11:00',
     p_reason => 'Entretien 120 000 km', p_technician_id => v_techs[1]);
   perform public.save_appointment(p_client_name => 'Frigo Transports Leroy', p_plate => 'EZ-093-WV', p_vehicle_type => 'remorque',
-    p_scheduled_date => v_today + 1, p_start_time => '14:00', p_reason => 'Contrôle hayon avant visite');
+    p_scheduled_date => pg_temp.demo_workday(v_today + 1), p_start_time => '14:00', p_reason => 'Contrôle hayon avant visite');
   perform public.save_appointment(p_client_name => 'Transports Girard', p_plate => 'GE-129-SK', p_vehicle_type => 'pl',
-    p_scheduled_date => v_today + 3, p_start_time => '08:30', p_reason => 'Bruit boîte de vitesses');
+    p_scheduled_date => pg_temp.demo_workday(v_today + 3), p_start_time => '08:30', p_reason => 'Bruit boîte de vitesses');
   perform public.save_appointment(p_client_name => 'Nordis Fret', p_plate => 'GN-990-KB', p_vehicle_type => 'pl',
-    p_scheduled_date => v_today + 6, p_start_time => '10:00', p_reason => 'Préparation contrôle technique');
+    p_scheduled_date => pg_temp.demo_workday(v_today + 6), p_start_time => '10:00', p_reason => 'Préparation contrôle technique');
   perform public.save_appointment(p_client_name => 'Déménagements Petit', p_plate => 'FK-661-BA', p_vehicle_type => 'pl',
-    p_scheduled_date => v_today + 8, p_start_time => '09:30', p_reason => 'Pneus arrière');
+    p_scheduled_date => pg_temp.demo_workday(v_today + 8), p_start_time => '09:30', p_reason => 'Pneus arrière');
 
   -- ------------------------------------------------------------------ Contrats d'entretien
   perform public.save_maintenance_contract(p_client_name => 'Transports Moreau & Fils',
