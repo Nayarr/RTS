@@ -107,9 +107,16 @@ jobs:
           version: ${{ env.SUPABASE_CLI_VERSION }}
 
       - name: Démarrer Supabase (base, authentification, API, Realtime, Edge Functions) avec le seed de test
-        run: >
-          supabase start
-          -x studio,imgproxy,vector,logflare,supavisor,storage-api,postgres-meta,mailpit
+        run: |
+          # Le registre d'images de Supabase (public.ecr.aws) refuse parfois les téléchargements
+          # (« Rate exceeded ») : jusqu'à 3 essais, conteneurs nettoyés entre deux.
+          for attempt in 1 2 3; do
+            supabase start -x studio,imgproxy,vector,logflare,supavisor,storage-api,postgres-meta,mailpit && exit 0
+            echo "::warning::Démarrage de Supabase échoué (essai $attempt/3), nouvel essai dans 30 s"
+            supabase stop --no-backup || true
+            sleep 30
+          done
+          exit 1
 
       - name: Démarrer le stockage de fichiers local (compatible S3, remplace R2)
         run: npm run storage:start

@@ -32,7 +32,16 @@ jobs:
           version: 2.118.0
 
       - name: Démarrer Postgres et appliquer toutes les migrations depuis zéro
-        run: supabase db start
+        run: |
+          # Le registre d'images de Supabase (public.ecr.aws) refuse parfois les téléchargements
+          # (« Rate exceeded ») : jusqu'à 3 essais, conteneurs nettoyés entre deux.
+          for attempt in 1 2 3; do
+            supabase db start && exit 0
+            echo "::warning::Démarrage de Supabase échoué (essai $attempt/3), nouvel essai dans 30 s"
+            supabase stop --no-backup || true
+            sleep 30
+          done
+          exit 1
 
       - name: Lint du schéma (fonctions, types, SQL)
         run: supabase db lint --level warning --fail-on warning
