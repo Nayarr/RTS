@@ -28,6 +28,7 @@ supabase/
   migrations/  Schéma de la base (tables, fonctions métier, RLS, tâches planifiées)
   tests/       Tests pgTAP de la base
   seed.sql     Comptes et données de développement (local uniquement)
+  demo/        Données fictives de démonstration (npm run db:demo, local uniquement)
 ```
 
 ## Démarrer en local
@@ -48,18 +49,19 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
 
 ## Commandes utiles
 
-| Commande                | Rôle                                                                   |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `npm run lint`          | ESLint                                                                 |
-| `npm run typecheck`     | Vérification TypeScript                                                |
-| `npm run format:check`  | Formatage Prettier                                                     |
-| `npm test`              | Tests unitaires (Vitest)                                               |
-| `npm run test:e2e`      | Tests end-to-end (Playwright, Supabase et stockage local démarrés)     |
-| `npm run storage:start` | Stockage local compatible S3 sur le port 9000 (après `supabase start`) |
-| `npm run db:types`      | Régénère `src/types/database.ts` après une migration                   |
-| `npx supabase db reset` | Recrée la base locale : migrations + `seed.sql`                        |
-| `npx supabase test db`  | Tests pgTAP de la base                                                 |
-| `npx supabase db lint`  | Lint du schéma                                                         |
+| Commande                | Rôle                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `npm run lint`          | ESLint                                                                                |
+| `npm run typecheck`     | Vérification TypeScript                                                               |
+| `npm run format:check`  | Formatage Prettier                                                                    |
+| `npm test`              | Tests unitaires (Vitest)                                                              |
+| `npm run test:e2e`      | Tests end-to-end (Playwright, Supabase et stockage local démarrés)                    |
+| `npm run storage:start` | Stockage local compatible S3 sur le port 9000 (après `supabase start`)                |
+| `npm run db:types`      | Régénère `src/types/database.ts` après une migration                                  |
+| `npx supabase db reset` | Recrée la base locale : migrations + `seed.sql`                                       |
+| `npm run db:demo`       | Ajoute des données fictives (clients, 12 mois d'OR et de factures…), après `db reset` |
+| `npx supabase test db`  | Tests pgTAP de la base                                                                |
+| `npx supabase db lint`  | Lint du schéma                                                                        |
 
 ## Contribuer
 
