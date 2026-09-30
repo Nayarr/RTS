@@ -129,7 +129,9 @@ describe('invitation à activer les notifications', () => {
   it('iPhone : explique comment installer l’appli d’abord', () => {
     browser('default', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)');
     renderBanner();
-    expect(screen.getByRole('region', { name: 'Notifications de l’appareil' })).toHaveTextContent('Sur l’écran d’accueil');
+    expect(screen.getByRole('region', { name: 'Notifications de l’appareil' })).toHaveTextContent(
+      'Sur l’écran d’accueil',
+    );
     expect(screen.queryByRole('button', { name: 'Activer les notifications' })).toBeNull();
   });
 });
