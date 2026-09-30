@@ -16,6 +16,17 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Build sans clé publique VAPID : les notifications push seront désactivées sur le site.
+    {
+      name: 'rts-env-check',
+      configResolved(config) {
+        if (config.command === 'build' && !config.env.VITE_VAPID_PUBLIC_KEY) {
+          config.logger.warn(
+            '⚠ VITE_VAPID_PUBLIC_KEY absente : les notifications push seront désactivées sur ce site.',
+          );
+        }
+      },
+    },
     // PWA : site classique sur PC, « vraie » appli plein écran une fois installée
     // sur téléphone / tablette (display: standalone, sans barre d'adresse).
     VitePWA({

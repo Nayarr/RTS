@@ -57,7 +57,7 @@ select is(public.verify_kiosk_exit_code('0001'), false, 'Un mauvais code de sort
 -- Anti force brute : après 5 erreurs dans la minute, même le bon code est bloqué
 select lives_ok($$ select public.kiosk_clock('0000', pg_temp.fake_file('clock_photo')) from generate_series(1, 4) $$,
                 'Quatre codes erronés de plus');
-select alike(public.kiosk_clock('1234', pg_temp.fake_file('clock_photo')) ->> 'message', 'Trop de tentatives%',
+select alike(public.kiosk_clock('1234', pg_temp.fake_file('clock_photo')) ->> 'message', 'Trop de codes faux%',
             'Blocage après 5 erreurs en une minute');
 
 -- ---------------------------------------------------------------- Technicien
