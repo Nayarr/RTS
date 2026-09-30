@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { currentSubscription, enablePush, pushSupport } from './push';
+import { currentSubscription, enablePush, pushSupport, requestNotificationPermission } from './push';
 
 const HIDDEN_KEY = 'rts_push_banner_hidden_until';
 const HIDE_DAYS = 7;
@@ -31,7 +31,7 @@ export function PushBanner() {
     staleTime: Infinity,
   });
   const enable = useMutation({
-    mutationFn: () => enablePush(),
+    mutationFn: (permission: Promise<NotificationPermission>) => enablePush(permission),
     onSuccess: async (granted) => {
       if (!granted) {
         toast.error('Notifications refusées : autorise-les dans les réglages du navigateur');
@@ -84,7 +84,11 @@ export function PushBanner() {
           Plus tard
         </Button>
         {support === 'available' && (
-          <Button size="sm" disabled={enable.isPending} onClick={() => enable.mutate()}>
+          <Button
+            size="sm"
+            disabled={enable.isPending}
+            onClick={() => enable.mutate(requestNotificationPermission())}
+          >
             Activer les notifications
           </Button>
         )}

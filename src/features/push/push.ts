@@ -54,11 +54,19 @@ export async function currentSubscription(): Promise<PushSubscription | null> {
 }
 
 /**
+ * Demande d'autorisation : à appeler DIRECTEMENT dans le clic sur le bouton. Sur iPhone,
+ * Safari ignore la demande si elle part plus tard (après une attente, dans une file…).
+ */
+export const requestNotificationPermission = () => Notification.requestPermission();
+
+/**
  * Active les notifications sur cet appareil pour le compte connecté, puis envoie une
  * notification d'essai. Renvoie false si l'utilisateur refuse l'autorisation.
  */
-export async function enablePush(): Promise<boolean> {
-  const permission = await Notification.requestPermission();
+export async function enablePush(
+  permissionRequest: Promise<NotificationPermission> = requestNotificationPermission(),
+): Promise<boolean> {
+  const permission = await permissionRequest;
   if (permission !== 'granted') return false;
 
   const reg = await registration(20_000);

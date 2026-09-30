@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -98,6 +98,16 @@ describe('notifications push', () => {
 
 describe('invitation à activer les notifications', () => {
   const renderBanner = () => renderRoutes([{ path: '/', element: <PushBanner /> }]);
+
+  it('iPhone : l’autorisation est demandée pendant le toucher, sans attente', async () => {
+    const { requestPermission } = browser('default');
+    renderBanner();
+    const button = await screen.findByRole('button', { name: 'Activer les notifications' });
+    fireEvent.click(button);
+    // Appel synchrone : Safari ignore une demande faite après le geste de l'utilisateur.
+    expect(requestPermission).toHaveBeenCalledOnce();
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+  });
 
   it('proposée tant que l’appareil n’est pas abonné ; activation confirmée', async () => {
     browser('default');
