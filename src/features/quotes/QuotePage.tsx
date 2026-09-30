@@ -9,6 +9,7 @@ import { useSettings } from '@/features/settings/hooks';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
 import { addQuoteLine, deleteQuoteLine, updateQuoteLine, type NewQuoteLine, type QuoteLine } from './api';
+import { PreQuoteWorkCard } from '@/features/repair-orders/PreQuoteWorkCard';
 import { computeTotals, isQuoteLocked, nextPosition } from './domain';
 import { QuoteActions } from './editor/QuoteActions';
 import { useQuote, useQuoteMutation } from './hooks';
@@ -125,6 +126,10 @@ export function QuotePage() {
               )}
             </div>
 
+            {quote.status === 'accepted' && quote.repair_order_id && (
+              // Devis accepté : les travaux déjà faits sur l'OR d'origine sont à facturer ou offrir.
+              <PreQuoteWorkCard repairOrderId={quote.repair_order_id} autoOpen />
+            )}
             {locked && (
               <Alert>
                 <Lock />

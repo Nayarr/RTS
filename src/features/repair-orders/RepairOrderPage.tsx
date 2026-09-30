@@ -17,6 +17,7 @@ import { PhotosCard } from './detail/PhotosCard';
 import { SubcontractsCard } from './detail/SubcontractsCard';
 import { TimeCard } from './detail/TimeCard';
 import { useRepairOrder, useRepairOrderSupplies } from './hooks';
+import { PreQuoteWorkCard } from './PreQuoteWorkCard';
 
 /** Fiche d'un OR côté bureau. */
 export function RepairOrderPage() {
@@ -52,6 +53,7 @@ export function RepairOrderPage() {
         </Link>
       </Button>
       <OrderHeader order={order} />
+      <PreQuoteWorkCard repairOrderId={order.id} />
       <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-5">
           <LinesCard lines={lines} />
