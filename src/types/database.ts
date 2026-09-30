@@ -815,6 +815,7 @@ export type Database = {
           id: string;
           mime_type: string;
           original_name: string | null;
+          purged_at: string | null;
           size_bytes: number | null;
           storage_key: string;
           uploaded_at: string | null;
@@ -828,6 +829,7 @@ export type Database = {
           id?: string;
           mime_type: string;
           original_name?: string | null;
+          purged_at?: string | null;
           size_bytes?: number | null;
           storage_key: string;
           uploaded_at?: string | null;
@@ -841,6 +843,7 @@ export type Database = {
           id?: string;
           mime_type?: string;
           original_name?: string | null;
+          purged_at?: string | null;
           size_bytes?: number | null;
           storage_key?: string;
           uploaded_at?: string | null;
@@ -4610,6 +4613,14 @@ export type Database = {
         Args: { p_category: Database['public']['Enums']['file_category']; p_mime_type: string };
         Returns: boolean;
       };
+      files_to_purge: {
+        Args: { p_limit?: number };
+        Returns: {
+          bucket: string;
+          id: string;
+          storage_key: string;
+        }[];
+      };
       generate_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       global_search: { Args: { p_query: string }; Returns: Json };
@@ -4625,6 +4636,7 @@ export type Database = {
           repair_order_id: string;
         }[];
       };
+      invoke_edge_function: { Args: { p_body?: Json; p_name: string }; Returns: number };
       is_direction: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_migration_context: { Args: Record<PropertyKey, never>; Returns: boolean };
@@ -4685,7 +4697,9 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      mark_files_purged: { Args: { p_ids: string[] }; Returns: number };
       mark_in_progress_if_technician: { Args: { p_repair_order_id: string }; Returns: undefined };
+      mark_orphan_files: { Args: { p_grace?: string }; Returns: number };
       merge_quote_into_repair_order: {
         Args: { p_quote_id: string; p_repair_order_id: string };
         Returns: undefined;
@@ -4737,6 +4751,7 @@ export type Database = {
         Returns: Json;
       };
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
+      purge_files: { Args: Record<PropertyKey, never>; Returns: number };
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
         Returns: {

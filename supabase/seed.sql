@@ -67,3 +67,9 @@ insert into public.parts (designation, brand, manufacturer_ref, oem_ref, supplie
   ('Plaquettes de frein avant (jeu)', 'Knorr-Bremse', 'K-II37', '81508206095', '41000000-0000-0000-0000-000000000001', 92.00, 138.00),
   ('Filtre à huile', 'Mann-Filter', 'HU 12 140 x', '51055040108', '41000000-0000-0000-0000-000000000001', 21.50, 32.00),
   ('Disque de frein arrière', 'SBP', '02-MA010', '81508030037', '41000000-0000-0000-0000-000000000001', 118.00, 165.00);
+
+-- Tâches planifiées → Edge Functions (purge des fichiers, notifications) : adresse de l'API
+-- vue depuis la base (réseau Docker local) et secret partagé avec les fonctions
+-- (CRON_SECRET dans config.toml). En production, ces deux secrets sont créés à la main.
+select vault.create_secret('http://supabase_kong_rts-atelier:8000', 'project_url');
+select vault.create_secret('rts-local-cron-secret-0000', 'cron_secret');

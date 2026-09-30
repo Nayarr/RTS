@@ -390,6 +390,8 @@ R2_PUBLIC_ENDPOINT = "http://127.0.0.1:9000"
 R2_ACCESS_KEY_ID = "rts-local-access"
 R2_SECRET_ACCESS_KEY = "rts-local-secret-key"
 R2_BUCKET = "rts-atelier"
+# Secret des tâches planifiées (même valeur que cron_secret dans Vault, voir seed.sql).
+CRON_SECRET = "rts-local-cron-secret-0000"
 
 [analytics]
 enabled = true
@@ -439,6 +441,13 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/files/deno.json"
 entrypoint = "./functions/files/index.ts"
+
+[functions.files-purge]
+enabled = true
+# Appelée par la tâche planifiée purge_files() : secret partagé vérifié dans la fonction.
+verify_jwt = false
+import_map = "./functions/files-purge/deno.json"
+entrypoint = "./functions/files-purge/index.ts"
 
 [functions.quote-response]
 enabled = true
