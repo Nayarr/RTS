@@ -18,6 +18,8 @@ const isInstalled = () =>
 
 export function pushSupport(): PushSupport {
   if (!env.VITE_VAPID_PUBLIC_KEY) return 'unsupported';
+  // « npm run dev » : pas de service worker, donc pas de notifications (build ou preview seulement).
+  if (import.meta.env.MODE === 'development') return 'unsupported';
   if (isIos() && !isInstalled()) return 'ios-install';
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
     return 'unsupported';

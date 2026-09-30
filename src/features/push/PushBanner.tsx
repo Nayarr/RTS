@@ -40,7 +40,12 @@ export function PushBanner() {
       toast.success('Notifications activées sur cet appareil');
       await queryClient.invalidateQueries({ queryKey: ['push-subscription'] });
     },
-    onError: () => toast.error('Activation impossible : réessaie dans un instant'),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message.startsWith('Service worker')
+          ? error.message
+          : 'Activation impossible : réessaie dans un instant',
+      ),
   });
 
   const later = () => {
