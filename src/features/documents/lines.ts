@@ -44,34 +44,51 @@ export interface NewLine {
   oem_ref?: string | null;
 }
 
+// Montants calculés en centimes entiers (BigInt), exactement comme les colonnes numeric de
+// la base : les nombres à virgule du navigateur faisaient dévier ~3 % des totaux d'un centime.
+
+/** Valeur à 2 décimales au plus (prix, quantité, remise, taux : numeric(…, 2) en base) → entier ×100. */
+const hundredths = (value: number) => BigInt(Math.round(value * 100));
+
+/** Division entière arrondie au plus proche, moitié vers le haut (round() de Postgres, montants positifs). */
+const divRound = (numerator: bigint, denominator: bigint) =>
+  (numerator * 2n + denominator) / (denominator * 2n);
+
+const euros = (cents: bigint) => Number(cents) / 100;
+
+/** Net de la ligne en centimes : prix × quantité × (1 − remise), arrondi au centime. */
+function lineNetCents(line: Pick<PricedLine, 'line_type' | 'unit_price' | 'quantity' | 'discount_percent'>) {
+  if (line.line_type === 'text') return 0n;
+  const price = hundredths(line.unit_price ?? 0); // centimes
+  const quantity = hundredths(line.quantity); // × 100
+  const kept = 10_000n - hundredths(line.discount_percent); // (100 − remise) × 100
+  return divRound(price * quantity * kept, 1_000_000n);
+}
+
 /** Même calcul que la base (`line_net_ht`) : prix × quantité − remise, arrondi au centime. */
 export function lineNet(
   line: Pick<PricedLine, 'line_type' | 'unit_price' | 'quantity' | 'discount_percent'>,
 ) {
-  if (line.line_type === 'text') return 0;
-  const gross = (line.unit_price ?? 0) * line.quantity;
-  return Math.round(gross * (1 - line.discount_percent / 100) * 100) / 100;
+  return euros(lineNetCents(line));
 }
 
 /** Totaux comme les vues de la base : TVA arrondie par taux. */
 export function computeTotals(lines: PricedLine[]) {
-  const bases = new Map<number, number>();
+  const bases = new Map<number, bigint>();
   for (const line of lines) {
     if (line.line_type === 'text') continue;
-    bases.set(line.vat_rate, (bases.get(line.vat_rate) ?? 0) + lineNet(line));
+    bases.set(line.vat_rate, (bases.get(line.vat_rate) ?? 0n) + lineNetCents(line));
   }
-  let ht = 0;
-  let vat = 0;
+  let ht = 0n;
+  let vat = 0n;
   const rates: { rate: number; amount: number }[] = [];
   for (const [rate, base] of bases) {
-    const amount = Math.round(base * rate) / 100;
+    const amount = divRound(base * hundredths(rate), 10_000n); // base × taux / 100
     ht += base;
     vat += amount;
-    rates.push({ rate, amount });
+    rates.push({ rate, amount: euros(amount) });
   }
-  ht = Math.round(ht * 100) / 100;
-  vat = Math.round(vat * 100) / 100;
-  return { ht, vat, ttc: Math.round((ht + vat) * 100) / 100, rates };
+  return { ht: euros(ht), vat: euros(vat), ttc: euros(ht + vat), rates };
 }
 
 /** Forfait applicable au type de véhicule (même règle que `package_fits_vehicle`). */
