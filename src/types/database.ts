@@ -4415,6 +4415,10 @@ export type Database = {
       };
     };
     Functions: {
+      active_invoice_number: {
+        Args: { p_exclude_invoice_id?: string; p_repair_order_id: string };
+        Returns: string;
+      };
       add_manual_clock_event: {
         Args: {
           p_event_type: Database['public']['Enums']['clock_event_type'];

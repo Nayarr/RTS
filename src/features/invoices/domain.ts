@@ -26,9 +26,17 @@ export function issueWarnings(lines: InvoiceLine[], client: ClientBilling): stri
   ).length;
   const warnings: string[] = [];
   if (unpriced) warnings.push(`${unpriced} ligne${unpriced > 1 ? 's' : ''} sans prix`);
-  if (!client.billing_address?.trim()) warnings.push('adresse du client manquante');
   if (!client.siren?.trim()) warnings.push('SIREN du client manquant');
   return warnings;
+}
+
+/** Ce qui empêche l'émission (mention obligatoire, refusée aussi par la base). */
+export function issueBlockers(client: ClientBilling): string[] {
+  return client.billing_address?.trim()
+    ? []
+    : [
+        'Renseigne l’adresse de facturation du client (carte « Client » sur cette page) avant d’émettre la facture.',
+      ];
 }
 
 /** Reste dû en HT (proposé pour un avoir). */

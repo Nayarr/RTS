@@ -210,6 +210,8 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
   const { company } = quote;
   const done = quote.lines.filter((line) => line.section === 'done');
   const planned = quote.lines.filter((line) => line.section === 'planned');
+  // Même règle que la base : plus de signature en ligne après la date de validité.
+  const expired = quote.valid_until !== null && quote.valid_until < todayIso();
 
   return (
     <article className="rounded-lg bg-white p-5 text-neutral-900 shadow-sm sm:p-8">
@@ -246,7 +248,13 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
           <XCircle className="size-5 shrink-0 text-[#B5453A]" /> Devis refusé.
         </p>
       )}
-      {quote.status === 'sent' && <ResponseForm token={token} />}
+      {quote.status === 'sent' && !expired && <ResponseForm token={token} />}
+      {quote.status === 'sent' && expired && (
+        <p className="mt-6 rounded-md bg-neutral-100 p-4">
+          Ce devis a expiré le {formatDate(quote.valid_until ?? '')} : contactez l’atelier pour recevoir une
+          nouvelle proposition.
+        </p>
+      )}
       {quote.status !== 'sent' && quote.status !== 'accepted' && quote.status !== 'refused' && (
         <p className="mt-6 rounded-md bg-neutral-100 p-4">
           Ce devis est en cours de modification par l’atelier. Contactez-le pour recevoir la dernière version.

@@ -29,6 +29,7 @@ import {
   invoiceShareMessage,
   invoicesCsvRows,
   isOverdue,
+  issueBlockers,
   issueWarnings,
   mainVatRate,
 } from './domain';
@@ -179,9 +180,11 @@ describe('règles de facturation', () => {
     const client = { name: 'X', billing_address: null, siren: '', email: null };
     expect(issueWarnings([line(), line({ id: 'l2', unit_price: null })], client)).toEqual([
       '1 ligne sans prix',
-      'adresse du client manquante',
       'SIREN du client manquant',
     ]);
+    // Adresse de facturation : mention obligatoire, elle bloque l'émission
+    expect(issueBlockers(client)).toHaveLength(1);
+    expect(issueBlockers({ ...client, billing_address: '1 rue A' })).toEqual([]);
     expect(
       issueWarnings(
         [
@@ -326,12 +329,23 @@ describe('brouillon de facture', () => {
     );
   });
 
-  it('émission après confirmation, avec les points à vérifier', async () => {
-    vi.mocked(issueInvoice).mockResolvedValue('F11887');
+  it('sans adresse du client : émission bloquée', async () => {
+    vi.mocked(issueInvoice).mockClear();
     setupInvoice();
     await userEvent.click(await screen.findByRole('button', { name: /Émettre la facture/ }));
     const dialog = screen.getByRole('dialog', { name: 'Émettre définitivement cette facture ?' });
-    expect(dialog).toHaveTextContent('adresse du client manquante, SIREN du client manquant');
+    expect(dialog).toHaveTextContent('Renseigne l’adresse de facturation du client');
+    expect(within(dialog).getByRole('button', { name: 'Émettre la facture' })).toBeDisabled();
+  });
+
+  it('émission après confirmation, avec les points à vérifier', async () => {
+    vi.mocked(issueInvoice).mockResolvedValue('F11887');
+    setupInvoice({
+      client: { name: 'Transports Martin', billing_address: '1 rue A', siren: null, email: null },
+    });
+    await userEvent.click(await screen.findByRole('button', { name: /Émettre la facture/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Émettre définitivement cette facture ?' });
+    expect(dialog).toHaveTextContent('SIREN du client manquant');
     expect(dialog).toHaveTextContent(/720,00\s€ TTC/);
     await userEvent.click(within(dialog).getByRole('button', { name: 'Émettre la facture' }));
     await waitFor(() => expect(issueInvoice).toHaveBeenCalledWith('i1'));
@@ -452,5 +466,43 @@ describe('facturation depuis la fiche OR', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Facturer$/ }));
     expect(buildInvoiceDraft).toHaveBeenCalledWith(['ro1']);
     expect(await screen.findByRole('heading', { name: 'Brouillon ouvert' })).toBeInTheDocument();
+  });
+
+  const renderCard = (status: RepairOrderOverview['status']) => {
+    mockCommon();
+    renderRoutes(
+      [
+        {
+          path: '/or/:id',
+          element: <RepairOrderInvoiceCard order={{ id: 'ro1', status } as RepairOrderOverview} />,
+        },
+        { path: '/factures/:id', element: <h1>Brouillon ouvert</h1> },
+      ],
+      { initialPath: '/or/ro1', auth: { session: fakeSession() } },
+    );
+  };
+
+  it('OR pas encore terminé : confirmation avant de facturer', async () => {
+    vi.mocked(fetchRepairOrderInvoices).mockResolvedValue([]);
+    vi.mocked(buildInvoiceDraft).mockClear().mockResolvedValue('i1');
+    renderCard('in_progress');
+    await userEvent.click(await screen.findByRole('button', { name: /^Facturer$/ }));
+    const dialog = screen.getByRole('dialog', { name: 'OR pas encore terminé' });
+    expect(buildInvoiceDraft).not.toHaveBeenCalled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Facturer quand même' }));
+    expect(await screen.findByRole('heading', { name: 'Brouillon ouvert' })).toBeInTheDocument();
+  });
+
+  it('OR déjà facturé : plus de bouton pour facturer', async () => {
+    vi.mocked(fetchRepairOrderInvoices).mockResolvedValue([issued()]);
+    renderCard('invoiced');
+    expect(await screen.findByText('F11887')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Facturer/ })).toBeNull();
+  });
+
+  it('facture entièrement annulée par avoir : « Refacturer (après avoir) »', async () => {
+    vi.mocked(fetchRepairOrderInvoices).mockResolvedValue([issued({ total_ttc: 720, credited_ttc: 720 })]);
+    renderCard('invoiced');
+    expect(await screen.findByRole('button', { name: /Refacturer \(après avoir\)/ })).toBeInTheDocument();
   });
 });
