@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Receipt } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
@@ -17,9 +19,17 @@ export function RepairOrderInvoiceCard({ order }: { order: RepairOrderOverview }
     await navigate(`/factures/${id}`);
   }, null);
 
+  const [confirmUnfinished, setConfirmUnfinished] = useState(false);
+
   const list = invoices.data ?? [];
   const draft = list.find((invoice) => invoice.status === 'draft');
   const issued = list.some((invoice) => invoice.status === 'issued');
+  // Une nouvelle facture n'est possible qu'après un avoir couvrant toute la précédente.
+  const billed = list.some(
+    (invoice) => invoice.status === 'issued' && (invoice.credited_ttc ?? 0) < (invoice.total_ttc ?? 0) - 0.01,
+  );
+  const unfinished = order.status === 'assigned' || order.status === 'in_progress';
+  const facturer = () => (unfinished && !draft ? setConfirmUnfinished(true) : prepare.mutate(undefined));
 
   return (
     <Card>
@@ -48,17 +58,29 @@ export function RepairOrderInvoiceCard({ order }: { order: RepairOrderOverview }
           </ul>
         )}
       </CardContent>
-      {!issued && order.status !== 'invoiced' && (
+      {!billed && (
         <CardFooter>
           <Button
             variant={order.status === 'to_invoice' ? 'default' : 'outline'}
             disabled={prepare.isPending}
-            onClick={() => prepare.mutate(undefined)}
+            onClick={facturer}
           >
-            <Receipt /> {draft ? 'Reprendre la facture' : 'Facturer'}
+            <Receipt /> {draft ? 'Reprendre la facture' : issued ? 'Refacturer (après avoir)' : 'Facturer'}
           </Button>
         </CardFooter>
       )}
+      <ConfirmDialog
+        open={confirmUnfinished}
+        onOpenChange={setConfirmUnfinished}
+        title="OR pas encore terminé"
+        description="Le technicien n’a pas terminé cet OR à l’atelier. Facturer quand même (acompte, travaux partiels) ?"
+        confirmLabel="Facturer quand même"
+        pending={prepare.isPending}
+        onConfirm={() => {
+          setConfirmUnfinished(false);
+          prepare.mutate(undefined);
+        }}
+      />
     </Card>
   );
 }

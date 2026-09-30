@@ -467,4 +467,42 @@ describe('facturation depuis la fiche OR', () => {
     expect(buildInvoiceDraft).toHaveBeenCalledWith(['ro1']);
     expect(await screen.findByRole('heading', { name: 'Brouillon ouvert' })).toBeInTheDocument();
   });
+
+  const renderCard = (status: RepairOrderOverview['status']) => {
+    mockCommon();
+    renderRoutes(
+      [
+        {
+          path: '/or/:id',
+          element: <RepairOrderInvoiceCard order={{ id: 'ro1', status } as RepairOrderOverview} />,
+        },
+        { path: '/factures/:id', element: <h1>Brouillon ouvert</h1> },
+      ],
+      { initialPath: '/or/ro1', auth: { session: fakeSession() } },
+    );
+  };
+
+  it('OR pas encore terminé : confirmation avant de facturer', async () => {
+    vi.mocked(fetchRepairOrderInvoices).mockResolvedValue([]);
+    vi.mocked(buildInvoiceDraft).mockClear().mockResolvedValue('i1');
+    renderCard('in_progress');
+    await userEvent.click(await screen.findByRole('button', { name: /^Facturer$/ }));
+    const dialog = screen.getByRole('dialog', { name: 'OR pas encore terminé' });
+    expect(buildInvoiceDraft).not.toHaveBeenCalled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Facturer quand même' }));
+    expect(await screen.findByRole('heading', { name: 'Brouillon ouvert' })).toBeInTheDocument();
+  });
+
+  it('OR déjà facturé : plus de bouton pour facturer', async () => {
+    vi.mocked(fetchRepairOrderInvoices).mockResolvedValue([issued()]);
+    renderCard('invoiced');
+    expect(await screen.findByText('F11887')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Facturer/ })).toBeNull();
+  });
+
+  it('facture entièrement annulée par avoir : « Refacturer (après avoir) »', async () => {
+    vi.mocked(fetchRepairOrderInvoices).mockResolvedValue([issued({ total_ttc: 720, credited_ttc: 720 })]);
+    renderCard('invoiced');
+    expect(await screen.findByRole('button', { name: /Refacturer \(après avoir\)/ })).toBeInTheDocument();
+  });
 });
