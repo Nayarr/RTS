@@ -21,12 +21,14 @@ import { PAYMENT_METHODS } from './domain';
 
 /** Confirmation de l'émission définitive, avec les points à vérifier. */
 export function IssueDialog({
+  blockers,
   warnings,
   totalTtc,
   pending,
   onConfirm,
   onClose,
 }: {
+  blockers: string[];
   warnings: string[];
   totalTtc: number;
   pending: boolean;
@@ -43,8 +45,14 @@ export function IssueDialog({
             correction passera par un avoir.
           </DialogDescription>
         </DialogHeader>
+        {blockers.map((blocker) => (
+          <Alert key={blocker} variant="destructive">
+            <TriangleAlert />
+            <AlertDescription>{blocker}</AlertDescription>
+          </Alert>
+        ))}
         {warnings.length > 0 && (
-          <Alert variant="destructive">
+          <Alert>
             <TriangleAlert />
             <AlertDescription>Attention : {warnings.join(', ')}.</AlertDescription>
           </Alert>
@@ -53,7 +61,7 @@ export function IssueDialog({
           <Button variant="outline" onClick={onClose}>
             Annuler
           </Button>
-          <Button disabled={pending} onClick={onConfirm}>
+          <Button disabled={pending || blockers.length > 0} onClick={onConfirm}>
             {pending ? 'Émission…' : 'Émettre la facture'}
           </Button>
         </DialogFooter>

@@ -3,7 +3,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(23);
 
 \ir helpers/fixtures.psql
 
@@ -68,8 +68,13 @@ select throws_like($$ select public.issue_invoice('60000000-0000-0000-0000-00000
                    '%vide%', 'Une facture vide ne peut pas être émise');
 insert into public.invoice_lines (invoice_id, line_type, description, unit_price) values
   ('60000000-0000-0000-0000-000000000009', 'labor', 'Diagnostic', 50);
+-- Client sans adresse de facturation : mention obligatoire, émission refusée
+select throws_like($$ select public.issue_invoice('60000000-0000-0000-0000-000000000009') $$,
+                   '%adresse de facturation%', 'Pas d''émission sans adresse de facturation du client');
+update public.clients set billing_address = '8 rue du Fret, 95190 Goussainville'
+where id = '20000000-0000-0000-0000-000000000002';
 select is(public.issue_invoice('60000000-0000-0000-0000-000000000009'), 'F11888',
-          'L''échec précédent n''a pas consommé de numéro');
+          'Les échecs précédents n''ont pas consommé de numéro');
 
 -- Avoirs
 insert into public.credit_notes (invoice_id, amount_ht, reason)

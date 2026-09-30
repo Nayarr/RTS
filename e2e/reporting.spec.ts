@@ -34,6 +34,11 @@ async function createPaidInvoice(plate: string, clientName: string) {
     p_requested_work: 'Vidange',
   });
   if (error) throw error;
+  // Adresse de facturation : mention obligatoire pour émettre une facture
+  await client
+    .from('clients')
+    .update({ billing_address: '12 rue des Transporteurs, 95190 Goussainville' })
+    .eq('id', order.client_id ?? '');
   const draft = await client.rpc('build_invoice_draft', { p_repair_order_ids: [order.id] });
   if (draft.error) throw draft.error;
   const line = await client.from('invoice_lines').insert({

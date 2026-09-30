@@ -1,6 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { addDays } from '@/features/planning/domain';
+import { todayIso } from '@/features/repair-orders/schemas';
 import { renderRoutes } from '@/test/render';
 import { fetchPublicDocument, respondToQuote, type PublicInvoice, type PublicQuote } from './api';
 import type * as PublicApi from './api';
@@ -40,7 +42,7 @@ const quote = (overrides: Partial<PublicQuote> = {}): PublicQuote => ({
   },
   number: 'DV00012',
   issued_at: '2026-09-27T10:00:00Z',
-  valid_until: '2026-10-27',
+  valid_until: addDays(todayIso(), 30), // toujours valable, quelle que soit la date du test
   status: 'sent',
   accepted_by_name: null,
   accepted_at: null,
@@ -101,6 +103,13 @@ describe('devis en ligne (client, sans compte)', () => {
     expect(screen.getByText('(remise 10 %)')).toBeInTheDocument();
     expect(screen.getByText('Délai : 48 h')).toBeInTheDocument();
     expect(screen.getByLabelText('Totaux')).toHaveTextContent(/Total TTC\s*464,40\s€/);
+  });
+
+  it('devis expiré : plus de signature en ligne, message au client', async () => {
+    setup(quote({ valid_until: addDays(todayIso(), -1) }));
+    expect(await screen.findByText(/Ce devis a expiré le/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Accepter/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Refuser/ })).toBeNull();
   });
 
   it('accepter demande le nom puis la signature', async () => {

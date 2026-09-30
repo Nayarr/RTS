@@ -35,6 +35,11 @@ async function createIssuedInvoice(plate: string, clientName: string) {
     p_requested_work: 'Freinage',
   });
   if (error) throw error;
+  // Adresse de facturation : mention obligatoire pour émettre une facture
+  await client
+    .from('clients')
+    .update({ billing_address: '12 rue des Transporteurs, 95190 Goussainville' })
+    .eq('id', order.client_id ?? '');
   const work = await client.from('ro_lines').insert({
     repair_order_id: order.id,
     kind: 'done',

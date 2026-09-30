@@ -32,7 +32,7 @@ import {
 } from './api';
 import { ClientBillingCard } from './ClientBillingCard';
 import { CreditNoteDialog, IssueDialog, PaymentDialog } from './dialogs';
-import { balanceHt, issueWarnings, mainVatRate, PAYMENT_METHODS } from './domain';
+import { balanceHt, issueBlockers, issueWarnings, mainVatRate, PAYMENT_METHODS } from './domain';
 import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
@@ -399,6 +399,7 @@ export function InvoicePage() {
 
       {dialog === 'issue' && (
         <IssueDialog
+          blockers={issueBlockers(client)}
           warnings={issueWarnings(lines, client)}
           totalTtc={totals.ttc}
           pending={issue.isPending}

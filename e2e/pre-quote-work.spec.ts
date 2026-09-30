@@ -34,6 +34,11 @@ async function diagnosticWithQuote(plate: string) {
     p_requested_work: 'Bruit au freinage',
   });
   if (error) throw error;
+  // Adresse de facturation : mention obligatoire pour émettre une facture
+  await reception
+    .from('clients')
+    .update({ billing_address: '12 rue des Transporteurs, 95190 Goussainville' })
+    .eq('id', order.client_id ?? '');
   const lines = await reception.from('ro_lines').insert([
     {
       repair_order_id: order.id,
