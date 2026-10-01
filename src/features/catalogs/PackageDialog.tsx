@@ -63,11 +63,7 @@ export function PackageDialog({ pkg, onClose }: { pkg: ServicePackage | null; on
           />
           <div className="space-y-2">
             <Label htmlFor="package-category">Catégorie</Label>
-            <select
-              id="package-category"
-              className="inp"
-              {...register('category')}
-            >
+            <select id="package-category" className="inp" {...register('category')}>
               {PACKAGE_CATEGORIES.map((category) => (
                 <option key={category.value} value={category.value}>
                   {category.label}

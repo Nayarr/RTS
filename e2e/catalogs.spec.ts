@@ -38,9 +38,9 @@ test('consommable : création, réapprovisionnement, inventaire, alerte et retra
   await create.getByLabel('Seuil d’alerte').fill('40');
   await create.getByRole('button', { name: 'Enregistrer' }).click();
 
-  const card = page.getByRole('article', { name });
+  const card = page.getByRole('row', { name, exact: true });
   await expect(card.getByText('50 L')).toBeVisible();
-  await expect(card.getByText(/Vente 6,50/)).toBeVisible();
+  await expect(card.getByText(/6,50/)).toBeVisible();
   await expect(card.getByText(/Stock bas/)).toHaveCount(0);
 
   await card.getByRole('button', { name: 'Réappro' }).click();

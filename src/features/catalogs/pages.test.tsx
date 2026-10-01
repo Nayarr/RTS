@@ -77,9 +77,9 @@ describe('consommables', () => {
       consumable({ id: 'c2', name: 'Huile 10W40', stock_qty: 208, alert_threshold: 40 }),
     ]);
     setup('/stock/consommables');
-    const adblue = await screen.findByRole('article', { name: 'AdBlue' });
+    const adblue = await screen.findByRole('row', { name: 'AdBlue' });
     expect(within(adblue).getByText(/Stock bas \(seuil 100\)/)).toBeInTheDocument();
-    expect(within(screen.getByRole('article', { name: 'Huile 10W40' })).queryByText(/Stock bas/)).toBeNull();
+    expect(within(screen.getByRole('row', { name: 'Huile 10W40' })).queryByText(/Stock bas/)).toBeNull();
   });
 
   it('crée un consommable avec prix à virgule et stock de départ', async () => {
@@ -163,7 +163,7 @@ describe('catalogue de pièces', () => {
   it('affiche prix et marge, et recherche côté serveur', async () => {
     vi.mocked(fetchParts).mockResolvedValue([part]);
     setup('/stock/pieces');
-    const row = await screen.findByRole('article', { name: 'Filtre à huile' });
+    const row = await screen.findByRole('row', { name: 'Filtre à huile' });
     expect(within(row).getByText('49 %')).toBeInTheDocument();
     await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher une pièce' }), 'mann');
     await waitFor(() => expect(fetchParts).toHaveBeenLastCalledWith('mann'));
