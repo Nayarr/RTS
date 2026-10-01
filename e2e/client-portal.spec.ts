@@ -51,7 +51,7 @@ test('le client consulte son espace en ligne ; le bureau peut changer le lien', 
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
   await page.getByRole('link', { name: clientName }).first().click();
-  await page.getByRole('button', { name: 'Espace client en ligne' }).click();
+  await page.getByRole('button', { name: 'Envoyer le lien au client' }).click();
   const share = page.getByRole('dialog', { name: `Espace client — ${clientName}` });
   const link = await share.getByLabel('Lien', { exact: true }).inputValue();
   expect(link).toMatch(/\/d\/[A-Za-z0-9_-]{32,}$/);

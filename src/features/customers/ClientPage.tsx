@@ -2,11 +2,22 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Receipt, Trash2, Truck } from 'lucide-react';
+import {
+  CalendarDays,
+  Link2,
+  Plus,
+  Receipt,
+  Trash2,
+  TrendingUp,
+  TriangleAlert,
+  Truck,
+  Wrench,
+} from 'lucide-react';
+import { initials } from '@/app/nav';
+import { PageHeader } from '@/app/PageHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useProfile } from '@/features/auth/useProfile';
@@ -14,7 +25,8 @@ import { GroupedInvoiceDialog } from '@/features/invoices/GroupedInvoiceDialog';
 import { ClientPortalButtons } from './ClientPortalButtons';
 import { InvoiceStatusBadge } from '@/features/invoices/PaymentStatusBadge';
 import { QuoteStatusBadge } from '@/features/quotes/QuoteStatusBadge';
-import { formatDate } from '@/features/repair-orders/constants';
+import { AppointmentDialog } from '@/features/planning/AppointmentDialog';
+import { formatDate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
@@ -43,6 +55,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
   const navigate = useNavigate();
   const [grouping, setGrouping] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [booking, setBooking] = useState(false);
   const billable = orders.filter((order) => BILLABLE.includes(order.status));
 
   const {
@@ -57,228 +70,298 @@ function ClientView({ detail }: { detail: ClientDetail }) {
   );
   const remove = useCustomerMutation((clientId: string) => deleteClient(clientId), 'Client supprimé');
 
+  const kpis = [
+    { icon: <Truck className="i s" />, value: String(client.vehicles_count), label: 'Véhicules' },
+    { icon: <Wrench className="i s" />, value: String(client.orders_count), label: 'Ordres de réparation' },
+    {
+      icon: <TrendingUp className="i s" />,
+      value: formatEuro(client.revenue_ht),
+      label: 'Chiffre d’affaires HT',
+    },
+  ];
+  const overdue = client.overdue_invoices_count;
+
   return (
-    <div className="space-y-5">
-      <Link
-        to="/clients"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
-      >
-        <ArrowLeft className="size-4" /> Clients
-      </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">{client.name}</h1>
-          <p className="text-muted-foreground">
-            {client.vehicles_count} véhicule{client.vehicles_count > 1 ? 's' : ''} — {client.orders_count} OR
-            — CA HT : {formatEuro(client.revenue_ht)}
-            {client.last_visit ? ` — Dernière visite le ${formatDate(client.last_visit)}` : ''}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <ClientPortalButtons clientId={client.id} clientName={client.name} />
-          {billable.length > 1 && (
-            <Button onClick={() => setGrouping(true)}>
-              <Receipt /> Facture groupée ({billable.length} OR)
+    <>
+      <PageHeader
+        back={{ to: '/clients', label: 'Retour aux clients' }}
+        leading={
+          <span className="av lg bg-accent! text-accent-foreground!" aria-hidden>
+            {initials(client.name)}
+          </span>
+        }
+        crumbs={[{ label: 'Clients', to: '/clients' }, { label: 'Fiche client' }]}
+        title={client.name}
+        actions={
+          <>
+            {isDirection && (
+              <Button variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
+                <Trash2 /> Supprimer
+              </Button>
+            )}
+            {billable.length > 1 && (
+              <Button variant="outline" onClick={() => setGrouping(true)}>
+                <Receipt /> Facture groupée ({billable.length} OR)
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setBooking(true)}>
+              <CalendarDays /> Prendre rendez-vous
             </Button>
-          )}
-          {isDirection && (
-            <Button variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
-              <Trash2 /> Supprimer
+            <Button asChild>
+              <Link to="/or/nouveau">
+                <Plus /> Nouvel OR
+              </Link>
             </Button>
-          )}
+          </>
+        }
+      />
+
+      <ul className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+        {kpis.map((kpi) => (
+          <li key={kpi.label} className="card kpi">
+            <span className="kpi-ico">{kpi.icon}</span>
+            <div className="col gap-1">
+              <span className="kpi-v">{kpi.value}</span>
+              <span className="kpi-l">{kpi.label}</span>
+            </div>
+          </li>
+        ))}
+        <li
+          className="card kpi"
+          role="status"
+          style={
+            client.balance_due > 0
+              ? { borderColor: 'color-mix(in srgb, var(--destructive) 40%, transparent)' }
+              : undefined
+          }
+        >
+          <span className={cn('kpi-ico', client.balance_due > 0 && 'down')}>
+            <TriangleAlert className="i s" />
+          </span>
+          <div className="col gap-1">
+            <span className={cn('kpi-v', client.balance_due > 0 && 'down')}>
+              {formatEuro(client.balance_due)}
+            </span>
+            <span className="kpi-l">
+              Impayés TTC
+              {overdue > 0 && ` · ${overdue} facture${overdue > 1 ? 's' : ''} en retard`}
+            </span>
+          </div>
+        </li>
+      </ul>
+
+      <div className="split grid-cols-1! lg:grid-cols-[minmax(0,1fr)_380px]!">
+        <section data-slot="card" className="card" aria-labelledby="client-form">
+          <form
+            noValidate
+            onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: () => reset(values) }))}
+          >
+            <div className="card-h">
+              <h2 className="h2" id="client-form">
+                Fiche client
+              </h2>
+              <Button type="submit" size="sm" disabled={!isDirty || save.isPending}>
+                Enregistrer
+              </Button>
+            </div>
+            <div className="card-b col gap-3.5">
+              <div className="grid gap-3.5 sm:grid-cols-2">
+                <FormField id="client-name" label="Nom" error={errors.name?.message} {...register('name')} />
+                <FormField
+                  id="client-siren"
+                  label="SIREN"
+                  inputMode="numeric"
+                  placeholder="123 456 789"
+                  className="num"
+                  error={errors.siren?.message}
+                  {...register('siren')}
+                />
+                <FormField
+                  id="client-email"
+                  label="E-mail"
+                  type="email"
+                  placeholder="contact@client.fr"
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
+                <FormField
+                  id="client-phone"
+                  label="Téléphone"
+                  type="tel"
+                  placeholder="06 12 34 56 78"
+                  className="num"
+                  {...register('phone')}
+                />
+              </div>
+              <FormField
+                id="client-address"
+                label="Adresse de facturation"
+                placeholder="N°, rue, code postal, ville"
+                {...register('billing_address')}
+              />
+              {isDirection && (
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  <FormField
+                    id="client-discount"
+                    label="Remise client (%)"
+                    inputMode="decimal"
+                    placeholder="0"
+                    className="num"
+                    error={errors.discount_percent?.message}
+                    {...register('discount_percent')}
+                  />
+                  <FormField
+                    id="client-rate"
+                    label="Taux horaire client (€ HT)"
+                    inputMode="decimal"
+                    placeholder="Taux standard"
+                    className="num"
+                    error={errors.hourly_rate?.message}
+                    {...register('hourly_rate')}
+                  />
+                </div>
+              )}
+              <div className="field">
+                <Label htmlFor="client-notes">Notes</Label>
+                <Textarea id="client-notes" rows={3} {...register('notes')} />
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <div className="col gap-5">
+          <section data-slot="card" className="card" aria-labelledby="client-portal">
+            <div className="card-h">
+              <h2 className="h2" id="client-portal">
+                <Link2 className="i" /> Espace client en ligne
+              </h2>
+            </div>
+            <div className="card-b col gap-2.5">
+              <p className="hint">
+                Un lien sans mot de passe : le client y retrouve ses véhicules, ses devis à signer et ses
+                factures.
+              </p>
+              <ClientPortalButtons clientId={client.id} clientName={client.name} />
+            </div>
+          </section>
+
+          <section data-slot="card" className="card" aria-labelledby="client-vehicles">
+            <div className="card-h">
+              <h2 className="h2" id="client-vehicles">
+                Véhicules{' '}
+                <span className="cnt" aria-hidden>
+                  {vehicles.length}
+                </span>
+              </h2>
+            </div>
+            {vehicles.length === 0 ? (
+              <p className="card-b hint">Aucun véhicule.</p>
+            ) : (
+              <ul className="max-h-[360px] overflow-y-auto">
+                {vehicles.map((vehicle) => (
+                  <li key={vehicle.id}>
+                    <Link to={`/vehicules/${vehicle.id}`} className="li hover:bg-hover">
+                      <span className="col gap-0">
+                        <b className="plate">{vehicle.plate}</b>
+                        <span className="hint">
+                          {[
+                            [vehicle.brand, vehicle.model].filter(Boolean).join(' '),
+                            VEHICLE_TYPES[vehicle.vehicle_type],
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      </span>
+                      <span className="hint">{vehicle.orders_count} OR</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       </div>
 
-      {client.balance_due > 0 && (
-        <p
-          role="status"
-          className={cn(
-            'rounded-lg border p-3 font-semibold',
-            client.overdue_invoices_count > 0
-              ? 'border-destructive/40 bg-destructive/5 text-destructive'
-              : 'border-amber-500/40 bg-amber-50 text-amber-800',
-          )}
-        >
-          Reste dû : {formatEuro(client.balance_due)} TTC
-          {client.overdue_invoices_count > 0 &&
-            ` — ${client.overdue_invoices_count} facture${client.overdue_invoices_count > 1 ? 's' : ''} en retard`}
-        </p>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Fiche client</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form
-            noValidate
-            className="space-y-4"
-            onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: () => reset(values) }))}
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField id="client-name" label="Nom" error={errors.name?.message} {...register('name')} />
-              <FormField
-                id="client-siren"
-                label="SIREN"
-                inputMode="numeric"
-                placeholder="123 456 789"
-                error={errors.siren?.message}
-                {...register('siren')}
-              />
-              <FormField
-                id="client-email"
-                label="E-mail"
-                type="email"
-                placeholder="contact@client.fr"
-                error={errors.email?.message}
-                {...register('email')}
-              />
-              <FormField
-                id="client-phone"
-                label="Téléphone"
-                type="tel"
-                placeholder="06 12 34 56 78"
-                {...register('phone')}
-              />
-            </div>
-            <FormField
-              id="client-address"
-              label="Adresse de facturation"
-              placeholder="N°, rue, code postal, ville"
-              {...register('billing_address')}
-            />
-            {isDirection && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  id="client-discount"
-                  label="Remise client (%)"
-                  inputMode="decimal"
-                  placeholder="0"
-                  error={errors.discount_percent?.message}
-                  {...register('discount_percent')}
-                />
-                <FormField
-                  id="client-rate"
-                  label="Taux horaire client (€ HT)"
-                  inputMode="decimal"
-                  placeholder="Taux standard"
-                  error={errors.hourly_rate?.message}
-                  {...register('hourly_rate')}
-                />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="client-notes">Notes</Label>
-              <Textarea id="client-notes" rows={3} {...register('notes')} />
-            </div>
-            <Button type="submit" disabled={!isDirty || save.isPending}>
-              Enregistrer
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <section aria-labelledby="client-vehicles" className="space-y-2">
-        <h2 id="client-vehicles" className="text-lg font-bold">
-          Véhicules
-        </h2>
-        {vehicles.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun véhicule.</p>
-        ) : (
-          <ul className="flex flex-wrap gap-2">
-            {vehicles.map((vehicle) => (
-              <li key={vehicle.id}>
-                <Link
-                  to={`/vehicules/${vehicle.id}`}
-                  className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm font-semibold hover:bg-muted"
-                >
-                  <Truck className="size-4" /> {vehicle.plate}
-                  <span className="font-normal text-muted-foreground">({vehicle.orders_count} OR)</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-labelledby="client-orders" className="space-y-2">
-        <h2 id="client-orders" className="text-lg font-bold">
-          Ordres de réparation ({orders.length})
-        </h2>
-        {orders.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun OR.</p>
-        ) : (
-          <ul className="space-y-2">
-            {orders.map((order) => (
-              <li key={order.id}>
-                <Link
-                  to={`/or/${order.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 hover:bg-muted"
-                >
-                  <span>
-                    <strong>{order.number}</strong> — {order.plate} — {formatDate(order.created_at)}
-                    <span className="block text-sm text-muted-foreground">{order.requested_work}</span>
-                  </span>
-                  <StatusBadge status={order.status} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section aria-labelledby="client-invoices" className="space-y-2">
-          <h2 id="client-invoices" className="text-lg font-bold">
-            Factures ({invoices.length})
-          </h2>
-          {invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune facture.</p>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <section data-slot="card" className="card" aria-labelledby="client-orders">
+          <div className="card-h">
+            <h2 className="h2" id="client-orders">
+              Ordres de réparation
+            </h2>
+            <span className="cnt">{orders.length}</span>
+          </div>
+          {orders.length === 0 ? (
+            <p className="card-b hint">Aucun OR.</p>
           ) : (
-            <ul className="space-y-2">
-              {invoices.map((invoice) => (
-                <li key={invoice.id}>
-                  <Link
-                    to={`/factures/${invoice.id}`}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 hover:bg-muted"
-                  >
-                    <span>
-                      <strong>{invoice.number ?? 'Brouillon'}</strong> — {formatDate(invoice.issued_at)}
-                      <span className="block text-sm text-muted-foreground">
-                        {formatEuro(invoice.total_ttc)} TTC
-                        {invoice.balance_due && invoice.balance_due > 0
-                          ? ` — reste ${formatEuro(invoice.balance_due)}`
-                          : ''}
-                      </span>
+            <ul className="max-h-[420px] overflow-y-auto">
+              {orders.map((order) => (
+                <li key={order.id}>
+                  <Link to={`/or/${order.id}`} className="li hover:bg-hover">
+                    <span className="c2 min-w-0">
+                      <b>
+                        {order.number} · {order.plate}
+                      </b>
+                      <span>{formatDate(order.created_at)}</span>
                     </span>
-                    <InvoiceStatusBadge invoice={invoice} />
+                    <StatusBadge status={order.status} />
                   </Link>
                 </li>
               ))}
             </ul>
           )}
         </section>
-        <section aria-labelledby="client-quotes" className="space-y-2">
-          <h2 id="client-quotes" className="text-lg font-bold">
-            Devis ({quotes.length})
-          </h2>
+        <section data-slot="card" className="card" aria-labelledby="client-quotes">
+          <div className="card-h">
+            <h2 className="h2" id="client-quotes">
+              Devis
+            </h2>
+            <span className="cnt">{quotes.length}</span>
+          </div>
           {quotes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun devis.</p>
+            <p className="card-b hint">Aucun devis.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="max-h-[420px] overflow-y-auto">
               {quotes.map((quote) => (
                 <li key={quote.id}>
-                  <Link
-                    to={`/devis/${quote.id}`}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 hover:bg-muted"
-                  >
-                    <span>
-                      <strong>{quote.number ?? 'Sans numéro'}</strong> — {formatDate(quote.created_at)}
-                      <span className="block text-sm text-muted-foreground">
-                        {formatEuro(quote.total_ttc)} TTC{quote.plate ? ` — ${quote.plate}` : ''}
-                      </span>
+                  <Link to={`/devis/${quote.id}`} className="li hover:bg-hover">
+                    <span className="c2 min-w-0">
+                      <b>
+                        {quote.number ?? 'Brouillon'}
+                        {quote.plate ? ` · ${quote.plate}` : ''}
+                      </b>
+                      <span>{formatEuro(quote.total_ttc)} TTC</span>
                     </span>
                     {quote.status && <QuoteStatusBadge status={quote.status} />}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section data-slot="card" className="card" aria-labelledby="client-invoices">
+          <div className="card-h">
+            <h2 className="h2" id="client-invoices">
+              Factures
+            </h2>
+            <span className="cnt">{invoices.length}</span>
+          </div>
+          {invoices.length === 0 ? (
+            <p className="card-b hint">Aucune facture.</p>
+          ) : (
+            <ul className="max-h-[420px] overflow-y-auto">
+              {invoices.map((invoice) => (
+                <li key={invoice.id}>
+                  <Link to={`/factures/${invoice.id}`} className="li hover:bg-hover">
+                    <span className="c2 min-w-0">
+                      <b>{invoice.number ?? 'Brouillon'}</b>
+                      <span>
+                        {invoice.balance_due && invoice.balance_due > 0
+                          ? `Reste dû ${formatEuro(invoice.balance_due)}`
+                          : `${formatEuro(invoice.total_ttc)} TTC`}
+                        {invoice.issued_at ? ` · ${formatDate(invoice.issued_at)}` : ''}
+                      </span>
+                    </span>
+                    <InvoiceStatusBadge invoice={invoice} />
                   </Link>
                 </li>
               ))}
@@ -298,6 +381,13 @@ function ClientView({ detail }: { detail: ClientDetail }) {
         pending={remove.isPending}
         onConfirm={() => remove.mutate(client.id, { onSuccess: () => void navigate('/clients') })}
       />
-    </div>
+      {booking && (
+        <AppointmentDialog
+          appointment={null}
+          preset={{ client_name: client.name }}
+          onClose={() => setBooking(false)}
+        />
+      )}
+    </>
   );
 }

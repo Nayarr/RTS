@@ -16,6 +16,8 @@ interface PageHeaderProps {
   title: ReactNode;
   /** Bouton retour à gauche du titre. */
   back?: { to: string; label: string };
+  /** Élément entre le bouton retour et le titre (avatar du client…). */
+  leading?: ReactNode;
   /** Boutons et informations à droite. */
   actions?: ReactNode;
   className?: string;
@@ -25,7 +27,7 @@ interface PageHeaderProps {
  * Barre de titre de la page (maquette : fil d'Ariane, titre, actions à droite).
  * Affichée dans la coquille, au-dessus du contenu ; sans coquille (tests), à sa place.
  */
-export function PageHeader({ crumbs, title, back, actions, className }: PageHeaderProps) {
+export function PageHeader({ crumbs, title, back, leading, actions, className }: PageHeaderProps) {
   const slot = useContext(PageHeaderSlotContext);
   const header = (
     <header className={cn('topbar h-auto! min-h-[68px] flex-wrap px-4 py-2.5 lg:px-8', className)}>
@@ -35,6 +37,7 @@ export function PageHeader({ crumbs, title, back, actions, className }: PageHead
             <ArrowLeft className="size-[18px]" />
           </Link>
         )}
+        {leading}
         <div className="flex min-w-0 flex-col gap-0.5">
           {crumbs && crumbs.length > 0 && (
             <nav aria-label="Fil d’Ariane" className="crumbs flex-wrap">

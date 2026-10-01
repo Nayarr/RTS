@@ -257,7 +257,7 @@ describe('clients et véhicules : écrans', () => {
     vi.mocked(fetchClient).mockResolvedValue(CLIENT_DETAIL);
     renderAs('reception', '/clients/c1', <ClientPage />, '/clients/:id');
     expect(await screen.findByRole('heading', { name: 'Transports Martin' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/Reste dû : 146,40\s€ TTC — 1 facture en retard/);
+    expect(screen.getByRole('status')).toHaveTextContent(/146,40\s€Impayés TTC · 1 facture en retard/);
     expect(screen.queryByLabelText('Remise client (%)')).toBeNull();
     expect(screen.getByRole('button', { name: 'Facture groupée (2 OR)' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Supprimer' })).toBeNull();
@@ -302,7 +302,7 @@ describe('clients et véhicules : écrans', () => {
   it('fiche véhicule : échéances, historique, rendez-vous prérempli', async () => {
     vi.mocked(fetchVehicle).mockResolvedValue(VEHICLE_DETAIL);
     renderAs('reception', '/vehicules/v1', <VehiclePage />, '/vehicules/:id');
-    expect(await screen.findByRole('heading', { name: 'GH-512-RT' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /GH-512-RT/ })).toBeInTheDocument();
     expect(screen.getByText(/Dernier km : 184\s320 km/)).toBeInTheDocument();
     expect(screen.getByText('Dépassé (8 j)')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Kilométrage : de 150\s000 à 184\s320 km/ })).toBeInTheDocument();
@@ -312,7 +312,7 @@ describe('clients et véhicules : écrans', () => {
         .getAllByRole('link')
         .map((link) => link.getAttribute('href')),
     ).toEqual(['/or/ro2', '/or/ro1']);
-    expect(within(history).getByText('Vidange moteur • Filtre à huile')).toBeInTheDocument();
+    expect(within(history).getByText('Vidange moteur · Filtre à huile')).toBeInTheDocument();
 
     await userEvent.clear(screen.getByLabelText('Contrôle hayon'));
     const nextYear = addDays(todayIso(), 365);

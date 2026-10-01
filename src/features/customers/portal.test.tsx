@@ -64,7 +64,7 @@ describe('espace client : envoi du lien', () => {
     await waitFor(() => expect(hasClientPortal).toHaveBeenCalledWith('c1'));
     expect(screen.queryByRole('button', { name: 'Changer le lien' })).toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Espace client en ligne' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Envoyer le lien au client' }));
     const dialog = await screen.findByRole('dialog', { name: 'Espace client — Transports Dupont' });
     expect(shareClientPortal).toHaveBeenCalledWith('c1');
     expect(within(dialog).getByLabelText('Lien')).toHaveValue(
