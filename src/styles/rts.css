@@ -1455,3 +1455,63 @@
   text-decoration-line: none;
   font-family: 'Barlow', ui-sans-serif, system-ui, sans-serif;
 }
+
+@layer components {
+  /* Aide : liste des sujets et questions fréquentes (maquette « Aide ») */
+  .topic {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 9px;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    width: 100%;
+    text-align: left;
+  }
+  .topic:hover {
+    background: var(--hover);
+  }
+  .topic.on {
+    background: var(--accent);
+    color: var(--accent-foreground);
+    font-weight: 600;
+  }
+  .faq {
+    border-bottom: 1px solid var(--border);
+  }
+  .faq:last-child {
+    border-bottom: 0;
+  }
+  .faq summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq summary svg {
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .faq[open] summary svg {
+    transform: rotate(180deg);
+  }
+  .faq p {
+    padding: 0 20px 16px;
+    color: var(--muted-foreground);
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+}

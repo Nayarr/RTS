@@ -62,11 +62,10 @@ describe('aide', () => {
     renderHelp();
     const office = await screen.findByRole('region', { name: 'Pour la réception et la direction' });
     expect(screen.getByRole('region', { name: 'Pour la direction' })).toBeInTheDocument();
-    const invoicing = within(office).getByText('Facturer').closest('details')!;
-    expect(invoicing).not.toHaveAttribute('open');
-    await userEvent.click(within(office).getByText('Facturer'));
-    expect(invoicing).toHaveAttribute('open');
-    expect(invoicing).toHaveTextContent('Générer un avoir');
+    expect(screen.getByRole('article', { name: 'Démarrer un OR' })).toBeInTheDocument();
+    await userEvent.click(within(office).getByRole('button', { name: 'Facturer' }));
+    expect(within(office).getByRole('button', { name: 'Facturer' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('article', { name: 'Facturer' })).toHaveTextContent('Générer un avoir');
   });
 
   it('réception : pas la section de la direction', async () => {
