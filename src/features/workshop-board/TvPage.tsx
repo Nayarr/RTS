@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Settings } from 'lucide-react';
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { initials } from '@/app/nav';
 import { verifyExitCode } from '@/features/kiosk/api';
 import { useKioskMode } from '@/features/kiosk/use-kiosk-mode';
 import { cn } from '@/lib/utils';
@@ -100,51 +101,50 @@ export function TvPage() {
   const expected = board.data ? expectedVehicles(board.data) : '';
 
   return (
-    <div className="flex min-h-dvh flex-col gap-4 overflow-x-hidden bg-[#0d0d0d] p-5 text-white">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-wide uppercase">
-            {board.data?.company_name ?? 'Atelier'} — Atelier
-          </h1>
-          <p className="text-lg text-white/70 capitalize">
-            {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
+    <div className="relative flex min-h-dvh flex-col gap-6 overflow-x-hidden bg-[#eef0ee] px-10 py-8 dark:bg-[#0d0d0d]">
+      <header className="row between items-start gap-6">
+        <div className="row gap-[18px]">
+          <img src="/icons/icon-192.png" alt="" className="size-[72px] rounded-2xl bg-white p-[3px]" />
+          <div className="col gap-0.5">
+            <h1 className="font-display text-[42px] leading-none font-bold tracking-[.03em] uppercase">
+              {board.data?.company_name ?? 'Atelier'} — Atelier
+            </h1>
+            <span className="sub text-2xl! first-letter:uppercase">
+              {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </span>
+          </div>
         </div>
-        <p className="text-5xl font-bold tabular-nums" aria-label="Heure">
+        <span className="num font-display text-8xl leading-[.9] font-bold" aria-label="Heure">
           {now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-        </p>
+        </span>
       </header>
 
-      {board.isError && <p className="text-xl text-red-300">Connexion perdue : nouvel essai dans 30 s…</p>}
+      {board.isError && <p className="alert s-bad text-xl">Connexion perdue : nouvel essai dans 30 s…</p>}
 
-      <div className="grid flex-1 auto-cols-[minmax(13rem,1fr)] grid-flow-col gap-3 overflow-x-auto">
+      <div className="grid flex-1 auto-cols-[minmax(16rem,1fr)] grid-flow-col gap-6 overflow-x-auto">
         {columns.map((column) => (
-          <section key={column.id} aria-label={column.name} className="flex min-w-0 flex-col gap-2">
-            <h2
-              className="border-b-4 pb-1 text-2xl font-bold"
-              style={{ borderColor: column.color ?? '#ffffff' }}
-            >
-              {column.name}
+          <section
+            key={column.id}
+            aria-label={column.name}
+            className="col min-w-0 gap-3.5"
+            style={{ '--c': column.color ?? '#9aa0a6' } as CSSProperties}
+          >
+            <h2 className="col-h">
+              <span className="av lg" style={{ '--c': column.color ?? '#9aa0a6' } as CSSProperties}>
+                {column.color ? initials(column.name) : '—'}
+              </span>
+              <span className="truncate">{column.name}</span>
             </h2>
             {column.offLabel ? (
-              <p className="text-xl text-white/60">{column.offLabel}</p>
+              <p className="sub px-1 py-2 text-[26px]!">{column.offLabel}</p>
             ) : column.cards.length === 0 ? (
-              <p className="text-xl text-white/60">Disponible</p>
+              <p className="sub px-1 py-2 text-[26px]!">Disponible</p>
             ) : (
               column.cards.map((card) => (
-                <article
-                  key={card.id}
-                  aria-label={card.plate}
-                  className={cn(
-                    'rounded-lg border-2 p-3',
-                    card.running ? 'border-[#2e9a33] bg-[#16301a]' : 'border-white/20 bg-white/5',
-                  )}
-                >
-                  <p className="text-2xl font-extrabold tracking-wide">{card.plate}</p>
-                  <p className="line-clamp-2 text-lg text-white/85">{card.task.slice(0, 70)}</p>
-                  <p className={cn('text-base', card.running ? 'text-[#7ee07f]' : 'text-white/60')}>
-                    {cardMeta(card)}
-                  </p>
+                <article key={card.id} aria-label={card.plate} className={cn('tcard', card.running && 'run')}>
+                  <span className="p">{card.plate}</span>
+                  <span className="t line-clamp-2">{card.task.slice(0, 70)}</span>
+                  <span className="m">{cardMeta(card)}</span>
                 </article>
               ))
             )}
@@ -152,17 +152,17 @@ export function TvPage() {
         ))}
       </div>
 
-      <footer className="rounded-lg bg-white/10 p-3 text-lg">
-        <strong>Véhicules attendus aujourd’hui :</strong> {expected || 'aucun'}
+      <footer className="card px-6 py-[18px] text-2xl">
+        <b>Véhicules attendus aujourd’hui :</b> <span className="muted">{expected || 'aucun'}</span>
       </footer>
 
       <button
         type="button"
         aria-label="Quitter l’écran atelier"
-        className="fixed right-3 bottom-3 rounded-full p-2 text-white/30 hover:text-white/70"
+        className="ibtn ghost fixed right-3.5 bottom-3.5 opacity-35 hover:opacity-100"
         onClick={() => setExitOpen(true)}
       >
-        <Settings className="size-6" />
+        <Settings className="size-[18px]" />
       </button>
       {exitOpen && <ExitDialog onClose={() => setExitOpen(false)} />}
     </div>

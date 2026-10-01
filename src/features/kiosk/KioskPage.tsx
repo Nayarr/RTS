@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Delete, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,10 +32,10 @@ const MAX_PIN = 6;
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'] as const;
 
 const TONE_CLASS: Record<KioskTone, string> = {
-  info: 'text-white',
-  success: 'text-emerald-400',
-  warning: 'text-amber-300',
-  error: 'text-red-400',
+  info: 's-blue',
+  success: 's-green',
+  warning: 's-warn',
+  error: 's-bad',
 };
 
 function useNow() {
@@ -114,28 +114,41 @@ export function KioskPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [press, busy, exitOpen]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-neutral-950 text-white select-none">
-      <header className="flex items-start justify-between gap-4 p-5">
-        <div>
-          <p className="text-2xl font-bold tracking-wide">{company.data ?? 'RTS Atelier'}</p>
-          <p className="text-neutral-400">Borne de pointage</p>
-        </div>
-        <div className="text-right" aria-label="Heure">
-          <p className="text-4xl font-bold tabular-nums">
-            {now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-          </p>
-          <p className="text-sm text-neutral-400">
-            {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-        </div>
-      </header>
+  const idle = message === IDLE_MESSAGE;
+  const dots = Math.max(4, pin.length);
 
-      <main className="grid flex-1 items-center gap-6 px-5 pb-5 md:grid-cols-2">
-        <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl bg-neutral-900">
-          <video ref={videoRef} autoPlay playsInline muted className="size-full -scale-x-100 object-cover" />
-          {cameraState !== 'ready' && (
-            <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-neutral-300">
+  return (
+    <div className="fixed inset-0 z-50 grid overflow-y-auto bg-background p-6 select-none lg:grid-cols-[1fr_460px] lg:gap-10 lg:px-12 lg:py-10">
+      <div className="col gap-6">
+        <div className="row gap-3">
+          <img src="/icons/icon-192.png" alt="" className="size-12 rounded-[11px] bg-white p-0.5" />
+          <div className="col gap-0">
+            <b className="font-display text-2xl leading-tight">{company.data ?? 'RTS Atelier'}</b>
+            <span className="hint">Borne de pointage</span>
+          </div>
+        </div>
+        <div className="col gap-0" aria-label="Heure">
+          <span className="num font-display text-[84px] leading-[.95] font-bold lg:text-[120px]">
+            {now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <span className="sub text-[22px]! first-letter:uppercase">
+            {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </span>
+        </div>
+        <div className="relative flex min-h-56 grow items-center justify-center overflow-hidden rounded-[20px] bg-[#1c1d1f] text-white/60">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 size-full -scale-x-100 object-cover"
+          />
+          {cameraState === 'ready' ? (
+            <span className="badge dot s-bad absolute top-3.5 left-3.5 border-transparent! bg-black/40! text-white!">
+              REC
+            </span>
+          ) : (
+            <p className="relative max-w-sm p-6 text-center text-sm">
               {cameraState === 'starting'
                 ? 'Activation de la caméra…'
                 : cameraState === 'denied'
@@ -144,50 +157,60 @@ export function KioskPage() {
             </p>
           )}
         </div>
+      </div>
 
-        <div className="mx-auto w-full max-w-sm space-y-4">
-          <p aria-label="Code saisi" className="h-12 text-center text-4xl tracking-[0.5em] text-white">
-            {'●'.repeat(pin.length)}
-          </p>
-          <div className="grid grid-cols-3 gap-3" role="group" aria-label="Clavier">
-            {KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                disabled={busy}
-                aria-label={key === 'C' ? 'Effacer' : key === 'OK' ? 'Valider' : key}
-                onClick={() => press(key)}
-                className={cn(
-                  'h-20 rounded-2xl text-3xl font-bold transition active:scale-95 disabled:opacity-50',
-                  key === 'OK'
-                    ? 'bg-emerald-600 hover:bg-emerald-500'
-                    : key === 'C'
-                      ? 'bg-neutral-700 hover:bg-neutral-600'
-                      : 'bg-neutral-800 hover:bg-neutral-700',
-                )}
-              >
-                {key === 'C' ? <Delete className="mx-auto size-8" /> : key}
-              </button>
-            ))}
-          </div>
-          <div
-            role="status"
-            aria-live="polite"
-            className={cn('min-h-20 text-center', TONE_CLASS[message.tone])}
-          >
-            <p className={cn('font-bold', message.detail ? 'text-3xl' : 'text-xl')}>{message.title}</p>
-            {message.detail && <p className="text-xl">{message.detail}</p>}
-          </div>
+      <div className="card col mt-6 justify-center gap-[22px] p-7 lg:mt-0">
+        <div className="col gap-1 text-center">
+          <h1 className="title text-[30px]!">Tape ton code</h1>
+          <span className="sub">Arrivée ou départ, la borne le sait.</span>
         </div>
-      </main>
+        <div className="dots" aria-label="Code saisi" data-length={pin.length}>
+          {Array.from({ length: dots }, (_, index) => (
+            <i key={index} className={cn(index < pin.length && 'f')} />
+          ))}
+        </div>
+        <div className="pad" role="group" aria-label="Clavier">
+          {KEYS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              disabled={busy}
+              aria-label={key === 'C' ? 'Effacer' : key === 'OK' ? 'Valider' : key}
+              onClick={() => press(key)}
+              className={cn('key', key === 'C' && 'c', key === 'OK' && 'ok')}
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        role="status"
+        aria-live="polite"
+        className={cn(
+          idle
+            ? 'sr-only'
+            : cn(
+                'alert fixed right-6 bottom-6 left-6 z-10 px-[18px]! py-4! text-base shadow-(--pop) lg:right-auto lg:bottom-12 lg:left-12 lg:w-[560px]',
+                'bg-[color-mix(in_srgb,var(--c)_14%,var(--card))]!',
+                TONE_CLASS[message.tone],
+              ),
+        )}
+      >
+        <div className="col gap-0">
+          <b className="text-lg">{message.title}</b>
+          {message.detail && <span className="muted">{message.detail}</span>}
+        </div>
+      </div>
 
       <button
         type="button"
         aria-label="Quitter la borne"
         onClick={() => setExitOpen(true)}
-        className="absolute bottom-3 left-3 rounded-full p-3 text-neutral-600 hover:text-neutral-300"
+        className="ibtn ghost absolute right-3.5 bottom-3.5 opacity-50 hover:opacity-100"
       >
-        <Settings className="size-6" />
+        <Settings className="size-[18px]" />
       </button>
       {exitOpen && <ExitDialog onClose={() => setExitOpen(false)} />}
     </div>
