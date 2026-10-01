@@ -24,7 +24,8 @@ test('contrat d’entretien : entretien planifié, facture du mois, fin du contr
 
   await loginAs(page, 'reception@rts.local');
   await page.goto('/contrats');
-  await page.getByRole('button', { name: 'Nouveau contrat' }).click();
+  // Bouton de la barre de titre (la liste vide en affiche un second)
+  await page.getByRole('button', { name: 'Nouveau contrat' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Nouveau contrat d’entretien' });
   await dialog.getByLabel('Client').fill(clientName);
   await dialog.getByLabel('Prestation').fill('Vidange + contrôle général');
