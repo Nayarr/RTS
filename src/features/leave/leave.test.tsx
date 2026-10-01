@@ -83,13 +83,16 @@ describe('congés : direction', () => {
     expect(request).toHaveTextContent('En attente');
 
     const history = screen.getByRole('region', { name: 'Historique' });
-    expect(
+    const rows = () =>
       within(history)
-        .getAllByRole('article')
-        .map((item) => item.getAttribute('aria-label')),
-    ).toEqual(['Bruno — Maladie', 'Alice — Congés payés']);
+        .getAllByRole('row')
+        .slice(1)
+        .map((item) => item.getAttribute('aria-label'));
+    expect(rows()).toEqual(['Bruno — Maladie']);
+    await userEvent.click(within(history).getByRole('button', { name: 'Passées' }));
+    expect(rows()).toEqual(['Alice — Congés payés']);
     expect(within(history).getByText('Refusée')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Congés et absences' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^Congés et absences/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('valider, refuser, supprimer', async () => {
@@ -105,7 +108,7 @@ describe('congés : direction', () => {
     await waitFor(() => expect(decideLeaveRequest).toHaveBeenLastCalledWith('l1', false));
 
     await userEvent.click(
-      within(screen.getByRole('article', { name: 'Bruno — Congés payés' })).getByRole('button', {
+      within(screen.getByRole('row', { name: 'Bruno — Congés payés' })).getByRole('button', {
         name: 'Supprimer',
       }),
     );

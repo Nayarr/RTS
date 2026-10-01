@@ -86,7 +86,7 @@ test('le technicien demande un congé, la direction le valide', async ({ page, b
   await expect(request).toContainText(`le ${frenchDate(day)} (1 j)`);
   await request.getByRole('button', { name: 'Valider' }).click();
   await expect(
-    office.getByRole('region', { name: 'Historique' }).getByRole('article').filter({ hasText: comment }),
+    office.getByRole('region', { name: 'Historique' }).getByRole('row').filter({ hasText: comment }),
   ).toContainText('Validée');
   await office.context().close();
 
