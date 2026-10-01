@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
+import { CalendarClock, Info, TriangleAlert, Truck } from 'lucide-react';
+import { PageHeader } from '@/app/PageHeader';
+import { Button } from '@/components/ui/button';
+import { AppointmentDialog } from '@/features/planning/AppointmentDialog';
+import type { AppointmentPreset } from '@/features/planning/schemas';
 import { todayIso } from '@/features/repair-orders/schemas';
-import { cn } from '@/lib/utils';
 import { CustomersTabs } from './CustomersTabs';
-import { DEADLINE_LABELS, DEADLINE_TONE_CLASS, deadlineStatus, type DeadlineKind } from './domain';
+import { DEADLINE_BADGE_CLASS, DEADLINE_LABELS, deadlineStatus, type DeadlineKind } from './domain';
 import { useDeadlines } from './hooks';
 
 const frenchDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
@@ -11,56 +16,122 @@ const frenchDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${is
 export function DeadlinesPage() {
   const deadlines = useDeadlines();
   const today = todayIso();
+  const [booking, setBooking] = useState<AppointmentPreset | null>(null);
+  const list = deadlines.data ?? [];
+  const statuses = list.map((deadline) => deadlineStatus(deadline.due_date, today));
+  const overdue = statuses.filter((status) => status?.tone === 'overdue').length;
+  const vehicles = new Set(list.map((deadline) => deadline.vehicle_id)).size;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-3xl font-bold">Clients et véhicules</h1>
-        <p className="text-muted-foreground">
-          Fiches clients, historique, impayés et échéances des véhicules.
-        </p>
-      </div>
-      <CustomersTabs />
-      <p className="text-sm text-muted-foreground">
-        Contrôles techniques et contrôles hayon dépassés ou dans les 30 prochains jours. Les dates se
-        renseignent sur la fiche du véhicule (ou par le technicien depuis l’OR).
-      </p>
+    <>
+      <PageHeader crumbs={[{ label: 'Clients et véhicules' }, { label: 'Échéances' }]} title="Échéances" />
 
-      {deadlines.isPending && <p className="text-muted-foreground">Chargement…</p>}
-      {deadlines.isError && <p className="text-destructive">Impossible de charger les échéances.</p>}
-      {deadlines.isSuccess && deadlines.data.length === 0 && (
-        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-          Aucune échéance proche. 👍
-        </p>
-      )}
+      <div className="col gap-4">
+        <div className="toolbar">
+          <CustomersTabs deadlines={list.length || undefined} />
+        </div>
+        <div className="alert s-blue">
+          <Info className="i" />
+          <span>
+            Contrôles techniques et contrôles hayon dépassés ou dans les 30 prochains jours. Les dates se
+            renseignent sur la fiche du véhicule (ou par le technicien depuis l’OR).
+          </span>
+        </div>
 
-      <ul className="space-y-2">
-        {(deadlines.data ?? []).map((deadline) => {
-          const status = deadlineStatus(deadline.due_date, today);
-          const kind = (deadline.kind ?? 'ct') as DeadlineKind;
-          return (
-            <li key={`${deadline.vehicle_id}-${kind}`}>
-              <Link
-                to={`/vehicules/${deadline.vehicle_id}`}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-4 hover:bg-muted"
-              >
-                <span>
-                  <strong className="tracking-wide">{deadline.plate}</strong>
-                  <span className="block text-sm text-muted-foreground">
-                    {DEADLINE_LABELS[kind]} — {deadline.due_date ? frenchDate(deadline.due_date) : '—'}
-                    {deadline.client_name ? ` — ${deadline.client_name}` : ''}
-                  </span>
-                </span>
-                {status && (
-                  <span className={cn('font-semibold', DEADLINE_TONE_CLASS[status.tone])}>
-                    {status.label}
-                  </span>
-                )}
-              </Link>
+        {deadlines.isPending && <p className="text-muted-foreground">Chargement…</p>}
+        {deadlines.isError && <p className="text-destructive">Impossible de charger les échéances.</p>}
+
+        {deadlines.isSuccess && (
+          <ul className="grid gap-3.5 sm:grid-cols-3">
+            <li className="card kpi flex-row items-center">
+              <span className="kpi-ico down">
+                <TriangleAlert className="i s" />
+              </span>
+              <div className="col gap-0.5">
+                <span className={`kpi-v ${overdue > 0 ? 'down' : ''}`}>{overdue}</span>
+                <span className="kpi-l">Dépassées</span>
+              </div>
             </li>
-          );
-        })}
-      </ul>
-    </div>
+            <li className="card kpi flex-row items-center">
+              <span className="kpi-ico warn-t">
+                <CalendarClock className="i s" />
+              </span>
+              <div className="col gap-0.5">
+                <span className="kpi-v">{list.length - overdue}</span>
+                <span className="kpi-l">Dans les 30 jours</span>
+              </div>
+            </li>
+            <li className="card kpi flex-row items-center">
+              <span className="kpi-ico">
+                <Truck className="i s" />
+              </span>
+              <div className="col gap-0.5">
+                <span className="kpi-v">{vehicles}</span>
+                <span className="kpi-l">Véhicules concernés</span>
+              </div>
+            </li>
+          </ul>
+        )}
+
+        {deadlines.isSuccess && list.length === 0 && <p className="empty">Aucune échéance proche.</p>}
+
+        {list.length > 0 && (
+          <div className="card tbl-wrap overflow-x-auto!">
+            <table className="tbl" aria-label="Échéances">
+              <thead>
+                <tr>
+                  <th>Véhicule</th>
+                  <th>Échéance</th>
+                  <th>Date</th>
+                  <th>Client</th>
+                  <th>État</th>
+                  <th className="r">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((deadline, index) => {
+                  const status = statuses[index];
+                  const kind = (deadline.kind ?? 'ct') as DeadlineKind;
+                  return (
+                    <tr key={`${deadline.vehicle_id}-${kind}`}>
+                      <td>
+                        <Link to={`/vehicules/${deadline.vehicle_id}`} className="plate-tag">
+                          {deadline.plate}
+                        </Link>
+                      </td>
+                      <td className="b">{DEADLINE_LABELS[kind]}</td>
+                      <td className="num">{deadline.due_date ? frenchDate(deadline.due_date) : '—'}</td>
+                      <td>{deadline.client_name ?? '—'}</td>
+                      <td>
+                        {status && (
+                          <span className={`badge ${DEADLINE_BADGE_CLASS[status.tone]}`}>{status.label}</span>
+                        )}
+                      </td>
+                      <td className="r">
+                        <Button
+                          size="sm"
+                          variant={status?.tone === 'overdue' ? 'default' : 'outline'}
+                          onClick={() =>
+                            setBooking({
+                              plate: deadline.plate ?? '',
+                              client_name: deadline.client_name ?? '',
+                              reason: DEADLINE_LABELS[kind],
+                            })
+                          }
+                        >
+                          Prendre rendez-vous
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {booking && <AppointmentDialog appointment={null} preset={booking} onClose={() => setBooking(null)} />}
+    </>
   );
 }

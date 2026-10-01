@@ -230,17 +230,16 @@ describe('clients et véhicules : écrans', () => {
       }),
     ]);
     renderAs('reception', '/clients', <ClientsPage />, '/clients');
-    const martin = await screen.findByRole('link', { name: /Transports Martin/ });
-    expect(martin).toHaveAttribute('href', '/clients/c1');
-    expect(martin).toHaveTextContent(/Impayés : 146,40\s€ TTC/);
-    expect(martin).toHaveTextContent(/2 véhicules — 3 OR — CA HT : 1\s200,00\s€/);
+    const martin = await screen.findByRole('row', { name: /Transports Martin/ });
+    expect(within(martin).getAllByRole('link')[0]).toHaveAttribute('href', '/clients/c1');
+    expect(martin).toHaveTextContent(/2\s*3\s*1\s200,00\s€.*146,40\s€/);
 
     await userEvent.click(screen.getByRole('button', { name: 'Avec impayés 1' }));
-    expect(screen.queryByRole('link', { name: /Logistique Durand/ })).toBeNull();
+    expect(screen.queryByRole('row', { name: /Logistique Durand/ })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Tous 2' }));
     await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher un client' }), 'durand');
-    expect(screen.getByRole('link', { name: /Logistique Durand/ })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Transports Martin/ })).toBeNull();
+    expect(screen.getByRole('row', { name: /Logistique Durand/ })).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Transports Martin/ })).toBeNull();
   });
 
   const CLIENT_DETAIL: ClientDetail = {
@@ -346,9 +345,9 @@ describe('clients et véhicules : écrans', () => {
       },
     ]);
     renderAs('reception', '/vehicules/echeances', <DeadlinesPage />, '/vehicules/echeances');
-    const item = await screen.findByRole('link', { name: /GH-512-RT/ });
-    expect(item).toHaveAttribute('href', '/vehicules/v1');
-    expect(item).toHaveTextContent('Contrôle hayon — 20/09/2020 — Transports Martin');
+    const item = await screen.findByRole('row', { name: /GH-512-RT/ });
+    expect(within(item).getByRole('link', { name: 'GH-512-RT' })).toHaveAttribute('href', '/vehicules/v1');
+    expect(item).toHaveTextContent('Contrôle hayon20/09/2020Transports Martin');
     expect(item).toHaveTextContent(/Dépassé/);
   });
 });

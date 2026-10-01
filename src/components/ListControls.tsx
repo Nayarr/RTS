@@ -46,7 +46,12 @@ export function FilterChips<T extends string>({
         >
           {option.color && <span className="sw" style={{ '--c': option.color } as CSSProperties} />}
           {option.label}
-          {option.count !== undefined && <span className="n">{option.count}</span>}
+          {option.count !== undefined && (
+            <>
+              {' '}
+              <span className="n">{option.count}</span>
+            </>
+          )}
         </button>
       ))}
     </div>
