@@ -8,6 +8,8 @@ import { formatDate, normalizeKey } from '@/features/repair-orders/constants';
 import { formatEuro } from '@/lib/numbers';
 import { useIsDesktop } from '@/lib/use-media-query';
 import { usePagination } from '@/lib/use-pagination';
+import { addDays } from '@/features/planning/domain';
+import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
 import type { QuoteOverview, QuoteStatus } from './api';
 import { QUOTE_STATUS_META, QUOTE_STATUS_ORDER } from './domain';
@@ -70,10 +72,10 @@ export function QuotesPage() {
 
   const all = quotes.data ?? [];
   const sent = all.filter((quote) => quote.status === 'sent');
-  const since = Date.now() - 90 * 86_400_000;
+  const since = addDays(todayIso(), -90);
   const decided = all.filter(
     (quote) =>
-      (quote.status === 'accepted' || quote.status === 'refused') && Date.parse(quote.created_at) >= since,
+      (quote.status === 'accepted' || quote.status === 'refused') && quote.created_at.slice(0, 10) >= since,
   );
   const rate = decided.length
     ? Math.round((decided.filter((quote) => quote.status === 'accepted').length / decided.length) * 100)
