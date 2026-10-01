@@ -87,7 +87,7 @@ test('le client signe et accepte le devis en ligne ; le bureau voit sa signature
 
   // Sans signature : refusé
   await client.page.getByLabel('Votre nom').fill('Jean Martin');
-  await client.page.getByRole('button', { name: 'J’accepte ce devis' }).click();
+  await client.page.getByRole('button', { name: 'Accepter et signer' }).click();
   await expect(client.page.getByRole('alert')).toContainText('Merci de signer le devis');
 
   // Signature au doigt / à la souris
@@ -98,13 +98,13 @@ test('le client signe et accepte le devis en ligne ; le bureau voit sa signature
   await client.page.mouse.move(box.x + 120, box.y + 100, { steps: 8 });
   await client.page.mouse.move(box.x + 220, box.y + 30, { steps: 8 });
   await client.page.mouse.up();
-  await client.page.getByRole('button', { name: 'J’accepte ce devis' }).click();
+  await client.page.getByRole('button', { name: 'Accepter et signer' }).click();
   await expect(client.page.getByText(/Devis accepté par Jean Martin/)).toBeVisible();
 
   // Le lien ne permet plus de répondre
   await client.page.reload();
   await expect(client.page.getByText(/Devis accepté par Jean Martin/)).toBeVisible();
-  await expect(client.page.getByRole('button', { name: 'J’accepte ce devis' })).toHaveCount(0);
+  await expect(client.page.getByRole('button', { name: 'Accepter et signer' })).toHaveCount(0);
   await client.close();
 
   // Côté bureau : devis accepté, signé en ligne, figé
@@ -124,7 +124,7 @@ test('le client refuse le devis en ligne', async ({ page, browser }, testInfo) =
   const path = await shareQuote(page, quote.id);
 
   const client = await openAsClient(browser, path, testInfo);
-  await client.page.getByRole('button', { name: 'Refuser' }).click();
+  await client.page.getByRole('button', { name: 'Refuser le devis' }).click();
   await client.page.getByRole('dialog').getByRole('button', { name: 'Refuser le devis' }).click();
   await expect(client.page.getByText('Devis refusé.')).toBeVisible();
   await client.close();
