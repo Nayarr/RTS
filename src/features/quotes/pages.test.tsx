@@ -146,7 +146,7 @@ function setup(path: string, detail?: Partial<QuoteDetail>) {
 }
 
 describe('liste des devis', () => {
-  it('en attente de réponse par défaut, filtres et recherche', async () => {
+  it('tous les devis par défaut, filtres et recherche', async () => {
     vi.mocked(fetchQuotes).mockResolvedValue([
       quote(),
       quote({ id: 'q2', number: 'DV00002', status: 'accepted', client_name: 'Dupont', plate: 'AB-123-CD' }),
@@ -160,10 +160,11 @@ describe('liste des devis', () => {
     ]);
     setup('/devis');
     expect(await screen.findByText(/Transports Martin/)).toBeInTheDocument();
-    expect(screen.queryByText(/Dupont/)).toBeNull();
+    expect(screen.getByText(/Dupont/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /^Accepté/ }));
     expect(screen.getByText(/Dupont/)).toBeInTheDocument();
+    expect(screen.queryByText(/Transports Martin/)).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: /^Tous/ }));
     await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher un devis' }), 'ef456');
