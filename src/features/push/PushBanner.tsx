@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BellRing } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { currentSubscription, enablePush, pushSupport, requestNotificationPermission } from './push';
@@ -61,23 +61,15 @@ export function PushBanner() {
   if (support === 'available' && (subscription.isPending || subscription.data)) return null;
 
   return (
-    <section
-      aria-label="Notifications de l’appareil"
-      className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border-2 border-primary/60 bg-card p-3"
-    >
-      <BellRing className="size-5 shrink-0 text-primary" />
-      <p className="min-w-0 flex-1 text-sm">
-        {support === 'ios-install' ? (
-          <>
-            Pour être prévenu même téléphone verrouillé, installe d’abord l’appli : touche Partager puis « Sur
-            l’écran d’accueil », et ouvre-la depuis la nouvelle icône.
-          </>
-        ) : (
-          <>
-            Active les notifications pour être prévenu d’un nouvel OR ou d’une demande, même téléphone
-            verrouillé.
-          </>
-        )}
+    <section aria-label="Notifications de l’appareil" className="alert s-blue flex-wrap">
+      <Bell className="i" />
+      <p className="grow">
+        <b>Notifications de l’appareil</b>{' '}
+        <span className="muted">
+          {support === 'ios-install'
+            ? '— pour être prévenu même téléphone verrouillé, installe d’abord l’appli : touche Partager puis « Sur l’écran d’accueil », et ouvre-la depuis la nouvelle icône.'
+            : '— sois prévenu dès qu’un devis est accepté, qu’un OR t’est confié ou qu’un congé est demandé, même téléphone verrouillé.'}
+        </span>
       </p>
       <div className="flex gap-2">
         <Button variant="ghost" size="sm" onClick={later}>
@@ -86,10 +78,11 @@ export function PushBanner() {
         {support === 'available' && (
           <Button
             size="sm"
+            aria-label="Activer les notifications"
             disabled={enable.isPending}
             onClick={() => enable.mutate(requestNotificationPermission())}
           >
-            Activer les notifications
+            Activer
           </Button>
         )}
       </div>

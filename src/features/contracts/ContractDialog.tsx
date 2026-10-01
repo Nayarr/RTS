@@ -64,7 +64,7 @@ export function ContractDialog({ contract, onClose }: { contract: Contract | nul
           <FormField
             id="contract-plates"
             label="Véhicules (immatriculations séparées par des virgules)"
-            className="h-11 uppercase"
+            className="uppercase"
             error={errors.plates?.message}
             {...register('plates')}
           />

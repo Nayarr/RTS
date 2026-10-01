@@ -1,14 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { CheckCircle2, Printer, XCircle } from 'lucide-react';
+import { CheckCircle2, FileSignature, FileText, Info, PenLine, Printer, XCircle } from 'lucide-react';
+import { initials } from '@/app/nav';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SignaturePad } from '@/components/SignaturePad';
 import { useSignaturePad } from '@/components/use-signature-pad';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DEADLINE_TONE_CLASS, deadlineStatus } from '@/features/customers/domain';
+import { DEADLINE_BADGE_CLASS, DEADLINE_TONE_CLASS, deadlineStatus } from '@/features/customers/domain';
 import { PAYMENT_STATUS_META } from '@/features/invoices/domain';
 import { formatDate, formatDateTime } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
@@ -31,54 +32,97 @@ type TableLine = Pick<
   line_type: string;
 };
 
+const PAYMENT_BADGE: Record<PublicPortal['invoices'][number]['payment_status'], string> = {
+  paid: 's-ok',
+  pending: 's-warn',
+  partial: 's-blue',
+  overdue: 's-bad',
+};
+
+/** Bandeau du haut : identité de l'atelier, et à droite l'état du document ou le client. */
+function PublicHeader({
+  company,
+  subtitle,
+  wide = false,
+  children,
+}: {
+  company: PublicCompany;
+  subtitle: string;
+  wide?: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <header className="mbar h-[72px]! print:hidden">
+      <div
+        className={cn(
+          'mx-auto flex w-full items-center justify-between gap-3',
+          wide ? 'max-w-[1040px]' : 'max-w-[880px]',
+        )}
+      >
+        <div className="row min-w-0 gap-3">
+          <img src="/icons/icon-192.png" alt="" className="size-11 shrink-0 rounded-[10px] bg-white p-0.5" />
+          <div className="col min-w-0 gap-0">
+            <b className="truncate font-display text-xl uppercase">{company.legal_name}</b>
+            <span className="hint truncate">{subtitle}</span>
+          </div>
+        </div>
+        {children}
+      </div>
+    </header>
+  );
+}
+
 function LinesTable({ lines, title }: { lines: TableLine[]; title: string }) {
   if (lines.length === 0) return null;
   return (
-    <section className="space-y-1">
-      {title && <h2 className="mt-5 text-sm font-bold tracking-wide text-[#137017] uppercase">{title}</h2>}
+    <>
+      {title && (
+        <div className="border-t px-5 pt-4 pb-1 first:border-t-0 sm:px-7">
+          <h2 className="h3">{title}</h2>
+        </div>
+      )}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+        <table className="tbl dense">
           <thead>
-            <tr className="bg-[#136817] text-left text-white">
-              <th className="p-2 font-semibold">Prestation</th>
-              <th className="p-2 text-right font-semibold whitespace-nowrap">Prix unit. HT</th>
-              <th className="p-2 text-right font-semibold">Qté</th>
-              <th className="p-2 text-right font-semibold whitespace-nowrap">Net HT</th>
+            <tr>
+              <th className="pl-5! sm:pl-7!">Prestation</th>
+              <th className="r">Qté</th>
+              <th className="r">Prix unit. HT</th>
+              <th className="r pr-5! sm:pr-7!">Net HT</th>
             </tr>
           </thead>
           <tbody>
             {lines.map((line, index) =>
               line.line_type === 'text' ? (
-                <tr key={index} className="border-b">
-                  <td colSpan={4} className="p-2 whitespace-pre-wrap text-neutral-600 italic">
+                <tr key={index}>
+                  <td
+                    colSpan={4}
+                    className="pr-5! pl-5! whitespace-pre-wrap text-muted-foreground italic sm:pr-7! sm:pl-7!"
+                  >
                     {line.description}
                   </td>
                 </tr>
               ) : (
-                <tr key={index} className="border-b align-top">
-                  <td className="p-2 whitespace-pre-wrap">
+                <tr key={index} className="align-top">
+                  <td className="pl-5! whitespace-pre-wrap sm:pl-7!">
                     {line.description}
                     {line.discount_percent > 0 && (
-                      <em className="text-neutral-500">
+                      <em className="text-muted-foreground">
                         {' '}
                         (remise {formatQuantity(line.discount_percent)} %)
                       </em>
                     )}
                   </td>
-                  <td className="p-2 text-right whitespace-nowrap tabular-nums">
-                    {formatEuro(line.unit_price ?? 0)}
-                  </td>
-                  <td className="p-2 text-right tabular-nums">{formatQuantity(line.quantity)}</td>
-                  <td className="p-2 text-right font-semibold whitespace-nowrap tabular-nums">
-                    {formatEuro(line.net_ht)}
-                  </td>
+                  <td className="r num">{formatQuantity(line.quantity)}</td>
+                  <td className="r num whitespace-nowrap">{formatEuro(line.unit_price ?? 0)}</td>
+                  <td className="r num b pr-5! whitespace-nowrap sm:pr-7!">{formatEuro(line.net_ht)}</td>
                 </tr>
               ),
             )}
           </tbody>
         </table>
       </div>
-    </section>
+    </>
   );
 }
 
@@ -108,37 +152,59 @@ function ResponseForm({ token }: { token: string }) {
   };
 
   return (
-    <div className="mt-6 space-y-3 border-t pt-4">
-      <h2 className="font-bold">Bon pour accord</h2>
-      <div className="space-y-2">
-        <Label htmlFor="signer-name">Votre nom</Label>
-        <Input
-          id="signer-name"
-          className="h-11 text-base"
-          autoComplete="name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-        />
+    <section data-slot="card" className="card print:hidden" aria-labelledby="response-title">
+      <div className="card-h flex-wrap">
+        <h2 className="h2 text-[22px]!" id="response-title">
+          Bon pour accord
+        </h2>
+        <span className="hint">L’atelier sera prévenu de votre réponse.</span>
       </div>
-      <p className="text-sm text-neutral-600">Signez dans le cadre ci-dessous :</p>
-      <SignaturePad pad={pad} label="Signature du client" />
-      {error && (
-        <p role="alert" className="text-sm font-medium text-destructive">
-          {error}
-        </p>
-      )}
-      <div className="flex flex-wrap gap-2">
-        <Button size="lg" className="flex-1" disabled={respond.isPending} onClick={accept}>
-          J’accepte ce devis
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          disabled={respond.isPending}
-          onClick={() => setConfirmRefusal(true)}
-        >
-          Refuser
-        </Button>
+      <div className="card-b col gap-4 sm:px-6! sm:py-[22px]!">
+        <div className="field max-w-[400px]">
+          <Label htmlFor="signer-name">Votre nom</Label>
+          <Input
+            id="signer-name"
+            autoComplete="name"
+            className="h-12 text-[15px]!"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </div>
+        <div className="field">
+          <span className="lbl">Signez dans le cadre ci-dessous :</span>
+          <div className="relative">
+            <SignaturePad pad={pad} label="Signature du client" showClear={false} />
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="absolute top-2.5 right-2.5"
+              onClick={pad.clear}
+              disabled={pad.isEmpty}
+            >
+              Effacer
+            </Button>
+          </div>
+        </div>
+        {error && (
+          <p role="alert" className="err">
+            {error}
+          </p>
+        )}
+        <div className="row between flex-wrap gap-2">
+          <Button
+            size="lg"
+            variant="outline"
+            className="text-destructive"
+            disabled={respond.isPending}
+            onClick={() => setConfirmRefusal(true)}
+          >
+            Refuser le devis
+          </Button>
+          <Button size="lg" disabled={respond.isPending} onClick={accept}>
+            <PenLine /> Accepter et signer
+          </Button>
+        </div>
       </div>
       <ConfirmDialog
         open={confirmRefusal}
@@ -153,58 +219,53 @@ function ResponseForm({ token }: { token: string }) {
           respond.mutate(false);
         }}
       />
-    </div>
+    </section>
   );
 }
 
-function DocumentHeader({
-  company,
-  title,
-  children,
-}: {
-  company: PublicCompany;
-  title: string;
-  children: ReactNode;
-}) {
+/** En-tête du document : titre (DEVIS, FACTURE), références, et client / véhicule à droite. */
+function DocumentHead({ title, meta, aside }: { title: string; meta: ReactNode; aside: ReactNode }) {
   return (
-    <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <img src="/icons/icon-192.png" alt="" className="size-14" />
-        <div>
-          <p className="text-base font-bold">{company.legal_name}</p>
-          <p className="text-xs text-neutral-600">
-            {company.address_line}, {company.postal_code} {company.city}
-            {company.siret && ` — SIRET ${company.siret}`}
-            {company.email && ` — ${company.email}`}
-          </p>
-        </div>
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b px-5 py-6 sm:px-7">
+      <div className="col gap-1">
+        <h1 className="font-display text-[34px] leading-none font-bold tracking-[.06em]">{title}</h1>
+        <span className="hint">{meta}</span>
       </div>
-      <div className="ml-auto text-right">
-        <h1 className="text-3xl font-extrabold text-[#137017]">{title}</h1>
-        {children}
-      </div>
-    </header>
+      <div className="col gap-1.5 sm:text-right">{aside}</div>
+    </div>
   );
 }
 
 function DocumentTotals({ totals }: { totals: { total_ht: number; total_vat: number; total_ttc: number } }) {
   return (
-    <dl className="mt-5 ml-auto max-w-xs space-y-1 text-right" aria-label="Totaux">
-      <div className="flex justify-between gap-4">
+    <div className="flex justify-end border-t px-5 py-[18px] sm:px-7">
+      <dl className="dl grid-cols-[140px_130px]! items-baseline text-right" aria-label="Totaux">
         <dt>Total HT</dt>
-        <dd className="font-semibold tabular-nums">{formatEuro(totals.total_ht)}</dd>
-      </div>
-      <div className="flex justify-between gap-4">
+        <dd className="num">{formatEuro(totals.total_ht)}</dd>
         <dt>TVA</dt>
-        <dd className="tabular-nums">{formatEuro(totals.total_vat)}</dd>
-      </div>
-      <div className="flex justify-between gap-4 text-lg">
-        <dt>Total TTC</dt>
-        <dd className="font-bold tabular-nums">{formatEuro(totals.total_ttc)}</dd>
-      </div>
-    </dl>
+        <dd className="num">{formatEuro(totals.total_vat)}</dd>
+        <dt className="b text-base text-foreground!">Total TTC</dt>
+        <dd className="num font-display text-[26px] font-bold">{formatEuro(totals.total_ttc)}</dd>
+      </dl>
+    </div>
   );
 }
+
+function Notice({ tone, children }: { tone: 's-ok' | 's-bad' | 's-blue' | 's-grey'; children: ReactNode }) {
+  const Icon = tone === 's-ok' ? CheckCircle2 : tone === 's-bad' ? XCircle : Info;
+  return (
+    <p className={cn('alert font-semibold', tone)}>
+      <Icon className="i s shrink-0" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+const QUOTE_BADGE: Record<string, { label: string; tone: string }> = {
+  sent: { label: 'Devis à valider', tone: 's-blue' },
+  accepted: { label: 'Devis accepté', tone: 's-ok' },
+  refused: { label: 'Devis refusé', tone: 's-bad' },
+};
 
 function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) {
   const { company } = quote;
@@ -212,239 +273,293 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
   const planned = quote.lines.filter((line) => line.section === 'planned');
   // Même règle que la base : plus de signature en ligne après la date de validité.
   const expired = quote.valid_until !== null && quote.valid_until < todayIso();
+  const badge = QUOTE_BADGE[quote.status];
 
   return (
-    <article className="rounded-lg bg-white p-5 text-neutral-900 shadow-sm sm:p-8">
-      <DocumentHeader company={company} title="DEVIS">
-        <p className="text-neutral-600">
-          {quote.number}
-          {quote.issued_at && ` — ${formatDate(quote.issued_at)}`}
-        </p>
-        {quote.valid_until && (
-          <p className="text-xs text-neutral-600">Valable jusqu’au {formatDate(quote.valid_until)}</p>
+    <>
+      <PublicHeader company={company} subtitle={companyAddress(company)}>
+        {badge && <span className={cn('badge lg', badge.tone)}>{badge.label}</span>}
+      </PublicHeader>
+      <main className="col mx-auto w-full max-w-[880px] gap-5 px-3 py-5 sm:py-8">
+        <article data-slot="card" className="card overflow-hidden">
+          <DocumentHead
+            title="DEVIS"
+            meta={
+              <>
+                N° {quote.number}
+                {quote.issued_at && ` · ${formatDate(quote.issued_at)}`}
+                {quote.valid_until && ` · valable jusqu’au ${formatDate(quote.valid_until)}`}
+              </>
+            }
+            aside={
+              <>
+                <span>
+                  <span className="muted">Client :</span> <b>{quote.client_name ?? '—'}</b>
+                </span>
+                <span>
+                  <span className="muted">Véhicule :</span>{' '}
+                  <b className="plate">{quote.vehicle_plate ?? '—'}</b>
+                </span>
+              </>
+            }
+          />
+          <LinesTable lines={done} title={done.length ? 'Travaux déjà effectués' : ''} />
+          <LinesTable lines={planned} title={done.length ? 'Travaux à prévoir' : ''} />
+          <DocumentTotals totals={quote.totals} />
+        </article>
+
+        {quote.status === 'accepted' && (
+          <Notice tone="s-ok">
+            Devis accepté{quote.accepted_by_name && ` par ${quote.accepted_by_name}`}. Merci, nous vous
+            recontactons pour planifier l’intervention.
+          </Notice>
         )}
-      </DocumentHeader>
-
-      <p>
-        <strong>Client :</strong> {quote.client_name ?? '—'}
-        <br />
-        <strong>Véhicule :</strong> {quote.vehicle_plate ?? '—'}
-      </p>
-
-      <LinesTable lines={done} title={done.length ? 'Travaux déjà effectués' : ''} />
-      <LinesTable lines={planned} title={done.length ? 'Travaux à prévoir' : ''} />
-
-      <DocumentTotals totals={quote.totals} />
-
-      {quote.status === 'accepted' && (
-        <p className="mt-6 flex items-center gap-2 rounded-md bg-[#e3f3e7] p-4 font-bold">
-          <CheckCircle2 className="size-5 shrink-0 text-[#2A6B52]" />
-          Devis accepté{quote.accepted_by_name && ` par ${quote.accepted_by_name}`}. Merci, nous vous
-          recontactons pour planifier l’intervention.
-        </p>
-      )}
-      {quote.status === 'refused' && (
-        <p className="mt-6 flex items-center gap-2 rounded-md bg-[#f8e3e1] p-4 font-bold">
-          <XCircle className="size-5 shrink-0 text-[#B5453A]" /> Devis refusé.
-        </p>
-      )}
-      {quote.status === 'sent' && !expired && <ResponseForm token={token} />}
-      {quote.status === 'sent' && expired && (
-        <p className="mt-6 rounded-md bg-neutral-100 p-4">
-          Ce devis a expiré le {formatDate(quote.valid_until ?? '')} : contactez l’atelier pour recevoir une
-          nouvelle proposition.
-        </p>
-      )}
-      {quote.status !== 'sent' && quote.status !== 'accepted' && quote.status !== 'refused' && (
-        <p className="mt-6 rounded-md bg-neutral-100 p-4">
-          Ce devis est en cours de modification par l’atelier. Contactez-le pour recevoir la dernière version.
-        </p>
-      )}
-    </article>
+        {quote.status === 'refused' && <Notice tone="s-bad">Devis refusé.</Notice>}
+        {quote.status === 'sent' && !expired && <ResponseForm token={token} />}
+        {quote.status === 'sent' && expired && (
+          <Notice tone="s-grey">
+            Ce devis a expiré le {formatDate(quote.valid_until ?? '')} : contactez l’atelier pour recevoir une
+            nouvelle proposition.
+          </Notice>
+        )}
+        {quote.status !== 'sent' && quote.status !== 'accepted' && quote.status !== 'refused' && (
+          <Notice tone="s-grey">
+            Ce devis est en cours de modification par l’atelier. Contactez-le pour recevoir la dernière
+            version.
+          </Notice>
+        )}
+      </main>
+    </>
   );
+}
+
+function companyAddress(company: PublicCompany) {
+  return `${company.address_line}, ${company.postal_code} ${company.city}`;
 }
 
 /** Facture consultée en ligne : imprimable ou enregistrable en PDF depuis le navigateur. */
 function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
   const balance = invoice.balance_due ?? 0;
+  const { company } = invoice;
   return (
-    <article className="rounded-lg bg-white p-5 text-neutral-900 shadow-sm sm:p-8 print:p-0 print:shadow-none">
-      <DocumentHeader company={invoice.company} title="FACTURE">
-        <p className="text-neutral-600">
-          {invoice.number} — {formatDate(invoice.issued_at)}
-        </p>
-        <p className="text-xs text-neutral-600">Échéance le {formatDate(invoice.due_date)}</p>
-      </DocumentHeader>
-
-      <div className="flex flex-wrap justify-between gap-4">
-        <p>
-          <strong>Véhicule :</strong> {invoice.vehicle_label ?? '—'}
-          {invoice.mileage !== null && ` — ${invoice.mileage.toLocaleString('fr-FR')} km`}
-          {invoice.service_date && (
-            <>
-              <br />
-              <strong>Date de la prestation :</strong> {formatDate(invoice.service_date)}
-            </>
+    <>
+      <PublicHeader company={company} subtitle={companyAddress(company)}>
+        {balance > 0.01 ? (
+          <span className="badge lg s-blue">À régler</span>
+        ) : (
+          <span className="badge lg s-ok">Réglée</span>
+        )}
+      </PublicHeader>
+      <main className="col mx-auto w-full max-w-[880px] gap-5 px-3 py-5 sm:py-8 print:p-0">
+        <article data-slot="card" className="card overflow-hidden print:border-0 print:shadow-none">
+          <DocumentHead
+            title="FACTURE"
+            meta={
+              <>
+                N° {invoice.number} · {formatDate(invoice.issued_at)} · échéance le{' '}
+                {formatDate(invoice.due_date)}
+              </>
+            }
+            aside={
+              <>
+                <b>{invoice.client_name}</b>
+                {invoice.client_address && (
+                  <span className="text-[13px] whitespace-pre-line text-muted-foreground">
+                    {invoice.client_address}
+                  </span>
+                )}
+              </>
+            }
+          />
+          <div className="row wrap gap-x-6 gap-y-1 border-b px-5 py-3.5 text-[13.5px] sm:px-7">
+            <span>
+              <span className="muted">Véhicule :</span> <b>{invoice.vehicle_label ?? '—'}</b>
+              {invoice.mileage !== null && ` — ${invoice.mileage.toLocaleString('fr-FR')} km`}
+            </span>
+            {invoice.service_date && (
+              <span>
+                <span className="muted">Date de la prestation :</span>{' '}
+                <b>{formatDate(invoice.service_date)}</b>
+              </span>
+            )}
+          </div>
+          <LinesTable lines={invoice.lines} title="" />
+          <DocumentTotals totals={invoice.totals} />
+          {invoice.legal_mentions && invoice.legal_mentions.length > 0 && (
+            <div className="col gap-1 border-t px-5 py-3.5 text-xs text-muted-foreground sm:px-7">
+              {invoice.legal_mentions.map((mention) => (
+                <p key={mention}>{mention}</p>
+              ))}
+            </div>
           )}
-        </p>
-        <div className="min-w-56 rounded-md border p-3">
-          <p className="font-bold">{invoice.client_name}</p>
-          {invoice.client_address && <p className="text-sm whitespace-pre-line">{invoice.client_address}</p>}
+        </article>
+
+        {balance > 0.01 ? (
+          <Notice tone="s-blue">
+            Facture à régler avant le {formatDate(invoice.due_date)}
+            {balance < invoice.totals.total_ttc - 0.01 && ` — reste dû : ${formatEuro(balance)}`}. Merci de
+            votre confiance.
+          </Notice>
+        ) : (
+          <Notice tone="s-ok">Facture réglée. Merci de votre confiance.</Notice>
+        )}
+        <div className="row justify-end print:hidden">
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer /> Imprimer / enregistrer en PDF
+          </Button>
         </div>
-      </div>
-
-      <LinesTable lines={invoice.lines} title="" />
-      <DocumentTotals totals={invoice.totals} />
-
-      {balance > 0.01 ? (
-        <p className="mt-6 rounded-md bg-[#eef3fb] p-4 font-bold">
-          Facture à régler avant le {formatDate(invoice.due_date)}
-          {balance < invoice.totals.total_ttc - 0.01 && ` — reste dû : ${formatEuro(balance)}`}. Merci de
-          votre confiance.
-        </p>
-      ) : (
-        <p className="mt-6 flex items-center gap-2 rounded-md bg-[#e3f3e7] p-4 font-bold">
-          <CheckCircle2 className="size-5 shrink-0 text-[#2A6B52]" /> Facture réglée. Merci de votre
-          confiance.
-        </p>
-      )}
-
-      {invoice.legal_mentions && invoice.legal_mentions.length > 0 && (
-        <div className="mt-6 space-y-1 border-t pt-3 text-xs text-neutral-600">
-          {invoice.legal_mentions.map((mention) => (
-            <p key={mention}>{mention}</p>
-          ))}
-        </div>
-      )}
-      <Button variant="outline" className="mt-5 print:hidden" onClick={() => window.print()}>
-        <Printer /> Imprimer / enregistrer en PDF
-      </Button>
-    </article>
+      </main>
+    </>
   );
 }
 
-function DeadlineCell({ date }: { date: string | null }) {
+function Deadline({ label, date }: { label: string; date: string | null }) {
   const status = deadlineStatus(date, todayIso());
-  if (!date || !status) return <span className="text-neutral-500">—</span>;
-  return <span className={cn('font-bold', DEADLINE_TONE_CLASS[status.tone])}>{formatDate(date)}</span>;
+  const text = `${label} : ${date ? formatDate(date) : '—'}`;
+  if (!date || !status || status.tone === 'ok') {
+    return <span className={cn('hint', status && DEADLINE_TONE_CLASS[status.tone])}>{text}</span>;
+  }
+  return (
+    <span className={cn('badge h-[22px]! text-[11.5px]!', DEADLINE_BADGE_CLASS[status.tone])}>{text}</span>
+  );
 }
-
-const PORTAL_SECTION = 'mt-6 mb-2 text-sm font-bold tracking-wide text-[#137017] uppercase';
 
 /** Espace client : véhicules, devis à signer, factures (toujours à jour, sans compte). */
 function PortalDocument({ portal }: { portal: PublicPortal }) {
+  const { company } = portal;
   return (
-    <article className="rounded-lg bg-white p-6 shadow-sm sm:p-10 print:shadow-none">
-      <DocumentHeader company={portal.company} title="Espace client">
-        <p className="font-semibold">{portal.client_name}</p>
-        <p className="text-xs text-neutral-500">Mis à jour le {formatDateTime(portal.generated_at)}</p>
-      </DocumentHeader>
-
-      <h2 className={PORTAL_SECTION}>Vos véhicules</h2>
-      {portal.vehicles.length === 0 ? (
-        <p className="text-neutral-500">Aucun véhicule.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="py-2 pr-3">Véhicule</th>
-                <th className="py-2 pr-3">Statut</th>
-                <th className="py-2 pr-3">Contrôle technique</th>
-                <th className="py-2">Contrôle hayon</th>
-              </tr>
-            </thead>
-            <tbody>
-              {portal.vehicles.map((vehicle) => (
-                <tr key={vehicle.plate} className="border-b">
-                  <td className="py-2 pr-3 font-bold">{vehicle.plate}</td>
-                  <td className="py-2 pr-3">
-                    {vehicle.in_workshop ? (
-                      <strong className="text-[#137017]">
-                        À l’atelier — {vehicle.status_label}
-                        {vehicle.since && ` depuis le ${formatDate(vehicle.since)}`}
-                      </strong>
-                    ) : (
-                      <span className="text-neutral-500">{vehicle.status_label}</span>
-                    )}
-                  </td>
-                  <td className="py-2 pr-3">
-                    <DeadlineCell date={vehicle.ct_due_date} />
-                  </td>
-                  <td className="py-2">
-                    <DeadlineCell date={vehicle.tailgate_due_date} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <>
+      <PublicHeader company={company} subtitle="Espace client" wide>
+        <span className="row min-w-0 gap-2">
+          <span className="av shrink-0 bg-accent! text-accent-foreground!">
+            {initials(portal.client_name)}
+          </span>
+          <b className="truncate">{portal.client_name}</b>
+        </span>
+      </PublicHeader>
+      <main className="col mx-auto w-full max-w-[1040px] gap-5 px-3 py-5 sm:py-7">
+        <div className="col gap-1">
+          <h1 className="title xl">Bonjour</h1>
+          <p className="sub">
+            Vos véhicules, vos devis à signer et vos factures, à jour en permanence (le{' '}
+            {formatDateTime(portal.generated_at)}).
+          </p>
         </div>
-      )}
 
-      {portal.quotes.length > 0 && (
-        <>
-          <h2 className={PORTAL_SECTION}>Devis à valider</h2>
-          <ul className="space-y-1">
-            {portal.quotes.map((quote) => (
-              <li key={quote.token}>
-                <Link to={`/d/${quote.token}`} className="font-semibold text-[#137017] underline">
-                  Devis {quote.number}
-                  {quote.vehicle_plate && ` — ${quote.vehicle_plate}`}
-                </Link>{' '}
-                → à consulter et signer
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+        {portal.quotes.map((quote) => (
+          <Link key={quote.token} to={`/d/${quote.token}`} className="alert s-blue px-[18px]! py-4!">
+            <FileSignature className="i shrink-0" />
+            <span className="grow">
+              <b>Devis {quote.number} à valider</b>
+              {quote.vehicle_plate && <span className="muted"> — {quote.vehicle_plate}</span>}
+            </span>
+            <span className="btn sm pri">Voir et signer</span>
+          </Link>
+        ))}
 
-      <h2 className={PORTAL_SECTION}>Vos factures</h2>
-      {portal.invoices.length === 0 ? (
-        <p className="text-neutral-500">Aucune facture.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="py-2 pr-3">Facture</th>
-                <th className="py-2 pr-3">Date</th>
-                <th className="py-2 pr-3">Véhicule</th>
-                <th className="py-2 pr-3 text-right">TTC</th>
-                <th className="py-2 pr-3 text-right">Reste dû</th>
-                <th className="py-2">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              {portal.invoices.map((invoice) => (
-                <tr key={invoice.token} className="border-b">
-                  <td className="py-2 pr-3">
-                    <Link to={`/d/${invoice.token}`} className="font-semibold text-[#137017] underline">
-                      {invoice.number}
-                    </Link>
-                  </td>
-                  <td className="py-2 pr-3">{formatDate(invoice.issued_at)}</td>
-                  <td className="py-2 pr-3">{invoice.vehicle_label}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{formatEuro(invoice.total_ttc)}</td>
-                  <td className="py-2 pr-3 text-right font-bold tabular-nums">
-                    {formatEuro(invoice.balance_due)}
-                  </td>
-                  <td className="py-2" style={{ color: PAYMENT_STATUS_META[invoice.payment_status].color }}>
-                    {PAYMENT_STATUS_META[invoice.payment_status].label}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.4fr]">
+          <section data-slot="card" className="card" aria-labelledby="portal-vehicles">
+            <div className="card-h">
+              <h2 className="h2" id="portal-vehicles">
+                Vos véhicules
+              </h2>
+              <span className="cnt">{portal.vehicles.length}</span>
+            </div>
+            {portal.vehicles.length === 0 ? (
+              <p className="card-b hint">Aucun véhicule.</p>
+            ) : (
+              <ul>
+                {portal.vehicles.map((vehicle) => (
+                  <li key={vehicle.plate} className="li flex-wrap" aria-label={vehicle.plate}>
+                    <span className="col gap-0.5">
+                      <b className="plate">{vehicle.plate}</b>
+                      {vehicle.in_workshop ? (
+                        <b className="text-[13px] text-primary">
+                          À l’atelier — {vehicle.status_label}
+                          {vehicle.since && ` depuis le ${formatDate(vehicle.since)}`}
+                        </b>
+                      ) : (
+                        <span className="hint">{vehicle.status_label}</span>
+                      )}
+                    </span>
+                    <span className="col items-end gap-1">
+                      <Deadline label="Contrôle technique" date={vehicle.ct_due_date} />
+                      <Deadline label="Contrôle hayon" date={vehicle.tailgate_due_date} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section data-slot="card" className="card tbl-wrap" aria-labelledby="portal-invoices">
+            <div className="card-h">
+              <h2 className="h2" id="portal-invoices">
+                Vos factures
+              </h2>
+            </div>
+            {portal.invoices.length === 0 ? (
+              <p className="card-b hint">Aucune facture.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="tbl dense">
+                  <thead>
+                    <tr>
+                      <th>Facture</th>
+                      <th>Date</th>
+                      <th>Véhicule</th>
+                      <th className="r">TTC</th>
+                      <th className="r">Reste dû</th>
+                      <th>Statut</th>
+                      <th aria-label="Ouvrir" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {portal.invoices.map((invoice) => (
+                      <tr key={invoice.token}>
+                        <td>
+                          <Link to={`/d/${invoice.token}`} className="b ul">
+                            {invoice.number}
+                          </Link>
+                        </td>
+                        <td className="num">{formatDate(invoice.issued_at)}</td>
+                        <td className="plate text-sm!">{invoice.vehicle_label}</td>
+                        <td className="r num">{formatEuro(invoice.total_ttc)}</td>
+                        <td className={cn('r num b', invoice.payment_status === 'overdue' && 'down')}>
+                          {formatEuro(invoice.balance_due)}
+                        </td>
+                        <td>
+                          <span className={cn('badge', PAYMENT_BADGE[invoice.payment_status])}>
+                            {PAYMENT_STATUS_META[invoice.payment_status].label}
+                          </span>
+                        </td>
+                        <td>
+                          <Link
+                            to={`/d/${invoice.token}`}
+                            className="ibtn sm"
+                            tabIndex={-1}
+                            aria-label={`Ouvrir la facture ${invoice.number}`}
+                          >
+                            <FileText className="i s" />
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
-      )}
 
-      <p className="mt-6 text-xs text-neutral-500">
-        Une question ? Contactez l’atelier {portal.company.legal_name} — {portal.company.address_line},{' '}
-        {portal.company.postal_code} {portal.company.city}
-        {portal.company.email && ` — ${portal.company.email}`}
-        {portal.company.phone && ` — ${portal.company.phone}`}
-      </p>
-    </article>
+        <p className="hint text-center">
+          Une question ? Contactez l’atelier {company.legal_name} — {company.address_line},{' '}
+          {company.postal_code} {company.city}
+          {company.phone && ` — ${company.phone}`}
+          {company.email && ` — ${company.email}`}
+        </p>
+      </main>
+    </>
   );
 }
 
@@ -457,17 +572,15 @@ export function PublicDocumentPage() {
   });
 
   const data = document.data;
+  const message = (text: string) => <p className="empty mx-auto mt-16 max-w-md">{text}</p>;
   let content;
-  if (document.isPending) content = <p>Chargement du document…</p>;
-  else if (document.isError) content = <p>Impossible de charger le document. Réessayez dans un instant.</p>;
+  if (document.isPending) content = message('Chargement du document…');
+  else if (document.isError)
+    content = message('Impossible de charger le document. Réessayez dans un instant.');
   else if (data?.type === 'quote') content = <QuoteDocument quote={data} token={token} />;
   else if (data?.type === 'invoice') content = <InvoiceDocument invoice={data} />;
   else if (data?.type === 'portal') content = <PortalDocument portal={data} />;
-  else content = <p>Ce document est introuvable ou le lien a expiré.</p>;
+  else content = message('Ce document est introuvable ou le lien a expiré.');
 
-  return (
-    <div className="min-h-dvh bg-[#eef0ee] px-3 py-5 print:bg-white print:p-0">
-      <main className="mx-auto max-w-[820px]">{content}</main>
-    </div>
-  );
+  return <div className="min-h-dvh bg-background print:bg-white">{content}</div>;
 }

@@ -55,13 +55,18 @@ export function ShareInvoiceButtons({ invoice }: { invoice: InvoiceOverview }) {
 
   return (
     <>
-      <Button variant="outline" disabled={prepare.isPending} onClick={() => prepare.mutate(false)}>
+      <Button
+        variant="outline"
+        className="w-full"
+        disabled={prepare.isPending}
+        onClick={() => prepare.mutate(false)}
+      >
         <Send /> Envoyer au client
       </Button>
       {isOverdue(invoice) && (
         <Button
           variant="outline"
-          className="text-destructive"
+          className="w-full text-destructive"
           disabled={prepare.isPending}
           onClick={() => prepare.mutate(true)}
         >

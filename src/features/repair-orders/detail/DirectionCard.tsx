@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 import { Pause, Trash2, Unlock } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { deleteRepairOrder, forceStopTimer, updateRepairOrder, type RepairOrderOverview } from '../api';
 import { OPEN_STATUSES } from '../constants';
 import { useRepairOrderMutation } from '../hooks';
@@ -26,16 +25,17 @@ export function DirectionCard({ order }: { order: RepairOrderOverview }) {
   }, `${order.number} supprimé`);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Pilotage (direction)</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-wrap gap-2">
+    <section data-slot="card" className="card" aria-labelledby="ro-direction">
+      <div className="card-h">
+        <h2 className="h2" id="ro-direction">
+          Pilotage (direction)
+        </h2>
+      </div>
+      <div className="card-b col gap-2">
         {order.running_since && closed && (
           <Button
             variant="destructive"
+            className="w-full"
             disabled={stopTimer.isPending}
             onClick={() => stopTimer.mutate(undefined)}
           >
@@ -43,16 +43,25 @@ export function DirectionCard({ order }: { order: RepairOrderOverview }) {
           </Button>
         )}
         {closed && order.status !== 'invoiced' && (
-          <Button variant="outline" disabled={unlock.isPending} onClick={() => unlock.mutate(undefined)}>
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={unlock.isPending}
+            onClick={() => unlock.mutate(undefined)}
+          >
             <Unlock /> Débloquer pour le technicien
           </Button>
         )}
         {order.status !== 'invoiced' && (
-          <Button variant="outline" className="text-destructive" onClick={() => setConfirmDelete(true)}>
+          <Button
+            variant="outline"
+            className="w-full text-destructive"
+            onClick={() => setConfirmDelete(true)}
+          >
             <Trash2 /> Supprimer cet OR
           </Button>
         )}
-      </CardContent>
+      </div>
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
@@ -63,6 +72,6 @@ export function DirectionCard({ order }: { order: RepairOrderOverview }) {
         pending={remove.isPending}
         onConfirm={() => remove.mutate(undefined)}
       />
-    </Card>
+    </section>
   );
 }

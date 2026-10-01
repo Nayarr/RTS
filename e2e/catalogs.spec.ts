@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { goTo, sideNav } from './support/nav';
 
 const PASSWORD = 'atelier-dev-2026';
 
@@ -16,7 +17,7 @@ const unique = (label: string, project: string) =>
 
 test('seule la direction gère le stock', async ({ page }) => {
   await loginAs(page, 'reception@rts.local');
-  await expect(page.getByRole('link', { name: 'Stock' })).toHaveCount(0);
+  await expect((await sideNav(page)).getByRole('button', { name: 'Stock' })).toHaveCount(0);
   await page.goto('/stock/consommables');
   await expect(page.getByRole('heading', { name: 'Accès refusé' })).toBeVisible();
 });
@@ -26,7 +27,7 @@ test('consommable : création, réapprovisionnement, inventaire, alerte et retra
 }, testInfo) => {
   const name = unique('Huile test', testInfo.project.name);
   await loginAs(page, 'direction@rts.local');
-  await page.getByRole('link', { name: 'Stock' }).click();
+  await goTo(page, 'Stock', 'Consommables');
   await expect(page).toHaveURL(/\/stock\/consommables$/);
 
   await page.getByRole('button', { name: 'Nouveau consommable' }).click();
@@ -38,9 +39,9 @@ test('consommable : création, réapprovisionnement, inventaire, alerte et retra
   await create.getByLabel('Seuil d’alerte').fill('40');
   await create.getByRole('button', { name: 'Enregistrer' }).click();
 
-  const card = page.getByRole('article', { name });
+  const card = page.getByRole('row', { name, exact: true });
   await expect(card.getByText('50 L')).toBeVisible();
-  await expect(card.getByText(/Vente 6,50/)).toBeVisible();
+  await expect(card.getByText(/6,50/)).toBeVisible();
   await expect(card.getByText(/Stock bas/)).toHaveCount(0);
 
   await card.getByRole('button', { name: 'Réappro' }).click();

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { goTo } from './support/nav';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -73,10 +74,11 @@ test('retour d’une pièce d’OR au fournisseur, suivi jusqu’au remboursemen
   await expect(page.getByText(`Retour / garantie déclaré : ${partName}`)).toBeVisible();
 
   // Liste des retours en cours, rattaché à l'OR et au véhicule
-  await page.getByRole('link', { name: 'Garanties' }).click();
-  const card = page.getByRole('article', { name: partName });
+  await goTo(page, 'Facturation', 'Garanties et retours');
+  const card = page.getByRole('row', { name: new RegExp(partName) });
   await expect(card).toContainText('À retourner');
-  await expect(card).toContainText('Knorr-Bremse — PL Pièces 95 — K012345 — 180,00 € HT');
+  await expect(card).toContainText(/Réf\. K012345\s*PL Pièces 95 · Knorr-Bremse/);
+  await expect(card).toContainText('180,00 €');
   await expect(card.getByRole('link', { name: plate })).toBeVisible();
 
   // Envoyé, puis remboursé : il quitte les retours en cours

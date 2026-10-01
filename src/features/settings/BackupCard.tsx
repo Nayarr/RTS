@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Download, TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { backupAge, backupIsDue, backupRowCount, downloadBackup } from './backup';
 import { settingsQueryKey } from './hooks';
 
@@ -20,32 +20,32 @@ export function BackupCard({ lastBackupAt }: { lastBackupAt: string | null }) {
   const due = backupIsDue(lastBackupAt);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Sauvegarde</h2>
-        </CardTitle>
-        <CardDescription>
-          Télécharge toute la base (clients, véhicules, OR, devis, factures, pointages…) dans un fichier à
+    <section data-slot="card" className="card" aria-labelledby="backup-title">
+      <div className="sec-h">
+        <h2 className="h2" id="backup-title">
+          Sauvegarde
+        </h2>
+        <span className="hint">
+          Un fichier contenant toutes les données de l’atelier (clients, OR, devis, factures, pointages…), à
           garder en lieu sûr, par exemple sur une clé USB ou un disque externe. À faire au moins une fois par
           semaine.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p
-          className={due ? 'flex items-center gap-2 font-semibold text-destructive' : 'text-muted-foreground'}
-        >
-          {due && <TriangleAlert className="size-4" />}
-          {backupAge(lastBackupAt)}
-        </p>
+        </span>
+      </div>
+      <div className="form flex-row! flex-wrap items-center justify-between">
+        <div className="col gap-0.5">
+          <b className={cn('row gap-2', due && 'text-destructive')}>
+            {due && <TriangleAlert className="i s" />}
+            {backupAge(lastBackupAt)}
+          </b>
+          <span className="hint">
+            Les photos et PDF restent dans le stockage des fichiers ; les codes PIN et le code de sortie de la
+            borne ne sont jamais inclus.
+          </span>
+        </div>
         <Button disabled={backup.isPending} onClick={() => backup.mutate()}>
           <Download /> {backup.isPending ? 'Sauvegarde en cours…' : 'Télécharger la sauvegarde'}
         </Button>
-        <p className="text-sm text-muted-foreground">
-          Les photos et PDF restent dans le stockage des fichiers ; les codes PIN et le code de sortie de la
-          borne ne sont jamais inclus.
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

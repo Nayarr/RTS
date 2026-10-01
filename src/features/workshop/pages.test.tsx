@@ -187,14 +187,17 @@ describe('fiche OR technicien', () => {
     expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1);
   });
 
-  it('terminer l’intervention demande si un devis est nécessaire', async () => {
+  it('travaux terminés : demande si un devis est nécessaire', async () => {
     vi.mocked(completeRepairOrder).mockResolvedValue();
     vi.mocked(fetchMyRepairOrders).mockResolvedValue([]);
     setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }) });
 
-    await userEvent.click(await screen.findByRole('button', { name: /Terminer l’intervention/ }));
-    const dialog = await screen.findByRole('dialog', { name: 'Devis nécessaire ?' });
-    await userEvent.click(within(dialog).getByRole('button', { name: /Oui, établir un devis/ }));
+    const finish = await screen.findByRole('button', { name: /Travaux terminés/ });
+    expect(finish).toBeDisabled(); // réponse à « Devis nécessaire ? » obligatoire
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Devis nécessaire ?' })).getByRole('button', { name: 'OUI' }),
+    );
+    await userEvent.click(finish);
     await waitFor(() => expect(completeRepairOrder).toHaveBeenCalledWith('ro1', true));
     expect(await screen.findByRole('heading', { name: 'Mes ordres de réparation' })).toBeInTheDocument();
   });
@@ -225,7 +228,7 @@ describe('fiche OR technicien', () => {
     setup('/atelier/or/ro1', { order: order({ status: 'work_done' }), lines: [line({})] });
     expect(await screen.findByText('Cet OR est terminé : consultation seulement.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Démarrer le badgeage/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Terminer l’intervention/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Travaux terminés/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ajouter une tâche/ })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Description de la tâche' })).toBeDisabled();
   });

@@ -53,7 +53,8 @@ test('la direction crée un forfait, inséré dans un devis, puis le retire', as
   await expect(dialog).toBeHidden();
 
   const card = page.getByRole('article', { name });
-  await expect(card).toContainText(/PL — 2,5 h barème — 215,00\s€ HT/);
+  await expect(card).toContainText(/PL2,5 h barème/);
+  await expect(card).toContainText(/215,00\s€/);
 
   // Le forfait est proposé dans les devis
   const quote = await createQuote(`Client forfait ${id}`);

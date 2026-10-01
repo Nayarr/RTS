@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { CalendarOff } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
@@ -22,29 +21,34 @@ export function MyLeaveSection() {
     .sort((a, b) => a.starts_on.localeCompare(b.starts_on));
 
   return (
-    <section aria-labelledby="my-leave" className="space-y-3 rounded-xl border bg-card p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="my-leave" className="text-lg font-bold">
+    <section id="conges" data-slot="card" aria-labelledby="my-leave" className="card scroll-mt-20">
+      <div className="card-h min-h-[50px]! px-3.5! py-2.5!">
+        <h2 id="my-leave" className="h2 text-[17px]!">
           Mes congés
         </h2>
-        <Button variant="outline" onClick={() => setRequesting(true)}>
-          <CalendarOff /> Demander un congé
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label="Demander un congé"
+          onClick={() => setRequesting(true)}
+        >
+          <CalendarOff /> Demander
         </Button>
       </div>
       {upcoming.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun congé à venir.</p>
+        <p className="hint px-3.5 py-3">Aucun congé à venir.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul>
           {upcoming.map((leave) => (
-            <li key={leave.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span>
-                <strong>{LEAVE_LABELS[leave.leave_type]}</strong>{' '}
-                {leavePeriod(leave.starts_on, leave.ends_on)}
+            <li key={leave.id} className="li px-3.5! py-2.5!">
+              <span className="col gap-0">
+                <b className="text-[13.5px]">{LEAVE_LABELS[leave.leave_type]}</b>
+                <span className="hint">{leavePeriod(leave.starts_on, leave.ends_on)}</span>
               </span>
-              <span className="flex items-center gap-2">
-                <Badge className={cn(LEAVE_STATUS_META[leave.status].className)}>
+              <span className="row gap-2">
+                <span className={cn('badge', LEAVE_STATUS_META[leave.status].badge)}>
                   {LEAVE_STATUS_META[leave.status].label}
-                </Badge>
+                </span>
                 {leave.status === 'requested' && (
                   <Button variant="ghost" size="sm" onClick={() => setToCancel(leave)}>
                     Annuler

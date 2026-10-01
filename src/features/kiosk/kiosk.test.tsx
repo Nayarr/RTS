@@ -98,7 +98,7 @@ describe('borne : écran', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Tape ton code PIN puis OK');
 
     await typePin('123');
-    expect(screen.getByLabelText('Code saisi')).toHaveTextContent('●●●');
+    expect(screen.getByLabelText('Code saisi')).toHaveAttribute('data-length', '3');
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
     expect(kioskClock).not.toHaveBeenCalled(); // 4 chiffres minimum
 
@@ -119,7 +119,7 @@ describe('borne : écran', () => {
     await screen.findByText('RAPID TRUCK SERVICE');
     await userEvent.keyboard('98');
     await userEvent.click(screen.getByRole('button', { name: 'Effacer' }));
-    expect(screen.getByLabelText('Code saisi')).toHaveTextContent('');
+    expect(screen.getByLabelText('Code saisi')).toHaveAttribute('data-length', '0');
 
     vi.useFakeTimers({ shouldAdvanceTime: true });
     await userEvent.keyboard('0000{Enter}');
@@ -129,7 +129,7 @@ describe('borne : écran', () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
     expect(screen.getByRole('status')).toHaveTextContent('Tape ton code PIN puis OK');
-    expect(screen.getByLabelText('Code saisi')).toHaveTextContent('');
+    expect(screen.getByLabelText('Code saisi')).toHaveAttribute('data-length', '0');
   });
 
   it('sans photo, pas de pointage', async () => {

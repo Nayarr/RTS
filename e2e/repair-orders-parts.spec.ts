@@ -54,7 +54,7 @@ test('la réception suit pièces, sous-traitance et consommables ; le technicien
 
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
 
   // Pièce reprise du catalogue, quantité 2
   const parts = card(page, 'Pièces');

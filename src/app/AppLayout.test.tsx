@@ -1,20 +1,30 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
 import type { Profile } from '@/features/auth/roles';
 import { fakeSession, renderRoutes } from '@/test/render';
 import { AppLayout } from './AppLayout';
+import { activePath } from './nav';
 
 vi.mock('@/features/auth/api', async (importOriginal) => ({
   ...(await importOriginal<typeof AuthApi>()),
   fetchProfile: vi.fn(),
 }));
-// Cloche du bureau : aucune alerte.
-vi.mock('@/features/alerts/api', () => ({
-  fetchMyNotifications: vi.fn().mockResolvedValue([]),
-  markNotificationsRead: vi.fn(),
-  subscribeToNotifications: () => () => {},
+// Compteurs du menu : rien en attente.
+vi.mock('@/features/dashboard/api', () => ({
+  fetchOfficeDashboard: vi.fn().mockResolvedValue({
+    repair_orders: {},
+    parts_to_order: 0,
+    quotes_awaiting_response: 0,
+    quotes_to_convert: 0,
+    overdue_invoices: { count: 2, balance_due: 100 },
+    appointments_today: 0,
+    reminders_to_send: 0,
+    leave_requests: 0,
+    workload: [],
+  }),
 }));
 
 const profile = (role: Profile['role']): Profile => ({
@@ -33,21 +43,48 @@ const routes = [
     children: [
       { path: '/', element: <p>Accueil</p> },
       { path: '/equipe', element: <p>Écran Équipe</p> },
+      { path: '/factures', element: <p>Écran Factures</p> },
     ],
   },
 ];
 
+const menu = () => screen.getAllByRole('navigation', { name: 'Navigation principale' })[0]!;
+
 describe('AppLayout', () => {
-  it('affiche le lien Équipe à la direction', async () => {
+  it('la direction voit la partie Gestion ; le groupe se déplie sur ses écrans', async () => {
     vi.mocked(fetchProfile).mockResolvedValue(profile('direction'));
     renderRoutes(routes, { auth: { session: fakeSession() } });
-    expect(await screen.findByRole('link', { name: 'Équipe' })).toHaveAttribute('href', '/equipe');
+    const group = await screen.findByRole('button', { name: 'Équipe' });
+    expect(group).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(group);
+    expect(within(menu()).getByRole('link', { name: 'Comptes et rôles' })).toHaveAttribute('href', '/equipe');
   });
 
-  it('masque le lien Équipe aux autres rôles', async () => {
+  it('la réception ne voit pas la partie Gestion', async () => {
     vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
     renderRoutes(routes, { auth: { session: fakeSession() } });
-    expect(await screen.findByText('Réception')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Équipe' })).not.toBeInTheDocument();
+    expect((await screen.findAllByText('Réception')).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Équipe' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Réglages' })).not.toBeInTheDocument();
+  });
+
+  it('écran ouvert : son groupe est déplié et l’entrée marquée, avec le compteur en attente', async () => {
+    vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
+    renderRoutes(routes, { auth: { session: fakeSession() }, initialPath: '/factures' });
+    const link = await within(menu()).findByRole('link', { name: /Factures/ });
+    expect(link).toHaveAttribute('aria-current', 'page');
+    expect(await within(link).findByText('2')).toBeInTheDocument();
+  });
+});
+
+describe('activePath', () => {
+  it('retient l’entrée la plus précise', () => {
+    expect(activePath('/')).toBe('/');
+    expect(activePath('/or/123')).toBe('/or');
+    expect(activePath('/vehicules/echeances')).toBe('/vehicules/echeances');
+    expect(activePath('/vehicules/abc')).toBe('/vehicules');
+    expect(activePath('/factures/avoirs')).toBe('/factures/avoirs');
+    expect(activePath('/pointages/conges')).toBe('/pointages/conges');
+    expect(activePath('/inconnu')).toBeNull();
   });
 });

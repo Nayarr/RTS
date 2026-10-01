@@ -71,7 +71,7 @@ export function GroupedInvoiceDialog({
               <Label htmlFor="grouped-client">Client</Label>
               <select
                 id="grouped-client"
-                className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+                className="inp"
                 value={clientId}
                 onChange={(event) => {
                   setClientId(event.target.value);

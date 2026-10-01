@@ -1,37 +1,41 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDateTime } from '../constants';
 import { useRepairOrderEvents } from '../hooks';
+
+/** Couleur de la pastille selon l'événement (maquette : terminé, chrono, message, le reste). */
+function eventTone(label: string) {
+  const text = label.toLowerCase();
+  if (text.includes('termin') || text.includes('factur')) return 's-done';
+  if (text.includes('chrono') || text.includes('badg') || text.includes('en cours')) return 's-progress';
+  if (text.includes('message') || text.includes('envoy') || text.includes('devis')) return 's-blue';
+  return 's-grey';
+}
 
 /** Historique de l'OR (création, statuts, technicien, badgeage…), du plus récent au plus ancien. */
 export function HistoryCard({ repairOrderId }: { repairOrderId: string }) {
   const events = useRepairOrderEvents(repairOrderId, true);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Historique</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {events.isPending && <p className="text-sm text-muted-foreground">Chargement…</p>}
-        <ol className="max-h-72 divide-y overflow-y-auto">
-          {(events.data ?? []).map((event) => (
-            <li
-              key={event.id}
-              className="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5 text-sm"
-            >
-              <span>
-                {event.label}
-                {event.actor_name && <span className="text-muted-foreground"> — {event.actor_name}</span>}
+    <section data-slot="card" className="card" aria-labelledby="ro-history">
+      <div className="card-h">
+        <h2 className="h2" id="ro-history">
+          Historique
+        </h2>
+      </div>
+      {events.isPending && <p className="card-b hint">Chargement…</p>}
+      <ol className="card-b col max-h-96 gap-3.5 overflow-y-auto">
+        {(events.data ?? []).map((event) => (
+          <li key={event.id} className="row top gap-2.5">
+            <span className={`tdot mt-[5px] ${eventTone(event.label)}`} />
+            <div className="col gap-0">
+              <span>{event.label}</span>
+              <span className="hint">
+                {event.actor_name && `${event.actor_name} · `}
+                <time dateTime={event.created_at}>{formatDateTime(event.created_at)}</time>
               </span>
-              <time className="text-xs whitespace-nowrap text-muted-foreground" dateTime={event.created_at}>
-                {formatDateTime(event.created_at)}
-              </time>
-            </li>
-          ))}
-        </ol>
-      </CardContent>
-    </Card>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

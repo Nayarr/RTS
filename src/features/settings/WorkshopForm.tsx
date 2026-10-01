@@ -10,15 +10,18 @@ import { useSaveSettings } from './hooks';
 import { workshopSchema, workshopToForm, type WorkshopValues } from './schemas';
 import { SectionCard } from '@/components/SectionCard';
 
-const TIME_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
+const HOUR_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
   { name: 'workday_start', label: 'Ouverture' },
   { name: 'lunch_start', label: 'Début de pause' },
-  { name: 'friday_lunch_start', label: 'Pause du vendredi' },
   { name: 'lunch_end', label: 'Fin de pause' },
   { name: 'workday_end', label: 'Fermeture' },
-  { name: 'overtime_start', label: 'Heures sup. dès' },
+  { name: 'friday_lunch_start', label: 'Pause du vendredi' },
+];
+
+const CLOCK_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
   { name: 'expected_arrival', label: 'Arrivée attendue' },
   { name: 'late_tolerance', label: 'Retard après' },
+  { name: 'overtime_start', label: 'Heures sup. dès' },
 ];
 
 const MONEY_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
@@ -52,10 +55,10 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
       pending={save.isPending}
       onCancel={() => reset()}
     >
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold">Horaires</legend>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {TIME_FIELDS.map(({ name, label }) => (
+      <fieldset className="col gap-3">
+        <legend className="mb-3 overline">Horaires</legend>
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+          {HOUR_FIELDS.map(({ name, label }) => (
             <FormField
               key={name}
               id={name}
@@ -71,6 +74,7 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             type="number"
             step="0.25"
             inputMode="decimal"
+            className="num"
             error={errors.daily_hours?.message}
             {...register('daily_hours', { valueAsNumber: true })}
           />
@@ -80,15 +84,70 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             type="number"
             step="0.25"
             inputMode="decimal"
+            className="num"
             error={errors.friday_hours?.message}
             {...register('friday_hours', { valueAsNumber: true })}
           />
         </div>
       </fieldset>
 
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-semibold">Dépannage</legend>
-        <div className="grid gap-4 sm:grid-cols-3">
+      <fieldset className="col gap-3">
+        <legend className="mb-3 overline">Pointage et saisie</legend>
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+          {CLOCK_FIELDS.map(({ name, label }) => (
+            <FormField
+              key={name}
+              id={name}
+              label={label}
+              type="time"
+              error={errors[name]?.message}
+              {...register(name)}
+            />
+          ))}
+          <Controller
+            control={control}
+            name="clock_photo_retention_months"
+            render={({ field }) => (
+              <div className="field col-span-2 sm:col-span-1">
+                <Label htmlFor="clock_photo_retention_months">Conservation des photos de pointage</Label>
+                <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))}>
+                  <SelectTrigger id="clock_photo_retention_months" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 3, 6, 12].map((months) => (
+                      <SelectItem key={months} value={String(months)}>
+                        {months} mois
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          />
+        </div>
+        <Controller
+          control={control}
+          name="label_scan_enabled"
+          render={({ field }) => (
+            <div className="row gap-3 rounded-xl border px-3.5 py-3">
+              <Switch id="label_scan_enabled" checked={field.value} onCheckedChange={field.onChange} />
+              <span className="col gap-0">
+                <Label htmlFor="label_scan_enabled" className="text-sm font-bold">
+                  Lecture automatique des étiquettes de pièces (photo)
+                </Label>
+                <span className="hint">
+                  Le technicien photographie l’étiquette, la désignation et la référence sont remplies.
+                </span>
+              </span>
+            </div>
+          )}
+        />
+      </fieldset>
+
+      <fieldset className="col gap-3">
+        <legend className="mb-3 overline">Dépannage</legend>
+        <div className="grid gap-3.5 sm:grid-cols-3">
           {MONEY_FIELDS.map(({ name, label }) => (
             <FormField
               key={name}
@@ -97,46 +156,12 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
               type="number"
               step="0.01"
               inputMode="decimal"
+              className="num"
               error={errors[name]?.message}
               {...register(name, { valueAsNumber: true })}
             />
           ))}
         </div>
-      </fieldset>
-
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold">Pointage et saisie</legend>
-        <Controller
-          control={control}
-          name="clock_photo_retention_months"
-          render={({ field }) => (
-            <div className="space-y-2">
-              <Label htmlFor="clock_photo_retention_months">Conservation des photos de pointage</Label>
-              <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))}>
-                <SelectTrigger id="clock_photo_retention_months" className="h-11 w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 3, 6, 12].map((months) => (
-                    <SelectItem key={months} value={String(months)}>
-                      {months} mois
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        />
-        <Controller
-          control={control}
-          name="label_scan_enabled"
-          render={({ field }) => (
-            <div className="flex items-center gap-3">
-              <Switch id="label_scan_enabled" checked={field.value} onCheckedChange={field.onChange} />
-              <Label htmlFor="label_scan_enabled">Lecture automatique des étiquettes de pièces (photo)</Label>
-            </div>
-          )}
-        />
       </fieldset>
     </SectionCard>
   );

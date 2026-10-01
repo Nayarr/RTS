@@ -31,7 +31,7 @@ export function CompanyForm({ company }: { company: CompanySettings }) {
       pending={save.isPending}
       onCancel={() => reset()}
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3.5 sm:grid-cols-3">
         <FormField
           id="legal_name"
           label="Raison sociale"
@@ -45,21 +45,38 @@ export function CompanyForm({ company }: { company: CompanySettings }) {
           {...register('legal_form')}
         />
         <FormField
-          id="address_line"
-          label="Adresse"
-          error={errors.address_line?.message}
-          {...register('address_line')}
+          id="share_capital"
+          label="Capital social"
+          placeholder="181 726 €"
+          {...register('share_capital')}
         />
-        <div className="grid grid-cols-[8rem_1fr] gap-3">
-          <FormField
-            id="postal_code"
-            label="Code postal"
-            inputMode="numeric"
-            error={errors.postal_code?.message}
-            {...register('postal_code')}
-          />
-          <FormField id="city" label="Ville" error={errors.city?.message} {...register('city')} />
-        </div>
+      </div>
+      <FormField
+        id="address_line"
+        label="Adresse"
+        error={errors.address_line?.message}
+        {...register('address_line')}
+      />
+      <div className="grid gap-3.5 sm:grid-cols-[1fr_2fr_2fr]">
+        <FormField
+          id="postal_code"
+          label="Code postal"
+          inputMode="numeric"
+          className="num"
+          error={errors.postal_code?.message}
+          {...register('postal_code')}
+        />
+        <FormField id="city" label="Ville" error={errors.city?.message} {...register('city')} />
+        <FormField
+          id="phone"
+          label="Téléphone"
+          type="tel"
+          inputMode="tel"
+          className="num"
+          {...register('phone')}
+        />
+      </div>
+      <div className="grid gap-3.5 sm:grid-cols-2">
         <FormField
           id="company_email"
           label="E-mail"
@@ -68,14 +85,14 @@ export function CompanyForm({ company }: { company: CompanySettings }) {
           error={errors.email?.message}
           {...register('email')}
         />
-        <FormField id="phone" label="Téléphone" type="tel" inputMode="tel" {...register('phone')} />
+        <FormField id="rcs" label="RCS" placeholder="RCS Pontoise" {...register('rcs')} />
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3.5 sm:grid-cols-3">
         <FormField
           id="siren"
           label="SIREN"
           inputMode="numeric"
+          className="num"
           error={errors.siren?.message}
           {...register('siren')}
         />
@@ -83,21 +100,16 @@ export function CompanyForm({ company }: { company: CompanySettings }) {
           id="siret"
           label="SIRET"
           inputMode="numeric"
+          className="num"
           error={errors.siret?.message}
           {...register('siret')}
         />
         <FormField
           id="vat_number"
           label="N° de TVA intracommunautaire"
+          className="num"
           error={errors.vat_number?.message}
           {...register('vat_number')}
-        />
-        <FormField id="rcs" label="RCS" placeholder="RCS Pontoise" {...register('rcs')} />
-        <FormField
-          id="share_capital"
-          label="Capital social"
-          placeholder="181 726 €"
-          {...register('share_capital')}
         />
       </div>
     </SectionCard>

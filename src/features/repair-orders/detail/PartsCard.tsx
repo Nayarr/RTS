@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
+import { useState, type CSSProperties } from 'react';
+import { ChevronDown, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { WarrantyDialog } from '@/features/warranties/WarrantyDialog';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
 import type { RoLine } from '../api';
@@ -38,16 +37,16 @@ function PartRow({
     .join(' · ');
 
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
-      <div className="min-w-0 flex-1 basis-56">
-        <p className="font-medium">{firstLine(line.description)}</p>
-        <p className="text-sm text-muted-foreground">
+    <li className="li flex-wrap">
+      <div className="col min-w-0 flex-1 basis-56 gap-0.5">
+        <b>{firstLine(line.description)}</b>
+        <span className="muted text-[12.5px]">
           {formatQuantity(line.quantity)} × {formatEuro(line.unit_price)}
           {line.purchase_price !== null && ` · achat ${formatEuro(line.purchase_price)}`}
           {details && ` · ${details}`}
-        </p>
+        </span>
       </div>
-      <span className="font-semibold tabular-nums">{formatEuro(partLineTotal(line))}</span>
+      <b className="num">{formatEuro(partLineTotal(line))}</b>
       <Button
         variant="ghost"
         size="sm"
@@ -56,40 +55,45 @@ function PartRow({
       >
         <Undo2 /> Retour
       </Button>
-      <select
-        aria-label={`Commande : ${firstLine(line.description)}`}
-        className="h-9 rounded-md border-2 bg-transparent px-2 text-sm font-semibold disabled:opacity-70"
-        style={{ borderColor: PART_ORDER_META[status].color, color: PART_ORDER_META[status].color }}
-        value={status}
-        disabled={!editable || setStatus.isPending}
-        onChange={(event) => setStatus.mutate(event.target.value as PartOrderStatus)}
-      >
-        {Object.entries(PART_ORDER_META).map(([value, meta]) => (
-          <option key={value} value={value}>
-            {meta.label}
-          </option>
-        ))}
-      </select>
+      <span className="relative inline-flex">
+        <select
+          aria-label={`Commande : ${firstLine(line.description)}`}
+          className="badge h-8 cursor-pointer appearance-none pr-7 pl-3 disabled:cursor-default disabled:opacity-70"
+          style={{ '--c': PART_ORDER_META[status].color } as CSSProperties}
+          value={status}
+          disabled={!editable || setStatus.isPending}
+          onChange={(event) => setStatus.mutate(event.target.value as PartOrderStatus)}
+        >
+          {Object.entries(PART_ORDER_META).map(([value, meta]) => (
+            <option key={value} value={value}>
+              {meta.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2"
+          style={{ color: PART_ORDER_META[status].color }}
+        />
+      </span>
       {editable && (
-        <div className="flex">
-          <Button
-            variant="ghost"
-            size="icon"
+        <span className="row gap-0">
+          <button
+            type="button"
+            className="ibtn sm ghost"
             aria-label={`Modifier ${firstLine(line.description)}`}
             onClick={onEdit}
           >
-            <Pencil />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-destructive"
+            <Pencil className="i s" />
+          </button>
+          <button
+            type="button"
+            className="ibtn sm ghost text-destructive"
             aria-label={`Retirer ${firstLine(line.description)}`}
             onClick={onDelete}
           >
-            <Trash2 />
-          </Button>
-        </div>
+            <Trash2 className="i s" />
+          </button>
+        </span>
       )}
     </li>
   );
@@ -116,17 +120,25 @@ export function PartsCard({
     Math.max(-1, ...lines.filter((line) => line.kind === 'done').map((line) => line.position)) + 1;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Pièces</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {parts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune pièce sur cet OR.</p>
-        ) : (
-          <ul className="divide-y">
+    <section data-slot="card" className="card" aria-labelledby="ro-parts">
+      <div className="card-h">
+        <h2 className="h2" id="ro-parts">
+          Pièces{' '}
+          <span className="cnt" aria-hidden>
+            {parts.length}
+          </span>
+        </h2>
+        {editable && (
+          <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
+            <Plus /> Ajouter une pièce
+          </Button>
+        )}
+      </div>
+      {parts.length === 0 ? (
+        <p className="card-b hint">Aucune pièce sur cet OR.</p>
+      ) : (
+        <>
+          <ul>
             {parts.map((line) => (
               <PartRow
                 key={line.id}
@@ -139,26 +151,15 @@ export function PartsCard({
               />
             ))}
           </ul>
-        )}
-      </CardContent>
-      {(editable || parts.length > 0) && (
-        <CardFooter className="flex-wrap justify-between gap-2">
-          {editable ? (
-            <Button variant="outline" onClick={() => setEditing('new')}>
-              <Plus /> Ajouter une pièce
-            </Button>
-          ) : (
-            <span />
-          )}
-          {parts.length > 0 && (
-            <p className="text-sm">
+          <div className="tfoot justify-end">
+            <p>
               Total pièces :{' '}
-              <strong className="tabular-nums">
+              <b className="num">
                 {formatEuro(parts.reduce((sum, line) => sum + partLineTotal(line), 0))} HT
-              </strong>
+              </b>
             </p>
-          )}
-        </CardFooter>
+          </div>
+        </>
       )}
 
       {editing && (
@@ -194,6 +195,6 @@ export function PartsCard({
         pending={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting, { onSuccess: () => setDeleting(null) })}
       />
-    </Card>
+    </section>
   );
 }

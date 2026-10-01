@@ -68,7 +68,7 @@ describe('tableau de bord du bureau', () => {
       'href',
       '/devis?filtre=accepted',
     );
-    expect(tile(todo, /Factures en retard/)).toHaveTextContent(/^2Factures en retard \(1\s250,50\s€\)$/);
+    expect(tile(todo, /Factures en retard/)).toHaveTextContent(/^Factures en retard \(1\s250,50\s€\)2$/);
     expect(tile(todo, 'Rendez-vous aujourd’hui')).toHaveAttribute('href', '/planning?vue=jour');
     expect(within(todo).queryByRole('link', { name: /congé/ })).toBeNull();
   });
@@ -87,6 +87,6 @@ describe('tableau de bord du bureau', () => {
       within(workload)
         .getAllByRole('listitem')
         .map((item) => item.textContent),
-    ).toEqual(['7,5 hAlice (3 OR)', '0 hBruno (0 OR)']);
+    ).toEqual(['ALAlice3 OR7,5 h', 'BRBruno0 OR0 h']);
   });
 });

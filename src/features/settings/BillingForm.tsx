@@ -33,13 +33,14 @@ export function BillingForm({ company }: { company: CompanySettings }) {
       pending={save.isPending}
       onCancel={() => reset()}
     >
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3.5 sm:grid-cols-3">
         <FormField
           id="default_vat_rate"
           label="TVA par défaut (%)"
           type="number"
           step="0.01"
           inputMode="decimal"
+          className="num"
           error={errors.default_vat_rate?.message}
           {...register('default_vat_rate', { valueAsNumber: true })}
         />
@@ -48,6 +49,7 @@ export function BillingForm({ company }: { company: CompanySettings }) {
           label="Délai de paiement (jours)"
           type="number"
           inputMode="numeric"
+          className="num"
           error={errors.payment_terms_days?.message}
           {...register('payment_terms_days', { valueAsNumber: true })}
         />
@@ -56,16 +58,16 @@ export function BillingForm({ company }: { company: CompanySettings }) {
           label="Validité des devis (jours)"
           type="number"
           inputMode="numeric"
+          className="num"
           error={errors.quote_validity_days?.message}
           {...register('quote_validity_days', { valueAsNumber: true })}
         />
       </div>
-      <div className="space-y-2">
+      <div className="field">
         <Label htmlFor="invoice_legal_mentions">Mentions légales des factures (une par ligne)</Label>
         <Textarea
           id="invoice_legal_mentions"
           rows={6}
-          className="text-base"
           aria-invalid={errors.invoice_legal_mentions ? true : undefined}
           {...register('invoice_legal_mentions')}
         />

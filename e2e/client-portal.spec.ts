@@ -51,7 +51,7 @@ test('le client consulte son espace en ligne ; le bureau peut changer le lien', 
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
   await page.getByRole('link', { name: clientName }).first().click();
-  await page.getByRole('button', { name: 'Espace client en ligne' }).click();
+  await page.getByRole('button', { name: 'Envoyer le lien au client' }).click();
   const share = page.getByRole('dialog', { name: `Espace client — ${clientName}` });
   const link = await share.getByLabel('Lien', { exact: true }).inputValue();
   expect(link).toMatch(/\/d\/[A-Za-z0-9_-]{32,}$/);
@@ -60,9 +60,9 @@ test('le client consulte son espace en ligne ; le bureau peut changer le lien', 
   // Le client ouvre le lien, sans compte
   const visitor = await browser.newPage();
   await visitor.goto(link);
-  await expect(visitor.getByRole('heading', { name: 'Espace client' })).toBeVisible();
+  await expect(visitor.getByRole('heading', { name: 'Bonjour' })).toBeVisible();
   await expect(visitor.getByText(clientName)).toBeVisible();
-  await expect(visitor.getByRole('row', { name: new RegExp(plate) })).toContainText('À l’atelier — Assigné');
+  await expect(visitor.getByRole('listitem', { name: plate })).toContainText('À l’atelier — Assigné');
 
   // Nouveau lien : l'ancien ne fonctionne plus
   await page.getByRole('button', { name: 'Changer le lien' }).click();

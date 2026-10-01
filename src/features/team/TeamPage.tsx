@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { toast } from 'sonner';
-import { KeyRound, MailCheck, MoreHorizontal, Pencil, Power, UserPlus } from 'lucide-react';
+import { KeyRound, MailCheck, MoreVertical, Pencil, Power, UserPlus } from 'lucide-react';
+import { initials } from '@/app/nav';
+import { PageHeader } from '@/app/PageHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { requestPasswordReset } from '@/features/auth/api';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
@@ -25,33 +25,59 @@ import type { TeamMember } from './types';
 
 const activeTechnician = (member: TeamMember) => (member.technician?.is_active ? member.technician : null);
 
-function StatusBadges({ member }: { member: TeamMember }) {
-  const technician = activeTechnician(member);
+const ROLE_BADGE: Record<TeamMember['role'], string> = {
+  direction: 's-green',
+  reception: 's-blue',
+  technician: 's-grey',
+  kiosk: 's-grey',
+};
+
+const ROLE_HINTS: { role: TeamMember['role']; hint: string }[] = [
+  { role: 'direction', hint: 'Accès complet, gestion de l’équipe' },
+  { role: 'reception', hint: 'OR, planning, devis, factures' },
+  { role: 'technician', hint: 'Ses OR, fiche de contrôle, badgeage' },
+  { role: 'kiosk', hint: 'Tablette de pointage / écran atelier' },
+];
+
+function RoleCell({ member }: { member: TeamMember }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
-      <Badge variant={member.role === 'direction' ? 'default' : 'secondary'}>
-        {ROLE_LABELS[member.role]}
-      </Badge>
-      {!member.is_active && <Badge variant="destructive">Désactivé</Badge>}
-      {technician && !member.pinSetAt && (
-        <Badge variant="outline" className="border-warning text-warning">
-          Sans PIN
-        </Badge>
-      )}
-      {technician?.exclude_from_planning && <Badge variant="outline">Hors planning</Badge>}
-      {technician?.rest_group && <Badge variant="outline">Repos {technician.rest_group}</Badge>}
-    </div>
+    <span className="row wrap gap-1.5">
+      <span className={`badge ${ROLE_BADGE[member.role]}`}>{ROLE_LABELS[member.role]}</span>
+      {!member.is_active && <span className="tag">Désactivé</span>}
+    </span>
   );
 }
 
-function TechnicianTag({ member }: { member: TeamMember }) {
+function PlanningCell({ member }: { member: TeamMember }) {
   const technician = activeTechnician(member);
-  if (!technician) return <span className="text-muted-foreground">—</span>;
+  if (!technician) {
+    return (
+      <span className="muted">
+        {member.role === 'direction' || member.role === 'reception' ? 'Hors planning' : '—'}
+      </span>
+    );
+  }
+  if (technician.exclude_from_planning) return <span className="muted">Hors planning</span>;
   return (
-    <span className="inline-flex items-center gap-2">
-      <span className="size-3 rounded-full" style={{ backgroundColor: technician.color ?? '#6B7280' }} />
+    <span className="who">
+      <span className="tdot" style={{ '--c': technician.color ?? '#6B7280' } as CSSProperties} />
       {technician.display_name}
+      {technician.rest_group && (
+        <>
+          <span className="muted">·</span>
+          <span>Repos {technician.rest_group}</span>
+        </>
+      )}
     </span>
+  );
+}
+
+function PinCell({ member }: { member: TeamMember }) {
+  if (!activeTechnician(member)) return <span className="muted">—</span>;
+  return member.pinSetAt ? (
+    <span className="badge s-ok dot">PIN défini</span>
+  ) : (
+    <span className="badge s-warn">Sans PIN</span>
   );
 }
 
@@ -76,9 +102,9 @@ function MemberActions({ member, isSelf, onEdit, onPin, onToggleActive }: Member
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Actions pour ${member.full_name}`}>
-          <MoreHorizontal />
-        </Button>
+        <button type="button" className="ibtn sm ghost" aria-label={`Actions pour ${member.full_name}`}>
+          <MoreVertical className="i s" />
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={onEdit}>
@@ -134,78 +160,105 @@ export function TeamPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Équipe</h1>
-          <p className="text-muted-foreground">Comptes, rôles, techniciens et codes de pointage.</p>
+    <>
+      <PageHeader
+        crumbs={[{ label: 'Équipe' }, { label: 'Comptes et rôles' }]}
+        title="Équipe"
+        actions={
+          <>
+            <span className="sub hidden md:inline">Comptes, rôles, techniciens et codes de pointage</span>
+            <Button onClick={() => setCreating(true)}>
+              <UserPlus /> Nouveau compte
+            </Button>
+          </>
+        }
+      />
+
+      <div className="split grid-cols-1! lg:grid-cols-[minmax(0,1fr)_330px]!">
+        <div className="col gap-3">
+          {team.isPending && <p className="text-muted-foreground">Chargement…</p>}
+          {team.isError && <p className="text-destructive">Impossible de charger l’équipe.</p>}
+          {team.isSuccess && (
+            <section data-slot="card" className="card tbl-wrap overflow-x-auto!" aria-label="Comptes">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Rôle et état</th>
+                    <th>Planning</th>
+                    <th>Pointage</th>
+                    <th className="w-14">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => {
+                    const technician = activeTechnician(member);
+                    return (
+                      <tr key={member.id} className={member.is_active ? undefined : 'opacity-60'}>
+                        <td>
+                          <span className="who">
+                            <span
+                              className="av"
+                              style={
+                                {
+                                  '--c':
+                                    technician?.color ??
+                                    (member.role === 'direction'
+                                      ? '#137017'
+                                      : member.role === 'reception'
+                                        ? '#4750B5'
+                                        : '#6B7280'),
+                                } as CSSProperties
+                              }
+                            >
+                              {initials(member.full_name)}
+                            </span>
+                            <span className="c2">
+                              <b>{member.full_name}</b>
+                              <span>{member.email}</span>
+                            </span>
+                          </span>
+                        </td>
+                        <td>
+                          <RoleCell member={member} />
+                        </td>
+                        <td>
+                          <PlanningCell member={member} />
+                        </td>
+                        <td>
+                          <PinCell member={member} />
+                        </td>
+                        <td>{actionsFor(member)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </section>
+          )}
         </div>
-        <Button size="lg" onClick={() => setCreating(true)}>
-          <UserPlus /> Nouveau compte
-        </Button>
+
+        <div className="col gap-5">
+          <RestRotationCard />
+          <section data-slot="card" className="card" aria-labelledby="team-roles">
+            <div className="card-h">
+              <h2 className="h2" id="team-roles">
+                Rôles
+              </h2>
+            </div>
+            <ul>
+              {ROLE_HINTS.map(({ role, hint }) => (
+                <li key={role} className="li">
+                  <span className={`badge ${ROLE_BADGE[role]}`}>{ROLE_LABELS[role]}</span>
+                  <span className="hint text-right">{hint}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
       </div>
-
-      {team.isPending && <p className="text-muted-foreground">Chargement…</p>}
-      {team.isError && <p className="text-destructive">Impossible de charger l’équipe.</p>}
-
-      {team.isSuccess && (
-        <>
-          {/* Bureau : tableau */}
-          <div className="hidden rounded-lg border bg-card md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Planning</TableHead>
-                  <TableHead>Rôle et état</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members.map((member) => (
-                  <TableRow key={member.id} className={member.is_active ? undefined : 'opacity-60'}>
-                    <TableCell>
-                      <div className="font-medium">{member.full_name}</div>
-                      <div className="text-sm text-muted-foreground">{member.email}</div>
-                    </TableCell>
-                    <TableCell>
-                      <TechnicianTag member={member} />
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadges member={member} />
-                    </TableCell>
-                    <TableCell>{actionsFor(member)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Téléphone / tablette : cartes */}
-          <ul className="space-y-3 md:hidden">
-            {members.map((member) => (
-              <li
-                key={member.id}
-                className={`rounded-lg border bg-card p-4 ${member.is_active ? '' : 'opacity-60'}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="font-medium">{member.full_name}</div>
-                    <div className="text-sm text-muted-foreground">{member.email}</div>
-                  </div>
-                  {actionsFor(member)}
-                </div>
-                <div className="mt-3 space-y-2 text-sm">
-                  <TechnicianTag member={member} />
-                  <StatusBadges member={member} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      <RestRotationCard />
 
       <CreateAccountDialog open={creating} onOpenChange={setCreating} />
       <EditAccountDialog member={editing} onOpenChange={(open) => !open && setEditing(null)} />
@@ -226,6 +279,6 @@ export function TeamPage() {
           toggling && toggleActive.mutate({ member: toggling }, { onSuccess: () => setToggling(null) })
         }
       />
-    </div>
+    </>
   );
 }

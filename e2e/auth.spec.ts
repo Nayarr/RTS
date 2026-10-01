@@ -33,7 +33,7 @@ test('la direction se connecte puis se déconnecte', async ({ page }) => {
 
 test('un technicien arrive sur son espace', async ({ page }) => {
   await login(page, 'alice@rts.local');
-  await expect(page.getByText('Espace Technicien')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mes ordres de réparation' })).toBeVisible();
 });
 
 test('la session est conservée au rechargement', async ({ page }) => {

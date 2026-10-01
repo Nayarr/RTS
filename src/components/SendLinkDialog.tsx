@@ -97,7 +97,7 @@ export function SendLinkDialog({
         {link && (
           <div className="space-y-2">
             <Label htmlFor="send-link">Lien</Label>
-            <Input id="send-link" readOnly value={link} className="h-11" onFocus={(e) => e.target.select()} />
+            <Input id="send-link" readOnly value={link} onFocus={(e) => e.target.select()} />
           </div>
         )}
         <div className="flex flex-col gap-2">

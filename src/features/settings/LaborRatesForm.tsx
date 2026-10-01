@@ -1,7 +1,6 @@
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pickDirty } from '@/lib/forms';
-import { FormField } from '@/components/FormField';
 import { updateLaborRates, type LaborRate } from './api';
 import { useSaveSettings } from './hooks';
 import { laborRatesSchema, laborRatesToForm, type LaborRatesValues } from './schemas';
@@ -38,35 +37,58 @@ export function LaborRatesForm({ rates }: { rates: LaborRate[] }) {
       pending={save.isPending}
       onCancel={() => reset()}
     >
-      {fields.map((field, index) => {
-        const rowErrors = errors.rates?.[index];
-        return (
-          <fieldset key={field.id} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[10rem_1fr_9rem]">
-            <legend className="px-1 text-sm font-semibold">{field.label}</legend>
-            <FormField
-              id={`rates-${index}-label`}
-              label="Catégorie"
-              error={rowErrors?.label?.message}
-              {...register(`rates.${index}.label`)}
-            />
-            <FormField
-              id={`rates-${index}-line`}
-              label="Libellé sur les documents"
-              error={rowErrors?.labor_line_label?.message}
-              {...register(`rates.${index}.labor_line_label`)}
-            />
-            <FormField
-              id={`rates-${index}-rate`}
-              label="Taux HT (€/h)"
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              error={rowErrors?.hourly_rate?.message}
-              {...register(`rates.${index}.hourly_rate`, { valueAsNumber: true })}
-            />
-          </fieldset>
-        );
-      })}
+      <div className="-mx-[22px] -my-5 overflow-x-auto">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th className="pl-[22px]!">Catégorie</th>
+              <th>Libellé sur les documents</th>
+              <th className="r w-40">Taux HT (€/h)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {fields.map((field, index) => {
+              const rowErrors = errors.rates?.[index];
+              const error =
+                rowErrors?.label?.message ??
+                rowErrors?.labor_line_label?.message ??
+                rowErrors?.hourly_rate?.message;
+              return (
+                <tr key={field.id}>
+                  <td className="pl-[22px]!">
+                    <input
+                      className="inp min-w-48 font-semibold"
+                      aria-label={`Catégorie : ${field.label}`}
+                      aria-invalid={rowErrors?.label ? true : undefined}
+                      {...register(`rates.${index}.label`)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="inp min-w-64"
+                      aria-label={`Libellé sur les documents : ${field.label}`}
+                      aria-invalid={rowErrors?.labor_line_label ? true : undefined}
+                      {...register(`rates.${index}.labor_line_label`)}
+                    />
+                    {error && <p className="err mt-1">{error}</p>}
+                  </td>
+                  <td>
+                    <input
+                      className="inp num text-right"
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      aria-label={`Taux HT (€/h) : ${field.label}`}
+                      aria-invalid={rowErrors?.hourly_rate ? true : undefined}
+                      {...register(`rates.${index}.hourly_rate`, { valueAsNumber: true })}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </SectionCard>
   );
 }

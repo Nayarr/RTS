@@ -76,22 +76,22 @@ const renderPortal = () =>
 describe('espace client en ligne', () => {
   it('véhicules à l’atelier et échéances colorées', async () => {
     renderPortal();
-    expect(await screen.findByRole('heading', { name: 'Espace client' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Bonjour' })).toBeInTheDocument();
+    expect(screen.getByText('Espace client')).toBeInTheDocument();
     expect(screen.getByText('Transports Dupont')).toBeInTheDocument();
-    const first = screen.getByRole('row', { name: /AB-123-CD À l’atelier/ });
+    const first = screen.getByRole('listitem', { name: 'AB-123-CD' });
     expect(first).toHaveTextContent('À l’atelier — En cours depuis le 27/09/2026');
-    const [ct] = within(first).getAllByRole('cell').slice(2);
-    expect(ct?.firstElementChild).toHaveClass('text-destructive');
-    const second = screen.getByRole('row', { name: /EF-456-GH/ });
+    // Échéance dépassée ou proche : pastille ; sinon simple texte coloré
+    expect(within(first).getByText(/^Contrôle technique/)).toHaveClass('s-bad');
+    const second = screen.getByRole('listitem', { name: 'EF-456-GH' });
     expect(second).toHaveTextContent('Pas à l’atelier');
-    const [ctOk, tailgate] = within(second).getAllByRole('cell').slice(2);
-    expect(ctOk?.firstElementChild).toHaveClass('text-emerald-700');
-    expect(tailgate?.firstElementChild).toHaveClass('text-amber-700');
+    expect(within(second).getByText(/^Contrôle technique/)).toHaveClass('text-success');
+    expect(within(second).getByText(/^Contrôle hayon/)).toHaveClass('s-warn');
   });
 
   it('devis à signer et factures : liens vers chaque document', async () => {
     renderPortal();
-    const quote = await screen.findByRole('link', { name: 'Devis DV00012 — AB-123-CD' });
+    const quote = await screen.findByRole('link', { name: /Devis DV00012 à valider.*AB-123-CD/ });
     expect(quote).toHaveAttribute('href', `/d/${QUOTE_TOKEN}`);
     const invoice = screen.getByRole('row', { name: /F11890/ });
     expect(invoice).toHaveTextContent(/20\/09\/2026\s*AB-123-CD\s*1\s200,00\s€\s*1\s200,00\s€\s*En retard/);

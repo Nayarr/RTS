@@ -79,7 +79,7 @@ test('la direction consulte la rentabilité par client / véhicule et la perform
 
   await loginAs(page, 'direction@rts.local');
   await page.goto('/pilotage');
-  await page.getByRole('link', { name: 'Rentabilité' }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Rentabilité' }).click();
   await expect(page.getByRole('button', { name: 'Cette année' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Ce mois' }).click();
   await expect(page).toHaveURL(/periode=mois/);
@@ -96,7 +96,7 @@ test('la direction consulte la rentabilité par client / véhicule et la perform
   await page.goto('/pilotage/performance');
   const alice = page.getByRole('article', { name: 'Alice' });
   await expect(alice).toContainText('/100');
-  await expect(alice).toContainText(/OR facturés : [1-9]/);
+  await expect(alice).toContainText(/OR facturés[1-9]/);
 });
 
 test('la réception n’a pas accès à la rentabilité', async ({ page }) => {

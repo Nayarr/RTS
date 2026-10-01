@@ -2,9 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 import { ArrowLeft, Lock } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useProfile } from '@/features/auth/useProfile';
 import { OPEN_STATUSES, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useRepairOrder } from '@/features/repair-orders/hooks';
@@ -40,9 +38,9 @@ export function TechRepairOrderPage() {
   if (detail.isPending) return <p className="text-muted-foreground">Chargement…</p>;
   if (detail.isError || !detail.data) {
     return (
-      <div className="space-y-4 py-16 text-center">
-        <h1 className="text-2xl font-bold">OR introuvable</h1>
-        <p className="text-muted-foreground">Il ne t’est peut-être plus assigné.</p>
+      <div className="col items-center gap-4 py-16 text-center">
+        <h1 className="title">OR introuvable</h1>
+        <p className="sub">Il ne t’est peut-être plus assigné.</p>
         <Button asChild>
           <Link to="/">Retour à mes OR</Link>
         </Button>
@@ -58,37 +56,39 @@ export function TechRepairOrderPage() {
   );
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-10">
+    <div className="col gap-3 pb-6">
       {capture.inputs}
-      <Button variant="ghost" asChild className="-ml-3">
-        <Link to="/">
-          <ArrowLeft /> Mes OR
-        </Link>
-      </Button>
-
-      <Card>
-        <CardContent className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h1 className="text-3xl font-bold tracking-wide">{order.plate}</h1>
-              <p className="text-muted-foreground">
-                {order.client_name ?? ''} · {VEHICLE_TYPES[order.vehicle_type]} · {order.number}
-              </p>
-            </div>
-            <StatusBadge status={order.status} className="px-3 py-1 text-sm" />
+      <header className="mbar sticky top-0 z-30 -mx-4 -mt-3.5 print:hidden">
+        <div className="row min-w-0 gap-2.5">
+          <Link to="/" className="ibtn shrink-0" aria-label="Retour à mes OR">
+            <ArrowLeft className="size-[18px]" />
+          </Link>
+          <div className="col min-w-0 gap-0">
+            <h1 className="plate text-xl leading-tight">{order.plate}</h1>
+            <span className="hint truncate text-[11.5px]!">
+              {[order.number, order.client_name, VEHICLE_TYPES[order.vehicle_type]]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
           </div>
-          <p className="text-lg whitespace-pre-line">{order.requested_work}</p>
-        </CardContent>
-      </Card>
+        </div>
+        <StatusBadge status={order.status} />
+      </header>
 
       {locked && (
-        <Alert>
-          <Lock />
-          <AlertDescription>Cet OR est terminé : consultation seulement.</AlertDescription>
-        </Alert>
+        <p className="alert s-grey">
+          <Lock className="i s shrink-0" />
+          <span>Cet OR est terminé : consultation seulement.</span>
+        </p>
       )}
 
+      <section data-slot="card" className="card sec" aria-label="Travaux demandés">
+        <p className="text-[14.5px] leading-[1.45] whitespace-pre-line">{order.requested_work}</p>
+      </section>
+
       <TimerSection order={order} loadedAt={detail.dataUpdatedAt} locked={locked} />
+      <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
+      <PartsSection lines={lines} />
       <PhotosSection
         repairOrderId={order.id}
         photos={photos}
@@ -104,8 +104,6 @@ export function TechRepairOrderPage() {
         locked={locked}
       />
       <DeadlinesSection repairOrderId={order.id} vehicleId={order.vehicle_id} locked={locked} />
-      <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
-      <PartsSection lines={lines} />
       {!locked && <FinishSection repairOrderId={order.id} />}
     </div>
   );

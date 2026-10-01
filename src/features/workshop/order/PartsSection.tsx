@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { RoLine } from '@/features/repair-orders/api';
 import { PART_ORDER_META } from '@/features/repair-orders/supplies';
 import { formatQuantity } from '@/lib/numbers';
@@ -9,30 +8,26 @@ export function PartsSection({ lines }: { lines: RoLine[] }) {
   if (parts.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Pièces</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="divide-y">
-          {parts.map((line) => {
-            const meta = PART_ORDER_META[line.order_status ?? 'to_order'];
-            return (
-              <li key={line.id} className="flex items-center justify-between gap-3 py-2">
-                <span className="text-base">
-                  {line.description.split('\n')[0]}
-                  {line.quantity !== 1 && ` × ${formatQuantity(line.quantity)}`}
-                </span>
-                <span className="text-sm font-semibold whitespace-nowrap" style={{ color: meta.color }}>
-                  {meta.label}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+    <section data-slot="card" className="card sec" aria-labelledby="tech-parts">
+      <h2 className="sec-t" id="tech-parts">
+        Pièces
+      </h2>
+      <ul className="col gap-2.5">
+        {parts.map((line) => {
+          const meta = PART_ORDER_META[line.order_status ?? 'to_order'];
+          return (
+            <li key={line.id} className="row between gap-3">
+              <span className="text-sm">
+                {line.description.split('\n')[0]}
+                {line.quantity !== 1 && ` × ${formatQuantity(line.quantity)}`}
+              </span>
+              <span className="badge shrink-0" style={{ '--c': meta.color } as React.CSSProperties}>
+                {meta.label}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

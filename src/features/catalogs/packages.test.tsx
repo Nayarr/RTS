@@ -77,12 +77,11 @@ describe('forfaits : écran', () => {
   it('liste : catégorie, barème, prix, mots-clés, cases de la fiche de contrôle', async () => {
     renderPage();
     const card = await screen.findByRole('article', { name: 'Forfait disques et plaquettes arrière PL' });
-    expect(card).toHaveTextContent(/PL — 3 h barème — 340,00\s€ HT/);
-    expect(card).toHaveTextContent('Mots-clés : disque arrière, plaquette arrière');
+    expect(card).toHaveTextContent(/PL3 h barème/);
+    expect(card).toHaveTextContent(/Prix forfaitaire HT340,00\s€/);
+    expect(card).toHaveTextContent('Mots-clés :disque arrièreplaquette arrière');
     expect(card).toHaveTextContent('Fiche de contrôle : Disques de frein arrière, Plaquettes arrière');
-    expect(screen.getByRole('article', { name: 'Vidange' })).toHaveTextContent(
-      'Toutes catégories — 3 h barème',
-    );
+    expect(screen.getByRole('article', { name: 'Vidange' })).toHaveTextContent('Toutes catégories3 h barème');
     expect(screen.getByRole('link', { name: 'Forfaits' })).toHaveAttribute('aria-current', 'page');
   });
 

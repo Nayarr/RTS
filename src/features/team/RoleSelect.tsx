@@ -20,7 +20,7 @@ export function RoleSelect({ value, onChange }: RoleSelectProps) {
     <div className="space-y-2">
       <Label htmlFor="role">Rôle</Label>
       <Select value={value} onValueChange={(role) => onChange(role as AppRole)}>
-        <SelectTrigger id="role" className="h-11 w-full">
+        <SelectTrigger id="role" className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { goTo, sideNav } from './support/nav';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -64,14 +65,14 @@ test('la direction consulte les statistiques et la trésorerie', async ({ page }
   await createPaidInvoice(`TR${id}`, clientName);
 
   await loginAs(page, 'direction@rts.local');
-  await page.getByRole('link', { name: 'Pilotage' }).click();
+  await goTo(page, 'Pilotage', 'Statistiques');
   await expect(page).toHaveURL(/\/pilotage\/statistiques$/);
   await expect(page.getByRole('figure', { name: 'Chiffre d’affaires HT par mois' })).toBeVisible();
   // 12 mois + l'en-tête ; le mois en cours a au moins une facture
   await expect(page.getByRole('row')).toHaveCount(13);
   await expect(page.getByRole('row').nth(1).getByRole('cell').nth(1)).not.toHaveText('0');
 
-  await page.getByRole('link', { name: 'Trésorerie' }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Trésorerie' }).click();
   await expect(page.getByText('Encaissé ce mois')).toBeVisible();
   await expect(page.getByRole('figure', { name: 'Encaissements attendus par semaine' })).toBeVisible();
   // Payée avant l'échéance : délai négatif, en vert
@@ -83,7 +84,7 @@ test('la direction consulte les statistiques et la trésorerie', async ({ page }
 
 test('la réception n’a pas accès au pilotage', async ({ page }) => {
   await loginAs(page, 'reception@rts.local');
-  await expect(page.getByRole('link', { name: 'Pilotage' })).toHaveCount(0);
+  await expect((await sideNav(page)).getByRole('button', { name: 'Pilotage' })).toHaveCount(0);
   await page.goto('/pilotage/tresorerie');
   await expect(page.getByRole('heading', { name: 'Accès refusé' })).toBeVisible();
 });

@@ -17,6 +17,7 @@ export function ImageUploadButton({
   children = 'Ajouter une photo',
   variant = 'outline',
   compress = true,
+  size = 'default',
 }: {
   category: FileCategory;
   onUploaded: (fileId: string) => void;
@@ -24,6 +25,7 @@ export function ImageUploadButton({
   variant?: 'default' | 'outline' | 'secondary';
   /** false : fichier envoyé tel quel (logo PNG avec transparence). */
   compress?: boolean;
+  size?: 'default' | 'sm';
 }) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploadFile(category, { compress });
@@ -51,6 +53,7 @@ export function ImageUploadButton({
       <Button
         type="button"
         variant={variant}
+        size={size}
         disabled={upload.isPending}
         onClick={() => input.current?.click()}
       >

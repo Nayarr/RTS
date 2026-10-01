@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useProfile } from '@/features/auth/useProfile';
 import { formatDateTime } from '@/features/repair-orders/constants';
 import { cn } from '@/lib/utils';
@@ -34,56 +33,51 @@ export function AlertsBell() {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative"
+      <button
+        type="button"
+        className="ibtn"
         aria-label={unread.length ? `Alertes (${unread.length} non lues)` : 'Alertes'}
         onClick={open}
       >
-        <Bell />
-        {unread.length > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-white">
-            {unread.length > 99 ? '99+' : unread.length}
-          </span>
-        )}
-      </Button>
+        <Bell className="i" />
+        {unread.length > 0 && <span className="pip">{unread.length > 99 ? '99+' : unread.length}</span>}
+      </button>
       <Dialog open={openedUnread !== null} onOpenChange={(value) => !value && setOpenedUnread(null)}>
-        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Alertes</DialogTitle>
-            <DialogDescription>Mises à jour automatiquement toutes les 5 minutes.</DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          showCloseButton={false}
+          className="top-16! right-3 left-auto! flex max-h-[min(560px,80dvh)] w-[min(400px,calc(100%-1.5rem))] translate-x-0! translate-y-0! flex-col gap-0! overflow-hidden rounded-[14px] p-0! *:px-0! sm:right-8"
+        >
+          <div className="row between gap-3 border-b px-4! py-3">
+            <DialogTitle className="font-sans text-sm font-bold">Alertes</DialogTitle>
+            <DialogDescription className="hint">Mises à jour toutes les 5 minutes.</DialogDescription>
+          </div>
           {list.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune alerte.</p>
+            <p className="hint px-4! py-6 text-center">Aucune alerte.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="overflow-y-auto">
               {list.map((notification) => {
                 const isNew = openedUnread?.has(notification.id) ?? false;
                 const content = (
                   <>
-                    <span className="flex items-start justify-between gap-2">
-                      <strong className="text-sm">{notification.title}</strong>
-                      {isNew && <span className="shrink-0 text-xs font-semibold text-primary">Nouvelle</span>}
+                    <span className={cn('tdot mt-1.5 shrink-0', alertTone(notification.type))} />
+                    <span className="col min-w-0 grow gap-0">
+                      <b className="text-[13.5px]">{notification.title}</b>
+                      {notification.body && <span className="hint">{notification.body}</span>}
+                      <span className="hint">{formatDateTime(notification.created_at)}</span>
                     </span>
-                    {notification.body && (
-                      <span className="block text-sm text-muted-foreground">{notification.body}</span>
-                    )}
-                    <span className="block text-xs text-muted-foreground">
-                      {formatDateTime(notification.created_at)}
-                    </span>
+                    {isNew && <span className="badge s-blue h-[22px]! shrink-0 text-[11px]!">Nouvelle</span>}
                   </>
                 );
                 const className = cn(
-                  'block w-full rounded-lg border p-3 text-left',
-                  isNew ? 'border-primary bg-primary/5' : 'opacity-75',
+                  'flex w-full gap-2.5 border-b px-4 py-3 text-left',
+                  !isNew && 'opacity-75',
                 );
                 return (
-                  <li key={notification.id}>
+                  <li key={notification.id} className="last:*:border-b-0">
                     {notification.link ? (
                       <button
                         type="button"
-                        className={cn(className, 'transition hover:bg-muted')}
+                        className={cn(className, 'cursor-pointer transition hover:bg-hover')}
                         onClick={() => follow(notification)}
                       >
                         {content}
@@ -100,4 +94,12 @@ export function AlertsBell() {
       </Dialog>
     </>
   );
+}
+
+/** Pastille de couleur selon le type d'alerte (retard / stock en rouge, bonne nouvelle en vert). */
+function alertTone(type: string | null) {
+  if (!type) return 's-warn';
+  if (/overdue|late|retard|stock|refus|reject/.test(type)) return 's-bad';
+  if (/accept|received|paid|approved/.test(type)) return 's-ok';
+  return 's-warn';
 }

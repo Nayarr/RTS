@@ -106,24 +106,24 @@ describe('garanties : règles', () => {
 describe('garanties : écran', () => {
   it('liste des retours en cours, statistiques, liens OR et véhicule', async () => {
     renderPage();
-    const card = await screen.findByRole('article', { name: 'Étrier de frein AV' });
-    expect(card).toHaveTextContent('Knorr-Bremse — PL Pièces 95 — K012345 — 180,00 € HT');
+    const card = await screen.findByRole('row', { name: /Étrier de frein AV/ });
+    expect(card).toHaveTextContent(/Réf\. K012345.*PL Pièces 95 · Knorr-Bremse.*180,00\s€/);
     expect(card).toHaveTextContent('À retourner');
     expect(within(card).getByRole('link', { name: 'OR00012' })).toHaveAttribute('href', '/or/ro1');
     expect(within(card).getByRole('link', { name: 'GH-512-RT' })).toHaveAttribute('href', '/vehicules/v1');
-    expect(screen.getByRole('article', { name: 'Turbo' })).toHaveTextContent('Envoyée au fournisseur');
-    expect(screen.queryByRole('article', { name: 'Alternateur' })).toBeNull();
+    expect(screen.getByRole('row', { name: /Turbo/ })).toHaveTextContent('Envoyée au fournisseur');
+    expect(screen.queryByRole('row', { name: /Alternateur/ })).toBeNull();
     expect(screen.getByText('Retours en cours').previousSibling).toHaveTextContent('2');
-    expect(screen.getByText('Montant en attente').previousSibling).toHaveTextContent('1 130,00 €');
+    expect(screen.getByText('Montant en attente (HT)').previousSibling).toHaveTextContent('1 130,00 €');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Tous' }));
-    expect(screen.getByRole('article', { name: 'Alternateur' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^Tous/ }));
+    expect(screen.getByRole('row', { name: /Alternateur/ })).toBeInTheDocument();
   });
 
   it('filtre dans l’adresse', async () => {
     renderPage('/garanties?filtre=refunded');
-    expect(await screen.findByRole('article', { name: 'Alternateur' })).toBeInTheDocument();
-    expect(screen.queryByRole('article', { name: 'Turbo' })).toBeNull();
+    expect(await screen.findByRole('row', { name: /Alternateur/ })).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Turbo/ })).toBeNull();
   });
 
   it('nouveau retour : pièce obligatoire, enregistrement', async () => {

@@ -135,7 +135,7 @@ describe('contrats : écran', () => {
       name: 'Transports Martin — Vidange + contrôle général',
     });
     const rows = within(card).getAllByRole('listitem');
-    expect(rows[0]).toHaveTextContent(/GH-512-RT — dernier entretien : 10\/03\/2026 \(\+28\s500 km\)/);
+    expect(rows[0]).toHaveTextContent(/GH-512-RTs*dernier entretien : 10\/03\/2026 \(\+28\s500 km\)/);
     expect(within(rows[0]!).getByRole('button', { name: 'À planifier' })).toBeInTheDocument();
     expect(rows[1]).toHaveTextContent('RDV planifié');
     expect(rows[2]).toHaveTextContent('À jour');

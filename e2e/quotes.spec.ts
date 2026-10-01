@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { goTo } from './support/nav';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -54,8 +55,8 @@ test('devis d’un OR : chiffrage, pièce, PDF, accord du client, OR des travaux
 
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
-  await page.getByRole('button', { name: 'Préparer le devis' }).click();
-  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 1 })).toBeVisible();
+  await page.getByRole('button', { name: 'Préparer le devis' }).first().click();
+  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 2 })).toBeVisible();
 
   // Travail de l'OR chiffré au taux PL (3 h × 90 €)
   const totals = page.getByLabel('Totaux');
@@ -82,7 +83,7 @@ test('devis d’un OR : chiffrage, pièce, PDF, accord du client, OR des travaux
   const preview = page.getByRole('dialog', { name: 'Aperçu' });
   await expect(preview.getByText(/^Devis_DV\d{5}_/)).toBeVisible();
   await preview.getByRole('button', { name: 'Fermer' }).click();
-  await expect(page.getByText(/^DV\d{5}$/)).toBeVisible();
+  await expect(page.getByText(/^DV\d{5}$/).first()).toBeVisible();
 
   // Accord du client : devis figé
   await page.getByRole('button', { name: 'Accepté', exact: true }).click();
@@ -95,7 +96,7 @@ test('devis d’un OR : chiffrage, pièce, PDF, accord du client, OR des travaux
   const create = page.getByRole('dialog', { name: 'Créer l’OR' });
   await create.getByLabel('Technicien').selectOption({ label: 'Alice' });
   await create.getByRole('button', { name: 'Créer l’OR' }).click();
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   await expect(page.getByText('Attente pièces (1)')).toBeVisible();
   await expect(page.getByText(/Technicien : Alice/)).toBeVisible();
 
@@ -109,12 +110,12 @@ test('devis sans OR : demande de prix, refus puis réouverture, transformation e
 }, testInfo) => {
   const plate = uniquePlate('S', testInfo.project.name);
   await loginAs(page, 'reception@rts.local');
-  await page.getByRole('link', { name: 'Devis', exact: true }).click();
+  await goTo(page, 'Facturation', 'Devis');
   await page.getByRole('link', { name: 'Nouveau devis' }).click();
   await page.getByLabel('Client').fill(`Client ${plate}`);
   await page.getByLabel('Immatriculation (facultatif)').fill(plate);
   await page.getByRole('button', { name: 'Créer le devis' }).click();
-  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 2 })).toBeVisible();
 
   await page.getByRole('button', { name: 'Ajouter de la main d’œuvre' }).click();
   const labor = page.getByRole('dialog', { name: 'Main d’œuvre' });
@@ -137,6 +138,6 @@ test('devis sans OR : demande de prix, refus puis réouverture, transformation e
 
   await page.getByRole('button', { name: 'Transformer en OR' }).click();
   await page.getByRole('dialog', { name: 'Créer l’OR' }).getByRole('button', { name: 'Créer l’OR' }).click();
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   await expect(page.getByText('Diagnostic électronique').first()).toBeVisible();
 });

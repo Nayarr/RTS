@@ -262,7 +262,7 @@ describe('règles de facturation', () => {
 });
 
 describe('liste des factures', () => {
-  it('à encaisser par défaut, filtres, recherche et reste à encaisser', async () => {
+  it('toutes par défaut, filtres, recherche et reste à encaisser', async () => {
     mockCommon();
     vi.mocked(fetchInvoices).mockResolvedValue([
       issued(),
@@ -282,6 +282,8 @@ describe('liste des factures', () => {
       auth: { session: fakeSession() },
     });
     expect(await screen.findByText(/Transports Martin/)).toBeInTheDocument();
+    expect(screen.getByText(/Brouillon SA/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^À encaisser/ }));
     expect(screen.queryByText(/Dupont/)).toBeNull();
     expect(screen.queryByText(/Brouillon SA/)).toBeNull();
     expect(screen.getByText(/Reste à encaisser/)).toHaveTextContent(/820,00\s€/);

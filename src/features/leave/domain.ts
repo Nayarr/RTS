@@ -11,10 +11,10 @@ export const LEAVE_LABELS: Record<LeaveType, string> = {
   other: 'Autre absence',
 };
 
-export const LEAVE_STATUS_META: Record<LeaveStatus, { label: string; className: string }> = {
-  requested: { label: 'En attente', className: 'bg-amber-500 text-white' },
-  approved: { label: 'Validée', className: 'bg-emerald-700 text-white' },
-  rejected: { label: 'Refusée', className: 'bg-muted text-muted-foreground' },
+export const LEAVE_STATUS_META: Record<LeaveStatus, { label: string; className: string; badge: string }> = {
+  requested: { label: 'En attente', className: 'bg-amber-500 text-white', badge: 's-warn' },
+  approved: { label: 'Validée', className: 'bg-emerald-700 text-white', badge: 's-ok' },
+  rejected: { label: 'Refusée', className: 'bg-muted text-muted-foreground', badge: 's-grey' },
 };
 
 const parseDay = (iso: string) => new Date(`${iso}T12:00:00`);

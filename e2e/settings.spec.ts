@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { goTo, sideNav } from './support/nav';
 
 const PASSWORD = 'atelier-dev-2026';
 // PNG 1×1 transparent.
@@ -17,7 +18,7 @@ async function loginAs(page: Page, email: string) {
 
 test('seule la direction accède aux réglages', async ({ page }) => {
   await loginAs(page, 'reception@rts.local');
-  await expect(page.getByRole('link', { name: 'Réglages' })).toHaveCount(0);
+  await expect((await sideNav(page)).getByRole('link', { name: 'Réglages' })).toHaveCount(0);
   await page.goto('/reglages');
   await expect(page.getByRole('heading', { name: 'Accès refusé' })).toBeVisible();
 });
@@ -28,7 +29,7 @@ test('la direction modifie les coordonnées, conservées après rechargement', a
   const value = `Test ${Date.now()}`;
 
   await loginAs(page, 'direction@rts.local');
-  await page.getByRole('link', { name: 'Réglages' }).click();
+  await goTo(page, null, 'Réglages');
   await expect(page.getByRole('heading', { name: 'Réglages', level: 1 })).toBeVisible();
 
   const save = page.getByRole('button', { name: 'Enregistrer' });

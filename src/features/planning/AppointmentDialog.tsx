@@ -39,7 +39,7 @@ import {
   type AppointmentValues,
 } from './schemas';
 
-const selectClass = 'h-11 w-full rounded-md border bg-transparent px-3 text-base';
+const selectClass = 'inp';
 
 interface Reminder {
   message: SendLinkMessage;
@@ -157,7 +157,7 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
               id="appointment-plate"
               label="Immatriculation"
               autoComplete="off"
-              className="h-11 uppercase"
+              className="uppercase"
               {...plateField}
               onChange={(event) => {
                 setValue('plate', formatPlate(event.target.value));

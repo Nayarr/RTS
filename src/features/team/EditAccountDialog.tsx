@@ -138,7 +138,7 @@ export function EditAccountDialog({ member, onOpenChange }: EditAccountDialogPro
                   <div className="space-y-2">
                     <Label htmlFor="rest_group">Repos tournant (un lundi sur deux)</Label>
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="rest_group" className="h-11 w-full">
+                      <SelectTrigger id="rest_group" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

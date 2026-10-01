@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { goTo } from './support/nav';
 
 const PASSWORD = 'atelier-dev-2026';
 
@@ -40,6 +41,6 @@ test('un lien ouvert directement affiche l’écran chargé à la demande', asyn
   await loginAs(page, 'direction@rts.local');
   await page.goto('/pilotage/statistiques');
   await expect(page.getByRole('heading', { name: 'Pilotage', level: 1 })).toBeVisible();
-  await page.getByRole('link', { name: 'Réglages' }).click();
+  await goTo(page, null, 'Réglages');
   await expect(page.getByRole('heading', { name: 'Réglages', level: 1 })).toBeVisible();
 });

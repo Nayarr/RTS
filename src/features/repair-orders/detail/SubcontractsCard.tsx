@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatEuro } from '@/lib/numbers';
 import { formatDate } from '../constants';
 import { isLateSubcontract, SUBCONTRACT_META } from '../supplies';
@@ -12,11 +11,11 @@ function SubcontractStatus({ subcontract }: { subcontract: Subcontract }) {
   const late = isLateSubcontract(subcontract);
   const meta = SUBCONTRACT_META[subcontract.status];
   return (
-    <span
-      className="text-sm font-semibold whitespace-nowrap"
-      style={{ color: late ? 'var(--destructive)' : meta.color }}
-    >
-      {late ? 'En retard' : meta.label}
+    <span className="row gap-1.5">
+      <span className="badge" style={{ '--c': meta.color } as CSSProperties}>
+        {meta.label}
+      </span>
+      {late && <span className="badge s-bad">En retard</span>}
     </span>
   );
 }
@@ -34,51 +33,48 @@ export function SubcontractsCard({
   const [editing, setEditing] = useState<Subcontract | 'new' | null>(null);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Sous-traitance</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {subcontracts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun travail sous-traité.</p>
-        ) : (
-          <ul className="divide-y">
-            {subcontracts.map((subcontract) => (
-              <li key={subcontract.id}>
-                <button
-                  type="button"
-                  className="flex w-full items-start justify-between gap-3 py-3 text-left disabled:cursor-default"
-                  disabled={!editable}
-                  aria-label={`${subcontract.service} — ${subcontract.supplier_name}`}
-                  onClick={() => setEditing(subcontract)}
-                >
-                  <span className="min-w-0">
-                    <span className="block font-medium">
-                      {subcontract.service} — {subcontract.supplier_name}
-                    </span>
-                    <span className="block text-sm text-muted-foreground">
-                      Coût {formatEuro(subcontract.cost_ht)} → refacturé{' '}
-                      {formatEuro(subcontract.resale_price_ht)} HT
-                      {subcontract.expected_return_on &&
-                        subcontract.status === 'sent' &&
-                        ` · retour prévu le ${formatDate(subcontract.expected_return_on)}`}
-                    </span>
-                  </span>
-                  <SubcontractStatus subcontract={subcontract} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-      {editable && (
-        <CardFooter>
-          <Button variant="outline" onClick={() => setEditing('new')}>
+    <section data-slot="card" className="card" aria-labelledby="ro-subcontracts">
+      <div className="card-h">
+        <h2 className="h2" id="ro-subcontracts">
+          Sous-traitance
+        </h2>
+        {editable && (
+          <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
             <Plus /> Confier un travail à un prestataire
           </Button>
-        </CardFooter>
+        )}
+      </div>
+      {subcontracts.length === 0 ? (
+        <p className="card-b hint">Aucun travail sous-traité.</p>
+      ) : (
+        <ul>
+          {subcontracts.map((subcontract) => (
+            <li key={subcontract.id}>
+              <button
+                type="button"
+                className="li w-full cursor-pointer text-left hover:bg-hover disabled:cursor-default disabled:hover:bg-transparent"
+                disabled={!editable}
+                aria-label={`${subcontract.service} — ${subcontract.supplier_name}`}
+                onClick={() => setEditing(subcontract)}
+              >
+                <span className="col grow gap-0.5">
+                  <b>
+                    {subcontract.service} — {subcontract.supplier_name}
+                  </b>
+                  <span className="muted text-[12.5px]">
+                    {subcontract.expected_return_on &&
+                      subcontract.status === 'sent' &&
+                      `Retour prévu le ${formatDate(subcontract.expected_return_on)} · `}
+                    Coût {formatEuro(subcontract.cost_ht)} → refacturé{' '}
+                    {formatEuro(subcontract.resale_price_ht)} HT
+                  </span>
+                </span>
+                <b className="num">{formatEuro(subcontract.resale_price_ht)}</b>
+                <SubcontractStatus subcontract={subcontract} />
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
       {editing && (
         <SubcontractDialog
@@ -87,6 +83,6 @@ export function SubcontractsCard({
           onClose={() => setEditing(null)}
         />
       )}
-    </Card>
+    </section>
   );
 }

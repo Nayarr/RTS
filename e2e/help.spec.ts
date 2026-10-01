@@ -15,8 +15,8 @@ test('le technicien ouvre l’aide depuis le menu et imprime le mémo', async ({
   await page.getByRole('link', { name: 'Aide' }).click();
   await expect(page.getByRole('heading', { name: 'Aide', level: 1 })).toBeVisible();
   const tech = page.getByRole('region', { name: 'Pour les techniciens' });
-  await tech.getByText('Terminer', { exact: true }).click();
-  await expect(tech).toContainText('Terminer l’intervention');
+  await tech.getByRole('button', { name: 'Terminer', exact: true }).click();
+  await expect(page.getByRole('article', { name: 'Terminer' })).toContainText('Travaux terminés');
   await expect(page.getByRole('region', { name: 'Pour la réception et la direction' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Fiche mémo technicien (PDF)' }).click();

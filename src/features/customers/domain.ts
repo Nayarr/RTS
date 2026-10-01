@@ -32,8 +32,15 @@ export function deadlineStatus(
 
 export const DEADLINE_TONE_CLASS: Record<DeadlineTone, string> = {
   overdue: 'text-destructive',
-  soon: 'text-amber-700',
-  ok: 'text-emerald-700',
+  soon: 'text-warning',
+  ok: 'text-success',
+};
+
+/** Pastille de la maquette pour une échéance. */
+export const DEADLINE_BADGE_CLASS: Record<DeadlineTone, string> = {
+  overdue: 's-bad',
+  soon: 's-warn',
+  ok: 's-ok',
 };
 
 // ---------------------------------------------------------------- Kilométrage

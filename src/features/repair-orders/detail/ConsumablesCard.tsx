@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, X } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -75,7 +74,7 @@ function AddConsumableDialog({ repairOrderId, onClose }: { repairOrderId: string
                   <Label htmlFor="consumable-use-product">Produit</Label>
                   <select
                     id="consumable-use-product"
-                    className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+                    className="inp"
                     aria-invalid={errors.consumable_id ? true : undefined}
                     value={field.value}
                     onChange={field.onChange}
@@ -124,24 +123,23 @@ function ConsumableRow({ item, editable }: { item: RoConsumable; editable: boole
   }, `${item.name} retiré (remis en stock)`);
 
   return (
-    <li className="flex items-center justify-between gap-3 py-2">
-      <span>
-        {item.name} — <strong>{`${formatQuantity(item.quantity)} ${item.unit}`}</strong>
-        <span className="text-sm text-muted-foreground">
-          {' '}
-          · {formatEuro(item.unit_sale_price * item.quantity)} HT
-        </span>
+    <li className="li">
+      <span className="grow">
+        {item.name} — <b className="num">{`${formatQuantity(item.quantity)} ${item.unit}`}</b>
+      </span>
+      <span className="num muted w-[90px] text-right">
+        {formatEuro(item.unit_sale_price * item.quantity)} HT
       </span>
       {editable && (
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
+          type="button"
+          className="ibtn sm ghost text-destructive"
           aria-label={`Retirer ${item.name}`}
           disabled={remove.isPending}
           onClick={() => remove.mutate(undefined)}
         >
-          <X />
-        </Button>
+          <Trash2 className="i s" />
+        </button>
       )}
     </li>
   );
@@ -159,31 +157,30 @@ export function ConsumablesCard({
 }) {
   const [adding, setAdding] = useState(false);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Consommables (vrac)</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {consumables.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun consommable noté.</p>
-        ) : (
-          <ul className="divide-y">
-            {consumables.map((item) => (
-              <ConsumableRow key={item.id} item={item} editable={editable} />
-            ))}
-          </ul>
-        )}
-      </CardContent>
-      {editable && (
-        <CardFooter>
-          <Button variant="outline" onClick={() => setAdding(true)}>
+    <section data-slot="card" className="card" aria-labelledby="ro-consumables">
+      <div className="card-h flex-wrap">
+        <div className="row wrap gap-x-3 gap-y-0.5">
+          <h2 className="h2" id="ro-consumables">
+            Consommables (vrac)
+          </h2>
+          <span className="hint">La quantité est déduite du stock et facturée avec l’OR.</span>
+        </div>
+        {editable && (
+          <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
             <Plus /> Ajouter huile / liquide / AdBlue…
           </Button>
-        </CardFooter>
+        )}
+      </div>
+      {consumables.length === 0 ? (
+        <p className="card-b hint">Aucun consommable noté.</p>
+      ) : (
+        <ul>
+          {consumables.map((item) => (
+            <ConsumableRow key={item.id} item={item} editable={editable} />
+          ))}
+        </ul>
       )}
       {adding && <AddConsumableDialog repairOrderId={repairOrderId} onClose={() => setAdding(false)} />}
-    </Card>
+    </section>
   );
 }

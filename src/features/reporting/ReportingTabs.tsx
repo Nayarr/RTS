@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router';
+import { useLocation } from 'react-router';
 import { FileText } from 'lucide-react';
+import { PageHeader } from '@/app/PageHeader';
+import { SectionNav } from '@/components/SectionNav';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { MonthlyReportDialog } from './MonthlyReportDialog';
 
 const TABS = [
@@ -14,42 +15,28 @@ const TABS = [
 
 /** Onglets du pilotage (direction). */
 export function ReportingTabs() {
-  return (
-    <nav aria-label="Pilotage" className="flex gap-1 overflow-x-auto border-b">
-      {TABS.map(({ to, label }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            cn(
-              '-mb-px shrink-0 border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap transition',
-              isActive
-                ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )
-          }
-        >
-          {label}
-        </NavLink>
-      ))}
-    </nav>
-  );
+  return <SectionNav label="Pilotage" links={TABS} variant="tabs" />;
 }
 
 /** En-tête commun des écrans de pilotage. */
 export function ReportingHeader() {
   const [reportOpen, setReportOpen] = useState(false);
+  const { pathname } = useLocation();
+  const section = TABS.find((tab) => pathname.startsWith(tab.to))?.label;
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Pilotage</h1>
-          <p className="text-muted-foreground">Chiffre d’affaires, marges et encaissements.</p>
-        </div>
-        <Button size="lg" variant="outline" onClick={() => setReportOpen(true)}>
-          <FileText /> Rapport mensuel
-        </Button>
-      </div>
+      <PageHeader
+        crumbs={[{ label: 'Pilotage' }, ...(section ? [{ label: section }] : [])]}
+        title="Pilotage"
+        actions={
+          <>
+            <span className="sub hidden md:inline">Chiffre d’affaires, marges et encaissements</span>
+            <Button variant="outline" onClick={() => setReportOpen(true)}>
+              <FileText /> Rapport mensuel
+            </Button>
+          </>
+        }
+      />
       <ReportingTabs />
       {reportOpen && <MonthlyReportDialog onClose={() => setReportOpen(false)} />}
     </>

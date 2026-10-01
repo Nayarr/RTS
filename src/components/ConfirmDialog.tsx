@@ -1,13 +1,8 @@
 import type { ReactNode } from 'react';
+import { CircleCheck, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -31,13 +26,26 @@ export function ConfirmDialog({
   pending = false,
   onConfirm,
 }: ConfirmDialogProps) {
+  const Icon = destructive ? Trash2 : CircleCheck;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+      <DialogContent showCloseButton={false} className="pt-[22px] sm:max-w-[460px]">
+        <div className="row items-start gap-3.5">
+          <span
+            className={cn(
+              'kpi-ico shrink-0',
+              destructive
+                ? 'border-transparent! bg-[color-mix(in_srgb,var(--destructive)_12%,transparent)]! text-destructive!'
+                : 'text-primary!',
+            )}
+          >
+            <Icon className="i s" />
+          </span>
+          <div className="col min-w-0 gap-1">
+            <DialogTitle className="font-sans text-[17px] leading-snug font-bold">{title}</DialogTitle>
+            <DialogDescription className="text-[13.5px]!">{description}</DialogDescription>
+          </div>
+        </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler

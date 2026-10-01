@@ -114,10 +114,10 @@ describe('devis en ligne (client, sans compte)', () => {
 
   it('accepter demande le nom puis la signature', async () => {
     setup(quote());
-    await userEvent.click(await screen.findByRole('button', { name: 'J’accepte ce devis' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Accepter et signer' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Merci d’indiquer votre nom.');
     await userEvent.type(screen.getByLabelText('Votre nom'), 'Jean Martin');
-    await userEvent.click(screen.getByRole('button', { name: 'J’accepte ce devis' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accepter et signer' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Merci de signer le devis');
     expect(respondToQuote).not.toHaveBeenCalled();
   });
@@ -130,7 +130,7 @@ describe('devis en ligne (client, sans compte)', () => {
     vi.mocked(fetchPublicDocument).mockResolvedValue(
       quote({ status: 'accepted', accepted_by_name: 'Jean Martin' }),
     );
-    await userEvent.click(screen.getByRole('button', { name: 'J’accepte ce devis' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accepter et signer' }));
     await waitFor(() =>
       expect(respondToQuote).toHaveBeenCalledWith({
         token: TOKEN,
@@ -140,13 +140,13 @@ describe('devis en ligne (client, sans compte)', () => {
       }),
     );
     expect(await screen.findByText(/Devis accepté par Jean Martin/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'J’accepte ce devis' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Accepter et signer' })).toBeNull();
   });
 
   it('refus après confirmation, sans signature', async () => {
     vi.mocked(respondToQuote).mockResolvedValue({ status: 'refused' });
     setup(quote());
-    await userEvent.click(await screen.findByRole('button', { name: 'Refuser' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Refuser le devis' }));
     await userEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: 'Refuser le devis' }),
     );
@@ -165,7 +165,7 @@ describe('devis en ligne (client, sans compte)', () => {
     vi.mocked(respondToQuote).mockRejectedValue(new Error('Ce devis a déjà reçu une réponse'));
     setup(quote());
     await userEvent.type(await screen.findByLabelText('Votre nom'), 'Jean');
-    await userEvent.click(screen.getByRole('button', { name: 'J’accepte ce devis' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accepter et signer' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Ce devis a déjà reçu une réponse');
   });
 
@@ -222,7 +222,7 @@ describe('facture en ligne (client, sans compte)', () => {
       screen.getByText(/Facture à régler avant le 27\/10\/2026 — reste dû : 124,00\s€/),
     ).toBeInTheDocument();
     expect(screen.getByText('TVA sur les encaissements.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'J’accepte ce devis' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Accepter et signer' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: /Imprimer/ }));
     expect(print).toHaveBeenCalled();
   });

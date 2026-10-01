@@ -86,7 +86,7 @@ test('le technicien demande un congé, la direction le valide', async ({ page, b
   await expect(request).toContainText(`le ${frenchDate(day)} (1 j)`);
   await request.getByRole('button', { name: 'Valider' }).click();
   await expect(
-    office.getByRole('region', { name: 'Historique' }).getByRole('article').filter({ hasText: comment }),
+    office.getByRole('region', { name: 'Historique' }).getByRole('row').filter({ hasText: comment }),
   ).toContainText('Validée');
   await office.context().close();
 
@@ -113,7 +113,7 @@ test('la direction saisit une absence puis la supprime', async ({ page }, testIn
 
   const absence = page
     .getByRole('region', { name: 'Historique' })
-    .getByRole('article')
+    .getByRole('row')
     .filter({ hasText: comment });
   await expect(absence).toContainText('Validée');
   await absence.getByRole('button', { name: 'Supprimer' }).click();
@@ -152,9 +152,7 @@ test('relevé d’heures du mois et export CSV pour la paie', async ({ page }, t
 
   await loginAs(page, 'direction@rts.local');
   await page.goto(`/pointages/releve?mois=${month}`);
-  await expect(page.getByRole('article', { name })).toContainText(
-    '1 jour travaillé — 9h30 — HS : 0h00 — 0 retard',
-  );
+  await expect(page.getByRole('row', { name, exact: true })).toContainText('19h300h00——');
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export CSV (paie)' }).click();

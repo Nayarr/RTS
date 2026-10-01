@@ -148,11 +148,7 @@ export function PaymentDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="payment-method">Mode</Label>
-            <select
-              id="payment-method"
-              className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
-              {...register('method')}
-            >
+            <select id="payment-method" className="inp" {...register('method')}>
               {Object.entries(PAYMENT_METHODS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -255,7 +251,7 @@ export function CreditNoteDialog({
             <textarea
               id="credit-note-reason"
               rows={3}
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-base"
+              className="inp"
               placeholder="Ex : erreur de facturation, retour pièce, geste commercial…"
               aria-invalid={errors.reason ? true : undefined}
               {...register('reason')}

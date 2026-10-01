@@ -1,9 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   CHECK_FIELDS,
   CHECK_PHOTO_FIELDS,
@@ -31,6 +29,7 @@ function ChipRow({
   onChange,
   disabled,
   extra,
+  children,
 }: {
   label: string;
   options: ChipOption[];
@@ -38,43 +37,50 @@ function ChipRow({
   onChange: (value: string) => void;
   disabled: boolean;
   extra?: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   const labelId = useId();
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
-      <span id={labelId} className="text-base">
-        {label}
-      </span>
-      <div className="flex items-center gap-1.5">
-        <div role="radiogroup" aria-labelledby={labelId} className="flex gap-1.5">
-          {options.map((option) => {
-            const selected = value === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                disabled={disabled}
-                // Un second appui sur la valeur choisie l'efface.
-                onClick={() => onChange(selected ? '' : option.value)}
-                className="min-w-12 rounded-md border px-3 py-2 text-sm font-bold transition disabled:opacity-50"
-                style={
-                  selected
-                    ? { backgroundColor: option.color, borderColor: option.color, color: '#fff' }
-                    : undefined
-                }
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
+    <div className="col gap-1.5">
+      <div className="row between gap-2">
+        <span id={labelId} className="lbl">
+          {label}
+        </span>
         {extra}
       </div>
+      <div
+        role="radiogroup"
+        aria-labelledby={labelId}
+        className="lvl"
+        style={{ '--n': options.length } as React.CSSProperties}
+      >
+        {options.map((option) => {
+          const selected = value === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={disabled}
+              className={cn(selected && 'on')}
+              // Un second appui sur la valeur choisie l'efface.
+              onClick={() => onChange(selected ? '' : option.value)}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      {children}
     </div>
   );
 }
+
+const FLUID_OPTIONS: ChipOption[] = [
+  { value: 'bon', label: 'Niveau bon', color: '' },
+  { value: 'manque', label: 'Manque — appoint fait', color: '' },
+];
 
 /** Taille de pneu au format « 315/70/22.5 » pendant la saisie. */
 function formatTireSize(value: string) {
@@ -130,172 +136,147 @@ export function InspectionEditor({
     }));
 
   return (
-    <Card className={cn(locked && 'opacity-70')}>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Fiche de contrôle véhicule</h2>
-        </CardTitle>
-        <CardDescription>
+    <section
+      data-slot="card"
+      className={cn('card sec gap-3.5!', locked && 'opacity-70')}
+      aria-labelledby="tech-inspection"
+    >
+      <div className="col gap-1">
+        <h2 className="sec-t" id="tech-inspection">
+          Fiche de contrôle véhicule
+        </h2>
+        <span className="hint">
           {save.isPending
             ? 'Enregistrement…'
             : 'Enregistrée automatiquement. HS ou 50 % ajoute la réparation à prévoir.'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <section>
-          {WEAR_FIELDS.map(([key, label]) => (
-            <ChipRow
-              key={key}
-              label={label}
-              options={WEAR_OPTIONS}
-              value={data.usure?.[key]}
-              disabled={locked}
-              onChange={(value) => setIn('usure', key, value)}
-            />
-          ))}
-        </section>
+        </span>
+      </div>
 
-        <section className="space-y-2">
-          <div className="grid grid-cols-2 gap-3">
-            {(
-              [
-                ['avant_taille', 'Taille pneus avant'],
-                ['arriere_taille', 'Taille pneus arrière'],
-              ] as const
-            ).map(([key, label]) => (
-              <div key={key} className="space-y-1.5">
-                <Label htmlFor={`tire-${key}`}>{label}</Label>
-                <Input
-                  id={`tire-${key}`}
-                  inputMode="decimal"
-                  placeholder="315/70/22.5"
-                  className="h-11"
-                  disabled={locked}
-                  value={data.pneus?.[key] ?? ''}
-                  onChange={(event) => setIn('pneus', key, formatTireSize(event.target.value))}
-                />
-              </div>
-            ))}
-          </div>
+      {FLUID_FIELDS.map(([key, label]) => {
+        const fluid = data.niveaux?.[key];
+        return (
           <ChipRow
-            label="Pneus avant"
-            options={WEAR_OPTIONS}
-            value={data.pneus?.avant_etat}
+            key={key}
+            label={label}
+            options={FLUID_OPTIONS}
+            value={fluid?.etat}
             disabled={locked}
-            onChange={(value) => setIn('pneus', 'avant_etat', value)}
-          />
-          <ChipRow
-            label="Pneus arrière"
-            options={WEAR_OPTIONS}
-            value={data.pneus?.arriere_etat}
+            onChange={(value) => setFluid(key, { etat: value })}
+          >
+            {fluid?.etat === 'manque' && (
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                inputMode="decimal"
+                placeholder="Litres ajoutés"
+                aria-label={`${label} : litres ajoutés`}
+                disabled={locked}
+                value={fluid.litres ?? ''}
+                onChange={(event) => setFluid(key, { litres: event.target.value })}
+              />
+            )}
+          </ChipRow>
+        );
+      })}
+
+      {WEAR_FIELDS.map(([key, label]) => (
+        <ChipRow
+          key={key}
+          label={label}
+          options={WEAR_OPTIONS}
+          value={data.usure?.[key]}
+          disabled={locked}
+          onChange={(value) => setIn('usure', key, value)}
+        />
+      ))}
+
+      {(
+        [
+          ['avant', 'Pneus avant'],
+          ['arriere', 'Pneus arrière'],
+        ] as const
+      ).map(([side, label]) => (
+        <ChipRow
+          key={side}
+          label={label}
+          options={WEAR_OPTIONS}
+          value={data.pneus?.[`${side}_etat`]}
+          disabled={locked}
+          onChange={(value) => setIn('pneus', `${side}_etat`, value)}
+        >
+          <Input
+            id={`tire-${side}_taille`}
+            inputMode="decimal"
+            placeholder="315/70/22.5"
+            aria-label={`Taille ${label.toLowerCase()}`}
             disabled={locked}
-            onChange={(value) => setIn('pneus', 'arriere_etat', value)}
+            value={data.pneus?.[`${side}_taille`] ?? ''}
+            onChange={(event) => setIn('pneus', `${side}_taille`, formatTireSize(event.target.value))}
           />
-        </section>
+        </ChipRow>
+      ))}
 
-        <section>
-          {CHECK_FIELDS.map(([key, label]) => (
-            <ChipRow
-              key={key}
-              label={label}
-              options={OK_HS_OPTIONS}
-              value={data.controles?.[key]}
-              disabled={locked}
-              onChange={(value) => setIn('controles', key, value)}
-              extra={
-                (CHECK_PHOTO_FIELDS as readonly string[]).includes(key) && !locked ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Photo de l’étiquette « ${label} »`}
-                    onClick={() => capture.openCamera(label)}
-                  >
-                    <Camera />
-                  </Button>
-                ) : undefined
-              }
-            />
-          ))}
-          <ChipRow
-            label="Problème électrique constaté"
-            options={YES_NO_OPTIONS}
-            value={data.probleme_electrique}
-            disabled={locked}
-            onChange={(value) => update((current) => ({ ...current, probleme_electrique: value }))}
-          />
-        </section>
+      {CHECK_FIELDS.map(([key, label]) => (
+        <ChipRow
+          key={key}
+          label={label}
+          options={OK_HS_OPTIONS}
+          value={data.controles?.[key]}
+          disabled={locked}
+          onChange={(value) => setIn('controles', key, value)}
+          extra={
+            (CHECK_PHOTO_FIELDS as readonly string[]).includes(key) && !locked ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={`Photo de l’étiquette « ${label} »`}
+                onClick={() => capture.openCamera(label)}
+              >
+                <Camera /> Étiquette
+              </Button>
+            ) : undefined
+          }
+        />
+      ))}
 
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold">Voyants allumés</h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {WARNING_LIGHT_FIELDS.map(([key, label]) => {
-              const on = Boolean(data.voyants?.[key]);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={on}
-                  disabled={locked}
-                  onClick={() => setIn('voyants', key, !on)}
-                  className={cn(
-                    'rounded-md border px-3 py-3 text-sm font-semibold transition disabled:opacity-50',
-                    on ? 'border-destructive bg-destructive text-white' : 'hover:bg-muted',
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="other-lights">Autres voyants</Label>
-            <Input
-              id="other-lights"
-              className="h-11"
-              disabled={locked}
-              value={data.voyants_autres ?? ''}
-              onChange={(event) => update((current) => ({ ...current, voyants_autres: event.target.value }))}
-            />
-          </div>
-        </section>
-
-        <section className="grid gap-3 sm:grid-cols-3">
-          {FLUID_FIELDS.map(([key, label]) => {
-            const fluid = data.niveaux?.[key];
+      <div className="col gap-1.5">
+        <span className="lbl">Voyants allumés</span>
+        <div className="row wrap gap-1.5">
+          {WARNING_LIGHT_FIELDS.map(([key, label]) => {
+            const on = Boolean(data.voyants?.[key]);
             return (
-              <div key={key} className="space-y-1.5">
-                <Label htmlFor={`fluid-${key}`}>{label}</Label>
-                <select
-                  id={`fluid-${key}`}
-                  className="h-11 w-full rounded-md border bg-transparent px-3 text-base disabled:opacity-50"
-                  disabled={locked}
-                  value={fluid?.etat ?? ''}
-                  onChange={(event) => setFluid(key, { etat: event.target.value })}
-                >
-                  <option value="">—</option>
-                  <option value="bon">Niveau bon</option>
-                  <option value="manque">Manque — appoint fait</option>
-                </select>
-                {fluid?.etat === 'manque' && (
-                  <Input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    inputMode="decimal"
-                    placeholder="Litres ajoutés"
-                    aria-label={`${label} : litres ajoutés`}
-                    className="h-11"
-                    disabled={locked}
-                    value={fluid.litres ?? ''}
-                    onChange={(event) => setFluid(key, { litres: event.target.value })}
-                  />
-                )}
-              </div>
+              <button
+                key={key}
+                type="button"
+                aria-pressed={on}
+                disabled={locked}
+                onClick={() => setIn('voyants', key, !on)}
+                className={cn('chip', on && 'on')}
+              >
+                {label}
+              </button>
             );
           })}
-        </section>
-      </CardContent>
-    </Card>
+        </div>
+        <Input
+          id="other-lights"
+          aria-label="Autres voyants"
+          placeholder="Autres voyants"
+          disabled={locked}
+          value={data.voyants_autres ?? ''}
+          onChange={(event) => update((current) => ({ ...current, voyants_autres: event.target.value }))}
+        />
+      </div>
+
+      <ChipRow
+        label="Problème électrique constaté"
+        options={YES_NO_OPTIONS}
+        value={data.probleme_electrique}
+        disabled={locked}
+        onChange={(value) => update((current) => ({ ...current, probleme_electrique: value }))}
+      />
+    </section>
   );
 }

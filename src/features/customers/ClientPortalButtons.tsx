@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Globe, RefreshCw } from 'lucide-react';
+import { Send, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SendLinkDialog } from '@/components/SendLinkDialog';
@@ -75,11 +75,16 @@ export function ClientPortalButtons({ clientId, clientName }: { clientId: string
 
   return (
     <>
-      <Button variant="outline" disabled={share.isPending} onClick={() => share.mutate()}>
-        <Globe /> Espace client en ligne
+      <Button className="w-full" disabled={share.isPending} onClick={() => share.mutate()}>
+        <Send /> Envoyer le lien au client
       </Button>
       {exists.data && (
-        <Button variant="ghost" disabled={reset.isPending} onClick={() => setConfirmReset(true)}>
+        <Button
+          variant="outline"
+          className="w-full"
+          disabled={reset.isPending}
+          onClick={() => setConfirmReset(true)}
+        >
           <RefreshCw /> Changer le lien
         </Button>
       )}

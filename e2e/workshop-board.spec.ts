@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { goTo } from './support/nav';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -75,7 +76,7 @@ test('atelier en direct : la réception voit le véhicule et ouvre son OR', asyn
   const order = await createOrder(plate, technicianId);
 
   await loginAs(page, 'reception@rts.local');
-  await page.getByRole('link', { name: 'En direct' }).click();
+  await goTo(page, 'Atelier', 'Atelier en direct');
   await expect(page.getByRole('heading', { name: 'Atelier en direct' })).toBeVisible();
   const card = page.getByRole('link', { name: new RegExp(plate) });
   await expect(card).toContainText(`Technicien : Tech direct ${id}`);

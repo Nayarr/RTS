@@ -17,7 +17,7 @@ import { saveLeaveRequest } from './api';
 import { LEAVE_LABELS, leaveDays } from './domain';
 import { useLeaveMutation } from './hooks';
 
-const selectClass = 'h-11 w-full rounded-md border bg-transparent px-3 text-base';
+const selectClass = 'inp';
 
 const leaveSchema = z
   .object({

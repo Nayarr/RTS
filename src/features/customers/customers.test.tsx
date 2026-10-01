@@ -230,17 +230,16 @@ describe('clients et véhicules : écrans', () => {
       }),
     ]);
     renderAs('reception', '/clients', <ClientsPage />, '/clients');
-    const martin = await screen.findByRole('link', { name: /Transports Martin/ });
-    expect(martin).toHaveAttribute('href', '/clients/c1');
-    expect(martin).toHaveTextContent(/Impayés : 146,40\s€ TTC/);
-    expect(martin).toHaveTextContent(/2 véhicules — 3 OR — CA HT : 1\s200,00\s€/);
+    const martin = await screen.findByRole('row', { name: /Transports Martin/ });
+    expect(within(martin).getAllByRole('link')[0]).toHaveAttribute('href', '/clients/c1');
+    expect(martin).toHaveTextContent(/2\s*3\s*1\s200,00\s€.*146,40\s€/);
 
     await userEvent.click(screen.getByRole('button', { name: 'Avec impayés 1' }));
-    expect(screen.queryByRole('link', { name: /Logistique Durand/ })).toBeNull();
+    expect(screen.queryByRole('row', { name: /Logistique Durand/ })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Tous 2' }));
     await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher un client' }), 'durand');
-    expect(screen.getByRole('link', { name: /Logistique Durand/ })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Transports Martin/ })).toBeNull();
+    expect(screen.getByRole('row', { name: /Logistique Durand/ })).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Transports Martin/ })).toBeNull();
   });
 
   const CLIENT_DETAIL: ClientDetail = {
@@ -258,7 +257,7 @@ describe('clients et véhicules : écrans', () => {
     vi.mocked(fetchClient).mockResolvedValue(CLIENT_DETAIL);
     renderAs('reception', '/clients/c1', <ClientPage />, '/clients/:id');
     expect(await screen.findByRole('heading', { name: 'Transports Martin' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/Reste dû : 146,40\s€ TTC — 1 facture en retard/);
+    expect(screen.getByRole('status')).toHaveTextContent(/146,40\s€Impayés TTC · 1 facture en retard/);
     expect(screen.queryByLabelText('Remise client (%)')).toBeNull();
     expect(screen.getByRole('button', { name: 'Facture groupée (2 OR)' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Supprimer' })).toBeNull();
@@ -303,7 +302,7 @@ describe('clients et véhicules : écrans', () => {
   it('fiche véhicule : échéances, historique, rendez-vous prérempli', async () => {
     vi.mocked(fetchVehicle).mockResolvedValue(VEHICLE_DETAIL);
     renderAs('reception', '/vehicules/v1', <VehiclePage />, '/vehicules/:id');
-    expect(await screen.findByRole('heading', { name: 'GH-512-RT' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /GH-512-RT/ })).toBeInTheDocument();
     expect(screen.getByText(/Dernier km : 184\s320 km/)).toBeInTheDocument();
     expect(screen.getByText('Dépassé (8 j)')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Kilométrage : de 150\s000 à 184\s320 km/ })).toBeInTheDocument();
@@ -313,7 +312,7 @@ describe('clients et véhicules : écrans', () => {
         .getAllByRole('link')
         .map((link) => link.getAttribute('href')),
     ).toEqual(['/or/ro2', '/or/ro1']);
-    expect(within(history).getByText('Vidange moteur • Filtre à huile')).toBeInTheDocument();
+    expect(within(history).getByText('Vidange moteur · Filtre à huile')).toBeInTheDocument();
 
     await userEvent.clear(screen.getByLabelText('Contrôle hayon'));
     const nextYear = addDays(todayIso(), 365);
@@ -346,9 +345,9 @@ describe('clients et véhicules : écrans', () => {
       },
     ]);
     renderAs('reception', '/vehicules/echeances', <DeadlinesPage />, '/vehicules/echeances');
-    const item = await screen.findByRole('link', { name: /GH-512-RT/ });
-    expect(item).toHaveAttribute('href', '/vehicules/v1');
-    expect(item).toHaveTextContent('Contrôle hayon — 20/09/2020 — Transports Martin');
+    const item = await screen.findByRole('row', { name: /GH-512-RT/ });
+    expect(within(item).getByRole('link', { name: 'GH-512-RT' })).toHaveAttribute('href', '/vehicules/v1');
+    expect(item).toHaveTextContent('Contrôle hayon20/09/2020Transports Martin');
     expect(item).toHaveTextContent(/Dépassé/);
   });
 });

@@ -91,15 +91,12 @@ describe('relevé : écran', () => {
     renderRoutes([{ path: '/pointages/releve', element: <TimesheetPage /> }], {
       initialPath: '/pointages/releve?mois=2026-10',
     });
-    const alice = await screen.findByRole('article', { name: 'Alice' });
+    const alice = await screen.findByRole('row', { name: 'Alice' });
     expect(fetchTimesheet).toHaveBeenCalledWith('2026-10');
-    expect(alice).toHaveTextContent(
-      '3 jours travaillés — 20h00 — HS : 0h30 — 1 retard (20 min) — 2 j d’absence — 1 oubli de badge',
-    );
-    expect(within(alice).getAllByRole('row')[1]).toHaveTextContent('2026-S4016h000h30');
-    expect(screen.getByRole('article', { name: 'Bruno' })).toHaveTextContent(
-      '1 jour travaillé — 1h00 — HS : 0h00 — 0 retard',
-    );
+    expect(alice).toHaveTextContent('ALAlice1 oubli de badge320h000h301 retard (20 min)2 j');
+    const weeks = screen.getByRole('article', { name: 'Semaines de Alice' });
+    expect(within(weeks).getAllByRole('row')[1]).toHaveTextContent('2026-S4016h000h30');
+    expect(screen.getByRole('row', { name: 'Bruno' })).toHaveTextContent('BRBruno11h000h00——');
 
     await userEvent.click(screen.getByRole('button', { name: 'Export CSV (paie)' }));
     const [content, fileName] = vi.mocked(downloadFile).mock.calls[0] ?? [];
