@@ -95,11 +95,7 @@ export function WarrantyDialog({
           />
           <div className="space-y-2">
             <Label htmlFor="warranty-status">Statut</Label>
-            <select
-              id="warranty-status"
-              className="inp"
-              {...register('status')}
-            >
+            <select id="warranty-status" className="inp" {...register('status')}>
               {WARRANTY_STATUSES.map((status) => (
                 <option key={status} value={status}>
                   {WARRANTY_META[status].label}

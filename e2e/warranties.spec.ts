@@ -74,7 +74,7 @@ test('retour d’une pièce d’OR au fournisseur, suivi jusqu’au remboursemen
 
   // Liste des retours en cours, rattaché à l'OR et au véhicule
   await page.getByRole('link', { name: 'Garanties' }).click();
-  const card = page.getByRole('article', { name: partName });
+  const card = page.getByRole('row', { name: new RegExp(partName) });
   await expect(card).toContainText('À retourner');
   await expect(card).toContainText('Knorr-Bremse — PL Pièces 95 — K012345 — 180,00 € HT');
   await expect(card.getByRole('link', { name: plate })).toBeVisible();

@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Plus, Trash2 } from 'lucide-react';
+import { Euro, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
+import { PageHeader } from '@/app/PageHeader';
+import { FilterChips } from '@/components/ListControls';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/features/repair-orders/constants';
 import { formatEuro } from '@/lib/numbers';
-import { cn } from '@/lib/utils';
 import { deleteWarrantyClaim, type WarrantyClaim } from './api';
 import {
   WARRANTY_FILTERS,
@@ -17,7 +18,7 @@ import {
 import { useWarrantyClaims, useWarrantyMutation } from './hooks';
 import { WarrantyDialog } from './WarrantyDialog';
 
-function ClaimCard({
+function ClaimRow({
   claim,
   onEdit,
   onDelete,
@@ -27,59 +28,72 @@ function ClaimCard({
   onDelete: () => void;
 }) {
   const meta = WARRANTY_META[claim.status];
-  const details = [claim.brand, claim.supplier_name, claim.reference].filter(Boolean).join(' — ');
   return (
-    <article aria-label={claim.part_name} className="space-y-1 rounded-lg border bg-card p-4">
-      <div className="flex items-start justify-between gap-2">
-        <button type="button" className="text-left font-bold hover:underline" onClick={onEdit}>
-          {claim.part_name}
-        </button>
-        <div className="flex shrink-0 items-center gap-1">
-          <span className="text-sm font-bold" style={{ color: meta.color }}>
+    <tr>
+      <td>
+        <span className="c2">
+          <button
+            type="button"
+            className="cursor-pointer text-left font-semibold hover:underline"
+            onClick={onEdit}
+          >
+            {claim.part_name}
+          </button>
+          <span>
+            {claim.reference ? `Réf. ${claim.reference}` : '—'}
+            {claim.notes && ` · ${claim.notes}`}
+          </span>
+        </span>
+      </td>
+      <td>
+        {[claim.supplier_name, claim.brand].filter(Boolean).join(' · ') || <span className="muted">—</span>}
+      </td>
+      <td className="muted max-w-[280px] whitespace-normal">{claim.reason ?? '—'}</td>
+      <td>
+        <span className="col gap-0">
+          {claim.repair_order_id && claim.repair_order_number && (
+            <Link to={`/or/${claim.repair_order_id}`} className="ul">
+              {claim.repair_order_number}
+            </Link>
+          )}
+          {claim.vehicle_id && claim.vehicle_plate && (
+            <Link to={`/vehicules/${claim.vehicle_id}`} className="hint hover:underline">
+              {claim.vehicle_plate}
+            </Link>
+          )}
+          {!claim.repair_order_number && !claim.vehicle_plate && <span className="muted">—</span>}
+        </span>
+      </td>
+      <td className="r num b">{claim.amount_ht !== null ? formatEuro(claim.amount_ht) : '—'}</td>
+      <td>
+        <span className="col gap-0.5">
+          <span className="badge" style={{ '--c': meta.color } as CSSProperties}>
             {meta.label}
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-destructive"
+          <span className="hint">créé le {formatDate(claim.created_at)}</span>
+        </span>
+      </td>
+      <td>
+        <span className="row gap-0.5">
+          <button
+            type="button"
+            className="ibtn sm ghost"
+            aria-label={`Modifier ${claim.part_name}`}
+            onClick={onEdit}
+          >
+            <Pencil className="i s" />
+          </button>
+          <button
+            type="button"
+            className="ibtn sm ghost text-destructive"
             aria-label={`Supprimer ${claim.part_name}`}
             onClick={onDelete}
           >
-            <Trash2 />
-          </Button>
-        </div>
-      </div>
-      {(details || claim.amount_ht !== null) && (
-        <p className="text-sm text-muted-foreground">
-          {details}
-          {claim.amount_ht !== null && `${details ? ' — ' : ''}${formatEuro(claim.amount_ht)} HT`}
-        </p>
-      )}
-      <p className="text-sm text-muted-foreground">
-        {claim.reason && `${claim.reason} — `}
-        {claim.repair_order_id && claim.repair_order_number && (
-          <>
-            <Link to={`/or/${claim.repair_order_id}`} className="font-medium text-foreground hover:underline">
-              {claim.repair_order_number}
-            </Link>
-            {' — '}
-          </>
-        )}
-        {claim.vehicle_id && claim.vehicle_plate && (
-          <>
-            <Link
-              to={`/vehicules/${claim.vehicle_id}`}
-              className="font-medium text-foreground hover:underline"
-            >
-              {claim.vehicle_plate}
-            </Link>
-            {' — '}
-          </>
-        )}
-        créé le {formatDate(claim.created_at)}
-      </p>
-      {claim.notes && <p className="text-sm">{claim.notes}</p>}
-    </article>
+            <Trash2 className="i s" />
+          </button>
+        </span>
+      </td>
+    </tr>
   );
 }
 
@@ -97,35 +111,56 @@ export function WarrantiesPage() {
   const all = useMemo(() => claims.data ?? [], [claims.data]);
   const list = all.filter((claim) => matchesWarrantyFilter(claim, filter));
   const stats = useMemo(() => warrantyStats(all), [all]);
+  const maxSupplier = Math.max(1, ...stats.bySupplier.map(({ count }) => count));
+  const chipOrder: WarrantyFilter[] = ['open', 'to_return', 'sent', 'accepted', 'refunded', 'refused', 'all'];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Garanties et retours</h1>
-          <p className="text-muted-foreground">Pièces renvoyées aux fournisseurs et leur remboursement.</p>
-        </div>
-        <Button size="lg" onClick={() => setEditing({ claim: null })}>
-          <Plus /> Nouveau retour
-        </Button>
-      </div>
+    <>
+      <PageHeader
+        crumbs={[{ label: 'Facturation' }, { label: 'Garanties et retours' }]}
+        title="Garanties et retours"
+        actions={
+          <>
+            <span className="sub hidden md:inline">
+              Pièces renvoyées aux fournisseurs et leur remboursement
+            </span>
+            <Button onClick={() => setEditing({ claim: null })}>
+              <Plus /> Nouveau retour
+            </Button>
+          </>
+        }
+      />
 
       {claims.isSuccess && all.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          <div className="rounded-lg border bg-card p-3 text-center">
-            <p className="text-2xl font-bold tabular-nums">{stats.openCount}</p>
-            <p className="text-sm text-muted-foreground">Retours en cours</p>
+        <div className="grid gap-3.5 md:grid-cols-[1fr_1fr_2fr]">
+          <div className="card kpi">
+            <span className="kpi-ico">
+              <Undo2 className="i s" />
+            </span>
+            <div className="col gap-1">
+              <span className="kpi-v">{stats.openCount}</span>
+              <span className="kpi-l">Retours en cours</span>
+            </div>
           </div>
-          <div className="rounded-lg border bg-card p-3 text-center">
-            <p className="text-2xl font-bold tabular-nums">{formatEuro(stats.pendingAmount)}</p>
-            <p className="text-sm text-muted-foreground">Montant en attente</p>
+          <div className="card kpi">
+            <span className="kpi-ico">
+              <Euro className="i s" />
+            </span>
+            <div className="col gap-1">
+              <span className="kpi-v">{formatEuro(stats.pendingAmount)}</span>
+              <span className="kpi-l">Montant en attente (HT)</span>
+            </div>
           </div>
-          <section aria-label="Retours par fournisseur / marque" className="rounded-lg border bg-card p-3">
-            <p className="mb-1 text-sm text-muted-foreground">Retours par fournisseur / marque</p>
-            <ul className="text-sm">
+          <section className="card kpi gap-2.5" aria-label="Retours par fournisseur / marque">
+            <span className="kpi-l">Retours par fournisseur / marque</span>
+            <ul className="col gap-2">
               {stats.bySupplier.map(({ label, count }) => (
-                <li key={label}>
-                  {label} : <strong>{count}</strong>
+                <li key={label} className="row gap-2.5">
+                  <span className="w-[140px] truncate text-[13px]">{label}</span>
+                  <div className="bar" aria-hidden>
+                    <i style={{ width: `${(count / maxSupplier) * 100}%` }} />
+                  </div>
+                  <b className="num w-[18px]">{count}</b>
                 </li>
               ))}
             </ul>
@@ -133,42 +168,52 @@ export function WarrantiesPage() {
         </div>
       )}
 
-      <div role="group" aria-label="Filtrer par statut" className="flex gap-2 overflow-x-auto pb-1">
-        {WARRANTY_FILTERS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={filter === value}
-            onClick={() => setFilter(value)}
-            className={cn(
-              'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition',
-              filter === value ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted',
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <FilterChips
+        label="Filtrer par statut"
+        value={filter}
+        onChange={setFilter}
+        options={chipOrder.map((value) => ({
+          value,
+          label: WARRANTY_FILTERS.find((option) => option.value === value)?.label ?? value,
+          count: all.filter((claim) => matchesWarrantyFilter(claim, value)).length,
+          color:
+            value in WARRANTY_META ? WARRANTY_META[value as keyof typeof WARRANTY_META].color : undefined,
+        }))}
+      />
 
       {claims.isPending && <p className="text-muted-foreground">Chargement…</p>}
       {claims.isError && <p className="text-destructive">Impossible de charger les retours.</p>}
-      {claims.isSuccess && list.length === 0 && (
-        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-          Aucun retour dans cette catégorie.
-        </p>
-      )}
+      {claims.isSuccess && list.length === 0 && <p className="empty">Aucun retour dans cette catégorie.</p>}
 
-      <ul className="space-y-3">
-        {list.map((claim) => (
-          <li key={claim.id}>
-            <ClaimCard
-              claim={claim}
-              onEdit={() => setEditing({ claim })}
-              onDelete={() => setToDelete(claim)}
-            />
-          </li>
-        ))}
-      </ul>
+      {list.length > 0 && (
+        <div className="card tbl-wrap overflow-x-auto!">
+          <table className="tbl" aria-label="Retours">
+            <thead>
+              <tr>
+                <th>Pièce</th>
+                <th>Fournisseur / marque</th>
+                <th>Motif du retour</th>
+                <th>OR</th>
+                <th className="r">Montant HT</th>
+                <th>Statut</th>
+                <th className="w-[90px]">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((claim) => (
+                <ClaimRow
+                  key={claim.id}
+                  claim={claim}
+                  onEdit={() => setEditing({ claim })}
+                  onDelete={() => setToDelete(claim)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {editing && <WarrantyDialog claim={editing.claim} onClose={() => setEditing(null)} />}
       {toDelete && (
@@ -183,6 +228,6 @@ export function WarrantiesPage() {
           onConfirm={() => remove.mutate(toDelete.id, { onSuccess: () => setToDelete(null) })}
         />
       )}
-    </div>
+    </>
   );
 }
