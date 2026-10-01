@@ -108,13 +108,14 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   await page.goto(`/atelier/or/${order.id}`);
   await expect(page.getByText('Cet OR est terminé : consultation seulement.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Travaux terminés' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Retour à mes OR' }).click();
   await logout(page);
 
   // Le bureau voit le résultat : statut, photos, temps déclaré, fiche de contrôle
   await loginAs(page, 'direction@rts.local');
   await page.goto(`/or/${order.id}`);
   await expect(page.getByText('Terminé atelier').first()).toBeVisible();
-  const declared = page.getByText('Déclaré (travaux effectués)').locator('..');
+  const declared = page.getByText('Déclaré', { exact: true }).locator('..');
   await expect(declared.getByText('2 h', { exact: true })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Face avant', exact: true })).toBeVisible();
   await expect(page.getByText('1 point à surveiller.')).toBeVisible();

@@ -57,7 +57,11 @@ export function TimerSection({
   };
 
   return (
-    <section data-slot="card" className="card sec items-center gap-3! px-4! py-[18px]! text-center" aria-label="Chrono">
+    <section
+      data-slot="card"
+      className="card sec items-center gap-3! px-4! py-[18px]! text-center"
+      aria-label="Chrono"
+    >
       <span className="hint">Temps passé sur cet OR</span>
       <span
         className="num font-display text-[52px] leading-none font-bold"

@@ -59,7 +59,7 @@ test('la direction crée un technicien, qui se connecte, puis le désactive', as
   // Le nouveau technicien se connecte
   await logout(page);
   await loginAs(page, email, temporaryPassword);
-  await expect(page.getByText('Espace Technicien')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mes ordres de réparation' })).toBeVisible();
   await logout(page);
 
   // La direction le désactive

@@ -110,7 +110,7 @@ test('le client signe et accepte le devis en ligne ; le bureau voit sa signature
   // Côté bureau : devis accepté, signé en ligne, figé
   await page.reload();
   await expect(page.getByText('Devis accepté par le client : il ne peut plus être modifié.')).toBeVisible();
-  await expect(page.getByText(/Accepté le .* en ligne par Jean Martin/)).toBeVisible();
+  await expect(page.getByText('Accepté en ligne par Jean Martin')).toBeVisible();
   const signature = page.getByRole('img', { name: 'Signature du client', exact: true });
   await expect(signature).toBeVisible();
   await expect(signature).toHaveJSProperty('complete', true);

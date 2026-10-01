@@ -113,7 +113,7 @@ test('la direction saisit une absence puis la supprime', async ({ page }, testIn
 
   const absence = page
     .getByRole('region', { name: 'Historique' })
-    .getByRole('article')
+    .getByRole('row')
     .filter({ hasText: comment });
   await expect(absence).toContainText('Validée');
   await absence.getByRole('button', { name: 'Supprimer' }).click();

@@ -136,7 +136,11 @@ export function InspectionEditor({
     }));
 
   return (
-    <section data-slot="card" className={cn('card sec gap-3.5!', locked && 'opacity-70')} aria-labelledby="tech-inspection">
+    <section
+      data-slot="card"
+      className={cn('card sec gap-3.5!', locked && 'opacity-70')}
+      aria-labelledby="tech-inspection"
+    >
       <div className="col gap-1">
         <h2 className="sec-t" id="tech-inspection">
           Fiche de contrôle véhicule
