@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateRestReferenceMonday } from './api';
@@ -30,21 +29,23 @@ export function RestRotationCard() {
   const invalid = value !== '' && !isMonday(value);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Repos tournant</CardTitle>
-        <CardDescription>
+    <section data-slot="card" className="card" aria-labelledby="rest-rotation">
+      <div className="card-h">
+        <h2 className="h2" id="rest-rotation">
+          Repos tournant
+        </h2>
+      </div>
+      <div className="card-b col gap-3">
+        <p className="hint">
           Choisis un lundi où le groupe A était en repos : l’alternance A / B est ensuite calculée
           automatiquement. Le groupe de chaque technicien se règle dans son compte.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-wrap items-end gap-3">
-        <div className="space-y-2">
+        </p>
+        <div className="field">
           <Label htmlFor="rest-reference">Lundi de référence (groupe A en repos)</Label>
           <Input
             id="rest-reference"
             type="date"
-            className="w-48"
+            className="w-full"
             value={value}
             disabled={isPending}
             aria-invalid={invalid || undefined}
@@ -52,13 +53,15 @@ export function RestRotationCard() {
           />
         </div>
         <Button
+          size="sm"
+          className="self-end"
           disabled={draft === null || invalid || save.isPending}
           onClick={() => save.mutate(value === '' ? null : value)}
         >
           Enregistrer
         </Button>
         {invalid && <p className="w-full text-sm text-destructive">Cette date n’est pas un lundi.</p>}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
