@@ -117,7 +117,7 @@ describe('SettingsPage', () => {
     vi.mocked(updateLaborRates).mockResolvedValue();
     renderSettings();
     await userEvent.click(await screen.findByRole('tab', { name: 'Taux horaires' }));
-    const rate = await screen.findByLabelText('Taux HT (€/h)');
+    const rate = await screen.findByLabelText(/^Taux HT \(€\/h\)/);
     await userEvent.clear(rate);
     await userEvent.type(rate, '95');
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
