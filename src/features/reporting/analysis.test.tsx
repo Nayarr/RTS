@@ -199,14 +199,14 @@ describe('pilotage : écrans', () => {
     const alice = await screen.findByRole('article', { name: 'Alice' });
     expect(screen.getByRole('button', { name: 'Ce mois' })).toHaveAttribute('aria-pressed', 'true');
     expect(alice).toHaveTextContent('83/100');
-    expect(alice).toHaveTextContent(/CA MO : 1\s000\s€/);
-    expect(alice).toHaveTextContent('Rendement : 90 %');
-    expect(alice).toHaveTextContent('Occupation : 50 %');
-    expect(alice).toHaveTextContent('Précision estim. : ±10 %');
-    expect(alice).toHaveTextContent('Délai moyen : 2,5 j');
+    expect(alice).toHaveTextContent(/CA MO1\s000\s€/);
+    expect(alice).toHaveTextContent('Rendement90 %');
+    expect(alice).toHaveTextContent('Occupation50 %');
+    expect(alice).toHaveTextContent('Précision estim.±10 %');
+    expect(alice).toHaveTextContent('Délai moyen2,5 j');
     const bruno = screen.getByRole('article', { name: 'Bruno' });
     expect(bruno).toHaveTextContent('0/100');
-    expect(bruno).toHaveTextContent('Rendement : —');
+    expect(bruno).toHaveTextContent('Rendement—');
     expect(screen.getAllByRole('article').map((a) => a.getAttribute('aria-label'))).toEqual([
       'Alice',
       'Bruno',
