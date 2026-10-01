@@ -80,25 +80,33 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
           <span>{group.label}</span>
           <ChevronDown className={cn('chev', isOpen && 'open')} />
         </button>
-        {isOpen && (
-          <div className="subnav" id={listId}>
-            {group.items.map((item) => {
-              const count = dashboard.data && item.count && role ? item.count(dashboard.data, role) : 0;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn('si', item.to === current && 'on')}
-                  aria-current={item.to === current ? 'page' : undefined}
-                  onClick={onNavigate}
-                >
-                  <span>{item.label}</span>
-                  {count > 0 && <span className={cn('cnt', item.hot && 'hot')}>{count}</span>}
-                </Link>
-              );
-            })}
+        {/* Toujours rendu pour animer l'ouverture et la fermeture ; replié, il sort de l'arbre d'accessibilité. */}
+        <div
+          className={cn('subnav-fold', isOpen && 'open')}
+          id={listId}
+          aria-hidden={isOpen ? undefined : true}
+          inert={!isOpen}
+        >
+          <div>
+            <div className="subnav">
+              {group.items.map((item) => {
+                const count = dashboard.data && item.count && role ? item.count(dashboard.data, role) : 0;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={cn('si', item.to === current && 'on')}
+                    aria-current={item.to === current ? 'page' : undefined}
+                    onClick={onNavigate}
+                  >
+                    <span>{item.label}</span>
+                    {count > 0 && <span className={cn('cnt', item.hot && 'hot')}>{count}</span>}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     );
   };

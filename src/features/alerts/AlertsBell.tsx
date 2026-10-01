@@ -45,7 +45,7 @@ export function AlertsBell() {
       <Dialog open={openedUnread !== null} onOpenChange={(value) => !value && setOpenedUnread(null)}>
         <DialogContent
           showCloseButton={false}
-          className="top-16! right-3 left-auto! flex max-h-[min(560px,80dvh)] w-[min(400px,calc(100%-1.5rem))] translate-x-0! translate-y-0! flex-col gap-0! overflow-hidden rounded-[10px] p-0! *:px-0! sm:right-8"
+          className="top-16! right-3 left-auto! flex max-h-[min(560px,80dvh)] w-[min(400px,calc(100%-1.5rem))] origin-top-right translate-x-0! translate-y-0! flex-col gap-0! overflow-hidden rounded-[10px] p-0! *:px-0! sm:right-8"
         >
           <div className="row between gap-3 border-b px-4! py-3">
             <DialogTitle className="font-sans text-sm font-bold">Alertes</DialogTitle>
