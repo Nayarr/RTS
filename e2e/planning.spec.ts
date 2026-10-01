@@ -124,7 +124,7 @@ test('rappel du rendez-vous de demain', async ({ page }, testInfo) => {
   await page.goto('/rendez-vous');
   const item = page.getByRole('listitem').filter({ hasText: plate });
   await expect(item).toContainText('Rappel à envoyer');
-  await expect(item).toContainText(`Client rappel ${id} — Contrôle — à assigner`);
+  await expect(item).toContainText(new RegExp(`Client rappel ${id}.*Contrôle.*à assigner`));
   await item.getByRole('button').click();
   await page.getByRole('button', { name: 'Envoyer un rappel au client' }).click();
 

@@ -243,7 +243,7 @@ describe('planning : écran', () => {
       within(workload)
         .getAllByRole('listitem')
         .map((item) => item.textContent),
-    ).toEqual(['3 hAlice', '0 hBruno']);
+    ).toEqual(['AL3 hAlice', 'BR0 hBruno']);
     // Le dimanche, pas d'OR à assigner
     expect(screen.getByRole('button', { name: 'Assigner un OR le Samedi 10/10' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Assigner un OR le Dimanche 11/10' })).toBeNull();
@@ -262,8 +262,8 @@ describe('planning : écran', () => {
     renderPlanning('?vue=jour&date=2026-10-06');
     expect(await screen.findByRole('heading', { name: 'Mardi 06/10' })).toBeInTheDocument();
     expect((await screen.findAllByRole('columnheader')).map((header) => header.textContent)).toEqual([
-      'Alice',
-      'Bruno',
+      'ALAlice',
+      'BRBruno',
     ]);
     expect(
       within(screen.getByTestId('planning-column-t1')).getByRole('link', { name: /GH-512-RT/ }),
@@ -396,10 +396,10 @@ describe('rendez-vous', () => {
     const items = await screen.findAllByRole('listitem');
     expect(fetchUpcomingAppointments).toHaveBeenCalledWith(todayIso());
     expect(items[0]).toHaveTextContent('Rappel à envoyer');
-    expect(items[0]).toHaveTextContent('Logistique Durand — Vidange — à assigner');
+    expect(items[0]).toHaveTextContent(/Logistique Durand.*Vidange.*à assigner/);
     expect(items[1]).toHaveTextContent('Rappel envoyé');
     expect(items[2]).toHaveTextContent('sans immatriculation');
     expect(items[2]).toHaveTextContent('Alice');
-    expect(items[2]).not.toHaveTextContent('Rappel');
+    expect(items[2]).toHaveTextContent('Rappel la veille');
   });
 });

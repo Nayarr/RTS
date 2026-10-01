@@ -1,6 +1,8 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { CalendarClock, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { CalendarClock, ChevronLeft, ChevronRight, List, Plus } from 'lucide-react';
+import { initials } from '@/app/nav';
+import { PageHeader } from '@/app/PageHeader';
 import { Button } from '@/components/ui/button';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { formatHours } from '@/features/repair-orders/constants';
@@ -27,7 +29,7 @@ import {
 } from './domain';
 import { usePlanning } from './hooks';
 
-const HOUR_HEIGHT = 56;
+const HOUR_HEIGHT = 44;
 const APPOINTMENT_STYLE = {
   backgroundImage: 'repeating-linear-gradient(135deg, #7B4FB5 0 8px, #8d63c4 8px 16px)',
 };
@@ -37,6 +39,8 @@ type Block = TimedEvent & ({ order: RepairOrderOverview } | { appointment: Appoi
 interface Column {
   key: string;
   header: ReactNode;
+  /** Colonne d'aujourd'hui (vue semaine), mise en avant. */
+  today?: boolean;
   /** Dimanche, ou technicien absent toute la journée (vue jour). */
   closed: boolean;
   offLabel: string | null;
@@ -94,19 +98,23 @@ function buildColumns(
       });
       return {
         key: day,
+        today: day === todayIso(),
         header: (
           <>
-            <span>{dayLabel(day)}</span>
+            <span className="truncate">
+              {dayLabel(day).replace(/^(\p{L}{3})\p{L}*/u, '$1')}
+              {day === todayIso() && ' · aujourd’hui'}
+              {closed && ' · fermé'}
+            </span>
             {!closed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
+              <button
+                type="button"
+                className="ibtn sm ghost"
                 aria-label={`Assigner un OR le ${dayLabel(day)}`}
                 onClick={() => onAssign(day)}
               >
-                <Plus />
-              </Button>
+                <Plus className="i s" />
+              </button>
             )}
           </>
         ),
@@ -134,17 +142,21 @@ function buildColumns(
       key: technician.id,
       header: (
         <>
-          <span style={{ color: technicianColor(technician) }}>{technician.display_name}</span>
+          <span className="who truncate">
+            <span className="av sm" style={{ '--c': technicianColor(technician) } as CSSProperties}>
+              {initials(technician.display_name)}
+            </span>
+            {technician.display_name}
+          </span>
           {!closed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
+            <button
+              type="button"
+              className="ibtn sm ghost"
               aria-label={`Assigner un OR à ${technician.display_name}`}
               onClick={() => onAssign(day, technician.id)}
             >
-              <Plus />
-            </Button>
+              <Plus className="i s" />
+            </button>
           )}
         </>
       ),
@@ -205,107 +217,163 @@ export function PlanningPage() {
     [planning.data],
   );
 
+  const toAssign = (planning.data?.appointments ?? []).filter((item) => !item.technician_id);
+  const newAppointment = () =>
+    setDialog({
+      kind: 'appointment',
+      appointment: null,
+      preset: { date: isSunday(date) ? addDays(date, 1) : date },
+    });
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Planning</h1>
-          <p className="text-muted-foreground">OR planifiés et rendez-vous de l’atelier.</p>
-        </div>
-        <Button
-          size="lg"
-          onClick={() =>
-            setDialog({
-              kind: 'appointment',
-              appointment: null,
-              preset: { date: isSunday(date) ? addDays(date, 1) : date },
-            })
-          }
-        >
-          <CalendarClock /> Nouveau rendez-vous
-        </Button>
-      </div>
+    <>
+      <PageHeader
+        crumbs={[{ label: 'Atelier' }, { label: 'Planning' }]}
+        title="Planning"
+        actions={
+          <>
+            <span className="sub hidden xl:inline">OR planifiés et rendez-vous de l’atelier</span>
+            <Button variant="outline" asChild>
+              <Link to="/rendez-vous">
+                <List /> Liste des rendez-vous
+              </Link>
+            </Button>
+            <Button onClick={newAppointment}>
+              <CalendarClock /> Nouveau rendez-vous
+            </Button>
+          </>
+        }
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={view === 'jour' ? 'Jour précédent' : 'Semaine précédente'}
-            onClick={() => go({ date: addDays(date, -step) })}
-          >
-            <ChevronLeft />
-          </Button>
-          <h2 className="min-w-48 text-center font-bold" aria-live="polite">
-            {periodLabel(view, days)}
-          </h2>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={view === 'jour' ? 'Jour suivant' : 'Semaine suivante'}
-            onClick={() => go({ date: addDays(date, step) })}
-          >
-            <ChevronRight />
-          </Button>
-          <Button variant="ghost" onClick={() => go({ date: todayIso() })}>
-            Aujourd’hui
-          </Button>
-        </div>
-        <div role="group" aria-label="Affichage" className="flex gap-2">
-          {(['semaine', 'jour'] as const).map((value) => (
+      <div className="col gap-4">
+        <div className="toolbar flex-wrap">
+          <div className="row gap-2">
             <button
-              key={value}
               type="button"
-              aria-pressed={view === value}
-              onClick={() => go({ vue: value })}
-              className={cn(
-                'rounded-full border px-3 py-1.5 text-sm font-medium transition',
-                view === value ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted',
-              )}
+              className="ibtn"
+              aria-label={view === 'jour' ? 'Jour précédent' : 'Semaine précédente'}
+              onClick={() => go({ date: addDays(date, -step) })}
             >
-              {value === 'semaine' ? 'Semaine' : 'Jour'}
+              <ChevronLeft className="i" />
             </button>
-          ))}
+            <h2 className="h2 min-w-[230px] justify-center" aria-live="polite">
+              {periodLabel(view, days)}
+            </h2>
+            <button
+              type="button"
+              className="ibtn"
+              aria-label={view === 'jour' ? 'Jour suivant' : 'Semaine suivante'}
+              onClick={() => go({ date: addDays(date, step) })}
+            >
+              <ChevronRight className="i" />
+            </button>
+            <Button variant="ghost" onClick={() => go({ date: todayIso() })}>
+              Aujourd’hui
+            </Button>
+          </div>
+          <div className="seg" role="group" aria-label="Affichage">
+            {(['semaine', 'jour'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={view === value}
+                className={cn(view === value && 'on')}
+                onClick={() => go({ vue: value })}
+              >
+                {value === 'semaine' ? 'Semaine' : 'Jour'}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {planning.isPending && <p className="text-muted-foreground">Chargement…</p>}
-      {planning.isError && <p className="text-destructive">Impossible de charger le planning.</p>}
+        {planning.isPending && <p className="text-muted-foreground">Chargement…</p>}
+        {planning.isError && <p className="text-destructive">Impossible de charger le planning.</p>}
 
-      {planning.data && (
-        <>
-          <section aria-label="Charge de travail" className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase">
-              Charge de travail ({view === 'jour' ? 'jour' : 'semaine'}, en heures déclarées)
-            </h3>
-            <ul className="grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-2">
-              {workload.map(({ technician, hours }) => (
-                <li key={technician.id} className="rounded-lg border bg-card p-3 text-center">
-                  <div className="text-xl font-bold tabular-nums">{formatHours(hours)}</div>
-                  <div className="truncate text-sm text-muted-foreground">{technician.display_name}</div>
-                </li>
-              ))}
-            </ul>
-          </section>
+        {planning.data && (
+          <>
+            <div className="flex flex-wrap items-stretch gap-3">
+              <section
+                aria-label="Charge de travail"
+                className="card row grow flex-wrap gap-[18px] px-3.5 py-2.5"
+              >
+                <span className="w-[120px] leading-[1.3] overline">
+                  Charge {view === 'jour' ? 'du jour' : 'de la semaine'}
+                </span>
+                <ul className="row wrap gap-[18px]">
+                  {workload.map(({ technician, hours }) => (
+                    <li key={technician.id} className="who">
+                      <span className="av sm" style={{ '--c': technicianColor(technician) } as CSSProperties}>
+                        {initials(technician.display_name)}
+                      </span>
+                      <span className="col gap-0">
+                        <b className="num">{formatHours(hours)}</b>
+                        <span className="hint">{technician.display_name}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              {toAssign.length > 0 && (
+                <section
+                  aria-label="RDV à assigner"
+                  className="card row w-full gap-3 px-3.5 py-2.5 lg:w-[420px]"
+                >
+                  <span className="kpi-ico border-0 text-white" style={APPOINTMENT_STYLE}>
+                    <CalendarClock className="i s" />
+                  </span>
+                  <div className="col grow gap-0">
+                    <b>{toAssign.length > 1 ? `${toAssign.length} RDV à assigner` : 'RDV à assigner'}</b>
+                    <span className="hint truncate">
+                      {[
+                        `${dayLabel(toAssign[0]!.scheduled_date)} ${shortTime(toAssign[0]!.start_time)}`,
+                        toAssign[0]!.client_name,
+                        toAssign[0]!.reason,
+                      ]
+                        .filter(Boolean)
+                        .join(' — ')}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDialog({ kind: 'appointment', appointment: toAssign[0]! })}
+                  >
+                    Assigner
+                  </Button>
+                </section>
+              )}
+            </div>
 
-          {columns.length === 0 ? (
-            <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-              Aucun technicien à afficher.
+            {columns.length === 0 ? (
+              <p className="empty">Aucun technicien à afficher.</p>
+            ) : (
+              <PlanningGrid
+                columns={columns}
+                dayStart={timeToMinutes(planning.data.hours.workday_start) ?? 9 * 60}
+                dayEnd={timeToMinutes(planning.data.hours.workday_end) ?? 18 * 60}
+                detailed={view === 'jour'}
+                onOpenAppointment={(appointment) => setDialog({ kind: 'appointment', appointment })}
+              />
+            )}
+            <p className="hint row wrap gap-4">
+              <span className="row gap-1.5">
+                <span
+                  className="size-3.5 rounded"
+                  style={{
+                    backgroundImage: 'repeating-linear-gradient(135deg, #7B4FB5 0 4px, #8d63c4 4px 8px)',
+                  }}
+                />
+                Rendez-vous
+              </span>
+              <span className="row gap-1.5">
+                <span className="size-3.5 rounded border bg-muted" />
+                Pause déjeuner
+              </span>
+              <span>Couleur du bloc = technicien. Clique sur « + » pour assigner un OR.</span>
             </p>
-          ) : (
-            <PlanningGrid
-              columns={columns}
-              dayStart={timeToMinutes(planning.data.hours.workday_start) ?? 9 * 60}
-              dayEnd={timeToMinutes(planning.data.hours.workday_end) ?? 18 * 60}
-              detailed={view === 'jour'}
-              onOpenAppointment={(appointment) => setDialog({ kind: 'appointment', appointment })}
-            />
-          )}
-          <p className="text-sm text-muted-foreground">
-            Blocs hachurés violets : rendez-vous. Zone grisée : pause déjeuner.
-          </p>
-        </>
-      )}
+          </>
+        )}
+      </div>
 
       {dialog?.kind === 'appointment' && (
         <AppointmentDialog
@@ -322,7 +390,7 @@ export function PlanningPage() {
           onClose={() => setDialog(null)}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -341,16 +409,17 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
   const toPx = (minutes: number) => ((minutes - dayStart) / 60) * HOUR_HEIGHT;
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <section data-slot="card" className="card overflow-x-auto">
       <div style={{ minWidth: `${3.5 + columns.length * 8.5}rem` }}>
-        <div className="sticky top-0 z-10 flex border-b bg-card">
+        <div className="flex border-b bg-card">
           <div className="w-14 shrink-0" />
           {columns.map((column) => (
             <div
               key={column.key}
               role="columnheader"
               className={cn(
-                'flex min-w-0 flex-1 items-center justify-center gap-1 border-l px-1 py-2 text-center text-sm font-bold',
+                'flex h-12 min-w-0 flex-1 items-center justify-between gap-1 border-l pr-1.5 pl-3 text-[13px] font-semibold',
+                column.today && 'bg-accent text-accent-foreground',
                 column.closed && 'bg-muted text-muted-foreground',
               )}
             >
@@ -358,12 +427,12 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
             </div>
           ))}
         </div>
-        <div className="flex py-2">
+        <div className="flex pt-2 pb-2.5">
           <div className="relative w-14 shrink-0" style={{ height: totalHeight }}>
             {hours.map((hour, index) => (
               <span
                 key={hour}
-                className="absolute right-2 -translate-y-1/2 text-xs text-muted-foreground tabular-nums"
+                className="absolute right-2 -translate-y-1/2 text-[11.5px] text-muted-foreground tabular-nums"
                 style={{ top: index * HOUR_HEIGHT }}
               >
                 {String(hour).padStart(2, '0')}:00
@@ -381,14 +450,14 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
               }}
             >
               {column.offLabel && (
-                <div className="absolute inset-x-0.5 top-0.5 z-20 truncate rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
+                <div className="absolute inset-x-[3px] top-[3px] z-20 truncate rounded-md bg-[#fdf1d3] px-2 py-[3px] text-[11.5px] font-semibold text-[#7a5200] dark:bg-[#3b3011] dark:text-[#f2d68a]">
                   {column.offLabel}
                 </div>
               )}
               {column.lunch && (
                 <div
                   aria-hidden
-                  className="absolute inset-x-0 flex items-center justify-center bg-muted/70 text-xs text-muted-foreground"
+                  className="absolute inset-x-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--muted)_75%,transparent)] text-[11px] text-muted-foreground"
                   style={{
                     top: toPx(column.lunch[0]),
                     height: toPx(column.lunch[1]) - toPx(column.lunch[0]),
@@ -402,11 +471,11 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                 const style = {
                   top: Math.min(Math.max(0, toPx(block.start)), Math.max(0, totalHeight - 18)),
                   height: Math.max(18, toPx(block.end) - toPx(block.start) - 2),
-                  left: `${block.column * width}%`,
-                  width: `calc(${width}% - 3px)`,
+                  left: `calc(${block.column * width}% + 3px)`,
+                  width: `calc(${width}% - 5px)`,
                 };
                 const className =
-                  'absolute z-10 overflow-hidden rounded px-1.5 py-0.5 text-left text-xs leading-tight text-white shadow-sm hover:brightness-110';
+                  'absolute z-10 overflow-hidden rounded-[7px] px-[7px] py-1 text-left text-[11.5px] leading-[1.3] text-white shadow-[0_1px_2px_rgba(0,0,0,.15)] hover:brightness-110 [&_strong]:font-bold';
                 if ('appointment' in block) {
                   const item = block.appointment;
                   return (
@@ -414,7 +483,7 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                       key={item.id}
                       type="button"
                       aria-label={`Rendez-vous ${shortTime(item.start_time)} ${item.plate ?? item.client_name ?? ''}`}
-                      className={cn(className, 'border-2 border-dashed border-white')}
+                      className={cn(className, 'border-2 border-dashed border-white/90')}
                       style={{ ...style, ...APPOINTMENT_STYLE }}
                       onClick={() => onOpenAppointment(item)}
                     >
@@ -464,6 +533,6 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

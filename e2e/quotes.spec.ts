@@ -54,7 +54,7 @@ test('devis d’un OR : chiffrage, pièce, PDF, accord du client, OR des travaux
 
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
-  await page.getByRole('button', { name: 'Préparer le devis' }).click();
+  await page.getByRole('button', { name: 'Préparer le devis' }).first().click();
   await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 1 })).toBeVisible();
 
   // Travail de l'OR chiffré au taux PL (3 h × 90 €)
@@ -95,7 +95,7 @@ test('devis d’un OR : chiffrage, pièce, PDF, accord du client, OR des travaux
   const create = page.getByRole('dialog', { name: 'Créer l’OR' });
   await create.getByLabel('Technicien').selectOption({ label: 'Alice' });
   await create.getByRole('button', { name: 'Créer l’OR' }).click();
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   await expect(page.getByText('Attente pièces (1)')).toBeVisible();
   await expect(page.getByText(/Technicien : Alice/)).toBeVisible();
 
@@ -137,6 +137,6 @@ test('devis sans OR : demande de prix, refus puis réouverture, transformation e
 
   await page.getByRole('button', { name: 'Transformer en OR' }).click();
   await page.getByRole('dialog', { name: 'Créer l’OR' }).getByRole('button', { name: 'Créer l’OR' }).click();
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   await expect(page.getByText('Diagnostic électronique').first()).toBeVisible();
 });

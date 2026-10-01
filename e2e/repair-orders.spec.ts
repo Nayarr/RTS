@@ -49,7 +49,7 @@ test('la réception crée un OR signé, visible dans la liste', async ({ page },
   await createRepairOrder(page, plate, { signature: true });
 
   // Fiche de l'OR : numéro, technicien, signature envoyée dans le stockage, historique
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   await expect(page.getByText(/OR\d{5} · Technicien : Alice/)).toBeVisible();
   const signature = page.getByRole('img', { name: 'Signature du client', exact: true });
   await expect(signature).toHaveAttribute('src', /X-Amz-Signature=/);
@@ -65,7 +65,7 @@ test('un second OR sur le même véhicule demande confirmation', async ({ page }
   const plate = uniquePlate(testInfo);
   await loginAs(page, 'reception@rts.local');
   await createRepairOrder(page, plate);
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   const firstUrl = page.url();
 
   await page.goto('/or/nouveau');
@@ -79,7 +79,7 @@ test('un second OR sur le même véhicule demande confirmation', async ({ page }
 
   const dialog = page.getByRole('dialog', { name: 'Créer un autre OR pour ce véhicule ?' });
   await dialog.getByRole('button', { name: 'Créer quand même' }).click();
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   await expect(page.getByText('Pneus', { exact: true })).toBeVisible();
   expect(page.url()).not.toBe(firstUrl);
 });
@@ -95,7 +95,7 @@ test('la direction valide un OR terminé puis le supprime', async ({ page }, tes
   const plate = uniquePlate(testInfo);
   await loginAs(page, 'direction@rts.local');
   await createRepairOrder(page, plate);
-  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
 
   // Statut « Terminé atelier » (normalement posé par le technicien), puis validation
   await page.getByRole('combobox', { name: 'Statut' }).click();
