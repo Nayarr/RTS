@@ -6,6 +6,7 @@ import { signOut } from '@/features/auth/api';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
 import { PushBanner } from '@/features/push/PushBanner';
+import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { setTheme, useTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { PageHeaderSlotContext } from './page-header-slot';
@@ -48,21 +49,27 @@ function OfficeLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="mbar sticky top-0 z-30 lg:hidden print:hidden">
           <MobileBrand subtitle={profile ? ROLE_LABELS[profile.role] : ''} />
-          <DialogPrimitive.Root open={menuOpen} onOpenChange={setMenuOpen}>
-            <DialogPrimitive.Trigger className="ibtn" aria-label="Menu">
-              <Menu className="size-[18px]" />
-            </DialogPrimitive.Trigger>
-            <DialogPrimitive.Portal>
-              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgba(12,14,12,.42)] data-[state=open]:animate-in data-[state=open]:fade-in-0 dark:bg-black/60" />
-              <DialogPrimitive.Content
-                aria-describedby={undefined}
-                className="fixed inset-y-0 left-0 z-50 flex outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
-              >
-                <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
-                <Sidebar className="h-dvh max-w-[85vw]" onNavigate={() => setMenuOpen(false)} />
-              </DialogPrimitive.Content>
-            </DialogPrimitive.Portal>
-          </DialogPrimitive.Root>
+          <div className="row gap-1.5">
+            <GlobalSearch variant="icon" />
+            <button type="button" className="ibtn" aria-label="Se déconnecter" onClick={() => void signOut()}>
+              <LogOut className="size-[18px]" />
+            </button>
+            <DialogPrimitive.Root open={menuOpen} onOpenChange={setMenuOpen}>
+              <DialogPrimitive.Trigger className="ibtn" aria-label="Menu">
+                <Menu className="size-[18px]" />
+              </DialogPrimitive.Trigger>
+              <DialogPrimitive.Portal>
+                <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgba(12,14,12,.42)] data-[state=open]:animate-in data-[state=open]:fade-in-0 dark:bg-black/60" />
+                <DialogPrimitive.Content
+                  aria-describedby={undefined}
+                  className="fixed inset-y-0 left-0 z-50 flex outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
+                >
+                  <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
+                  <Sidebar className="h-dvh max-w-[85vw]" onNavigate={() => setMenuOpen(false)} />
+                </DialogPrimitive.Content>
+              </DialogPrimitive.Portal>
+            </DialogPrimitive.Root>
+          </div>
         </header>
         <div ref={setSlot} className="relative z-20 lg:sticky lg:top-0 print:hidden">
           <LoadingBar />
