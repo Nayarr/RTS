@@ -59,7 +59,8 @@ test('rendez-vous pris au planning, puis OR créé à l’arrivée du véhicule'
   const block = page
     .getByTestId(`planning-column-${date}`)
     .getByRole('button', { name: `Rendez-vous 10:00 ${plate}` });
-  await expect(block).toBeVisible();
+  // Rechargement du planning après l'enregistrement : plus lent quand la CI tourne en parallèle
+  await expect(block).toBeVisible({ timeout: 15_000 });
   await block.click();
   await page.getByRole('button', { name: 'Le véhicule est arrivé : créer l’OR' }).click();
 
