@@ -126,7 +126,11 @@ describe('pointages : écran', () => {
     expect(within(alice).getByText(/Pointage incomplet/)).toBeInTheDocument();
     expect(within(alice).queryByText('Présent')).toBeNull(); // jour passé
     const events = within(alice).getAllByRole('listitem');
-    expect(events.map((item) => item.textContent)).toEqual(['↘ 08:57', '↗ 18:45', 'Manuel↘ 19:00manuel']);
+    expect(events.map((item) => item.textContent)).toEqual([
+      'Arrivée 08:57',
+      'Départ 18:45',
+      'Arrivée 19:00Manuel',
+    ]);
     expect(await within(alice).findByRole('button', { name: 'Photo : Arrivée 08:57' })).toBeInTheDocument();
 
     const bruno = screen.getByRole('article', { name: 'Bruno' });
@@ -148,7 +152,7 @@ describe('pointages : écran', () => {
   it('correction manuelle : motif obligatoire', async () => {
     vi.mocked(addManualClockEvent).mockResolvedValue(undefined);
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Correction manuelle' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajouter une correction' }));
     const dialog = screen.getByRole('dialog', { name: 'Correction de pointage' });
     await userEvent.selectOptions(within(dialog).getByLabelText('Technicien'), 't2');
     await userEvent.selectOptions(within(dialog).getByLabelText('Type'), 'out');

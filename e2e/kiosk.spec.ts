@@ -106,7 +106,7 @@ test('la direction corrige un oubli de badge puis supprime la correction', async
 
   await loginAs(page, 'direction@rts.local');
   await page.goto(`/pointages?date=${date}`);
-  await page.getByRole('button', { name: 'Correction manuelle' }).click();
+  await page.getByRole('button', { name: 'Ajouter une correction' }).click();
   const dialog = page.getByRole('dialog', { name: 'Correction de pointage' });
   await dialog.getByLabel('Technicien').selectOption({ label: name });
   await dialog.getByLabel('Heure').fill('08:15');
