@@ -180,21 +180,27 @@ export function AddLineButtons({
     <div className="flex flex-wrap gap-2">
       <Button
         variant="outline"
+        size="sm"
         disabled={pending}
         onClick={() => add({ line_type: 'labor', labor_category: vehicleType })}
       >
         <Plus /> Ajouter une ligne
       </Button>
-      <Button variant="outline" onClick={() => setOpen('package')}>
+      <Button variant="outline" size="sm" onClick={() => setOpen('package')}>
         <Package /> Insérer un forfait
       </Button>
-      <Button variant="outline" onClick={() => setOpen('part')}>
+      <Button variant="outline" size="sm" onClick={() => setOpen('part')}>
         <Wrench /> Ajouter une pièce du catalogue
       </Button>
-      <Button variant="outline" onClick={() => setOpen('labor')}>
+      <Button variant="outline" size="sm" onClick={() => setOpen('labor')}>
         <Clock /> Ajouter de la main d’œuvre
       </Button>
-      <Button variant="outline" disabled={pending} onClick={() => add({ line_type: 'text', quantity: 1 })}>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={pending}
+        onClick={() => add({ line_type: 'text', quantity: 1 })}
+      >
         <Type /> Insérer une ligne de texte
       </Button>
 

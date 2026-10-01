@@ -4,7 +4,6 @@ import { Check, FileDown, RotateCcw, Send, Trash2, Wrench, X } from 'lucide-reac
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { PdfPreviewDialog } from '@/components/PdfPreviewDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -75,12 +74,30 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
   );
 }
 
-/** PDF, envoi, réponse du client, création de l'OR. */
+/** Barre de titre du devis : PDF et envoi au client. */
+export function QuoteDocumentActions({ quote, hasLines }: { quote: QuoteOverview; hasLines: boolean }) {
+  const pdf = useQuotePdf(quote.id);
+  const answered = quote.status === 'accepted' || quote.status === 'refused';
+  return (
+    <>
+      <Button
+        variant="outline"
+        disabled={!hasLines || pdf.generate.isPending}
+        onClick={() => pdf.generate.mutate(undefined)}
+      >
+        <FileDown /> {pdf.generate.isPending ? 'Génération…' : 'Générer le PDF'}
+      </Button>
+      {!answered && <ShareQuoteButton quote={quote} disabled={!hasLines} />}
+      <PdfPreviewDialog file={pdf.file} onClose={pdf.close} />
+    </>
+  );
+}
+
+/** Réponse du client, création de l'OR, envoi marqué, suppression. */
 export function QuoteActions({ quote, hasLines }: { quote: QuoteOverview; hasLines: boolean }) {
   const navigate = useNavigate();
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [creatingOrder, setCreatingOrder] = useState(false);
-  const pdf = useQuotePdf(quote.id);
 
   const markSent = useQuoteMutation(() => assignQuoteNumber(quote.id, true), 'Devis marqué comme envoyé');
   const respond = useQuoteMutation(
@@ -102,39 +119,43 @@ export function QuoteActions({ quote, hasLines }: { quote: QuoteOverview; hasLin
   const canCreateOrder = standalone || (quote.status === 'accepted' && !quote.resulting_repair_order_id);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Actions</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        <Button disabled={!hasLines || pdf.generate.isPending} onClick={() => pdf.generate.mutate(undefined)}>
-          <FileDown /> {pdf.generate.isPending ? 'Génération…' : 'Générer le PDF'}
-        </Button>
-        {!answered && <ShareQuoteButton quote={quote} disabled={!hasLines} />}
-        {!answered && quote.status !== 'sent' && (
-          <Button
-            variant="outline"
-            disabled={!hasLines || markSent.isPending}
-            onClick={() => markSent.mutate(undefined)}
-          >
-            <Send /> Marquer comme envoyé
-          </Button>
-        )}
+    <section data-slot="card" className="card" aria-labelledby="quote-actions">
+      <div className="card-h">
+        <h2 className="h2" id="quote-actions">
+          Actions
+        </h2>
+      </div>
+      <div className="card-b col gap-2.5">
         {!answered && (
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" disabled={!hasLines} onClick={() => setConfirm('accepted')}>
-              <Check /> Accepté
-            </Button>
-            <Button variant="outline" disabled={!hasLines} onClick={() => setConfirm('refused')}>
-              <X /> Refusé
-            </Button>
-          </div>
+          <>
+            <span className="overline">Réponse du client</span>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="text-success"
+                disabled={!hasLines}
+                onClick={() => setConfirm('accepted')}
+              >
+                <Check /> Accepté
+              </Button>
+              <Button
+                variant="outline"
+                className="text-destructive"
+                disabled={!hasLines}
+                onClick={() => setConfirm('refused')}
+              >
+                <X /> Refusé
+              </Button>
+            </div>
+            <p className="hint">
+              Accord oral ou devis signé sur papier. Le devis ne pourra plus être modifié.
+            </p>
+          </>
         )}
         {quote.status === 'refused' && (
           <Button
             variant="outline"
+            className="w-full"
             disabled={respond.isPending}
             onClick={() => respond.mutate('in_progress')}
           >
@@ -142,16 +163,37 @@ export function QuoteActions({ quote, hasLines }: { quote: QuoteOverview; hasLin
           </Button>
         )}
         {canCreateOrder && (
-          <Button variant={standalone ? 'outline' : 'default'} onClick={() => setCreatingOrder(true)}>
-            <Wrench /> {standalone ? 'Transformer en OR' : 'Créer l’OR avec les travaux acceptés'}
-          </Button>
+          <>
+            <div className="hr my-1.5" />
+            <span className="overline">Transformer en OR</span>
+            <Button
+              variant={standalone ? 'outline' : 'default'}
+              className="w-full"
+              onClick={() => setCreatingOrder(true)}
+            >
+              <Wrench /> {standalone ? 'Transformer en OR' : 'Créer l’OR avec les travaux acceptés'}
+            </Button>
+          </>
+        )}
+        {!answered && quote.status !== 'sent' && (
+          <>
+            <div className="hr my-1.5" />
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={!hasLines || markSent.isPending}
+              onClick={() => markSent.mutate(undefined)}
+            >
+              <Send /> Marquer comme envoyé
+            </Button>
+          </>
         )}
         {!quote.number && !answered && (
-          <Button variant="ghost" className="text-destructive" onClick={() => setConfirm('delete')}>
+          <Button variant="ghost" className="w-full text-destructive" onClick={() => setConfirm('delete')}>
             <Trash2 /> Supprimer le devis
           </Button>
         )}
-      </CardContent>
+      </div>
 
       <ConfirmDialog
         open={confirm === 'accepted' || confirm === 'refused'}
@@ -180,7 +222,6 @@ export function QuoteActions({ quote, hasLines }: { quote: QuoteOverview; hasLin
         onConfirm={() => remove.mutate(undefined)}
       />
       {creatingOrder && <CreateRepairOrderDialog quote={quote} onClose={() => setCreatingOrder(false)} />}
-      <PdfPreviewDialog file={pdf.file} onClose={pdf.close} />
-    </Card>
+    </section>
   );
 }

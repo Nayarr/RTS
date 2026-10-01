@@ -55,7 +55,7 @@ test('devis d’un OR : chiffrage, pièce, PDF, accord du client, OR des travaux
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
   await page.getByRole('button', { name: 'Préparer le devis' }).first().click();
-  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 2 })).toBeVisible();
 
   // Travail de l'OR chiffré au taux PL (3 h × 90 €)
   const totals = page.getByLabel('Totaux');
@@ -114,7 +114,7 @@ test('devis sans OR : demande de prix, refus puis réouverture, transformation e
   await page.getByLabel('Client').fill(`Client ${plate}`);
   await page.getByLabel('Immatriculation (facultatif)').fill(plate);
   await page.getByRole('button', { name: 'Créer le devis' }).click();
-  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 2 })).toBeVisible();
 
   await page.getByRole('button', { name: 'Ajouter de la main d’œuvre' }).click();
   const labor = page.getByRole('dialog', { name: 'Main d’œuvre' });

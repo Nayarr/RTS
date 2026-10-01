@@ -1,6 +1,5 @@
+import { Fragment } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { decimalText, formatEuro, parseDecimal } from '@/lib/numbers';
@@ -15,6 +14,10 @@ const TYPE_LABELS: Partial<Record<LineType, string>> = {
   consumable: 'Consommable',
   travel: 'Déplacement',
 };
+
+/** Champ intégré au tableau (maquette) : sans bord, le bord apparaît au survol. */
+const INLINE_INPUT =
+  'h-[34px] rounded-lg border-transparent bg-transparent px-2 hover:border-input focus-visible:border-ring disabled:opacity-100';
 
 type NumericField = 'unit_price' | 'quantity' | 'discount_percent';
 export type LinePatch = Partial<Pick<EditableLine, 'description' | NumericField>>;
@@ -47,7 +50,7 @@ function NumberCell({
     <Input
       aria-label={label}
       inputMode="decimal"
-      className="h-10 text-right tabular-nums"
+      className={INLINE_INPUT + ' text-right tabular-nums'}
       defaultValue={field === 'discount_percent' && current === 0 ? '' : decimalText(current)}
       placeholder={field === 'discount_percent' ? '0' : undefined}
       key={`${line.id}-${field}-${String(current)}`}
@@ -67,10 +70,10 @@ function NumberCell({
 /** En-têtes de colonnes (écran large), alignés sur `LineRow`. */
 export function LineColumns() {
   return (
-    <div className="hidden grid-cols-[1fr_6.5rem_4.5rem_4.5rem_6.5rem_2.25rem] gap-2 border-b pb-1 text-xs text-muted-foreground md:grid">
+    <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_2.25rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground md:grid">
       <span>Prestation / pièce</span>
-      <span className="text-right">Prix unit. HT</span>
       <span className="text-right">Qté</span>
+      <span className="text-right">Prix unit. HT</span>
       <span className="text-right">Remise %</span>
       <span className="text-right">Net HT</span>
     </div>
@@ -95,12 +98,25 @@ export function LineRow({
   const label = TYPE_LABELS[line.line_type];
 
   return (
-    <li className="grid grid-cols-[1fr_auto] gap-2 border-b py-3 last:border-0 md:grid-cols-[1fr_6.5rem_4.5rem_4.5rem_6.5rem_auto] md:items-start">
-      <div className="space-y-1">
+    <li className="grid grid-cols-[1fr_auto] items-center gap-2 border-b px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_2.25rem] md:px-6">
+      <div className="flex min-w-0 items-start gap-2">
+        {label && (
+          <span className="tag mt-1.5 shrink-0">
+            {label}
+            {line.line_type === 'labor' &&
+              line.hours !== null &&
+              line.hours !== undefined &&
+              ` · ${decimalText(line.hours)} h`}
+          </span>
+        )}
         <Textarea
           aria-label="Désignation"
-          rows={isText ? 1 : 2}
-          className={cn('min-h-10 text-base', isText && 'text-muted-foreground italic')}
+          rows={1}
+          className={cn(
+            INLINE_INPUT,
+            'field-sizing-content h-auto min-h-[34px] resize-none py-1.5 leading-snug',
+            isText && 'text-muted-foreground italic',
+          )}
           defaultValue={line.description}
           key={`${line.id}-${line.description}`}
           disabled={locked}
@@ -109,34 +125,24 @@ export function LineRow({
             if (event.target.value !== line.description) onSave({ description: event.target.value });
           }}
         />
-        {label && (
-          <Badge variant="secondary">
-            {label}
-            {line.line_type === 'labor' &&
-              line.hours !== null &&
-              line.hours !== undefined &&
-              ` · ${decimalText(line.hours)} h`}
-          </Badge>
-        )}
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="md:order-last"
+      <button
+        type="button"
+        className="ibtn sm ghost md:order-last"
         aria-label={`Supprimer ${line.description || 'la ligne'}`}
         disabled={locked || deleting}
         onClick={onDelete}
       >
-        <Trash2 />
-      </Button>
+        <Trash2 className="i s" />
+      </button>
       {isText ? (
         <span className="hidden md:col-span-4 md:block" />
       ) : (
-        <div className="col-span-2 grid grid-cols-4 items-center gap-2 md:col-span-4 md:grid-cols-[6.5rem_4.5rem_4.5rem_6.5rem]">
-          <NumberCell line={line} field="unit_price" label="Prix unit. HT" locked={locked} onSave={onSave} />
+        <div className="col-span-2 grid grid-cols-4 items-center gap-2 md:col-span-4 md:grid-cols-[5rem_7.5rem_5.5rem_7rem]">
           <NumberCell line={line} field="quantity" label="Quantité" locked={locked} onSave={onSave} />
+          <NumberCell line={line} field="unit_price" label="Prix unit. HT" locked={locked} onSave={onSave} />
           <NumberCell line={line} field="discount_percent" label="Remise %" locked={locked} onSave={onSave} />
-          <span className="text-right font-semibold tabular-nums" aria-label="Net HT">
+          <span className="num b text-right" aria-label="Net HT">
             {formatEuro(lineNet(line))}
           </span>
         </div>
@@ -152,21 +158,20 @@ export function TotalsList({
   totals: { ht: number; ttc: number; rates: { rate: number; amount: number }[] };
 }) {
   return (
-    <dl className="ml-auto w-full max-w-xs space-y-1 text-right text-sm" aria-label="Totaux">
-      <div className="flex justify-between gap-4">
-        <dt>Total HT</dt>
-        <dd className="font-semibold tabular-nums">{formatEuro(totals.ht)}</dd>
-      </div>
+    <dl
+      className="ml-auto grid w-full max-w-[280px] grid-cols-[1fr_auto] items-baseline gap-x-4 gap-y-2.5 text-right"
+      aria-label="Totaux"
+    >
+      <dt className="muted">Total HT</dt>
+      <dd className="num">{formatEuro(totals.ht)}</dd>
       {totals.rates.map(({ rate, amount }) => (
-        <div key={rate} className="flex justify-between gap-4">
-          <dt>TVA ({String(rate).replace('.', ',')} %)</dt>
-          <dd className="tabular-nums">{formatEuro(amount)}</dd>
-        </div>
+        <Fragment key={rate}>
+          <dt className="muted">TVA ({String(rate).replace('.', ',')} %)</dt>
+          <dd className="num">{formatEuro(amount)}</dd>
+        </Fragment>
       ))}
-      <div className="flex justify-between gap-4 border-t pt-1 text-base">
-        <dt>Total TTC</dt>
-        <dd className="font-bold tabular-nums">{formatEuro(totals.ttc)}</dd>
-      </div>
+      <dt className="b text-base">Total TTC</dt>
+      <dd className="num disp text-2xl font-bold">{formatEuro(totals.ttc)}</dd>
     </dl>
   );
 }

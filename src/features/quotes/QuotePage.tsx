@@ -1,8 +1,8 @@
 import { Link, useParams } from 'react-router';
-import { ArrowLeft, Lock } from 'lucide-react';
+import { Lock, Mail, Wrench } from 'lucide-react';
+import { PageHeader } from '@/app/PageHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StoredImage } from '@/features/files/StoredImage';
 import { formatDate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
@@ -11,7 +11,7 @@ import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/doc
 import { addQuoteLine, deleteQuoteLine, updateQuoteLine, type NewQuoteLine, type QuoteLine } from './api';
 import { PreQuoteWorkCard } from '@/features/repair-orders/PreQuoteWorkCard';
 import { computeTotals, isQuoteLocked, nextPosition } from './domain';
-import { QuoteActions } from './editor/QuoteActions';
+import { QuoteActions, QuoteDocumentActions } from './editor/QuoteActions';
 import { useQuote, useQuoteMutation } from './hooks';
 import { QuoteStatusBadge } from './QuoteStatusBadge';
 
@@ -35,18 +35,22 @@ function LinesSection({
   lines,
   locked,
   empty,
+  first,
 }: {
   title: string;
   lines: QuoteLine[];
   locked: boolean;
   empty: string;
+  first?: boolean;
 }) {
   return (
-    <section aria-label={title} className="space-y-1">
-      <h3 className="text-sm font-bold tracking-wide text-primary uppercase">{title}</h3>
+    <section aria-label={title}>
+      <div className={first ? 'px-6 pt-3.5 pb-1.5' : 'border-t px-6 pt-[18px] pb-1.5'}>
+        <h3 className="h3 font-sans tracking-normal">{title}</h3>
+      </div>
       <LineColumns />
       {lines.length === 0 ? (
-        <p className="py-3 text-sm text-muted-foreground">{empty}</p>
+        <p className="hint px-6 py-3">{empty}</p>
       ) : (
         <ul>
           {lines.map((line) => (
@@ -69,8 +73,8 @@ export function QuotePage() {
   if (detail.isError) return <p className="text-destructive">Impossible de charger ce devis.</p>;
   if (!detail.data) {
     return (
-      <div className="space-y-4 py-16 text-center">
-        <h1 className="text-2xl font-bold">Devis introuvable</h1>
+      <div className="col items-center gap-4 py-16 text-center">
+        <h1 className="title">Devis introuvable</h1>
         <Button asChild>
           <Link to="/devis">Retour aux devis</Link>
         </Button>
@@ -84,78 +88,117 @@ export function QuotePage() {
   const planned = lines.filter((line) => line.section === 'planned');
   const totals = computeTotals(lines);
   const hasLines = lines.some((line) => line.line_type !== 'text');
+  const companyEmail = settings.data?.company.email;
+
+  const events = [
+    { tone: 's-warn', label: 'Devis créé', date: quote.created_at },
+    quote.sent_at && { tone: 's-blue', label: 'Envoyé au client', date: quote.sent_at },
+    quote.accepted_at && {
+      tone: 's-ok',
+      label: `Accepté${quote.accepted_by_name ? ` en ligne par ${quote.accepted_by_name}` : ''}`,
+      date: quote.accepted_at,
+    },
+    quote.refused_at && { tone: 's-bad', label: 'Refusé', date: quote.refused_at },
+  ].filter((event): event is { tone: string; label: string; date: string } => Boolean(event));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <Button variant="ghost" asChild className="-ml-3">
-        <Link to={quote.repair_order_id ? `/or/${quote.repair_order_id}` : '/devis'}>
-          <ArrowLeft /> {quote.repair_order_id ? `Retour à l’OR ${quote.repair_order_number ?? ''}` : 'Devis'}
-        </Link>
-      </Button>
+    <>
+      <PageHeader
+        back={{
+          to: quote.repair_order_id ? `/or/${quote.repair_order_id}` : '/devis',
+          label: quote.repair_order_id ? 'Retour à l’OR' : 'Retour aux devis',
+        }}
+        crumbs={[{ label: 'Devis', to: '/devis' }, { label: quote.number ?? 'Brouillon' }]}
+        title={
+          <>
+            <span>Devis{quote.plate ? ` — ${quote.plate}` : ''}</span>
+            <QuoteStatusBadge status={quote.status} />
+          </>
+        }
+        actions={
+          <>
+            {quote.repair_order_id && (
+              <Button variant="ghost" asChild>
+                <Link to={`/or/${quote.repair_order_id}`}>
+                  <Wrench /> Retour à l’OR {quote.repair_order_number ?? ''}
+                </Link>
+              </Button>
+            )}
+            <QuoteDocumentActions quote={quote} hasLines={hasLines} />
+          </>
+        }
+      />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
-        <Card className="min-w-0">
-          <CardContent className="space-y-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 className="text-3xl font-bold text-primary">DEVIS</h1>
-                <p className="text-muted-foreground">{quote.number ?? 'Numéro attribué à la génération'}</p>
-                {quote.valid_until && (
-                  <p className="text-sm text-muted-foreground">
-                    Valable jusqu’au {formatDate(quote.valid_until)}
-                  </p>
-                )}
-              </div>
-              <QuoteStatusBadge status={quote.status} className="px-3 py-1 text-sm" />
+      <div className="split grid-cols-1! lg:grid-cols-[minmax(0,1fr)_340px]!">
+        <section data-slot="card" className="card min-w-0 overflow-hidden" aria-label="Éditeur de devis">
+          <div className="row top flex-wrap justify-between gap-5 border-b px-6 py-[22px]">
+            <div className="col gap-1">
+              <h2 className="disp text-[30px] leading-none font-bold tracking-[.06em]">DEVIS</h2>
+              <span className="hint">{quote.number ?? 'Numéro attribué à la génération'}</span>
+              {quote.valid_until && (
+                <span className="hint">Valable jusqu’au {formatDate(quote.valid_until)}</span>
+              )}
             </div>
+            <div className="grid w-full max-w-[520px] gap-7 sm:grid-cols-2">
+              <div className="col gap-0.5">
+                <span className="overline">Client :</span>
+                <b>{quote.client_name ?? '—'}</b>
+              </div>
+              <div className="col gap-0.5">
+                <span className="overline">Véhicule :</span>
+                <b className="plate">{quote.plate ?? '—'}</b>
+                <span className="hint">{VEHICLE_TYPES[quote.vehicle_type]}</span>
+              </div>
+            </div>
+          </div>
 
-            <div className="text-base">
-              <p>
-                <strong>Client :</strong> {quote.client_name ?? '—'}
-              </p>
-              <p>
-                <strong>Véhicule :</strong> {quote.plate ?? '—'} ({VEHICLE_TYPES[quote.vehicle_type]})
-              </p>
+          {(quote.resulting_repair_order_id ||
+            locked ||
+            (quote.status === 'accepted' && quote.repair_order_id)) && (
+            <div className="col gap-3 border-b px-6 py-4">
               {quote.resulting_repair_order_id && (
-                <p className="mt-1 text-sm">
+                <p className="text-[13.5px]">
                   OR créé :{' '}
-                  <Link className="font-medium underline" to={`/or/${quote.resulting_repair_order_id}`}>
+                  <Link className="link" to={`/or/${quote.resulting_repair_order_id}`}>
                     {quote.resulting_repair_order_number}
                   </Link>
                 </p>
               )}
+              {quote.status === 'accepted' && quote.repair_order_id && (
+                // Devis accepté : les travaux déjà faits sur l'OR d'origine sont à facturer ou offrir.
+                <PreQuoteWorkCard repairOrderId={quote.repair_order_id} autoOpen />
+              )}
+              {locked && (
+                <Alert>
+                  <Lock />
+                  <AlertDescription>
+                    {quote.status === 'accepted'
+                      ? 'Devis accepté par le client : il ne peut plus être modifié.'
+                      : 'Devis rattaché à un OR : il ne peut plus être modifié.'}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
+          )}
 
-            {quote.status === 'accepted' && quote.repair_order_id && (
-              // Devis accepté : les travaux déjà faits sur l'OR d'origine sont à facturer ou offrir.
-              <PreQuoteWorkCard repairOrderId={quote.repair_order_id} autoOpen />
-            )}
-            {locked && (
-              <Alert>
-                <Lock />
-                <AlertDescription>
-                  {quote.status === 'accepted'
-                    ? 'Devis accepté par le client : il ne peut plus être modifié.'
-                    : 'Devis rattaché à un OR : il ne peut plus être modifié.'}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {done.length > 0 && (
-              <LinesSection
-                title="Travaux déjà effectués"
-                lines={done}
-                locked={locked}
-                empty="Aucun travail effectué."
-              />
-            )}
+          {done.length > 0 && (
             <LinesSection
-              title="Travaux à prévoir"
-              lines={planned}
+              title="Travaux déjà effectués"
+              lines={done}
               locked={locked}
-              empty="Aucune ligne : ajoute une prestation, un forfait ou une pièce."
+              empty="Aucun travail effectué."
+              first
             />
-            {!locked && (
+          )}
+          <LinesSection
+            title="Travaux à prévoir"
+            lines={planned}
+            locked={locked}
+            empty="Aucune ligne : ajoute une prestation, un forfait ou une pièce."
+            first={done.length === 0}
+          />
+          {!locked && (
+            <div className="border-t bg-head px-5 py-3">
               <AddLineButtons
                 vehicleType={quote.vehicle_type}
                 laborRate={laborRate}
@@ -170,41 +213,51 @@ export function QuotePage() {
                   })
                 }
               />
-            )}
+            </div>
+          )}
 
+          <div className="flex justify-end px-6 py-[18px]">
             <TotalsList totals={totals} />
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        <div className="space-y-5">
+        <div className="col gap-5">
           <QuoteActions quote={quote} hasLines={hasLines} />
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <h2 className="text-base font-semibold">Suivi</h2>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 text-sm text-muted-foreground">
-              <p>Créé le {formatDate(quote.created_at)}</p>
-              {quote.sent_at && <p>Envoyé le {formatDate(quote.sent_at)}</p>}
-              {quote.accepted_at && (
-                <p>
-                  Accepté le {formatDate(quote.accepted_at)}
-                  {quote.accepted_by_name && ` en ligne par ${quote.accepted_by_name}`}
-                </p>
-              )}
+          <section data-slot="card" className="card" aria-labelledby="quote-history">
+            <div className="card-h">
+              <h2 className="h2" id="quote-history">
+                Suivi
+              </h2>
+            </div>
+            <ul className="card-b col gap-3.5">
+              {events.map((event) => (
+                <li key={event.label} className="row top gap-2.5">
+                  <span className={`tdot mt-[5px] ${event.tone}`} />
+                  <div className="col gap-0">
+                    <span>{event.label}</span>
+                    <span className="hint">le {formatDate(event.date)}</span>
+                  </div>
+                </li>
+              ))}
               {quote.signature_file_id && (
-                <StoredImage
-                  fileId={quote.signature_file_id}
-                  alt="Signature du client"
-                  className="h-20 w-48 border bg-white object-contain"
-                />
+                <li>
+                  <StoredImage
+                    fileId={quote.signature_file_id}
+                    alt="Signature du client"
+                    className="h-20 w-48 rounded-[10px] border bg-white object-contain"
+                  />
+                </li>
               )}
-              {quote.refused_at && <p>Refusé le {formatDate(quote.refused_at)}</p>}
-            </CardContent>
-          </Card>
+            </ul>
+          </section>
+          {companyEmail && quote.status !== 'accepted' && quote.status !== 'refused' && (
+            <div className="alert s-blue">
+              <Mail className="i" />
+              <span>À envoyer depuis {companyEmail} — le client signe en ligne.</span>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
