@@ -60,7 +60,7 @@ function PublicHeader({
         )}
       >
         <div className="row min-w-0 gap-3">
-          <img src="/icons/icon-192.png" alt="" className="size-11 shrink-0 rounded-[10px] bg-white p-0.5" />
+          <img src="/icons/icon-192.png" alt="" className="size-11 shrink-0 rounded-[7px] bg-white p-0.5" />
           <div className="col min-w-0 gap-0">
             <b className="truncate font-display text-xl uppercase">{company.legal_name}</b>
             <span className="hint truncate">{subtitle}</span>

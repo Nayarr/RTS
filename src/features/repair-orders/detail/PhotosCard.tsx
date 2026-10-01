@@ -43,7 +43,7 @@ export function PhotosCard({ photos, missingLabels }: { photos: RoPhoto[]; missi
                         src={url}
                         alt={photo.label}
                         loading="lazy"
-                        className="h-[92px] w-full rounded-[10px] border object-cover"
+                        className="h-[92px] w-full rounded-[7px] border object-cover"
                       />
                     </a>
                   ) : (

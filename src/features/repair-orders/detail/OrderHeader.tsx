@@ -11,7 +11,7 @@ export function OrderHeader({ order }: { order: RepairOrderOverview }) {
   return (
     <section data-slot="card" className="card" aria-label="Véhicule et demande">
       <div className="card-b row top flex-wrap gap-7 px-6 py-[22px]">
-        <div className="col grow gap-3">
+        <div className="col grow basis-[340px] gap-3">
           <div className="row wrap gap-3.5">
             <Link
               to={`/vehicules/${order.vehicle_id}`}
@@ -75,7 +75,7 @@ export function OrderHeader({ order }: { order: RepairOrderOverview }) {
             <StoredImage
               fileId={order.customer_signature_file_id}
               alt="Signature du client"
-              className="h-24 w-full rounded-[10px] border bg-white object-contain"
+              className="h-24 w-full rounded-[7px] border bg-white object-contain"
             />
           </div>
         ) : (

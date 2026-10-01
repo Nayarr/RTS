@@ -19,7 +19,7 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
   const time = timeOptionValue(line.estimated_hours, line.estimate_is_minimum);
 
   return (
-    <li className="row items-start gap-2 rounded-[10px] border p-2">
+    <li className="row items-start gap-2 rounded-[7px] border p-2">
       <div className="col min-w-0 grow gap-1">
         <Textarea
           aria-label="Description de la tâche"

@@ -105,7 +105,7 @@ export function TvPage() {
     <div className="relative flex min-h-dvh flex-col gap-6 overflow-x-hidden bg-[#eef0ee] px-10 py-8 dark:bg-[#0d0d0d]">
       <header className="row between items-start gap-6">
         <div className="row gap-[18px]">
-          <img src="/icons/icon-192.png" alt="" className="size-[72px] rounded-2xl bg-white p-[3px]" />
+          <img src="/icons/icon-192.png" alt="" className="size-[72px] rounded-xl bg-white p-[3px]" />
           <div className="col gap-0.5">
             <h1 className="font-display text-[42px] leading-none font-bold tracking-[.03em] uppercase">
               {board.data?.company_name ?? 'Atelier'} — Atelier

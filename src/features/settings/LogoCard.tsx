@@ -23,7 +23,7 @@ export function LogoCard({ logoFileId }: { logoFileId: string | null }) {
         <StoredImage
           fileId={logoFileId}
           alt="Logo de l’entreprise"
-          className="size-24 rounded-[14px] bg-white object-contain p-1.5"
+          className="size-24 rounded-[10px] bg-white object-contain p-1.5"
         />
         <div className="col gap-2">
           <div className="row wrap gap-2">

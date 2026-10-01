@@ -103,7 +103,9 @@ test('un OR est placé au planning d’un technicien', async ({ page }, testInfo
   const link = page.getByRole('link', { name: new RegExp(`14:00 - 16:00 ${plate}`) });
   await expect(link).toBeVisible();
   await link.click();
-  await expect(page.getByText('Technicien : Bruno')).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Véhicule et demande' }).getByText('Technicien : Bruno'),
+  ).toBeVisible();
 });
 
 test('rappel du rendez-vous de demain', async ({ page }, testInfo) => {

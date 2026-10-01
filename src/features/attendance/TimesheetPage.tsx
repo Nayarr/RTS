@@ -186,7 +186,7 @@ export function TimesheetPage() {
                 {sheets.map(({ id, name, timesheet: { weeks } }) => (
                   <article key={id} aria-label={`Semaines de ${name}`} className="col gap-2">
                     <b>{name}</b>
-                    <table className="tbl dense rounded-[10px] border">
+                    <table className="tbl dense rounded-[7px] border">
                       <thead>
                         <tr>
                           <th>Semaine</th>

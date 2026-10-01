@@ -96,10 +96,10 @@ export function PhotosSection({
                   <img
                     src={url}
                     alt={photo.label}
-                    className="aspect-4/3 w-full rounded-[10px] border object-cover"
+                    className="aspect-4/3 w-full rounded-[7px] border object-cover"
                   />
                 ) : (
-                  <Skeleton className="aspect-4/3 w-full rounded-[10px]" />
+                  <Skeleton className="aspect-4/3 w-full rounded-[7px]" />
                 )}
                 {!locked && (
                   <button

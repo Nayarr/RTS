@@ -30,7 +30,7 @@ interface PageHeaderProps {
 export function PageHeader({ crumbs, title, back, leading, actions, className }: PageHeaderProps) {
   const slot = useContext(PageHeaderSlotContext);
   const header = (
-    <header className={cn('topbar h-auto! min-h-[68px] flex-wrap px-4 py-2.5 lg:px-8', className)}>
+    <header className={cn('topbar h-auto! min-h-[68px] flex-wrap px-4 py-2.5 lg:px-7', className)}>
       <div className="flex min-w-0 items-center gap-3.5">
         {back && (
           <Link to={back.to} className="ibtn" aria-label={back.label}>

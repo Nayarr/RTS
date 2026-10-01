@@ -244,7 +244,7 @@ export function QuotePage() {
                   <StoredImage
                     fileId={quote.signature_file_id}
                     alt="Signature du client"
-                    className="h-20 w-48 rounded-[10px] border bg-white object-contain"
+                    className="h-20 w-48 rounded-[7px] border bg-white object-contain"
                   />
                 </li>
               )}

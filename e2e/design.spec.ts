@@ -149,6 +149,7 @@ test('couleurs des statuts : alertes et pastilles colorées, barres visibles', a
       const result = {
         background: style.backgroundColor,
         border: style.borderTopColor,
+        color: style.color,
         height: element.getBoundingClientRect().height,
       };
       element.remove();
@@ -185,9 +186,11 @@ test('couleurs des statuts : alertes et pastilles colorées, barres visibles', a
     [styles.alertOk, styles.alertBad, styles.alertBlue, styles.alertDefault].map((s) => s.border),
   );
   expect(alertColors.size).toBe(4);
-  expect(styles.badgeOk.border).not.toBe(styles.badgeBad.border);
+  // Pastilles sans bordure : fond teinté et texte de la couleur du statut.
+  expect(styles.badgeOk.background).not.toBe(styles.badgeBad.background);
+  expect(styles.badgeOk.color).not.toBe(styles.badgeBad.color);
   // Pastille sans couleur : celle de son bloc (sinon grise).
-  expect(styles.inheritedBadge.border).not.toBe(styles.badgeDefault.border);
-  // Barre empilée en colonne : garde sa hauteur.
-  expect(styles.bar.height).toBe(8);
+  expect(styles.inheritedBadge.background).not.toBe(styles.badgeDefault.background);
+  // Barre empilée en colonne : garde sa hauteur (filet fin du style « Épuré »).
+  expect(styles.bar.height).toBe(4);
 });
