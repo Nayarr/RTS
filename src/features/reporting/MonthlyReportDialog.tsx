@@ -65,7 +65,7 @@ export function MonthlyReportDialog({ onClose }: { onClose: () => void }) {
           <Input
             id="report-month"
             type="month"
-          
+
             max={todayIso().slice(0, 7)}
             value={month}
             onChange={(event) => setMonth(event.target.value)}

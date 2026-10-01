@@ -93,7 +93,7 @@ describe('pilotage : écrans', () => {
     expect(screen.getByText('À encaisser sous 30 j').previousSibling).toHaveTextContent('880 €');
     expect(screen.getByText('En retard').previousSibling).toHaveTextContent('600 €');
     expect(screen.getByRole('figure', { name: 'Encaissements attendus par semaine' })).toHaveTextContent(
-      /28\/09.*880\s€.*05\/10/,
+      /28\/09.*05\/10.*880\s€/,
     );
 
     const late = screen.getByRole('row', { name: /Transports Dupont/ });
