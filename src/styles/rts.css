@@ -1515,3 +1515,81 @@
     line-height: 1.55;
   }
 }
+
+@layer components {
+  /* Fiche OR du technicien (maquette « OR technicien ») */
+  .sec {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .sec-t {
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .slot {
+    height: 84px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 4px;
+    font: inherit;
+    font-size: 11.5px;
+    text-align: center;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .slot.todo {
+    background: transparent;
+    border: 1.5px dashed var(--input);
+  }
+  .slot.req {
+    color: var(--destructive);
+  }
+  .slot.done {
+    color: var(--success);
+  }
+  .slot:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+  .lvl {
+    display: grid;
+    grid-template-columns: repeat(var(--n, 3), 1fr);
+    gap: 4px;
+  }
+  .lvl button {
+    min-height: 36px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--muted-foreground);
+    cursor: pointer;
+  }
+  .lvl button.on {
+    background: var(--accent);
+    color: var(--accent-foreground);
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  }
+  .lvl button:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}

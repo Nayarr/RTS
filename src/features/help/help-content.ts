@@ -35,7 +35,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
   {
     title: 'Terminer',
     items: [
-      'Quand tout est fait, appuie sur « Terminer l’intervention ». L’OR est alors verrouillé et quitte ta liste ; tu le retrouves pendant 7 jours avec « Voir mes OR terminés ».',
+      'Quand tout est fait, réponds à « Devis nécessaire ? » (OUI / NON) puis appuie sur « Travaux terminés ». L’OR est alors verrouillé et quitte ta liste ; tu le retrouves pendant 7 jours avec « Voir mes OR terminés ».',
       'Un oubli ? Demande à la direction de débloquer l’OR.',
     ],
   },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigation } from 'react-router';
+import { Link, NavLink, Outlet, useMatch, useNavigation } from 'react-router';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { CalendarDays, CircleHelp, LogOut, Menu, Moon, Sun, Wrench } from 'lucide-react';
 import { signOut } from '@/features/auth/api';
@@ -89,9 +89,11 @@ function OfficeLayout() {
 function TechnicianLayout() {
   const theme = useTheme();
   const tab = ({ isActive }: { isActive: boolean }) => cn(isActive && 'on');
+  // La fiche OR a sa propre barre du haut (retour, plaque, statut).
+  const onOrder = useMatch('/atelier/or/:id') !== null;
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mbar sticky top-0 z-30 print:hidden">
+      <header className={cn('mbar sticky top-0 z-30 print:hidden', onOrder && 'hidden')}>
         <MobileBrand subtitle="Technicien" />
         <div className="flex items-center gap-1.5">
           <button

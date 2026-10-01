@@ -96,11 +96,8 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   await expect(page.getByRole('combobox', { name: 'Temps estimé' }).first()).toHaveValue('2h');
 
   // Clôture : pas de devis
-  await page.getByRole('button', { name: 'Terminer l’intervention' }).click();
-  await page
-    .getByRole('dialog', { name: 'Devis nécessaire ?' })
-    .getByRole('button', { name: /Non, rien à prévoir/ })
-    .click();
+  await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'NON' }).click();
+  await page.getByRole('button', { name: 'Travaux terminés' }).click();
   await expect(page.getByRole('heading', { name: 'Mes ordres de réparation' })).toBeVisible();
   await page.getByRole('button', { name: /Voir mes OR terminés/ }).click();
   await expect(
@@ -110,7 +107,7 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   // L'OR est verrouillé pour le technicien
   await page.goto(`/atelier/or/${order.id}`);
   await expect(page.getByText('Cet OR est terminé : consultation seulement.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Terminer l’intervention' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Travaux terminés' })).toHaveCount(0);
   await logout(page);
 
   // Le bureau voit le résultat : statut, photos, temps déclaré, fiche de contrôle

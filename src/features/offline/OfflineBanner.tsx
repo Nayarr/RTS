@@ -33,9 +33,9 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-center gap-2 bg-amber-500 px-4 py-2 text-center text-sm font-semibold text-black shadow-lg"
+      className="alert s-warn fixed inset-x-0 bottom-0 z-50 justify-center rounded-none! border-x-0 border-b-0 bg-[color-mix(in_srgb,var(--warning)_18%,var(--card))]! px-4 py-2.5 text-center text-[13px] font-semibold shadow-(--pop)"
     >
-      <WifiOff className="size-4 shrink-0" />
+      <WifiOff className="i s shrink-0" />
       <span>
         Hors connexion : tu peux continuer, tout sera envoyé automatiquement au retour du réseau (garde
         l’appli ouverte).

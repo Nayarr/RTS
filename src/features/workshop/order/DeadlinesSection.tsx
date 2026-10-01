@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateDeadlines, type VehicleDeadlines } from '../api';
@@ -27,21 +26,18 @@ export function DeadlinesSection({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Échéances du véhicule</h2>
-        </CardTitle>
-        <CardDescription>Relevées sur le véhicule (vignette, étiquette du hayon).</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2">
+    <section data-slot="card" className="card sec" aria-labelledby="tech-deadlines">
+      <h2 className="sec-t" id="tech-deadlines">
+        Échéances du véhicule
+      </h2>
+      <span className="hint">Relevées sur le véhicule (vignette, étiquette du hayon).</span>
+      <div className="grid grid-cols-2 gap-2">
         {FIELDS.map(([key, label]) => (
-          <div key={key} className="space-y-1.5">
+          <div key={key} className="field">
             <Label htmlFor={`deadline-${key}`}>{label}</Label>
             <Input
               id={`deadline-${key}`}
               type="date"
-              className="h-11"
               disabled={locked || deadlines.isPending}
               defaultValue={deadlines.data?.[key] ?? ''}
               key={deadlines.data?.[key] ?? 'vide'}
@@ -52,7 +48,7 @@ export function DeadlinesSection({
             />
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

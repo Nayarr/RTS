@@ -1,7 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import type { RoLine } from '@/features/repair-orders/api';
 import { addLine, deleteLine, updateLine, type LinePatch } from '../api';
@@ -21,12 +19,12 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
   const time = timeOptionValue(line.estimated_hours, line.estimate_is_minimum);
 
   return (
-    <li className="flex flex-wrap items-start gap-2 border-b py-3 last:border-0">
-      <div className="min-w-0 flex-1 basis-60 space-y-1">
+    <li className="row items-start gap-2 rounded-[10px] border p-2">
+      <div className="col min-w-0 grow gap-1">
         <Textarea
           aria-label="Description de la tâche"
-          rows={2}
-          className="min-h-11 text-base"
+          rows={1}
+          className="field-sizing-content min-h-9 resize-none border-0 bg-transparent px-1.5 py-1.5 text-sm shadow-none focus-visible:ring-0 disabled:opacity-100"
           placeholder="Ex : Remplacement plaquettes"
           defaultValue={displayDescription(line)}
           key={line.description}
@@ -36,11 +34,11 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
             if (description !== line.description) update.mutate({ description });
           }}
         />
-        {line.line_type === 'package' && <Badge variant="secondary">Forfait</Badge>}
+        {line.line_type === 'package' && <span className="tag ml-1.5 self-start">Forfait</span>}
       </div>
       <select
         aria-label="Temps estimé"
-        className="h-11 rounded-md border bg-transparent px-3 text-base disabled:opacity-50"
+        className="inp h-9! w-auto shrink-0 text-[13px]!"
         disabled={locked}
         value={time}
         onChange={(event) => update.mutate(parseTimeOption(event.target.value))}
@@ -53,17 +51,15 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
         ))}
       </select>
       {editable && (
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11"
+          className="ibtn sm ghost shrink-0 text-muted-foreground"
           aria-label="Supprimer la tâche"
           disabled={remove.isPending}
           onClick={() => remove.mutate(undefined)}
         >
-          <Trash2 />
-        </Button>
+          <Trash2 className="i s" />
+        </button>
       )}
     </li>
   );
@@ -75,38 +71,47 @@ function LineGroup({
   lines,
   locked,
   repairOrderId,
+  compactAdd = false,
 }: {
   title: string;
   kind: RoLine['kind'];
   lines: RoLine[];
   locked: boolean;
   repairOrderId: string;
+  /** Bouton « + » seul (titre long). */
+  compactAdd?: boolean;
 }) {
   const add = useWorkshopMutation(repairOrderId, () =>
     addLine(repairOrderId, kind, Math.max(-1, ...lines.map((line) => line.position)) + 1),
   );
+  const headingId = `tech-lines-${kind}`;
   return (
-    <section className="space-y-1">
-      <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">{title}</h3>
+    <section data-slot="card" className="card sec" aria-labelledby={headingId}>
+      <div className="sec-t">
+        <h2 id={headingId}>{title}</h2>
+        {!locked && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            aria-label="Ajouter une tâche"
+            disabled={add.isPending}
+            onClick={() => add.mutate(undefined)}
+          >
+            <Plus />
+            {!compactAdd && 'Ajouter'}
+          </Button>
+        )}
+      </div>
       {lines.length === 0 ? (
-        <p className="py-2 text-sm text-muted-foreground">Aucune tâche ajoutée pour l’instant.</p>
+        <p className="hint">Aucune tâche ajoutée pour l’instant.</p>
       ) : (
-        <ul>
+        <ul className="col gap-2">
           {lines.map((line) => (
             <LineRow key={line.id} line={line} locked={locked} repairOrderId={repairOrderId} />
           ))}
         </ul>
-      )}
-      {!locked && (
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          disabled={add.isPending}
-          onClick={() => add.mutate(undefined)}
-        >
-          <Plus /> Ajouter une tâche
-        </Button>
       )}
     </section>
   );
@@ -123,28 +128,22 @@ export function WorkLinesSection({
   locked: boolean;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Intervention atelier</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <LineGroup
-          title="Travaux effectués"
-          kind="done"
-          lines={lines.filter((line) => line.kind === 'done' && line.line_type !== 'part')}
-          locked={locked}
-          repairOrderId={repairOrderId}
-        />
-        <LineGroup
-          title="Pièces / réparations à prévoir (devis)"
-          kind="planned"
-          lines={lines.filter((line) => line.kind === 'planned' && line.line_type !== 'part')}
-          locked={locked}
-          repairOrderId={repairOrderId}
-        />
-      </CardContent>
-    </Card>
+    <>
+      <LineGroup
+        title="Travaux effectués"
+        kind="done"
+        lines={lines.filter((line) => line.kind === 'done' && line.line_type !== 'part')}
+        locked={locked}
+        repairOrderId={repairOrderId}
+      />
+      <LineGroup
+        title="Pièces / réparations à prévoir (devis)"
+        kind="planned"
+        lines={lines.filter((line) => line.kind === 'planned' && line.line_type !== 'part')}
+        locked={locked}
+        repairOrderId={repairOrderId}
+        compactAdd
+      />
+    </>
   );
 }

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Camera, Check, FileImage, Loader2, Wrench, X } from 'lucide-react';
+import { Camera, CheckCircle2, FileImage, Loader2, Wrench, X } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFileUrls } from '@/features/files/hooks';
 import type { RoPhoto } from '@/features/repair-orders/api';
+import { cn } from '@/lib/utils';
 import { deletePhoto } from '../api';
 import { useWorkshopMutation } from '../hooks';
 import type { PhotoCapture } from './use-photo-capture';
@@ -35,80 +35,88 @@ export function PhotosSection({
     'Photo supprimée',
   );
 
-  const slotButton = (label: string, icon: React.ReactNode, onClick: () => void) => {
-    const done = photos.some((photo) => photo.label === label);
+  const has = (label: string) => photos.some((photo) => photo.label === label);
+  const doneCount = requiredLabels.filter(has).length;
+
+  const slot = (label: string, icon: React.ReactNode, onClick: () => void, required: boolean) => {
+    const done = has(label);
     const uploading = capture.uploadingLabel === label;
     return (
-      <Button
+      <button
         key={label}
         type="button"
-        size="lg"
-        variant={done ? 'default' : 'outline'}
-        disabled={uploading}
+        className={cn('slot', done ? 'done' : 'todo', !done && required && 'req')}
+        disabled={uploading || locked}
         onClick={onClick}
       >
-        {uploading ? <Loader2 className="animate-spin" /> : done ? <Check /> : icon}
+        {uploading ? <Loader2 className="i animate-spin" /> : done ? <CheckCircle2 className="i" /> : icon}
         {label}
-      </Button>
+      </button>
     );
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Photos</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!locked && (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {requiredLabels.map((label) => slotButton(label, <Camera />, () => capture.openCamera(label)))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {slotButton(PARTS, <Wrench />, () => capture.openCamera(PARTS))}
-              {slotButton(DIAGNOSTIC, <FileImage />, () => capture.openGallery(DIAGNOSTIC))}
-            </div>
+    <section data-slot="card" className="card sec" aria-labelledby="tech-photos">
+      <div className="sec-t">
+        <h2 id="tech-photos">Photos</h2>
+        <span className="hint font-sans! text-[12.5px]! font-medium!">
+          {doneCount} / {requiredLabels.length} obligatoires
+        </span>
+      </div>
+      {!locked && (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            {requiredLabels.map((label) =>
+              slot(label, <Camera className="i" />, () => capture.openCamera(label), true),
+            )}
+            {slot(PARTS, <Wrench className="i" />, () => capture.openCamera(PARTS), false)}
           </div>
-        )}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={capture.uploadingLabel === DIAGNOSTIC}
+            onClick={() => capture.openGallery(DIAGNOSTIC)}
+          >
+            {capture.uploadingLabel === DIAGNOSTIC ? <Loader2 className="animate-spin" /> : <FileImage />}
+            {DIAGNOSTIC}
+          </Button>
+        </>
+      )}
 
-        {photos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune photo pour l’instant.</p>
-        ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {photos.map((photo) => {
-              const url = urls.data?.[photo.file_id];
-              return (
-                <li key={photo.id} className="relative">
-                  {url ? (
-                    <img
-                      src={url}
-                      alt={photo.label}
-                      className="aspect-4/3 w-full rounded-md border object-cover"
-                    />
-                  ) : (
-                    <Skeleton className="aspect-4/3 w-full" />
-                  )}
-                  {!locked && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-1.5 right-1.5 size-8 rounded-full"
-                      aria-label={`Supprimer la photo « ${photo.label} »`}
-                      onClick={() => setToDelete(photo)}
-                    >
-                      <X />
-                    </Button>
-                  )}
-                  <p className="mt-1 text-sm font-medium">{photo.label}</p>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </CardContent>
+      {photos.length === 0 ? (
+        <p className="hint">Aucune photo pour l’instant.</p>
+      ) : (
+        <ul className="grid grid-cols-3 gap-2">
+          {photos.map((photo) => {
+            const url = urls.data?.[photo.file_id];
+            return (
+              <li key={photo.id} className="relative">
+                {url ? (
+                  <img
+                    src={url}
+                    alt={photo.label}
+                    className="aspect-4/3 w-full rounded-[10px] border object-cover"
+                  />
+                ) : (
+                  <Skeleton className="aspect-4/3 w-full rounded-[10px]" />
+                )}
+                {!locked && (
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 flex size-7 cursor-pointer items-center justify-center rounded-full bg-destructive text-white shadow"
+                    aria-label={`Supprimer la photo « ${photo.label} »`}
+                    onClick={() => setToDelete(photo)}
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+                <p className="hint mt-1 truncate">{photo.label}</p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <ConfirmDialog
         open={toDelete !== null}
         onOpenChange={(open) => !open && setToDelete(null)}
@@ -119,6 +127,6 @@ export function PhotosSection({
         pending={remove.isPending}
         onConfirm={() => toDelete && remove.mutate(toDelete, { onSettled: () => setToDelete(null) })}
       />
-    </Card>
+    </section>
   );
 }
