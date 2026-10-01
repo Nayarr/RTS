@@ -53,22 +53,22 @@ export function ClientBillingCard({ clientId, client }: { clientId: string; clie
       pending={save.isPending}
       onCancel={() => reset()}
     >
-      <div className="space-y-2">
-        <Label htmlFor="billing-address">Adresse de facturation</Label>
-        <Textarea
-          id="billing-address"
-          rows={3}
-          className="text-base"
-          placeholder="N°, rue, code postal, ville"
-          {...register('billing_address')}
-        />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3.5 sm:grid-cols-[2fr_1fr_1fr]">
+        <div className="field">
+          <Label htmlFor="billing-address">Adresse de facturation</Label>
+          <Textarea
+            id="billing-address"
+            rows={2}
+            placeholder="N°, rue, code postal, ville"
+            {...register('billing_address')}
+          />
+        </div>
         <FormField
           id="billing-siren"
           label="SIREN"
           inputMode="numeric"
           placeholder="123 456 789"
+          className="num"
           error={errors.siren?.message}
           {...register('siren')}
         />
