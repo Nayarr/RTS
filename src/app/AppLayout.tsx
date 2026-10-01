@@ -30,7 +30,7 @@ function MobileBrand({ subtitle }: { subtitle: string }) {
     <Link to="/" className="flex items-center gap-2.5" aria-label="Accueil">
       <img src="/icons/icon-192.png" alt="" className="size-[34px] rounded-lg bg-white p-0.5" />
       <span className="flex flex-col">
-        <b className="font-display text-[19px] leading-none font-bold">RTS Atelier</b>
+        <b className="text-[15px] leading-tight font-bold tracking-[-0.01em]">RTS Atelier</b>
         <span className="hint text-[11px]">{subtitle}</span>
       </span>
     </Link>
@@ -46,7 +46,7 @@ function OfficeLayout() {
   return (
     <div className="flex min-h-dvh">
       <Sidebar className="sticky top-0 hidden h-dvh lg:flex print:hidden" />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col lg:my-2 lg:mr-2 lg:min-h-[calc(100dvh-1rem)] lg:overflow-clip lg:rounded-xl lg:border lg:bg-card">
         <header className="mbar sticky top-0 z-30 lg:hidden print:hidden">
           <MobileBrand subtitle={profile ? ROLE_LABELS[profile.role] : ''} />
           <div className="row gap-1.5">
@@ -74,7 +74,7 @@ function OfficeLayout() {
         <div ref={setSlot} className="relative z-20 lg:sticky lg:top-0 print:hidden">
           <LoadingBar />
         </div>
-        <main className="flex flex-1 flex-col gap-5 px-4 pt-5 pb-8 lg:px-8 lg:pt-6">
+        <main className="flex flex-1 flex-col gap-5 px-4 pt-5 pb-8 lg:px-7 lg:pt-6">
           {profile && <PushBanner />}
           <PageHeaderSlotContext.Provider value={slot}>
             <Outlet />

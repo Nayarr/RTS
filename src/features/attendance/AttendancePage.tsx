@@ -270,7 +270,7 @@ function TechnicianCard({ tech, isToday, photoUrls, onPhoto, onDelete }: Technic
                 </span>
               );
               const chip =
-                'inline-flex h-10 items-center gap-2 rounded-[10px] border bg-card pr-3 pl-1 text-[13px] font-medium';
+                'inline-flex h-10 items-center gap-2 rounded-[7px] border bg-card pr-3 pl-1 text-[13px] font-medium';
               return (
                 <li key={event.id}>
                   {url && !event.photo_purged_at ? (

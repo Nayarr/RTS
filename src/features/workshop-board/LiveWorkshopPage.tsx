@@ -117,7 +117,7 @@ export function LiveWorkshopPage() {
           <section
             key={lane.name}
             aria-label={lane.name}
-            className="col min-w-0 gap-2.5 rounded-[14px] bg-muted p-2.5"
+            className="col min-w-0 gap-2.5 rounded-[10px] bg-muted p-2.5"
             style={{ '--c': lane.color } as CSSProperties}
           >
             <div className="row mb-0.5 gap-2 border-b-[3px] border-(--c) px-1 pt-1 pb-1.5">

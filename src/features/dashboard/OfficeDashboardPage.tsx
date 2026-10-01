@@ -49,13 +49,8 @@ function Tile({ to, value, label, color, urgent, badgeClass }: TileProps) {
     <li>
       <Link
         to={to}
-        className="card tile h-full transition-colors hover:bg-hover"
-        style={
-          {
-            '--c': color,
-            ...(urgent && { borderColor: 'color-mix(in srgb, var(--destructive) 45%, transparent)' }),
-          } as CSSProperties
-        }
+        className={cn('tile h-full transition-colors hover:bg-hover', urgent && 'hot')}
+        style={{ '--c': color } as CSSProperties}
       >
         <span className={cn('badge dot self-start', badgeClass)}>{label}</span>
         <span className={cn('kpi-v', urgent && 'down')}>{value}</span>
@@ -86,7 +81,7 @@ function Todo({ to, icon, label, value, urgent, badge }: TodoProps) {
           {urgent && value > 0 ? (
             <span className="badge s-bad">{badge ?? value}</span>
           ) : (
-            <b className="num disp text-xl">{value}</b>
+            <b className="num text-[15px] font-semibold">{value}</b>
           )}
           <ChevronRight className="size-4 text-muted-foreground" />
         </span>
@@ -173,7 +168,7 @@ export function OfficeDashboardPage() {
                 Voir tous les OR →
               </Link>
             </div>
-            <ul className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-6">
+            <ul className="kstrip grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
               {openStatuses.map((status) => (
                 <Tile
                   key={status}
@@ -194,8 +189,8 @@ export function OfficeDashboardPage() {
             </ul>
           </section>
 
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-            <section data-slot="card" className="card" aria-labelledby="dashboard-todo">
+          <div className="grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+            <section data-slot="card" className="card flat" aria-labelledby="dashboard-todo">
               <div className="card-h">
                 <h2 className="h2" id="dashboard-todo">
                   À suivre
@@ -260,7 +255,7 @@ export function OfficeDashboardPage() {
               </ul>
             </section>
 
-            <section data-slot="card" className="card" aria-labelledby="dashboard-workload">
+            <section data-slot="card" className="card flat" aria-labelledby="dashboard-workload">
               <div className="card-h flex-wrap">
                 <h2 className="h2" id="dashboard-workload">
                   Charge de travail atelier

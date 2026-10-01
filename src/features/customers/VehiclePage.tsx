@@ -314,7 +314,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                 <StoredImage
                   fileId={vehicle.registration_doc_file_id}
                   alt={`Carte grise ${vehicle.plate}`}
-                  className="max-h-56 w-full rounded-[10px] border object-contain"
+                  className="max-h-56 w-full rounded-[7px] border object-contain"
                 />
               ) : (
                 <div className="photo h-[200px]">

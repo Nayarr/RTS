@@ -121,7 +121,7 @@ export function KioskPage() {
     <div className="fixed inset-0 z-50 grid overflow-y-auto bg-background p-6 select-none lg:grid-cols-[1fr_460px] lg:gap-10 lg:px-12 lg:py-10">
       <div className="col gap-6">
         <div className="row gap-3">
-          <img src="/icons/icon-192.png" alt="" className="size-12 rounded-[11px] bg-white p-0.5" />
+          <img src="/icons/icon-192.png" alt="" className="size-12 rounded-[8px] bg-white p-0.5" />
           <div className="col gap-0">
             <b className="font-display text-2xl leading-tight">{company.data ?? 'RTS Atelier'}</b>
             <span className="hint">Borne de pointage</span>

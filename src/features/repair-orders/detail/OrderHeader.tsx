@@ -75,7 +75,7 @@ export function OrderHeader({ order }: { order: RepairOrderOverview }) {
             <StoredImage
               fileId={order.customer_signature_file_id}
               alt="Signature du client"
-              className="h-24 w-full rounded-[10px] border bg-white object-contain"
+              className="h-24 w-full rounded-[7px] border bg-white object-contain"
             />
           </div>
         ) : (

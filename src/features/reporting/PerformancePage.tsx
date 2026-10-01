@@ -17,7 +17,7 @@ const percent = (value: number | null) => (value === null ? '—' : `${Math.roun
 
 function Figure({ label, value }: { label: string; value: string }) {
   return (
-    <div className="col gap-0.5 rounded-[10px] border bg-head px-3.5 py-3">
+    <div className="col gap-0.5 rounded-[7px] border bg-head px-3.5 py-3">
       <span className="hint">{label}</span>
       <b className="num font-display text-[22px] leading-[1.1]">{value}</b>
     </div>

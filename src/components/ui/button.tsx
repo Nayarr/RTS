@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-transparent text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[7px] border border-transparent text-[13px] font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -13,21 +13,21 @@ const buttonVariants = cva(
         destructive:
           "border-destructive bg-destructive text-white shadow-(--shadow) hover:bg-destructive/90",
         outline:
-          "border-border bg-card text-foreground shadow-(--shadow) hover:bg-hover",
+          "border-input bg-card text-foreground hover:bg-hover",
         secondary:
           "border-border bg-secondary text-secondary-foreground hover:bg-hover",
         ghost: "hover:bg-hover",
         link: "border-0 text-primary underline-offset-4 hover:underline dark:text-[#6cc970]",
       },
       size: {
-        default: "h-10 px-4",
+        default: "h-9 px-3.5",
         xs: "h-6 gap-1 rounded-md px-2 text-xs [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1.5 rounded-lg px-3 text-[13px]",
-        lg: "h-12 rounded-xl px-[22px] text-[15px]",
-        icon: "size-10",
+        sm: "h-[30px] gap-1.5 rounded-md px-2.5 text-[12.5px]",
+        lg: "h-[46px] rounded-[9px] px-5 text-[15px]",
+        icon: "size-9",
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-8 rounded-lg",
-        "icon-lg": "size-12 rounded-xl",
+        "icon-sm": "size-[30px] rounded-md",
+        "icon-lg": "size-[46px] rounded-[9px]",
       },
     },
     defaultVariants: {

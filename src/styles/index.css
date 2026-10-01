@@ -2,12 +2,7 @@
 @import 'tw-animate-css';
 
 /* Polices auto-hébergées (pas d'appel à Google Fonts : conformité RGPD) */
-@import '@fontsource/barlow/400.css';
-@import '@fontsource/barlow/500.css';
-@import '@fontsource/barlow/600.css';
-@import '@fontsource/barlow/700.css';
-@import '@fontsource/barlow-condensed/600.css';
-@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource-variable/geist';
 @import './rts.css';
 
 @custom-variant dark (&:is(.dark *));
@@ -19,66 +14,66 @@
 :root {
   --radius: 0.5rem;
 
-  --background: #f4f5f4;
-  --foreground: #1c1d1f;
+  --background: #f3f4f2;
+  --foreground: #151815;
   --card: #ffffff;
-  --card-foreground: #1c1d1f;
+  --card-foreground: #151815;
   --popover: #ffffff;
-  --popover-foreground: #1c1d1f;
+  --popover-foreground: #151815;
   --primary: #137017;
   --primary-foreground: #ffffff;
-  --secondary: #e8eae8;
-  --secondary-foreground: #1c1d1f;
-  --muted: #eceeec;
-  --muted-foreground: #5b5e63;
-  --accent: #e3efe3;
-  --accent-foreground: #0d4f10;
-  --destructive: #b23a32;
+  --secondary: #eceeeb;
+  --secondary-foreground: #151815;
+  --muted: #f0f1ef;
+  --muted-foreground: #626862;
+  --accent: #e8f2e8;
+  --accent-foreground: #137017;
+  --destructive: #b5453a;
   --destructive-foreground: #ffffff;
   --warning: #c98a00;
   --success: #2a6b52;
-  --border: #dcdfdc;
-  --input: #cfd3cf;
+  --border: #e3e6e3;
+  --input: #d5d9d5;
   --ring: #137017;
   --primary-hover: #0f5c13;
-  --head: #f7f8f7;
-  --hover: #f3f5f3;
-  --shadow: 0 1px 2px rgba(20, 30, 20, 0.05);
-  --pop: 0 16px 40px rgba(20, 30, 20, 0.16);
+  --head: #f8f9f8;
+  --hover: #f5f6f4;
+  --shadow: none;
+  --pop: 0 12px 32px rgba(20, 30, 20, 0.12), 0 0 0 1px rgba(20, 30, 20, 0.04);
 }
 
 .dark {
-  --background: #141517;
-  --foreground: #edeae2;
-  --card: #1b1c1e;
-  --card-foreground: #edeae2;
-  --popover: #1b1c1e;
-  --popover-foreground: #edeae2;
+  --background: #0f100f;
+  --foreground: #eceeeb;
+  --card: #171817;
+  --card-foreground: #eceeeb;
+  --popover: #1a1c1a;
+  --popover-foreground: #eceeeb;
   --primary: #2e9a33;
   --primary-foreground: #ffffff;
-  --secondary: #26282b;
-  --secondary-foreground: #edeae2;
-  --muted: #232427;
-  --muted-foreground: #afaca3;
-  --accent: #1f3322;
-  --accent-foreground: #cfe8d0;
+  --secondary: #222422;
+  --secondary-foreground: #eceeeb;
+  --muted: #1f211f;
+  --muted-foreground: #9da39d;
+  --accent: #1b2e1c;
+  --accent-foreground: #7fd283;
   --destructive: #e06a61;
-  --destructive-foreground: #1b1c1e;
+  --destructive-foreground: #171817;
   --warning: #f2b705;
   --success: #3e9975;
-  --border: #2f3134;
-  --input: #3a3d41;
+  --border: #272a27;
+  --input: #343834;
   --ring: #2e9a33;
   --primary-hover: #35ad3a;
-  --head: #202124;
-  --hover: #232427;
+  --head: #1b1d1b;
+  --hover: #1e201e;
   --shadow: none;
-  --pop: 0 16px 40px rgba(0, 0, 0, 0.5);
+  --pop: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 @theme inline {
-  --font-sans: 'Barlow', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Barlow Condensed', 'Barlow', ui-sans-serif, sans-serif;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -127,7 +122,7 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.45;
     /* Encoche / barre d'accueil des téléphones en mode appli installée */
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
@@ -139,6 +134,6 @@
   }
   /* Icônes en trait fin, comme la maquette */
   svg.lucide {
-    stroke-width: 1.8;
+    stroke-width: 1.6;
   }
 }

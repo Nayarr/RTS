@@ -6,9 +6,7 @@ function Logo({ large = false }: { large?: boolean }) {
       <img
         src="/icons/icon-192.png"
         alt=""
-        className={
-          large ? 'size-[52px] rounded-xl bg-white p-[3px]' : 'size-11 rounded-[10px] bg-white p-0.5'
-        }
+        className={large ? 'size-[52px] rounded-xl bg-white p-[3px]' : 'size-11 rounded-[7px] bg-white p-0.5'}
       />
       <div className="col gap-0">
         <b

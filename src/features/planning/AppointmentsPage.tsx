@@ -94,7 +94,7 @@ export function AppointmentsPage() {
                         className="li w-full cursor-pointer flex-wrap gap-[18px] border-b text-left hover:bg-hover sm:flex-nowrap"
                         onClick={() => setOpen({ appointment })}
                       >
-                        <span className="flex h-[52px] w-16 shrink-0 flex-col items-center justify-center rounded-[10px] border bg-card">
+                        <span className="flex h-[52px] w-16 shrink-0 flex-col items-center justify-center rounded-[7px] border bg-card">
                           <b className="num font-display text-xl leading-none">
                             {shortTime(appointment.start_time)}
                           </b>
