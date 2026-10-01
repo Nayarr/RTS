@@ -114,7 +114,7 @@ function ResponseForm({ token }: { token: string }) {
         <Label htmlFor="signer-name">Votre nom</Label>
         <Input
           id="signer-name"
-          className="h-11 text-base"
+        
           autoComplete="name"
           value={name}
           onChange={(event) => setName(event.target.value)}

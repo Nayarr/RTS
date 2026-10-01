@@ -97,7 +97,7 @@ export function WarrantyDialog({
             <Label htmlFor="warranty-status">Statut</Label>
             <select
               id="warranty-status"
-              className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+              className="inp"
               {...register('status')}
             >
               {WARRANTY_STATUSES.map((status) => (

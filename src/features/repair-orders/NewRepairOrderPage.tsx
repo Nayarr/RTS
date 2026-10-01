@@ -110,7 +110,7 @@ export function NewRepairOrderPage() {
                     label="Immatriculation"
                     placeholder="AB-123-CD"
                     autoComplete="off"
-                    className="h-11 text-base font-semibold uppercase"
+                    className="font-semibold uppercase"
                     error={errors.plate?.message}
                     value={field.value}
                     onBlur={field.onBlur}
@@ -175,7 +175,7 @@ export function NewRepairOrderPage() {
                   <div className="space-y-2">
                     <Label htmlFor="vehicle_type">Type de véhicule</Label>
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="vehicle_type" className="h-11 w-full">
+                      <SelectTrigger id="vehicle_type" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -205,14 +205,14 @@ export function NewRepairOrderPage() {
                   id="planned_date"
                   label="Date prévue"
                   type="date"
-                  className="h-11"
+
                   {...register('planned_date')}
                 />
                 <FormField
                   id="planned_start"
                   label="Heure de début"
                   type="time"
-                  className="h-11"
+
                   error={errors.planned_start?.message}
                   {...register('planned_start')}
                 />
@@ -220,7 +220,7 @@ export function NewRepairOrderPage() {
                   id="planned_end"
                   label="Fin prévue"
                   type="time"
-                  className="h-11"
+
                   disabled={!plannedStart}
                   error={errors.planned_end?.message}
                   {...register('planned_end')}
@@ -238,7 +238,7 @@ export function NewRepairOrderPage() {
                     value={field.value || UNASSIGNED}
                     onValueChange={(value) => field.onChange(value === UNASSIGNED ? '' : value)}
                   >
-                    <SelectTrigger id="technician_id" className="h-11 w-full">
+                    <SelectTrigger id="technician_id" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

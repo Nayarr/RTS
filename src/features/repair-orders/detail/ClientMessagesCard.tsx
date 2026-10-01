@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check } from 'lucide-react';
+import { Check, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { SendLinkDialog } from '@/components/SendLinkDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   fetchClientContact,
   publicDocumentUrl,
@@ -82,34 +81,38 @@ export function ClientMessagesCard({ order }: { order: RepairOrderOverview }) {
     (sent.data ?? []).some((message) => message.message_type === type);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Informer le client</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex flex-col gap-2">
-          {CLIENT_MESSAGE_TYPES.map((type) => (
-            <Button
-              key={type}
-              variant={type === suggestion ? 'default' : 'outline'}
-              className="justify-start"
-              disabled={prepare.isPending}
-              onClick={() => prepare.mutate(type)}
-            >
-              {isSent(type) && <Check />}
+    <section data-slot="card" className="card" aria-labelledby="ro-client-messages">
+      <div className="card-h">
+        <h2 className="h2" id="ro-client-messages">
+          Informer le client
+        </h2>
+      </div>
+      <div className="card-b col gap-2">
+        {CLIENT_MESSAGE_TYPES.map((type) => (
+          <Button
+            key={type}
+            variant={type === suggestion ? 'default' : 'outline'}
+            className="w-full justify-between"
+            aria-label={`${CLIENT_MESSAGE_LABELS[type]}${isSent(type) ? ' (déjà envoyé)' : ''}`}
+            disabled={prepare.isPending}
+            onClick={() => prepare.mutate(type)}
+          >
+            <span className="row gap-2">
+              <MessageSquare />
               {CLIENT_MESSAGE_LABELS[type]}
-              {isSent(type) && <span className="sr-only"> (déjà envoyé)</span>}
-            </Button>
-          ))}
-        </div>
+            </span>
+            {isSent(type) && (
+              <span aria-hidden className={type === suggestion ? 'text-[12.5px] opacity-80' : 'hint'}>
+                <Check className="mr-1 inline size-3.5" />
+                déjà envoyé
+              </span>
+            )}
+          </Button>
+        ))}
         {suggestion && (
-          <p className="text-sm text-muted-foreground">
-            Suggestion : « {CLIENT_MESSAGE_LABELS[suggestion]} » (en vert).
-          </p>
+          <p className="hint">Suggestion : « {CLIENT_MESSAGE_LABELS[suggestion]} » (en vert).</p>
         )}
-      </CardContent>
+      </div>
 
       {prepared && (
         <SendLinkDialog
@@ -131,6 +134,6 @@ export function ClientMessagesCard({ order }: { order: RepairOrderOverview }) {
           onClose={() => setPrepared(null)}
         />
       )}
-    </Card>
+    </section>
   );
 }

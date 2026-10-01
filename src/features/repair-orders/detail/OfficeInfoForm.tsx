@@ -67,127 +67,128 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
     <SectionCard
       id="repair-order-info"
       title="Informations OR"
-      description="Tâche demandée, planning et affectation. L’atelier voit les changements immédiatement."
+      description="L’atelier voit les changements immédiatement."
       onSubmit={handleSubmit((values) => save.mutate(values))}
       dirty={isDirty}
       pending={save.isPending}
       onCancel={() => reset()}
+      compact
     >
-      <div className="space-y-2">
-        <Label htmlFor="edit-requested_work">Tâche à faire</Label>
-        <Textarea
-          id="edit-requested_work"
-          rows={3}
-          className="text-base"
-          aria-invalid={errors.requested_work ? true : undefined}
-          {...register('requested_work')}
-        />
-        {errors.requested_work && <p className="text-sm text-destructive">{errors.requested_work.message}</p>}
-      </div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
+        <div className="field">
+          <Label htmlFor="edit-requested_work">Tâche à faire</Label>
+          <Textarea
+            id="edit-requested_work"
+            rows={5}
+            className="h-full"
+            aria-invalid={errors.requested_work ? true : undefined}
+            {...register('requested_work')}
+          />
+          {errors.requested_work && <p className="err">{errors.requested_work.message}</p>}
+        </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Controller
-          control={control}
-          name="status"
-          render={({ field }) => (
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Statut</Label>
-              <Select
-                value={field.value}
-                onValueChange={field.onChange}
-                disabled={order.status === 'invoiced'}
-              >
-                <SelectTrigger id="edit-status" className="h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {STATUS_META[status].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        />
-        <Controller
-          control={control}
-          name="technician_id"
-          render={({ field }) => (
-            <div className="space-y-2">
-              <Label htmlFor="edit-technician">Technicien assigné</Label>
-              <Select
-                value={field.value || UNASSIGNED}
-                onValueChange={(value) => field.onChange(value === UNASSIGNED ? '' : value)}
-              >
-                <SelectTrigger id="edit-technician" className="h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UNASSIGNED}>— Non assigné —</SelectItem>
-                  {(technicians.data ?? []).map((technician) => (
-                    <SelectItem key={technician.id} value={technician.id}>
-                      {technician.display_name}
-                    </SelectItem>
-                  ))}
-                  {/* Technicien désactivé depuis : reste affiché tant qu'il est assigné. */}
-                  {order.technician_id &&
-                    !technicians.data?.some((technician) => technician.id === order.technician_id) && (
-                      <SelectItem value={order.technician_id}>
-                        {order.technician_name ?? 'Ancien technicien'}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <div className="field">
+                <Label htmlFor="edit-status">Statut</Label>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={order.status === 'invoiced'}
+                >
+                  <SelectTrigger id="edit-status" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {STATUS_META[status].label}
                       </SelectItem>
-                    )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        />
-        <Controller
-          control={control}
-          name="vehicle_type"
-          render={({ field }) => (
-            <div className="space-y-2">
-              <Label htmlFor="edit-vehicle_type">Type de véhicule</Label>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="edit-vehicle_type" className="h-11 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(VEHICLE_TYPES).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        />
-        <FormField
-          id="edit-mileage"
-          label="Kilométrage"
-          inputMode="numeric"
-          error={errors.mileage?.message}
-          {...register('mileage')}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <FormField id="edit-planned_date" label="Date prévue" type="date" {...register('planned_date')} />
-        <FormField
-          id="edit-planned_start"
-          label="Heure de début"
-          type="time"
-          {...register('planned_start')}
-        />
-        <FormField
-          id="edit-planned_end"
-          label="Heure de fin prévue"
-          type="time"
-          error={errors.planned_end?.message}
-          {...register('planned_end')}
-        />
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          />
+          <Controller
+            control={control}
+            name="technician_id"
+            render={({ field }) => (
+              <div className="field">
+                <Label htmlFor="edit-technician">Technicien assigné</Label>
+                <Select
+                  value={field.value || UNASSIGNED}
+                  onValueChange={(value) => field.onChange(value === UNASSIGNED ? '' : value)}
+                >
+                  <SelectTrigger id="edit-technician" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={UNASSIGNED}>— Non assigné —</SelectItem>
+                    {(technicians.data ?? []).map((technician) => (
+                      <SelectItem key={technician.id} value={technician.id}>
+                        {technician.display_name}
+                      </SelectItem>
+                    ))}
+                    {/* Technicien désactivé depuis : reste affiché tant qu'il est assigné. */}
+                    {order.technician_id &&
+                      !technicians.data?.some((technician) => technician.id === order.technician_id) && (
+                        <SelectItem value={order.technician_id}>
+                          {order.technician_name ?? 'Ancien technicien'}
+                        </SelectItem>
+                      )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          />
+          <Controller
+            control={control}
+            name="vehicle_type"
+            render={({ field }) => (
+              <div className="field">
+                <Label htmlFor="edit-vehicle_type">Type de véhicule</Label>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="edit-vehicle_type" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(VEHICLE_TYPES).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          />
+          <FormField
+            id="edit-mileage"
+            label="Kilométrage"
+            inputMode="numeric"
+            className="num"
+            error={errors.mileage?.message}
+            {...register('mileage')}
+          />
+          <FormField id="edit-planned_date" label="Date prévue" type="date" {...register('planned_date')} />
+          <FormField
+            id="edit-planned_start"
+            label="Heure de début"
+            type="time"
+            {...register('planned_start')}
+          />
+          <FormField
+            id="edit-planned_end"
+            label="Heure de fin prévue"
+            type="time"
+            error={errors.planned_end?.message}
+            {...register('planned_end')}
+          />
+        </div>
       </div>
     </SectionCard>
   );

@@ -44,7 +44,7 @@ export function RestRotationCard() {
           <Input
             id="rest-reference"
             type="date"
-            className="h-11 w-48"
+            className="w-48"
             value={value}
             disabled={isPending}
             aria-invalid={invalid || undefined}

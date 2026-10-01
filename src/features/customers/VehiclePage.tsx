@@ -32,7 +32,7 @@ import {
 import { useCustomerMutation, useVehicle } from './hooks';
 import { buildMaintenanceBookPdf } from './maintenance-book-pdf';
 
-const selectClass = 'h-11 w-full rounded-md border bg-transparent px-3 text-base';
+const selectClass = 'inp';
 
 /** Fiche véhicule : identification, carte grise, échéances, kilométrage, carnet d'entretien, historique. */
 export function VehiclePage() {
@@ -140,7 +140,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
               <FormField
                 id="vehicle-plate"
                 label="Immatriculation"
-                className="h-11 uppercase"
+                className="uppercase"
                 error={errors.plate?.message}
                 {...plateField}
                 onChange={(event) =>
@@ -168,7 +168,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
               <FormField
                 id="vehicle-vin"
                 label="N° de série (VIN)"
-                className="h-11 uppercase"
+                className="uppercase"
                 {...register('vin')}
               />
             </div>

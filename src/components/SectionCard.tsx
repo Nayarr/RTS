@@ -1,8 +1,12 @@
 import type { FormEventHandler, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
-/** Section de formulaire enregistrée d’un bloc (réglages, fiche OR…). */
+/**
+ * Section de formulaire enregistrée d’un bloc (réglages, fiche OR…).
+ * Par défaut (réglages) : titre et explication en haut, bouton « Enregistrer » en pied de carte.
+ * `compact` (fiche OR) : explication à côté du titre, bouton dans l’en-tête.
+ */
 export function SectionCard({
   id,
   title,
@@ -11,6 +15,7 @@ export function SectionCard({
   dirty,
   pending,
   onCancel,
+  compact = false,
   children,
 }: {
   id: string;
@@ -20,31 +25,52 @@ export function SectionCard({
   dirty: boolean;
   pending: boolean;
   onCancel: () => void;
+  compact?: boolean;
   children: ReactNode;
 }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">{title}</h2>
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form id={id} onSubmit={onSubmit} noValidate className="space-y-5">
-          {children}
-        </form>
-      </CardContent>
-      <CardFooter className="justify-end gap-2">
-        {dirty && (
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
-            Annuler les modifications
-          </Button>
-        )}
-        <Button type="submit" form={id} disabled={!dirty || pending}>
-          {pending ? 'Enregistrement…' : 'Enregistrer'}
+  const buttons = (
+    <>
+      {dirty && (
+        <Button
+          type="button"
+          variant="ghost"
+          size={compact ? 'sm' : 'default'}
+          onClick={onCancel}
+          disabled={pending}
+        >
+          Annuler les modifications
         </Button>
-      </CardFooter>
-    </Card>
+      )}
+      <Button type="submit" form={id} size={compact ? 'sm' : 'default'} disabled={!dirty || pending}>
+        {pending ? 'Enregistrement…' : 'Enregistrer'}
+      </Button>
+    </>
+  );
+
+  return (
+    <section data-slot="card" className="card" aria-labelledby={`${id}-title`}>
+      {compact ? (
+        <div className="card-h flex-wrap">
+          <div className="row wrap gap-x-3 gap-y-0.5">
+            <h2 className="h2" id={`${id}-title`}>
+              {title}
+            </h2>
+            <span className="hint">{description}</span>
+          </div>
+          <div className="row gap-2">{buttons}</div>
+        </div>
+      ) : (
+        <div className="sec-h">
+          <h2 className="h2" id={`${id}-title`}>
+            {title}
+          </h2>
+          <span className="hint">{description}</span>
+        </div>
+      )}
+      <form id={id} onSubmit={onSubmit} noValidate className={cn(compact ? 'card-b space-y-4' : 'form')}>
+        {children}
+      </form>
+      {!compact && <div className="save">{buttons}</div>}
+    </section>
   );
 }

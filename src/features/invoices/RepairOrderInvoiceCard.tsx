@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router';
 import { Receipt } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { formatEuro } from '@/lib/numbers';
 import { buildInvoiceDraft } from './api';
@@ -32,43 +31,42 @@ export function RepairOrderInvoiceCard({ order }: { order: RepairOrderOverview }
   const facturer = () => (unfinished && !draft ? setConfirmUnfinished(true) : prepare.mutate(undefined));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Facturation</h2>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <section data-slot="card" className="card" aria-labelledby="ro-invoice">
+      <div className="card-h">
+        <h2 className="h2" id="ro-invoice">
+          Facturation
+        </h2>
+      </div>
+      <div className="card-b col gap-3">
         {list.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="muted">
             {order.status === 'to_invoice' ? 'OR validé : la facture est à faire.' : 'Pas encore facturé.'}
           </p>
         ) : (
-          <ul className="divide-y">
+          <ul>
             {list.map((invoice) => (
-              <li key={invoice.id} className="flex items-center justify-between gap-2 py-2">
-                <Link to={`/factures/${invoice.id}`} className="font-medium hover:underline">
+              <li key={invoice.id} className="row between gap-2 border-b py-2 last:border-b-0">
+                <Link to={`/factures/${invoice.id}`} className="b ul">
                   {invoice.number ?? 'Brouillon'}
                   {invoice.repair_order_ids.length > 1 && ' (groupée)'}
                 </Link>
-                <span className="text-sm tabular-nums">{formatEuro(invoice.total_ttc)}</span>
+                <span className="num text-[13px]">{formatEuro(invoice.total_ttc)}</span>
                 <InvoiceStatusBadge invoice={invoice} />
               </li>
             ))}
           </ul>
         )}
-      </CardContent>
-      {!billed && (
-        <CardFooter>
+        {!billed && (
           <Button
             variant={order.status === 'to_invoice' ? 'default' : 'outline'}
+            className="w-full"
             disabled={prepare.isPending}
             onClick={facturer}
           >
             <Receipt /> {draft ? 'Reprendre la facture' : issued ? 'Refacturer (après avoir)' : 'Facturer'}
           </Button>
-        </CardFooter>
-      )}
+        )}
+      </div>
       <ConfirmDialog
         open={confirmUnfinished}
         onOpenChange={setConfirmUnfinished}
@@ -81,6 +79,6 @@ export function RepairOrderInvoiceCard({ order }: { order: RepairOrderOverview }
           prepare.mutate(undefined);
         }}
       />
-    </Card>
+    </section>
   );
 }

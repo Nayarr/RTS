@@ -233,9 +233,27 @@
   .tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted-foreground)}
   .tabbar a.on{color:var(--primary)}
   .dark .tabbar a.on{color:#6cc970}
+
+  /* Réglages : sections avec explication, formulaire et barre d'enregistrement (maquette « Réglages ») */
+  .snav{display:flex;flex-direction:column;gap:2px;position:sticky;top:84px}
+  .snav a,.snav button{height:40px;border:1px solid transparent;background:transparent;border-radius:9px;display:flex;align-items:center;gap:10px;padding:0 12px;font:inherit;font-size:14px;font-weight:500;color:var(--muted-foreground);cursor:pointer;text-align:left}
+  .snav a:hover,.snav button:hover{background:var(--hover);color:var(--foreground)}
+  .snav .on{background:var(--card);color:var(--foreground);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08);border-color:var(--border)}
+  .sec-h{display:flex;flex-direction:column;gap:2px;padding:18px 22px;border-bottom:1px solid var(--border)}
+  .form{padding:20px 22px;display:flex;flex-direction:column;gap:16px}
+  .save{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--border);background:var(--head);border-radius:0 0 14px 14px}
+
+  /* Liste déroulante native : même chevron que la maquette (.sel), sans élément en plus */
+  select.inp{padding-right:36px;background-repeat:no-repeat;background-position:right 12px center;background-size:16px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b5e63' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+  .dark select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23afaca3' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+  .sel select.inp{background-image:none}
+  .inp:focus-visible{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 50%,transparent)}
+  .inp[aria-invalid=true]{border-color:var(--destructive)}
+  .inp:disabled{opacity:.6;cursor:not-allowed}
 }
 
 /* « overline » est aussi un utilitaire Tailwind (texte surligné) : ici, c'est le petit intertitre. */
 .overline {
   text-decoration-line: none;
+  font-family: 'Barlow', ui-sans-serif, system-ui, sans-serif;
 }

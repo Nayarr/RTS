@@ -122,7 +122,7 @@ export function SubcontractDialog({ repairOrderId, subcontract, onClose }: Subco
                   <Label htmlFor="subcontract-status">Statut</Label>
                   <select
                     id="subcontract-status"
-                    className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+                    className="inp"
                     value={field.value}
                     onChange={field.onChange}
                   >

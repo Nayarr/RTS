@@ -207,11 +207,11 @@ describe('fiche OR', () => {
     ]);
     render('/or/ro1');
 
-    expect(await screen.findByRole('heading', { name: 'GH-512-RT' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'GH-512-RT' })).toBeInTheDocument();
     expect(screen.getByText('Aucune signature client enregistrée.')).toBeInTheDocument();
     expect(await screen.findByText('OR créé : OR00001')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Pilotage (direction)' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Déclaré (travaux effectués)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Déclaré')).not.toBeInTheDocument();
   });
 
   it('travaux terminés : validation vers « Facture à faire »', async () => {

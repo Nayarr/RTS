@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { Gift } from 'lucide-react';
 import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -115,7 +114,7 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
                 <div className="flex flex-wrap items-center gap-2">
                   <select
                     aria-label={`Décision pour « ${title} »`}
-                    className="h-10 min-w-44 flex-1 rounded-md border bg-transparent px-3"
+                    className="inp w-auto min-w-44 flex-1"
                     value={decisions[line.id]}
                     onChange={(event) =>
                       setDecisions((current) => ({
@@ -183,18 +182,29 @@ export function PreQuoteWorkCard({
   if (!work.data) return null;
   return (
     <>
-      <Alert className="border-2 border-amber-500">
-        <Gift />
-        <AlertTitle>Travaux réalisés avant le devis</AlertTitle>
-        <AlertDescription className="space-y-3">
-          <p>
-            Le devis {work.data.quote_number ?? ''} est accepté : choisis ce que tu factures et ce que tu
-            offres sur les travaux déjà effectués ({work.data.lines.length} ligne
-            {work.data.lines.length > 1 ? 's' : ''}).
-          </p>
-          <Button onClick={() => setOpen(true)}>Facturer / offrir ces travaux</Button>
-        </AlertDescription>
-      </Alert>
+      <section data-slot="card" className="card" aria-labelledby="pre-quote-work">
+        <div className="card-h flex-wrap">
+          <h2 className="h2" id="pre-quote-work">
+            <Gift className="i" /> Travaux réalisés avant le devis
+          </h2>
+          <span className="hint">
+            Devis {work.data.quote_number ?? ''} accepté : choisis ce que tu factures et ce que tu offres.
+          </span>
+        </div>
+        <ul>
+          {work.data.lines.map((line) => (
+            <li key={line.id} className="li">
+              <span className="b grow">{lineTitle(line.description)}</span>
+              {line.hours ? <span className="muted num">{formatQuantity(line.hours)} h</span> : null}
+            </li>
+          ))}
+        </ul>
+        <div className="tfoot justify-end">
+          <Button size="sm" onClick={() => setOpen(true)}>
+            Facturer / offrir ces travaux
+          </Button>
+        </div>
+      </section>
       {open && <DecisionDialog work={work.data} onClose={() => setOpen(false)} />}
     </>
   );

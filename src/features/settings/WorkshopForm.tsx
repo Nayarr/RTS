@@ -113,7 +113,7 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             <div className="space-y-2">
               <Label htmlFor="clock_photo_retention_months">Conservation des photos de pointage</Label>
               <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))}>
-                <SelectTrigger id="clock_photo_retention_months" className="h-11 w-56">
+                <SelectTrigger id="clock_photo_retention_months" className="w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

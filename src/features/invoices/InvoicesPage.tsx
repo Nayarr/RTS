@@ -130,7 +130,7 @@ function InvoiceList() {
             type="search"
             aria-label="Rechercher une facture"
             placeholder="N° de facture, client, plaque, n° d’OR…"
-            className="h-11 pl-9 text-base"
+            className="pl-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -140,7 +140,7 @@ function InvoiceList() {
           <Input
             id="invoices-from"
             type="date"
-            className="h-11"
+
             value={from}
             onChange={(e) => setFrom(e.target.value)}
           />
@@ -150,14 +150,14 @@ function InvoiceList() {
           <Input
             id="invoices-to"
             type="date"
-            className="h-11"
+
             value={to}
             onChange={(e) => setTo(e.target.value)}
           />
         </div>
         <select
           aria-label="Tri"
-          className="h-11 rounded-md border bg-transparent px-3"
+          className="inp w-auto"
           value={sort}
           onChange={(event) => setSort(event.target.value as Sort)}
         >

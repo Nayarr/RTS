@@ -61,7 +61,7 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
               autoFocus
               aria-label="Rechercher partout"
               placeholder="Ex : AB-123, Dupont, OR00012, F11890…"
-              className="h-11 pl-9 text-base"
+              className="pl-9"
               value={text}
               onChange={(event) => setText(event.target.value)}
             />

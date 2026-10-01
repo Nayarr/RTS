@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   CHECK_FIELDS,
   countAlerts,
@@ -15,20 +15,17 @@ import {
 
 function Value({ value, options }: { value: string | undefined; options: ChipOption[] }) {
   const option = optionFor(value, options);
-  if (!option) return <span className="text-muted-foreground">—</span>;
+  if (!option) return <span className="muted">—</span>;
   return (
-    <span
-      className="rounded px-2 py-0.5 text-xs font-bold text-white"
-      style={{ backgroundColor: option.color }}
-    >
+    <span className="badge" style={{ '--c': option.color } as CSSProperties}>
       {option.label}
     </span>
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b py-1.5 text-sm last:border-0">
+    <div className="row between gap-3">
       <span>{label}</span>
       <span className="text-right">{children}</span>
     </div>
@@ -41,23 +38,44 @@ export function InspectionCard({ data }: { data: InspectionData | null }) {
   const lights = WARNING_LIGHT_FIELDS.filter(([key]) => data?.voyants?.[key]).map(([, label]) => label);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-xl font-bold">Fiche de contrôle</h2>
-        </CardTitle>
-        <CardDescription>
-          {!data
-            ? 'Pas encore remplie par le technicien.'
-            : alerts > 0
-              ? `${alerts} point${alerts > 1 ? 's' : ''} à surveiller.`
-              : 'Aucun point signalé.'}
-        </CardDescription>
-      </CardHeader>
+    <section data-slot="card" className="card" aria-labelledby="ro-inspection">
+      <div className="card-h">
+        <h2 className="h2" id="ro-inspection">
+          Fiche de contrôle
+        </h2>
+        {!data ? (
+          <span className="hint">Pas encore remplie par le technicien.</span>
+        ) : alerts > 0 ? (
+          <span className="badge s-warn dot">
+            {alerts} point{alerts > 1 ? 's' : ''} à surveiller.
+          </span>
+        ) : (
+          <span className="badge s-ok dot">Aucun point signalé.</span>
+        )}
+      </div>
       {data && (
-        <CardContent className="grid gap-x-8 gap-y-4 md:grid-cols-2">
-          <div>
-            <h3 className="mb-1 text-sm font-semibold">Usure</h3>
+        <div className="card-b grid gap-5 md:grid-cols-3">
+          <div className="col gap-2">
+            <h3 className="overline">Niveaux</h3>
+            {FLUID_FIELDS.map(([key, label]) => {
+              const fluid = data.niveaux?.[key];
+              return (
+                <Row key={key} label={label}>
+                  {fluid?.etat === 'manque' ? (
+                    <span className="badge s-warn">
+                      Appoint fait{fluid.litres ? ` (${String(fluid.litres)} L)` : ''}
+                    </span>
+                  ) : fluid?.etat === 'bon' ? (
+                    <span className="badge s-ok">Niveau bon</span>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </Row>
+              );
+            })}
+          </div>
+          <div className="col gap-2">
+            <h3 className="overline">Pneus · usure</h3>
             {WEAR_FIELDS.map(([key, label]) => (
               <Row key={key} label={label}>
                 <Value value={data.usure?.[key]} options={WEAR_OPTIONS} />
@@ -72,34 +90,28 @@ export function InspectionCard({ data }: { data: InspectionData | null }) {
               <Value value={data.pneus?.arriere_etat} options={WEAR_OPTIONS} />
             </Row>
           </div>
-          <div>
-            <h3 className="mb-1 text-sm font-semibold">Contrôles</h3>
+          <div className="col gap-2">
+            <h3 className="overline">Contrôles</h3>
+            <Row label="Voyants allumés">
+              {lights.length > 0 || data.voyants_autres ? (
+                <span className="badge s-bad">
+                  {[...lights, data.voyants_autres].filter(Boolean).join(', ')}
+                </span>
+              ) : (
+                <span className="muted">—</span>
+              )}
+            </Row>
+            <Row label="Problème électrique">
+              <Value value={data.probleme_electrique} options={YES_NO_OPTIONS} />
+            </Row>
             {CHECK_FIELDS.map(([key, label]) => (
               <Row key={key} label={label}>
                 <Value value={data.controles?.[key]} options={OK_HS_OPTIONS} />
               </Row>
             ))}
-            <Row label="Problème électrique">
-              <Value value={data.probleme_electrique} options={YES_NO_OPTIONS} />
-            </Row>
-            <Row label="Voyants allumés">
-              {[...lights, data.voyants_autres].filter(Boolean).join(', ') || '—'}
-            </Row>
-            {FLUID_FIELDS.map(([key, label]) => {
-              const fluid = data.niveaux?.[key];
-              return (
-                <Row key={key} label={label}>
-                  {fluid?.etat === 'manque'
-                    ? `Appoint fait${fluid.litres ? ` (${String(fluid.litres)} L)` : ''}`
-                    : fluid?.etat === 'bon'
-                      ? 'Niveau bon'
-                      : '—'}
-                </Row>
-              );
-            })}
           </div>
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </section>
   );
 }

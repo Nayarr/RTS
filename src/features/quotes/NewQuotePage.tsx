@@ -103,7 +103,7 @@ export function NewQuotePage() {
                     label="Immatriculation (facultatif)"
                     placeholder="AB-123-CD"
                     autoComplete="off"
-                    className="h-11 text-base font-semibold uppercase"
+                    className="font-semibold uppercase"
                     value={field.value}
                     onBlur={field.onBlur}
                     onChange={(event) => field.onChange(formatPlate(event.target.value))}
@@ -118,7 +118,7 @@ export function NewQuotePage() {
                     <Label htmlFor="quote-vehicle-type">Type de véhicule</Label>
                     <select
                       id="quote-vehicle-type"
-                      className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+                      className="inp"
                       value={field.value}
                       onChange={field.onChange}
                     >

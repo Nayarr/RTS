@@ -327,7 +327,7 @@ export function InvoicePage() {
                   <Input
                     id="service-date"
                     type="date"
-                    className="h-11"
+
                     defaultValue={invoice.service_date ?? ''}
                     key={invoice.service_date ?? ''}
                     onBlur={(event) => {

@@ -18,7 +18,7 @@ import { dayLabel } from '@/features/planning/domain';
 import { addManualClockEvent, setKioskExitCode, type TechnicianDay } from './api';
 import { useAttendanceMutation } from './hooks';
 
-const selectClass = 'h-11 w-full rounded-md border bg-transparent px-3 text-base';
+const selectClass = 'inp';
 
 const manualSchema = z.object({
   technician_id: z.string().min(1, 'Choisis un technicien'),

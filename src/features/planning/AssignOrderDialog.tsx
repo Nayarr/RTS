@@ -17,7 +17,7 @@ import { dayLabel } from './domain';
 import { usePlannableOrders, usePlanningMutation } from './hooks';
 import { assignOrderSchema, type AssignOrderValues } from './schemas';
 
-const selectClass = 'h-11 w-full rounded-md border bg-transparent px-3 text-base';
+const selectClass = 'inp';
 
 interface AssignOrderDialogProps {
   date: string;

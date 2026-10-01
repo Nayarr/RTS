@@ -145,7 +145,7 @@ export function PartsPage() {
           type="search"
           aria-label="Rechercher une pièce"
           placeholder="Désignation, marque, référence…"
-          className="h-11 pl-9 text-base"
+          className="pl-9"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />

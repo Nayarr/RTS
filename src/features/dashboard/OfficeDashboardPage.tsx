@@ -195,7 +195,7 @@ export function OfficeDashboardPage() {
           </section>
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-            <section className="card" aria-labelledby="dashboard-todo">
+            <section data-slot="card" className="card" aria-labelledby="dashboard-todo">
               <div className="card-h">
                 <h2 className="h2" id="dashboard-todo">
                   À suivre
@@ -260,7 +260,7 @@ export function OfficeDashboardPage() {
               </ul>
             </section>
 
-            <section className="card" aria-labelledby="dashboard-workload">
+            <section data-slot="card" className="card" aria-labelledby="dashboard-workload">
               <div className="card-h flex-wrap">
                 <h2 className="h2" id="dashboard-workload">
                   Charge de travail atelier

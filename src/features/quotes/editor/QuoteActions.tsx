@@ -50,7 +50,7 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
           <Label htmlFor="quote-technician">Technicien</Label>
           <select
             id="quote-technician"
-            className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+            className="inp"
             value={technicianId}
             onChange={(event) => setTechnicianId(event.target.value)}
           >

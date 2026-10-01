@@ -65,7 +65,7 @@ export function PackageDialog({ pkg, onClose }: { pkg: ServicePackage | null; on
             <Label htmlFor="package-category">Catégorie</Label>
             <select
               id="package-category"
-              className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+              className="inp"
               {...register('category')}
             >
               {PACKAGE_CATEGORIES.map((category) => (

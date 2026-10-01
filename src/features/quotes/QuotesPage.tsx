@@ -82,7 +82,7 @@ export function QuotesPage() {
             type="search"
             aria-label="Rechercher un devis"
             placeholder="Plaque, client, n° de devis ou d’OR…"
-            className="h-11 pl-9 text-base"
+            className="pl-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />

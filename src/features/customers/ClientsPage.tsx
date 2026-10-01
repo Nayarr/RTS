@@ -50,7 +50,7 @@ export function ClientsPage() {
             type="search"
             aria-label="Rechercher un client"
             placeholder="Nom, e-mail, téléphone, SIREN…"
-            className="h-11 pl-9 text-base"
+            className="pl-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />

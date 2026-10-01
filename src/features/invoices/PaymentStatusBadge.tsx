@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import type { InvoiceOverview } from './api';
 import { PAYMENT_STATUS_META } from './domain';
@@ -15,13 +16,7 @@ export function InvoiceStatusBadge({
       ? { label: 'Brouillon', color: '#6B7280' }
       : PAYMENT_STATUS_META[invoice.payment_status];
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white',
-        className,
-      )}
-      style={{ backgroundColor: meta.color }}
-    >
+    <span className={cn('badge', className)} style={{ '--c': meta.color } as CSSProperties}>
       {meta.label}
     </span>
   );

@@ -130,7 +130,7 @@ export function PartLineDialog({
                 <Label htmlFor="part-line-order-status">Commande</Label>
                 <select
                   id="part-line-order-status"
-                  className="h-11 w-full rounded-md border bg-transparent px-3 text-base"
+                  className="inp"
                   value={field.value}
                   onChange={field.onChange}
                 >
