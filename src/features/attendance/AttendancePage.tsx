@@ -243,7 +243,7 @@ function TechnicianCard({ tech, isToday, photoUrls, onPhoto, onDelete }: Technic
           </div>
         )}
         {spans.length > 0 && (
-          <div className="relative h-2 rounded bg-muted" aria-hidden>
+          <div className="relative h-2 overflow-hidden rounded bg-muted" aria-hidden>
             {spans.map((item, index) => (
               <i
                 key={index}
