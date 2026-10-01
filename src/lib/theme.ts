@@ -27,7 +27,20 @@ export function initTheme() {
   apply(current);
 }
 
+let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Fondu des couleurs le temps de la bascule (sauf si l'appareil demande moins d'animations). */
+function fadeColors() {
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  if (reduce) return;
+  const root = document.documentElement;
+  root.classList.add('theme-anim');
+  clearTimeout(fadeTimer);
+  fadeTimer = setTimeout(() => root.classList.remove('theme-anim'), 400);
+}
+
 export function setTheme(theme: Theme) {
+  if (theme !== current) fadeColors();
   current = theme;
   try {
     localStorage.setItem(STORAGE_KEY, theme);

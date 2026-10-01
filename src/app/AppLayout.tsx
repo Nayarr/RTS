@@ -59,10 +59,10 @@ function OfficeLayout() {
                 <Menu className="size-[18px]" />
               </DialogPrimitive.Trigger>
               <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgba(12,14,12,.42)] data-[state=open]:animate-in data-[state=open]:fade-in-0 dark:bg-black/60" />
+                <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgba(12,14,12,.42)] duration-200 data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 dark:bg-black/60" />
                 <DialogPrimitive.Content
                   aria-describedby={undefined}
-                  className="fixed inset-y-0 left-0 z-50 flex outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
+                  className="fixed inset-y-0 left-0 z-50 flex duration-240 ease-(--ease-out) outline-none data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:slide-out-to-left data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
                 >
                   <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
                   <Sidebar className="h-dvh max-w-[85vw]" onNavigate={() => setMenuOpen(false)} />

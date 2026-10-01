@@ -355,7 +355,7 @@
     background: var(--primary);
   }
   .switch.on::after {
-    left: 19px;
+    transform: translateX(16px);
   }
 
   /* Onglets, filtres */
@@ -1137,7 +1137,7 @@
     margin-left: auto;
     width: 16px;
     height: 16px;
-    transition: transform 0.15s;
+    transition: transform var(--dur-2) var(--ease-out);
   }
   .ni .chev.open {
     transform: rotate(180deg);
@@ -1222,7 +1222,6 @@
     font-weight: 500;
   }
   .theme-sw .on {
-    background: var(--muted);
     color: var(--foreground);
     font-weight: 600;
   }
@@ -1476,7 +1475,7 @@
   }
   .faq summary svg {
     flex-shrink: 0;
-    transition: transform 0.15s;
+    transition: transform var(--dur-2) var(--ease-out);
   }
   .faq[open] summary svg {
     transform: rotate(180deg);
@@ -1736,5 +1735,175 @@
     height: 18px;
     background: none;
     color: var(--muted-foreground);
+  }
+}
+
+@layer components {
+  /* ---------------------------------------------------------------------------
+     Mouvement (style « Épuré ») : discret, court, jamais sur la mise en page.
+     Jetons --dur-* / --ease-* dans index.css ; « réduire les animations » y coupe tout.
+     --------------------------------------------------------------------------- */
+
+  /* Survols et états : couleurs en fondu court */
+  .ni,
+  .si,
+  .topic,
+  .snav a,
+  .snav button,
+  .chip,
+  .seg a,
+  .seg button,
+  .tabs a,
+  .theme-sw a,
+  .theme-sw button,
+  .li,
+  .tile,
+  .pager a,
+  .pager button,
+  .lvl button,
+  .slot,
+  .tabbar a,
+  .side-search,
+  .faq summary,
+  .tbl td {
+    transition:
+      background-color var(--dur-1) ease,
+      color var(--dur-1) ease,
+      border-color var(--dur-1) ease,
+      box-shadow var(--dur-1) ease;
+  }
+
+  /* Boutons : fondu au survol, léger enfoncement à l'appui */
+  .btn,
+  .ibtn {
+    transition:
+      background-color var(--dur-1) ease,
+      border-color var(--dur-1) ease,
+      color var(--dur-1) ease,
+      transform var(--dur-1) var(--ease-out);
+  }
+  .btn:active:not(:disabled),
+  .ibtn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  /* Champs : bordure et halo de focus en fondu */
+  .inp {
+    transition:
+      border-color var(--dur-1) ease,
+      box-shadow var(--dur-1) ease;
+  }
+  .cbx,
+  .radio,
+  .switch {
+    transition:
+      background-color var(--dur-1) ease,
+      border-color var(--dur-1) ease;
+  }
+  .switch::after {
+    transition: transform var(--dur-2) var(--ease-out);
+  }
+
+  /* Sélecteur Clair / Sombre : la pastille glisse sous le bouton choisi */
+  .theme-sw {
+    position: relative;
+    isolation: isolate;
+  }
+  .theme-sw::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    border-radius: 6px;
+    background: var(--muted);
+    transition: transform var(--dur-3) var(--ease-out);
+  }
+  .theme-sw:has(> .on:last-child)::before {
+    transform: translateX(100%);
+  }
+
+  /* Groupes du menu : ouverture et fermeture en hauteur, liens en léger fondu */
+  .subnav-fold {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--dur-2) var(--ease-out),
+      visibility 0s linear var(--dur-2);
+  }
+  .subnav-fold.open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+      grid-template-rows var(--dur-2) var(--ease-out),
+      visibility 0s;
+  }
+  .subnav-fold > div {
+    min-height: 0;
+    overflow: clip;
+    overflow-clip-margin: 4px;
+  }
+  .subnav-fold .subnav {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      opacity var(--dur-2) ease,
+      transform var(--dur-2) var(--ease-out);
+  }
+  .subnav-fold.open .subnav {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Questions fréquentes : la réponse apparaît en glissant */
+  .faq[open] > p {
+    animation: rts-reveal var(--dur-2) var(--ease-out);
+  }
+
+  /* Barres de charge : se remplissent à l'affichage, suivent les nouvelles valeurs */
+  .bar i {
+    transform-origin: left center;
+    animation: rts-grow 480ms var(--ease-out);
+    transition: width var(--dur-3) var(--ease-out);
+  }
+
+  /* Borne : chaque chiffre saisi « tombe » dans sa case */
+  .dots i {
+    transition:
+      background-color var(--dur-1) ease,
+      border-color var(--dur-1) ease;
+  }
+  .dots i.f {
+    animation: rts-pop var(--dur-2) var(--ease-out);
+  }
+
+  /* Bandeaux qui apparaissent (notifications, hors connexion) : fondu sans décalage */
+  .alert {
+    animation: rts-fade var(--dur-2) ease;
+  }
+
+  @keyframes rts-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+  @keyframes rts-grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
+  @keyframes rts-pop {
+    from {
+      transform: scale(0.6);
+    }
+  }
+  @keyframes rts-fade {
+    from {
+      opacity: 0;
+    }
   }
 }
