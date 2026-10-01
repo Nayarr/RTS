@@ -152,9 +152,7 @@ test('relevé d’heures du mois et export CSV pour la paie', async ({ page }, t
 
   await loginAs(page, 'direction@rts.local');
   await page.goto(`/pointages/releve?mois=${month}`);
-  await expect(page.getByRole('article', { name })).toContainText(
-    '1 jour travaillé — 9h30 — HS : 0h00 — 0 retard',
-  );
+  await expect(page.getByRole('row', { name, exact: true })).toContainText('19h300h00——');
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export CSV (paie)' }).click();
