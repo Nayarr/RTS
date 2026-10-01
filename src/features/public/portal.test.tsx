@@ -85,8 +85,8 @@ describe('espace client en ligne', () => {
     const second = screen.getByRole('row', { name: /EF-456-GH/ });
     expect(second).toHaveTextContent('Pas à l’atelier');
     const [ctOk, tailgate] = within(second).getAllByRole('cell').slice(2);
-    expect(ctOk?.firstElementChild).toHaveClass('text-emerald-700');
-    expect(tailgate?.firstElementChild).toHaveClass('text-amber-700');
+    expect(ctOk?.firstElementChild).toHaveClass('text-success');
+    expect(tailgate?.firstElementChild).toHaveClass('text-warning');
   });
 
   it('devis à signer et factures : liens vers chaque document', async () => {

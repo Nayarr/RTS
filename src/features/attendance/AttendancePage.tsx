@@ -65,7 +65,7 @@ export function AttendancePage() {
       <div className="col gap-4">
         <div className="toolbar flex-wrap">
           <AttendanceTabs />
-          <div className="row gap-2">
+          <div className="row flex-wrap gap-2">
             <button
               type="button"
               className="ibtn"
@@ -74,7 +74,7 @@ export function AttendancePage() {
             >
               <ChevronLeft className="i" />
             </button>
-            <h2 className="h2 min-w-[220px] justify-center">{dayLabel(date)}</h2>
+            <h2 className="h2 justify-center sm:min-w-[220px]">{dayLabel(date)}</h2>
             <button
               type="button"
               className="ibtn disabled:opacity-40"

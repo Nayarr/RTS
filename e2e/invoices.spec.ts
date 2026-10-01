@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { goTo } from './support/nav';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -131,7 +132,7 @@ test('facture groupée : deux OR du même client sur un brouillon', async ({ pag
   const second = await createFinishedOrder(`G${id}B`, clientName);
 
   await loginAs(page, 'reception@rts.local');
-  await page.getByRole('link', { name: 'Facturation' }).click();
+  await goTo(page, 'Facturation', 'Factures');
   await page.getByRole('button', { name: 'Facture groupée' }).click();
   const dialog = page.getByRole('dialog', { name: 'Facture groupée' });
   await dialog.getByLabel('Client').selectOption({ label: `${clientName} (2 OR)` });

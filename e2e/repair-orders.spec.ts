@@ -1,4 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { goTo } from './support/nav';
 
 const PASSWORD = 'atelier-dev-2026';
 
@@ -42,7 +43,7 @@ async function createRepairOrder(page: Page, plate: string, { signature = false 
 test('la réception crée un OR signé, visible dans la liste', async ({ page }, testInfo) => {
   const plate = uniquePlate(testInfo);
   await loginAs(page, 'reception@rts.local');
-  await page.getByRole('link', { name: 'Ordres de réparation' }).first().click();
+  await goTo(page, 'Atelier', 'Ordres de réparation');
   await page.getByRole('link', { name: 'Nouvel OR' }).click();
   await expect(page).toHaveURL(/\/or\/nouveau$/);
 
@@ -50,7 +51,8 @@ test('la réception crée un OR signé, visible dans la liste', async ({ page },
 
   // Fiche de l'OR : numéro, technicien, signature envoyée dans le stockage, historique
   await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
-  await expect(page.getByText(/OR\d{5} · Technicien : Alice/)).toBeVisible();
+  await expect(page.getByText(/^OR\d{5}$/).first()).toBeVisible();
+  await expect(page.getByText('Technicien : Alice')).toBeVisible();
   const signature = page.getByRole('img', { name: 'Signature du client', exact: true });
   await expect(signature).toHaveAttribute('src', /X-Amz-Signature=/);
   await expect(page.getByText(/^OR créé : OR\d{5}/)).toBeVisible();

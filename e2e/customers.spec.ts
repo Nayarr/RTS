@@ -3,6 +3,7 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
 import { parisDay } from './support/dates';
+import { goTo } from './support/nav';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -55,9 +56,9 @@ test('fiche client : coordonnées, véhicules et OR ; fiche véhicule : carte gr
   const order = await createOrder(plate, clientName, 123456);
 
   await loginAs(page, 'reception@rts.local');
-  await page.getByRole('link', { name: 'Clients', exact: true }).click();
+  await goTo(page, 'Clients', 'Clients');
   await page.getByRole('searchbox', { name: 'Rechercher un client' }).fill(clientName);
-  await page.getByRole('link', { name: new RegExp(clientName) }).click();
+  await page.getByRole('link', { name: clientName, exact: true }).click();
 
   await expect(page.getByRole('heading', { name: clientName })).toBeVisible();
   await expect(page.getByLabel('Remise client (%)')).toHaveCount(0); // réservé à la direction
@@ -91,7 +92,7 @@ test('fiche client : coordonnées, véhicules et OR ; fiche véhicule : carte gr
 
   // Le contrôle technique dépassé apparaît dans les échéances
   await page.goto('/vehicules/echeances');
-  await expect(page.getByRole('link', { name: new RegExp(plate) })).toContainText('Dépassé (3 j)');
+  await expect(page.getByRole('row', { name: new RegExp(plate) })).toContainText('Dépassé (3 j)');
 });
 
 test('la direction fixe la remise et le taux horaire du client', async ({ page }, testInfo) => {
@@ -102,7 +103,7 @@ test('la direction fixe la remise et le taux horaire du client', async ({ page }
   await loginAs(page, 'direction@rts.local');
   await page.goto('/clients');
   await page.getByRole('searchbox', { name: 'Rechercher un client' }).fill(clientName);
-  await page.getByRole('link', { name: new RegExp(clientName) }).click();
+  await page.getByRole('link', { name: clientName, exact: true }).click();
   await page.getByLabel('Remise client (%)').fill('5');
   await page.getByLabel('Taux horaire client (€ HT)').fill('82,50');
   await page.getByRole('button', { name: 'Enregistrer' }).click();

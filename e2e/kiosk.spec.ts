@@ -115,7 +115,7 @@ test('la direction corrige un oubli de badge puis supprime la correction', async
   await expect(dialog).toBeHidden();
 
   const card = page.getByRole('article', { name });
-  await expect(card.getByText('↘ 08:15')).toBeVisible();
+  await expect(card.getByText('Arrivée 08:15')).toBeVisible();
   await expect(card.getByText(/Pointage incomplet/)).toBeVisible(); // arrivée sans départ, jour passé
   await card.getByRole('button', { name: 'Supprimer la correction : Arrivée 08:15' }).click();
   await page

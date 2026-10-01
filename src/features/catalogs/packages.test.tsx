@@ -81,9 +81,7 @@ describe('forfaits : écran', () => {
     expect(card).toHaveTextContent(/Prix forfaitaire HT340,00\s€/);
     expect(card).toHaveTextContent('Mots-clés :disque arrièreplaquette arrière');
     expect(card).toHaveTextContent('Fiche de contrôle : Disques de frein arrière, Plaquettes arrière');
-    expect(screen.getByRole('article', { name: 'Vidange' })).toHaveTextContent(
-      'Toutes catégories3 h barème',
-    );
+    expect(screen.getByRole('article', { name: 'Vidange' })).toHaveTextContent('Toutes catégories3 h barème');
     expect(screen.getByRole('link', { name: 'Forfaits' })).toHaveAttribute('aria-current', 'page');
   });
 

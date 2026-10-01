@@ -247,7 +247,7 @@ export function PlanningPage() {
 
       <div className="col gap-4">
         <div className="toolbar flex-wrap">
-          <div className="row gap-2">
+          <div className="row flex-wrap gap-2">
             <button
               type="button"
               className="ibtn"
@@ -256,7 +256,7 @@ export function PlanningPage() {
             >
               <ChevronLeft className="i" />
             </button>
-            <h2 className="h2 min-w-[230px] justify-center" aria-live="polite">
+            <h2 className="h2 justify-center sm:min-w-[230px]" aria-live="polite">
               {periodLabel(view, days)}
             </h2>
             <button

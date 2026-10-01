@@ -64,7 +64,7 @@ test('rendez-vous pris au planning, puis OR créé à l’arrivée du véhicule'
   await page.getByRole('button', { name: 'Le véhicule est arrivé : créer l’OR' }).click();
 
   await expect(page).toHaveURL(/\/or\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole('heading', { name: plate })).toBeVisible();
+  await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
   await expect(page.getByText(`Client planning ${id}`).first()).toBeVisible();
   await expect(page.getByText(/OR créé depuis le rendez-vous du/)).toBeVisible();
 
@@ -102,7 +102,7 @@ test('un OR est placé au planning d’un technicien', async ({ page }, testInfo
   const link = page.getByRole('link', { name: new RegExp(`14:00 - 16:00 ${plate}`) });
   await expect(link).toBeVisible();
   await link.click();
-  await expect(page.getByText(`${order.number} · Technicien : Bruno`)).toBeVisible();
+  await expect(page.getByText('Technicien : Bruno')).toBeVisible();
 });
 
 test('rappel du rendez-vous de demain', async ({ page }, testInfo) => {
