@@ -55,8 +55,8 @@ describe('LoginPage', () => {
   it('envoie le lien de réinitialisation du mot de passe', async () => {
     vi.mocked(requestPasswordReset).mockResolvedValue();
     renderLogin();
-    await userEvent.click(screen.getByRole('button', { name: 'Mot de passe oublié ?' }));
-    await userEvent.type(screen.getByLabelText('E-mail'), 'tech@rts.fr');
+    await userEvent.click(screen.getByRole('button', { name: 'Mot de passe oublié' }));
+    await userEvent.type(screen.getByLabelText('E-mail du compte'), 'tech@rts.fr');
     await userEvent.click(screen.getByRole('button', { name: 'Envoyer le lien' }));
 
     expect(requestPasswordReset).toHaveBeenCalledWith('tech@rts.fr');

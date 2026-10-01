@@ -6,7 +6,8 @@ import { CircleCheck, LogIn } from 'lucide-react';
 import { FormField } from '@/components/FormField';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { authErrorMessage, requestPasswordReset, signIn } from './api';
 import { useAuth } from './auth-context';
 import { AuthLayout } from './AuthLayout';
@@ -20,7 +21,7 @@ import {
 export function LoginPage() {
   const { session } = useAuth();
   const location = useLocation();
-  const [mode, setMode] = useState<'login' | 'reset'>('login');
+  const [resetOpen, setResetOpen] = useState(false);
 
   if (session) {
     const from = (location.state as { from?: string } | null)?.from ?? '/';
@@ -29,11 +30,12 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      {mode === 'login' ? (
-        <LoginForm onForgotPassword={() => setMode('reset')} />
-      ) : (
-        <PasswordResetForm onBack={() => setMode('login')} />
-      )}
+      <div className="col gap-1.5">
+        <h1 className="title xl">Connexion</h1>
+        <p className="sub">Accès réservé — utilise les identifiants fournis par le bureau.</p>
+      </div>
+      <LoginForm onForgotPassword={() => setResetOpen((open) => !open)} />
+      {resetOpen && <PasswordResetForm />}
     </AuthLayout>
   );
 }
@@ -59,51 +61,53 @@ function LoginForm({ onForgotPassword }: { onForgotPassword: () => void }) {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h1 className="text-2xl">Connexion</h1>
-        </CardTitle>
-        <CardDescription>Accès réservé — utilise les identifiants fournis par le bureau.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} noValidate className="space-y-5">
-          <FormField
-            id="email"
-            label="E-mail"
-            type="email"
-            autoComplete="username"
-            inputMode="email"
-            error={errors.email?.message}
-            {...register('email')}
-          />
-          <FormField
-            id="password"
-            label="Mot de passe"
-            type="password"
-            autoComplete="current-password"
-            error={errors.password?.message}
-            {...register('password')}
-          />
-          {submitError && (
-            <Alert variant="destructive">
-              <AlertDescription>{submitError}</AlertDescription>
-            </Alert>
-          )}
-          <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isSubmitting}>
-            <LogIn />
-            {isSubmitting ? 'Connexion…' : 'Se connecter'}
-          </Button>
-          <Button type="button" variant="link" className="w-full" onClick={onForgotPassword}>
-            Mot de passe oublié ?
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={onSubmit} noValidate className="col gap-4">
+      <FormField
+        id="email"
+        label="E-mail"
+        type="email"
+        autoComplete="username"
+        inputMode="email"
+        className="h-12 text-[15px]!"
+        error={errors.email?.message}
+        {...register('email')}
+      />
+      <div className="field">
+        <div className="row between">
+          <Label htmlFor="password">Mot de passe</Label>
+          <button type="button" className="link cursor-pointer text-[13px]" onClick={onForgotPassword}>
+            Mot de passe oublié
+          </button>
+        </div>
+        <Input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          className="h-12 text-[15px]!"
+          aria-invalid={errors.password ? true : undefined}
+          aria-describedby={errors.password ? 'password-error' : undefined}
+          {...register('password')}
+        />
+        {errors.password && (
+          <p id="password-error" className="err">
+            {errors.password.message}
+          </p>
+        )}
+      </div>
+      {submitError && (
+        <Alert variant="destructive">
+          <AlertDescription>{submitError}</AlertDescription>
+        </Alert>
+      )}
+      <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+        <LogIn />
+        {isSubmitting ? 'Connexion…' : 'Se connecter'}
+      </Button>
+    </form>
   );
 }
 
-function PasswordResetForm({ onBack }: { onBack: () => void }) {
+function PasswordResetForm() {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
@@ -126,46 +130,39 @@ function PasswordResetForm({ onBack }: { onBack: () => void }) {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h1 className="text-2xl">Mot de passe oublié</h1>
-        </CardTitle>
-        <CardDescription>Tu vas recevoir un lien pour choisir un nouveau mot de passe.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        {sentTo ? (
-          <Alert>
-            <CircleCheck />
-            <AlertDescription>
-              Si un compte existe pour {sentTo}, un e-mail vient d’être envoyé. Pense à vérifier les spams.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <form onSubmit={onSubmit} noValidate className="space-y-5">
-            <FormField
-              id="reset-email"
-              label="E-mail"
-              type="email"
-              autoComplete="username"
-              inputMode="email"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-            {submitError && (
-              <Alert variant="destructive">
-                <AlertDescription>{submitError}</AlertDescription>
-              </Alert>
-            )}
-            <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isSubmitting}>
-              {isSubmitting ? 'Envoi…' : 'Envoyer le lien'}
-            </Button>
+    <section className="card col gap-2.5 px-4 py-3.5" aria-labelledby="reset-title">
+      <b id="reset-title" className="text-sm">
+        Mot de passe oublié
+      </b>
+      {sentTo ? (
+        <p className="row gap-2 text-sm">
+          <CircleCheck className="i s shrink-0 text-success" />
+          Si un compte existe pour {sentTo}, un e-mail vient d’être envoyé. Pense à vérifier les spams.
+        </p>
+      ) : (
+        <>
+          <p className="hint">Tu vas recevoir un lien pour choisir un nouveau mot de passe.</p>
+          <form onSubmit={onSubmit} noValidate className="col gap-1.5">
+            <div className="row gap-2">
+              <Input
+                id="reset-email"
+                type="email"
+                autoComplete="username"
+                inputMode="email"
+                aria-label="E-mail du compte"
+                placeholder="ton.email@rapidtruckservice.fr"
+                aria-invalid={errors.email ? true : undefined}
+                {...register('email')}
+              />
+              <Button type="submit" variant="outline" disabled={isSubmitting}>
+                {isSubmitting ? 'Envoi…' : 'Envoyer le lien'}
+              </Button>
+            </div>
+            {errors.email && <p className="err">{errors.email.message}</p>}
+            {submitError && <p className="err">{submitError}</p>}
           </form>
-        )}
-        <Button type="button" variant="link" className="w-full" onClick={onBack}>
-          ← Retour à la connexion
-        </Button>
-      </CardContent>
-    </Card>
+        </>
+      )}
+    </section>
   );
 }
