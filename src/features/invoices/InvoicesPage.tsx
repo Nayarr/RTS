@@ -1,36 +1,41 @@
 import { useMemo, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router';
-import { Download, Layers, Search } from 'lucide-react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { ChevronRight, Download, Info, Layers } from 'lucide-react';
+import { PageHeader } from '@/app/PageHeader';
+import { FilterChips, Pager, SearchField, TableFooterBar } from '@/components/ListControls';
+import { SectionNav } from '@/components/SectionNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useProfile } from '@/features/auth/useProfile';
 import { formatDate, normalizeKey } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { downloadFile, toCsv } from '@/lib/csv';
 import { formatEuro } from '@/lib/numbers';
 import { useIsDesktop } from '@/lib/use-media-query';
-import { cn } from '@/lib/utils';
+import { usePagination } from '@/lib/use-pagination';
 import type { InvoiceOverview } from './api';
 import { invoicesCsvRows } from './domain';
 import { GroupedInvoiceDialog } from './GroupedInvoiceDialog';
 import { useCreditNotes, useInvoices } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 
-type Filter = 'to_collect' | 'overdue' | 'paid' | 'draft' | 'all';
+type Filter = 'to_collect' | 'overdue' | 'paid' | 'draft' | 'no_order' | 'all';
 type Sort = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
 
-const FILTERS: { value: Filter; label: string }[] = [
-  { value: 'to_collect', label: 'À encaisser' },
-  { value: 'overdue', label: 'En retard' },
-  { value: 'paid', label: 'Payées' },
-  { value: 'draft', label: 'Brouillons' },
+const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'all', label: 'Toutes' },
+  { value: 'draft', label: 'Brouillons', color: '#6B7280' },
+  { value: 'to_collect', label: 'À encaisser', color: '#C98A00' },
+  { value: 'overdue', label: 'En retard', color: '#B5453A' },
+  { value: 'paid', label: 'Payées', color: '#2A6B52' },
+  { value: 'no_order', label: 'Sans OR' },
 ];
+
+const PAGE_SIZE = 20;
 
 function matchesFilter(invoice: InvoiceOverview, filter: Filter) {
   if (filter === 'all') return true;
+  if (filter === 'no_order') return invoice.repair_order_ids.length === 0;
   if (filter === 'draft') return invoice.status === 'draft';
   if (invoice.status === 'draft') return false;
   if (filter === 'paid') return invoice.payment_status === 'paid';
@@ -54,27 +59,26 @@ function matchesSearch(invoice: InvoiceOverview, search: string) {
 }
 
 function DocumentTabs() {
-  const tab = (to: string, label: string) => (
-    <NavLink
-      to={to}
-      end
-      className={({ isActive }) =>
-        cn(
-          '-mb-px border-b-2 px-3 py-2 text-sm font-medium transition',
-          isActive
-            ? 'border-primary text-foreground'
-            : 'border-transparent text-muted-foreground hover:text-foreground',
-        )
-      }
-    >
-      {label}
-    </NavLink>
-  );
   return (
-    <nav aria-label="Documents de facturation" className="flex gap-1 border-b">
-      {tab('/factures', 'Factures')}
-      {tab('/factures/avoirs', 'Avoirs')}
-    </nav>
+    <SectionNav
+      label="Documents de facturation"
+      links={[
+        { to: '/factures', label: 'Factures' },
+        { to: '/factures/avoirs', label: 'Avoirs' },
+      ]}
+    />
+  );
+}
+
+function GroupedInvoiceButton() {
+  const [grouping, setGrouping] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setGrouping(true)}>
+        <Layers /> Facture groupée
+      </Button>
+      {grouping && <GroupedInvoiceDialog onClose={() => setGrouping(false)} />}
+    </>
   );
 }
 
@@ -86,7 +90,7 @@ function InvoiceList() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [filter, setFilter] = useState<Filter>(
-    () => FILTERS.find(({ value }) => value === params.get('filtre'))?.value ?? 'to_collect',
+    () => FILTERS.find(({ value }) => value === params.get('filtre'))?.value ?? 'all',
   );
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
@@ -120,241 +124,282 @@ function InvoiceList() {
     [invoices.data],
   );
   const toCollect = list.reduce((sum, invoice) => sum + (invoice.balance_due ?? 0), 0);
+  const pages = usePagination(list, PAGE_SIZE, `${filter}|${search}|${from}|${to}|${sort}`);
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
-        <div className="relative">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            aria-label="Rechercher une facture"
-            placeholder="N° de facture, client, plaque, n° d’OR…"
-            className="pl-9"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="invoices-from">Du</Label>
-          <Input
-            id="invoices-from"
-            type="date"
-
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="invoices-to">au</Label>
-          <Input
-            id="invoices-to"
-            type="date"
-
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          />
-        </div>
-        <select
-          aria-label="Tri"
-          className="inp w-auto"
-          value={sort}
-          onChange={(event) => setSort(event.target.value as Sort)}
-        >
-          <option value="date_desc">Date (récent)</option>
-          <option value="date_asc">Date (ancien)</option>
-          <option value="amount_desc">Montant (décroissant)</option>
-          <option value="amount_asc">Montant (croissant)</option>
-        </select>
-      </div>
-      <div role="group" aria-label="Filtrer par état" className="flex gap-2 overflow-x-auto pb-1">
-        {FILTERS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={filter === value}
-            onClick={() => setFilter(value)}
-            className={cn(
-              'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition',
-              filter === value ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted',
+    <>
+      <PageHeader
+        crumbs={[{ label: 'Facturation' }, { label: 'Factures' }]}
+        title="Factures"
+        actions={
+          <>
+            <span className="sub hidden max-w-[380px] text-right text-[13px] xl:inline">
+              Les factures se préparent depuis l’OR (« Facturer ») ou en regroupant plusieurs OR.
+            </span>
+            {isDirection && (
+              <Button
+                variant="outline"
+                disabled={list.length === 0}
+                onClick={() => {
+                  const { headers, rows } = invoicesCsvRows(list);
+                  downloadFile(toCsv(headers, rows), `factures-${todayIso()}.csv`);
+                }}
+              >
+                <Download /> Export CSV
+              </Button>
             )}
-          >
-            {label} <span className="opacity-70">{counts[value] ?? 0}</span>
-          </button>
-        ))}
-      </div>
+            <GroupedInvoiceButton />
+          </>
+        }
+      />
 
-      {invoices.isPending && <p className="text-muted-foreground">Chargement…</p>}
-      {invoices.isError && <p className="text-destructive">Impossible de charger les factures.</p>}
-      {invoices.isSuccess && list.length === 0 && (
-        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-          Aucune facture correspondante.
-        </p>
-      )}
-      {list.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm">
-            {toCollect > 0 && (
-              <>
-                Reste à encaisser sur cette liste :{' '}
-                <strong className="tabular-nums">{formatEuro(toCollect)}</strong> TTC
-              </>
-            )}
-          </p>
-          {isDirection && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const { headers, rows } = invoicesCsvRows(list);
-                downloadFile(toCsv(headers, rows), `factures-${todayIso()}.csv`);
-              }}
+      <div className="col gap-3.5">
+        <div className="toolbar flex-wrap">
+          <DocumentTabs />
+          <div className="row wrap gap-2.5">
+            <SearchField
+              className="sm:w-[330px]"
+              aria-label="Rechercher une facture"
+              placeholder="N° de facture, client, plaque, n° d’OR…"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <label htmlFor="invoices-from" className="muted text-[13px]">
+              Du
+            </label>
+            <Input
+              id="invoices-from"
+              type="date"
+              className="w-[150px]"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+            <label htmlFor="invoices-to" className="muted text-[13px]">
+              au
+            </label>
+            <Input
+              id="invoices-to"
+              type="date"
+              className="w-[150px]"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
+            <select
+              aria-label="Tri"
+              className="inp w-[190px]"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as Sort)}
             >
-              <Download /> Export CSV
-            </Button>
+              <option value="date_desc">Date (récent)</option>
+              <option value="date_asc">Date (ancien)</option>
+              <option value="amount_desc">Montant (décroissant)</option>
+              <option value="amount_asc">Montant (croissant)</option>
+            </select>
+          </div>
+        </div>
+        <div className="row between wrap">
+          <FilterChips
+            label="Filtrer par état"
+            value={filter}
+            onChange={setFilter}
+            options={FILTERS.map((option) => ({ ...option, count: counts[option.value] ?? 0 }))}
+          />
+          {toCollect > 0 && (
+            <span className="text-[13.5px]">
+              Reste à encaisser sur cette liste : <b className="num">{formatEuro(toCollect)}</b> TTC
+            </span>
           )}
         </div>
-      )}
 
-      {list.length > 0 &&
-        (isDesktop ? (
-          <div className="rounded-lg border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Facture</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Véhicule</TableHead>
-                  <TableHead>État</TableHead>
-                  <TableHead className="text-right">Total TTC</TableHead>
-                  <TableHead className="text-right">Reste dû</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {list.map((invoice) => (
-                  <TableRow
-                    key={invoice.id}
-                    className="cursor-pointer"
-                    onClick={() => void navigate(`/factures/${invoice.id}`)}
-                  >
-                    <TableCell>
-                      <Link to={`/factures/${invoice.id}`} className="font-semibold hover:underline">
-                        {invoice.number ?? 'Brouillon'}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">
-                        {invoice.repair_order_numbers.join(', ') || 'Sans OR'}
-                        {invoice.repair_order_ids.length > 1 && ' (groupée)'}
+        {invoices.isPending && <p className="text-muted-foreground">Chargement…</p>}
+        {invoices.isError && <p className="text-destructive">Impossible de charger les factures.</p>}
+        {invoices.isSuccess && list.length === 0 && <p className="empty">Aucune facture correspondante.</p>}
+
+        {list.length > 0 &&
+          (isDesktop ? (
+            <div className="card tbl-wrap overflow-x-auto!">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Facture</th>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Véhicule</th>
+                    <th className="r">Total TTC</th>
+                    <th className="r">Reste dû</th>
+                    <th>État</th>
+                    <th className="w-12">
+                      <span className="sr-only">Ouvrir</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pages.items.map((invoice) => (
+                    <tr
+                      key={invoice.id}
+                      className="cursor-pointer"
+                      onClick={() => void navigate(`/factures/${invoice.id}`)}
+                    >
+                      <td>
+                        <Link to={`/factures/${invoice.id}`} className="c2">
+                          <b>{invoice.number ?? 'Brouillon'}</b>
+                          <span>
+                            {invoice.repair_order_numbers.join(', ') || 'Sans OR'}
+                            {invoice.repair_order_ids.length > 1 && ' (groupée)'}
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="num">{formatDate(invoiceDate(invoice))}</td>
+                      <td>{invoice.client_name ?? '—'}</td>
+                      <td>
+                        {invoice.vehicle_label ? (
+                          <span className="plate">{invoice.vehicle_label}</span>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                      <td className="r num b">{formatEuro(invoice.total_ttc)}</td>
+                      <td className="r num">
+                        {invoice.status === 'issued' ? formatEuro(invoice.balance_due) : '—'}
+                      </td>
+                      <td>
+                        <InvoiceStatusBadge invoice={invoice} />
+                      </td>
+                      <td>
+                        <Link
+                          to={`/factures/${invoice.id}`}
+                          className="ibtn sm ghost"
+                          aria-label={`Ouvrir la facture ${invoice.number ?? ''}`}
+                          tabIndex={-1}
+                        >
+                          <ChevronRight className="i s" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <TableFooterBar
+                pager={<Pager page={pages.page} pageCount={pages.pageCount} onChange={pages.setPage} />}
+              >
+                {pages.shown} sur {pages.total} factures
+              </TableFooterBar>
+            </div>
+          ) : (
+            <>
+              <ul className="col gap-3">
+                {pages.items.map((invoice) => (
+                  <li key={invoice.id}>
+                    <Link
+                      to={`/factures/${invoice.id}`}
+                      className="card col gap-2 px-4 py-3.5 hover:bg-hover"
+                    >
+                      <div className="row between items-start">
+                        <div className="col gap-0">
+                          <b className="text-base">{invoice.number ?? 'Brouillon'}</b>
+                          <span className="hint">
+                            {invoice.client_name ?? '—'} · {invoice.vehicle_label ?? '—'}
+                          </span>
+                        </div>
+                        <InvoiceStatusBadge invoice={invoice} />
                       </div>
-                    </TableCell>
-                    <TableCell>{invoice.client_name ?? '—'}</TableCell>
-                    <TableCell>{invoice.vehicle_label ?? '—'}</TableCell>
-                    <TableCell>
-                      <InvoiceStatusBadge invoice={invoice} />
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{formatEuro(invoice.total_ttc)}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {invoice.status === 'issued' ? formatEuro(invoice.balance_due) : '—'}
-                    </TableCell>
-                    <TableCell>{formatDate(invoiceDate(invoice))}</TableCell>
-                  </TableRow>
+                      <div className="row between text-[13px]">
+                        <span className="muted">{formatDate(invoiceDate(invoice))}</span>
+                        <span className="num">
+                          <b>{formatEuro(invoice.total_ttc)}</b> TTC
+                          {invoice.status === 'issued' &&
+                            (invoice.balance_due ?? 0) > 0.01 &&
+                            (invoice.balance_due ?? 0) < invoice.total_ttc - 0.01 &&
+                            ` · reste ${formatEuro(invoice.balance_due)}`}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {list.map((invoice) => (
-              <li key={invoice.id}>
-                <Link
-                  to={`/factures/${invoice.id}`}
-                  className="block rounded-lg border bg-card p-4 transition hover:bg-muted"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-lg font-bold">{invoice.number ?? 'Brouillon'}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {invoice.client_name ?? '—'} · {invoice.vehicle_label ?? '—'}
-                      </div>
-                    </div>
-                    <InvoiceStatusBadge invoice={invoice} />
-                  </div>
-                  <div className="mt-2 flex justify-between text-sm">
-                    <span className="text-muted-foreground">{formatDate(invoiceDate(invoice))}</span>
-                    <span className="tabular-nums">
-                      <strong>{formatEuro(invoice.total_ttc)}</strong> TTC
-                      {invoice.status === 'issued' &&
-                        (invoice.balance_due ?? 0) > 0.01 &&
-                        (invoice.balance_due ?? 0) < invoice.total_ttc - 0.01 &&
-                        ` · reste ${formatEuro(invoice.balance_due)}`}
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ))}
-    </div>
+              </ul>
+              <Pager page={pages.page} pageCount={pages.pageCount} onChange={pages.setPage} />
+            </>
+          ))}
+      </div>
+    </>
   );
 }
 
 function CreditNoteList() {
   const notes = useCreditNotes();
-  if (notes.isPending) return <p className="text-muted-foreground">Chargement…</p>;
-  if (notes.isError) return <p className="text-destructive">Impossible de charger les avoirs.</p>;
-  if (notes.data.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">Aucun avoir.</p>
-    );
-  }
+  const total = (notes.data ?? []).reduce((sum, note) => sum + (note.total_ttc ?? 0), 0);
   return (
-    <ul className="divide-y rounded-lg border bg-card">
-      {notes.data.map((note) => (
-        <li key={note.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
-          <div>
-            <p className="font-semibold">
-              {note.number}{' '}
-              <span className="font-normal text-muted-foreground">
-                sur la facture{' '}
-                <Link className="underline" to={`/factures/${note.invoice_id}`}>
-                  {note.invoice_number}
-                </Link>
-              </span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {formatDate(note.issued_at)} · {note.client_name ?? '—'} · {note.vehicle_label ?? '—'}
-              {note.reason && ` · ${note.reason}`}
-            </p>
+    <>
+      <PageHeader
+        crumbs={[{ label: 'Facturation' }, { label: 'Avoirs' }]}
+        title="Avoirs"
+        actions={
+          <>
+            <span className="sub hidden text-[13px] md:inline">
+              Un avoir se génère depuis la facture concernée.
+            </span>
+            <GroupedInvoiceButton />
+          </>
+        }
+      />
+      <div className="col gap-4">
+        <div className="toolbar flex-wrap">
+          <DocumentTabs />
+          {total > 0 && (
+            <span className="text-[13.5px]">
+              Total des avoirs : <b className="num">−{formatEuro(total)}</b> TTC
+            </span>
+          )}
+        </div>
+        {notes.isPending && <p className="text-muted-foreground">Chargement…</p>}
+        {notes.isError && <p className="text-destructive">Impossible de charger les avoirs.</p>}
+        {notes.isSuccess && notes.data.length === 0 && <p className="empty">Aucun avoir.</p>}
+        {notes.isSuccess && notes.data.length > 0 && (
+          <div className="card tbl-wrap overflow-x-auto!">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Avoir</th>
+                  <th>Date</th>
+                  <th>Facture d’origine</th>
+                  <th>Client</th>
+                  <th>Motif</th>
+                  <th className="r">Montant TTC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {notes.data.map((note) => (
+                  <tr key={note.id}>
+                    <td className="b">{note.number}</td>
+                    <td className="num">{formatDate(note.issued_at)}</td>
+                    <td>
+                      <Link className="ul" to={`/factures/${note.invoice_id}`}>
+                        {note.invoice_number}
+                      </Link>
+                    </td>
+                    <td>{note.client_name ?? '—'}</td>
+                    <td className="muted max-w-[320px] truncate">{note.reason ?? '—'}</td>
+                    <td className="r num b down">−{formatEuro(note.total_ttc)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <strong className="tabular-nums">−{formatEuro(note.total_ttc)} TTC</strong>
-        </li>
-      ))}
-    </ul>
+        )}
+        <div className="alert s-blue">
+          <Info className="i" />
+          <span>
+            Un avoir diminue le reste dû de la facture d’origine. Il a son propre numéro et son PDF, comme une
+            facture.
+          </span>
+        </div>
+      </div>
+    </>
   );
 }
 
 /** Factures et avoirs : encaissements à suivre, facture groupée. */
 export function InvoicesPage() {
   const { pathname } = useLocation();
-  const [grouping, setGrouping] = useState(false);
-  const creditNotes = pathname.endsWith('/avoirs');
-
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Facturation</h1>
-          <p className="text-muted-foreground">
-            Les factures se préparent depuis l’OR (« Facturer ») ou en regroupant plusieurs OR.
-          </p>
-        </div>
-        <Button size="lg" variant="outline" onClick={() => setGrouping(true)}>
-          <Layers /> Facture groupée
-        </Button>
-      </div>
-      <DocumentTabs />
-      {creditNotes ? <CreditNoteList /> : <InvoiceList />}
-      {grouping && <GroupedInvoiceDialog onClose={() => setGrouping(false)} />}
-    </div>
-  );
+  return pathname.endsWith('/avoirs') ? <CreditNoteList /> : <InvoiceList />;
 }
