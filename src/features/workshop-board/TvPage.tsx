@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { initials } from '@/app/nav';
 import { verifyExitCode } from '@/features/kiosk/api';
+import { technicianColor } from '@/features/planning/domain';
 import { useKioskMode } from '@/features/kiosk/use-kiosk-mode';
 import { cn } from '@/lib/utils';
 import { fetchWorkshopBoard } from './api';
@@ -127,11 +128,20 @@ export function TvPage() {
             key={column.id}
             aria-label={column.name}
             className="col min-w-0 gap-3.5"
-            style={{ '--c': column.color ?? '#9aa0a6' } as CSSProperties}
+            style={
+              { '--c': technicianColor({ display_name: column.name, color: column.color }) } as CSSProperties
+            }
           >
             <h2 className="col-h">
-              <span className="av lg" style={{ '--c': column.color ?? '#9aa0a6' } as CSSProperties}>
-                {column.color ? initials(column.name) : '—'}
+              <span
+                className="av lg"
+                style={
+                  {
+                    '--c': technicianColor({ display_name: column.name, color: column.color }),
+                  } as CSSProperties
+                }
+              >
+                {initials(column.name)}
               </span>
               <span className="truncate">{column.name}</span>
             </h2>

@@ -99,7 +99,7 @@ export function TechHomePage() {
     <div className="col gap-[11px]">
       <div className="row between gap-2">
         <h1 className="title">Bonjour{firstName ? ` ${firstName}` : ''}</h1>
-        <span className="sub text-[13px]! capitalize">{TODAY_LABEL.format(new Date())}</span>
+        <span className="sub text-[13px]! first-letter:uppercase">{TODAY_LABEL.format(new Date())}</span>
       </div>
 
       {running && <RunningCard order={running} />}
