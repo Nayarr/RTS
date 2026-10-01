@@ -40,7 +40,7 @@ interface TileProps {
   color: string;
   /** Mise en avant quand il y a quelque chose à faire. */
   urgent?: boolean;
-  /** Pastille colorée (sinon grise, comme la maquette). */
+  /** Couleur de pastille imposée (sinon celle de la tuile). */
   badgeClass?: string;
 }
 
