@@ -1,0 +1,115 @@
+import { useEffect, useRef, useState } from 'react';
+
+/** Reconnaissance vocale du navigateur (Chrome / Android, Safari / iPhone) : pas de type fourni par TypeScript. */
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  maxAlternatives: number;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+type RecognitionConstructor = new () => SpeechRecognitionLike;
+
+function recognitionConstructor(): RecognitionConstructor | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const scope = window as unknown as {
+    SpeechRecognition?: RecognitionConstructor;
+    webkitSpeechRecognition?: RecognitionConstructor;
+  };
+  return scope.SpeechRecognition ?? scope.webkitSpeechRecognition;
+}
+
+/** Le navigateur sait-il dicter ? (sinon le bouton micro n'est pas affiché) */
+export const dictationSupported = () => recognitionConstructor() !== undefined;
+
+/** Texte dicté mis en forme pour une ligne de travaux : majuscule, sans point final. */
+export function dictatedText(transcript: string): string {
+  const text = transcript
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[.。]+$/, '');
+  return text.charAt(0).toLocaleUpperCase('fr-FR') + text.slice(1);
+}
+
+/** Message affiché quand la dictée échoue (code d'erreur du navigateur). */
+export function dictationError(code: string): string {
+  if (code === 'not-allowed' || code === 'service-not-allowed') {
+    return 'Micro refusé : autorise le micro pour l’appli dans les réglages du téléphone.';
+  }
+  if (code === 'network') return 'Dictée impossible sans réseau : saisis la tâche au clavier.';
+  if (code === 'no-speech') return 'Rien entendu : appuie sur le micro et parle près du téléphone.';
+  return 'Dictée interrompue : réessaie ou saisis la tâche au clavier.';
+}
+
+/**
+ * Dictée en français : `start` écoute une phrase, `interim` affiche ce qui est compris pendant qu'on
+ * parle, `onFinal` reçoit la phrase terminée. Un nouvel appui (`stop`) arrête l'écoute.
+ */
+export function useDictation({
+  onFinal,
+  onError,
+}: {
+  onFinal: (text: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [listening, setListening] = useState(false);
+  const [interim, setInterim] = useState('');
+  const recognition = useRef<SpeechRecognitionLike | null>(null);
+  const handlers = useRef({ onFinal, onError });
+  useEffect(() => {
+    handlers.current = { onFinal, onError };
+  });
+
+  // Fiche quittée en pleine dictée : on coupe le micro.
+  useEffect(() => () => recognition.current?.abort(), []);
+
+  const start = () => {
+    const Recognition = recognitionConstructor();
+    if (!Recognition || recognition.current) return;
+    const rec = new Recognition();
+    rec.lang = 'fr-FR';
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (event) => {
+      let finalText = '';
+      let pending = '';
+      for (let index = event.resultIndex; index < event.results.length; index++) {
+        const result = event.results[index];
+        const transcript = result?.[0]?.transcript ?? '';
+        if (result?.isFinal) finalText += transcript;
+        else pending += transcript;
+      }
+      setInterim(pending);
+      const text = dictatedText(finalText);
+      if (text) handlers.current.onFinal(text);
+    };
+    rec.onerror = (event) => {
+      if (event.error !== 'aborted') handlers.current.onError(dictationError(event.error));
+    };
+    rec.onend = () => {
+      recognition.current = null;
+      setListening(false);
+      setInterim('');
+    };
+    recognition.current = rec;
+    setListening(true);
+    try {
+      rec.start();
+    } catch {
+      recognition.current = null;
+      setListening(false);
+      handlers.current.onError(dictationError('start'));
+    }
+  };
+
+  const stop = () => recognition.current?.stop();
+
+  return { supported: dictationSupported(), listening, interim, start, stop };
+}

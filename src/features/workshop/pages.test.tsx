@@ -229,7 +229,7 @@ describe('fiche OR technicien', () => {
 
     const [addDone] = screen.getAllByRole('button', { name: /Ajouter une tâche/ });
     await userEvent.click(addDone!);
-    expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1);
+    expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1, '');
   });
 
   it('OR issu d’un devis : temps fixé (sauf extincteurs), travail non fait retiré après confirmation', async () => {
@@ -270,6 +270,62 @@ describe('fiche OR technicien', () => {
     expect(confirm).toHaveTextContent('« vidange PL » n’a finalement pas été fait');
     await userEvent.click(within(confirm).getByRole('button', { name: 'Retirer' }));
     await waitFor(() => expect(deleteLine).toHaveBeenCalledWith('q1'));
+  });
+
+  it('dictée : la phrase prononcée devient une tâche des travaux effectués', async () => {
+    // Fausse reconnaissance vocale : « remplacement des plaquettes avant. » puis fin d'écoute
+    class FakeRecognition {
+      lang = '';
+      interimResults = false;
+      continuous = false;
+      maxAlternatives = 1;
+      onresult: ((event: unknown) => void) | null = null;
+      onerror: ((event: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        // Ce qui est compris pendant qu'on parle, puis la phrase terminée
+        setTimeout(() => {
+          this.onresult?.({
+            resultIndex: 0,
+            results: [Object.assign([{ transcript: 'remplacement des' }], { isFinal: false })],
+          });
+        }, 0);
+        setTimeout(() => {
+          this.onresult?.({
+            resultIndex: 0,
+            results: [
+              Object.assign([{ transcript: 'remplacement des plaquettes avant.' }], { isFinal: true }),
+            ],
+          });
+          this.onend?.();
+        }, 60);
+      }
+      stop() {
+        this.onend?.();
+      }
+      abort() {}
+    }
+    vi.stubGlobal('webkitSpeechRecognition', FakeRecognition);
+    vi.mocked(addLine).mockResolvedValue(line({ id: 'l9' }));
+    setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }), lines: [line({})] });
+
+    const done = (await screen.findByRole('heading', { name: 'Travaux effectués' })).closest<HTMLElement>(
+      '[data-slot="card"]',
+    )!;
+    await userEvent.click(within(done).getByRole('button', { name: 'Dicter une tâche' }));
+    expect(within(done).getByRole('button', { name: 'Arrêter la dictée' })).toBeInTheDocument();
+    expect(await within(done).findByText('« remplacement des »')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1, 'Remplacement des plaquettes avant'),
+    );
+    expect(toast.success).toHaveBeenCalledWith('Tâche ajoutée : Remplacement des plaquettes avant');
+    vi.unstubAllGlobals();
+  });
+
+  it('dictée indisponible sur ce navigateur : pas de bouton micro', async () => {
+    setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }) });
+    await screen.findByRole('heading', { name: 'Travaux effectués' });
+    expect(screen.queryByRole('button', { name: 'Dicter une tâche' })).toBeNull();
   });
 
   it('travaux terminés : demande si un devis est nécessaire', async () => {

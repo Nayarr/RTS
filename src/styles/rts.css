@@ -1980,3 +1980,31 @@
     font-weight: 600;
   }
 }
+
+@layer components {
+  /* Dictée en cours (fiche OR du technicien) : point rouge qui respire et texte compris */
+  .dictating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--destructive) 7%, var(--card));
+    color: var(--foreground);
+    font-size: 13.5px;
+  }
+  .dictating .dot {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--destructive);
+    animation: rts-breathe 1.2s ease-in-out infinite;
+  }
+  @keyframes rts-breathe {
+    50% {
+      opacity: 0.35;
+      transform: scale(0.8);
+    }
+  }
+}
