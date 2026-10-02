@@ -4,31 +4,36 @@ import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { MyLeaveSection } from '@/features/leave/MyLeaveSection';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
-import { formatDate, formatDuration } from '@/features/repair-orders/constants';
+import { formatDuration } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { taskSummary } from '@/features/repair-orders/tasks';
 import { cn } from '@/lib/utils';
-import { seenState, splitMyOrders, type SeenState } from './domain';
+import { planMyDay, seenState, type SeenState } from './domain';
 import { useMyRepairOrders, useSeen } from './hooks';
 
-function plannedLabel(order: RepairOrderOverview) {
-  if (!order.planned_start) return null;
-  const start = order.planned_start.slice(0, 5);
-  const day = order.planned_date === todayIso() ? 'prévu' : formatDate(order.planned_date);
-  return order.planned_end ? `${day} ${start} → ${order.planned_end.slice(0, 5)}` : `${day} ${start}`;
+function plannedLabel(order: RepairOrderOverview, today: string) {
+  if (!order.planned_date) return null;
+  const start = order.planned_start?.slice(0, 5);
+  const time = start && (order.planned_end ? `${start} → ${order.planned_end.slice(0, 5)}` : start);
+  if (order.planned_date === today) return time ? `prévu ${time}` : null;
+  // Jour court (« 28/09 ») : l'OR est d'une date passée toute proche.
+  const [, month, dayOfMonth] = order.planned_date.split('-');
+  return `prévu le ${dayOfMonth}/${month}${time ? ` ${time}` : ''}`;
 }
 
 function OrderCard({
   order,
   seen,
+  today,
   dimmed,
 }: {
   order: RepairOrderOverview;
   seen: SeenState;
+  today: string;
   dimmed?: boolean;
 }) {
-  const planned = plannedLabel(order);
+  const planned = plannedLabel(order, today);
   return (
     <Link
       to={`/atelier/or/${order.id}`}
@@ -80,13 +85,52 @@ function RunningCard({ order }: { order: RepairOrderOverview }) {
 
 const TODAY_LABEL = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 
-/** Accueil du technicien : ses OR à faire, puis ceux terminés récemment, et ses congés. */
+/** Groupe d'OR de la journée (« À terminer », « Aujourd'hui », « Flexible »). */
+function DayGroup({
+  id,
+  title,
+  hint,
+  orders,
+  seen,
+  today,
+}: {
+  id: string;
+  title: string;
+  hint?: string;
+  orders: RepairOrderOverview[];
+  seen: Record<string, string> | undefined;
+  today: string;
+}) {
+  if (orders.length === 0) return null;
+  return (
+    <section className="col gap-2" aria-labelledby={id}>
+      <h3 className="row between gap-2 px-0.5" id={id}>
+        <span className="text-[12px]! overline">
+          {title}
+          {hint && <span className="font-normal"> · {hint}</span>}
+        </span>
+        <span className="cnt">{orders.length}</span>
+      </h3>
+      <ul className="col gap-[11px]">
+        {orders.map((order) => (
+          <li key={order.id}>
+            <OrderCard order={order} seen={seenState(order, seen?.[order.id])} today={today} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Accueil du technicien : ses OR du jour (reportés, à heure fixe, flexibles), ses OR terminés, ses congés. */
 export function TechHomePage() {
   const { data: profile } = useProfile();
   const orders = useMyRepairOrders();
   const seen = useSeen();
   const [showDone, setShowDone] = useState(false);
-  const { active, recentlyDone } = splitMyOrders(orders.data ?? []);
+  const today = todayIso();
+  const { carriedOver, timed, flexible, recentlyDone } = planMyDay(orders.data ?? [], today);
+  const active = [...carriedOver, ...timed, ...flexible];
   const running = active.find((order) => order.running_since);
   const firstName = profile?.full_name?.split(' ')[0];
   const { hash } = useLocation();
@@ -112,17 +156,25 @@ export function TechHomePage() {
 
       {orders.isPending && <p className="text-muted-foreground">Chargement…</p>}
       {orders.isError && <p className="text-destructive">Impossible de charger tes OR.</p>}
-      {orders.isSuccess && active.length === 0 && (
-        <p className="empty">Aucun OR à faire pour l’instant. 👍</p>
-      )}
+      {orders.isSuccess && active.length === 0 && <p className="empty">Aucun OR à faire aujourd’hui. 👍</p>}
 
-      <ul className="col gap-[11px]">
-        {active.map((order) => (
-          <li key={order.id}>
-            <OrderCard order={order} seen={seenState(order, seen.data?.[order.id])} />
-          </li>
-        ))}
-      </ul>
+      <DayGroup
+        id="day-carried"
+        title="À terminer"
+        hint="pas fini les jours précédents"
+        orders={carriedOver}
+        seen={seen.data}
+        today={today}
+      />
+      <DayGroup id="day-timed" title="Aujourd’hui" orders={timed} seen={seen.data} today={today} />
+      <DayGroup
+        id="day-flexible"
+        title="Flexible"
+        hint="sans heure précisée"
+        orders={flexible}
+        seen={seen.data}
+        today={today}
+      />
 
       {recentlyDone.length > 0 && (
         <>
@@ -140,7 +192,7 @@ export function TechHomePage() {
             <ul className="col gap-[11px]">
               {recentlyDone.map((order) => (
                 <li key={order.id}>
-                  <OrderCard order={order} seen={null} dimmed />
+                  <OrderCard order={order} seen={null} today={today} dimmed />
                 </li>
               ))}
             </ul>

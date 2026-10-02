@@ -127,6 +127,38 @@ describe('accueil technicien', () => {
     expect(within(card).getByText('Nouveau')).toBeInTheDocument();
     expect(card).toHaveAttribute('href', '/atelier/or/ro1');
   });
+
+  it('journée : OR reportés, puis du jour par heure, puis flexibles ; ceux prévus plus tard masqués', async () => {
+    const day = (offset: number) => {
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+    };
+    vi.mocked(fetchMyRepairOrders).mockResolvedValue([
+      order({ id: 'later', plate: 'TO-MO-RW', planned_date: day(1), planned_start: '08:00:00' }),
+      order({ id: 'at14', plate: 'AA-140-PM', planned_date: day(0), planned_start: '14:00:00' }),
+      order({ id: 'flex', plate: 'FL-EX-00', planned_date: day(0) }),
+      order({
+        id: 'at8',
+        plate: 'AA-080-AM',
+        planned_date: day(0),
+        planned_start: '08:00:00',
+        planned_end: '10:00:00',
+      }),
+      order({ id: 'late', plate: 'LA-TE-01', planned_date: day(-1), planned_start: '15:00:00' }),
+    ]);
+    setup('/');
+
+    const plates = async (name: RegExp) =>
+      within(await screen.findByRole('region', { name }))
+        .getAllByRole('link')
+        .map((link) => within(link).getByText(/^[A-Z0-9-]+$/).textContent);
+    expect(await plates(/À terminer/)).toEqual(['LA-TE-01']);
+    expect(await plates(/Aujourd’hui/)).toEqual(['AA-080-AM', 'AA-140-PM']);
+    expect(await plates(/Flexible/)).toEqual(['FL-EX-00']);
+    expect(screen.queryByText('TO-MO-RW')).toBeNull();
+    expect(screen.getByText(/prévu 08:00 → 10:00/)).toBeInTheDocument();
+  });
 });
 
 describe('fiche OR technicien', () => {
