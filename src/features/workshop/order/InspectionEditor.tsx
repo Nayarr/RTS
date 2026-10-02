@@ -28,7 +28,7 @@ function ChipRow({
   value,
   onChange,
   disabled,
-  extra,
+  action,
   children,
 }: {
   label: string;
@@ -36,42 +36,50 @@ function ChipRow({
   value: string | undefined;
   onChange: (value: string) => void;
   disabled: boolean;
-  extra?: React.ReactNode;
+  /** Bouton à droite des choix, sur la même ligne (photo de l'étiquette). */
+  action?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   const labelId = useId();
+  const choices = (
+    <div
+      role="radiogroup"
+      aria-labelledby={labelId}
+      className={cn('lvl', action && 'min-w-0 grow')}
+      style={{ '--n': options.length } as React.CSSProperties}
+    >
+      {options.map((option) => {
+        const selected = value === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            disabled={disabled}
+            className={cn(selected && 'on')}
+            // Un second appui sur la valeur choisie l'efface.
+            onClick={() => onChange(selected ? '' : option.value)}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
   return (
     <div className="col gap-1.5">
-      <div className="row between gap-2">
-        <span id={labelId} className="lbl">
-          {label}
-        </span>
-        {extra}
-      </div>
-      <div
-        role="radiogroup"
-        aria-labelledby={labelId}
-        className="lvl"
-        style={{ '--n': options.length } as React.CSSProperties}
-      >
-        {options.map((option) => {
-          const selected = value === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              disabled={disabled}
-              className={cn(selected && 'on')}
-              // Un second appui sur la valeur choisie l'efface.
-              onClick={() => onChange(selected ? '' : option.value)}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+      <span id={labelId} className="lbl">
+        {label}
+      </span>
+      {action ? (
+        <div className="row items-stretch gap-2">
+          {choices}
+          {action}
+        </div>
+      ) : (
+        choices
+      )}
       {children}
     </div>
   );
@@ -94,11 +102,14 @@ export function InspectionEditor({
   repairOrderId,
   initial,
   capture,
+  photoLabels,
   locked,
 }: {
   repairOrderId: string;
   initial: InspectionData | null;
   capture: PhotoCapture;
+  /** Libellés des photos déjà prises sur l'OR (photo obligatoire du hayon HS). */
+  photoLabels: string[];
   locked: boolean;
 }) {
   const [data, setData] = useState<InspectionData>(initial ?? {});
@@ -196,50 +207,75 @@ export function InspectionEditor({
           ['avant', 'Pneus avant'],
           ['arriere', 'Pneus arrière'],
         ] as const
-      ).map(([side, label]) => (
-        <ChipRow
-          key={side}
-          label={label}
-          options={WEAR_OPTIONS}
-          value={data.pneus?.[`${side}_etat`]}
-          disabled={locked}
-          onChange={(value) => setIn('pneus', `${side}_etat`, value)}
-        >
-          <Input
-            id={`tire-${side}_taille`}
-            inputMode="decimal"
-            placeholder="315/70/22.5"
-            aria-label={`Taille ${label.toLowerCase()}`}
+      ).map(([side, label]) => {
+        const state = data.pneus?.[`${side}_etat`];
+        // Pneus à changer (50 % ou HS) : la taille est obligatoire pour les commander.
+        const sizeMissing = (state === '50' || state === 'HS') && !data.pneus?.[`${side}_taille`]?.trim();
+        const errorId = `tire-${side}-error`;
+        return (
+          <ChipRow
+            key={side}
+            label={label}
+            options={WEAR_OPTIONS}
+            value={state}
             disabled={locked}
-            value={data.pneus?.[`${side}_taille`] ?? ''}
-            onChange={(event) => setIn('pneus', `${side}_taille`, formatTireSize(event.target.value))}
-          />
-        </ChipRow>
-      ))}
+            onChange={(value) => setIn('pneus', `${side}_etat`, value)}
+          >
+            <Input
+              id={`tire-${side}_taille`}
+              inputMode="decimal"
+              placeholder="315/70/22.5"
+              aria-label={`Taille ${label.toLowerCase()}`}
+              aria-invalid={sizeMissing && !locked ? true : undefined}
+              aria-describedby={sizeMissing && !locked ? errorId : undefined}
+              disabled={locked}
+              value={data.pneus?.[`${side}_taille`] ?? ''}
+              onChange={(event) => setIn('pneus', `${side}_taille`, formatTireSize(event.target.value))}
+            />
+            {sizeMissing && !locked && (
+              <p id={errorId} className="err">
+                Taille obligatoire : pneus à {state === 'HS' ? 'HS' : '50 %'}.
+              </p>
+            )}
+          </ChipRow>
+        );
+      })}
 
-      {CHECK_FIELDS.map(([key, label]) => (
-        <ChipRow
-          key={key}
-          label={label}
-          options={OK_HS_OPTIONS}
-          value={data.controles?.[key]}
-          disabled={locked}
-          onChange={(value) => setIn('controles', key, value)}
-          extra={
-            (CHECK_PHOTO_FIELDS as readonly string[]).includes(key) && !locked ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label={`Photo de l’étiquette « ${label} »`}
-                onClick={() => capture.openCamera(label)}
-              >
-                <Camera /> Étiquette
-              </Button>
-            ) : undefined
-          }
-        />
-      ))}
+      {CHECK_FIELDS.map(([key, label]) => {
+        const taken = photoLabels.includes(label);
+        const photoRequired = key === 'hayon' && data.controles?.hayon === 'HS' && !taken && !locked;
+        return (
+          <ChipRow
+            key={key}
+            label={label}
+            options={OK_HS_OPTIONS}
+            value={data.controles?.[key]}
+            disabled={locked}
+            onChange={(value) => setIn('controles', key, value)}
+            action={
+              (CHECK_PHOTO_FIELDS as readonly string[]).includes(key) && !locked ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className={cn(
+                    'h-auto! min-h-[38px] w-12! shrink-0',
+                    taken && 'text-success',
+                    photoRequired && 'border-destructive text-destructive',
+                  )}
+                  aria-label={`Photo de l’étiquette « ${label} »${taken ? ' (déjà prise)' : ''}`}
+                  disabled={capture.uploadingLabel === label}
+                  onClick={() => capture.openCamera(label)}
+                >
+                  <Camera className="size-5" />
+                </Button>
+              ) : undefined
+            }
+          >
+            {photoRequired && <p className="err">Étiquette HS : photo obligatoire avant de terminer l’OR.</p>}
+          </ChipRow>
+        );
+      })}
 
       <div className="col gap-1.5">
         <span className="lbl">Voyants allumés</span>

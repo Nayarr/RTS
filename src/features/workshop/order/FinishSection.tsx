@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { CircleCheck } from 'lucide-react';
+import { CircleCheck, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { completeRepairOrder } from '../api';
@@ -8,10 +8,17 @@ import { useWorkshopMutation } from '../hooks';
 
 /**
  * « Travaux terminés » : le technicien indique si un devis est nécessaire, puis la base vérifie
- * qu'un temps est saisi sur chaque travail effectué, arrête le chrono et verrouille l'OR.
- * Le bureau valide ensuite le passage en facturation.
+ * les temps estimés, la taille des pneus à changer et la photo du hayon HS, arrête le chrono et
+ * verrouille l'OR. Le bureau valide ensuite le passage en facturation.
  */
-export function FinishSection({ repairOrderId }: { repairOrderId: string }) {
+export function FinishSection({
+  repairOrderId,
+  blockers,
+}: {
+  repairOrderId: string;
+  /** Ce qu'il reste à compléter (mêmes règles que la base) : le bouton attend que tout soit fait. */
+  blockers: string[];
+}) {
   const navigate = useNavigate();
   const [quoteNeeded, setQuoteNeeded] = useState<boolean | null>(null);
   const complete = useWorkshopMutation(
@@ -51,10 +58,23 @@ export function FinishSection({ repairOrderId }: { repairOrderId: string }) {
       <span className="hint">
         Le passage en « Facture à faire » est validé par le bureau une fois le dossier vérifié.
       </span>
+      {blockers.length > 0 && (
+        <div className="alert s-warn items-start!" role="status" aria-labelledby="tech-finish-blockers">
+          <TriangleAlert className="i s mt-0.5 shrink-0" />
+          <div className="col gap-1">
+            <b id="tech-finish-blockers">À compléter avant de terminer</b>
+            <ul className="col list-disc gap-0.5 pl-4">
+              {blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       <Button
         size="lg"
         className="h-14! w-full text-base"
-        disabled={quoteNeeded === null || complete.isPending}
+        disabled={quoteNeeded === null || blockers.length > 0 || complete.isPending}
         onClick={() => quoteNeeded !== null && complete.mutate(quoteNeeded)}
       >
         <CircleCheck /> Travaux terminés

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { RoLine } from '@/features/repair-orders/api';
 import { addLine, deleteLine, updateLine, type LinePatch } from '../api';
-import { parseTimeOption, timeOptionsFor, timeOptionValue } from '../domain';
+import { parseTimeOption, timeOptionLabel, timeOptionsFor, timeOptionValue } from '../domain';
 import { useWorkshopMutation } from '../hooks';
 
 const EDITABLE_TYPES: RoLine['line_type'][] = ['labor', 'text'];
@@ -43,10 +43,15 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
         value={time}
         onChange={(event) => update.mutate(parseTimeOption(event.target.value))}
       >
-        <option value="">Estim. —</option>
+        <option value="">
+          {/* Forfait sans estimation : son temps barème s'applique */}
+          {line.kind === 'planned' && line.line_type === 'package' && line.standard_hours !== null
+            ? `Barème ${timeOptionLabel(`${line.standard_hours}h`)}`
+            : 'Estim. —'}
+        </option>
         {timeOptionsFor(time).map((option) => (
           <option key={option} value={option}>
-            {option}
+            {timeOptionLabel(option)}
           </option>
         ))}
       </select>

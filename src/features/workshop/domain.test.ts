@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
-import { parseTimeOption, planMyDay, seenState, timeOptionsFor, timeOptionValue } from './domain';
+import type { RoLine } from '@/features/repair-orders/api';
+import {
+  finishBlockers,
+  parseTimeOption,
+  planMyDay,
+  seenState,
+  TIME_OPTIONS,
+  timeOptionLabel,
+  timeOptionsFor,
+  timeOptionValue,
+} from './domain';
 
 const order = (overrides: Partial<RepairOrderOverview>): RepairOrderOverview =>
   ({
@@ -24,9 +34,66 @@ describe('temps estimés', () => {
     expect(timeOptionValue(null, false)).toBe('');
   });
 
-  it('garde une valeur hors liste (ex. 0,5 h saisie au bureau)', () => {
-    expect(timeOptionsFor('0.5h').slice(0, 3)).toEqual(['0h', '0.5h', '1h']);
-    expect(timeOptionsFor('2h')).toHaveLength(14);
+  it('0,5 h proposé, libellés en français', () => {
+    expect(TIME_OPTIONS.slice(0, 3)).toEqual(['0h', '0.5h', '1h']);
+    expect(parseTimeOption('0.5h')).toEqual({ estimated_hours: 0.5, estimate_is_minimum: false });
+    expect([timeOptionLabel('0.5h'), timeOptionLabel('3h'), timeOptionLabel('12h+')]).toEqual([
+      '0,5 h',
+      '3 h',
+      '12 h et plus',
+    ]);
+  });
+
+  it('garde à sa place une valeur hors liste (ex. 1,5 h saisie au bureau)', () => {
+    expect(timeOptionsFor('1.5h').slice(0, 5)).toEqual(['0h', '0.5h', '1h', '1.5h', '2h']);
+    expect(timeOptionsFor('0.3h').slice(0, 3)).toEqual(['0h', '0.3h', '0.5h']);
+    expect(timeOptionsFor('2h')).toHaveLength(15);
+  });
+});
+
+describe('clôture de l’OR par le technicien', () => {
+  const line = (overrides: Partial<RoLine>): RoLine =>
+    ({
+      kind: 'done',
+      line_type: 'labor',
+      estimated_hours: null,
+      standard_hours: null,
+      ...overrides,
+    }) as RoLine;
+
+  it('rien à compléter : la liste est vide', () => {
+    expect(finishBlockers([line({ estimated_hours: 1 })], null, [])).toEqual([]);
+  });
+
+  it('temps estimé de chaque tâche, effectuée ou à prévoir ; le forfait à prévoir garde son barème', () => {
+    const lines = [
+      line({}),
+      line({ kind: 'planned' }),
+      line({ kind: 'planned' }),
+      line({ kind: 'planned', line_type: 'package', standard_hours: 2 }),
+      line({ kind: 'planned', line_type: 'text' }),
+      line({ kind: 'done', line_type: 'package', standard_hours: 2 }),
+    ];
+    expect(finishBlockers(lines, null, [])).toEqual([
+      'Temps estimé manquant : 2 tâches des travaux effectués',
+      'Temps estimé manquant : 2 tâches à prévoir',
+    ]);
+  });
+
+  it('pneus à 50 % ou HS : taille obligatoire ; étiquette hayon HS : photo obligatoire', () => {
+    const inspection = {
+      pneus: { avant_etat: 'HS', arriere_etat: '50', arriere_taille: '315/80/22.5' },
+      controles: { hayon: 'HS' },
+    };
+    expect(finishBlockers([], inspection, ['Extincteur 1 kg cabine'])).toEqual([
+      'Taille des pneus avant obligatoire (HS)',
+      'Photo de l’étiquette contrôle hayon obligatoire (HS)',
+    ]);
+    expect(
+      finishBlockers([], { ...inspection, pneus: { ...inspection.pneus, avant_taille: '315/70/22.5' } }, [
+        'Étiquette contrôle hayon',
+      ]),
+    ).toEqual([]);
   });
 });
 

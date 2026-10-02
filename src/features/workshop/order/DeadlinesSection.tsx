@@ -31,7 +31,8 @@ export function DeadlinesSection({
         Échéances du véhicule
       </h2>
       <span className="hint">Relevées sur le véhicule (vignette, étiquette du hayon).</span>
-      <div className="grid grid-cols-2 gap-2">
+      {/* Sur téléphone, l'une sous l'autre : les libellés longs ne décalent plus les dates */}
+      <div className="grid gap-3 sm:grid-cols-2 sm:items-end sm:gap-2">
         {FIELDS.map(([key, label]) => (
           <div key={key} className="field">
             <Label htmlFor={`deadline-${key}`}>{label}</Label>
