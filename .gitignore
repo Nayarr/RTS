@@ -35,3 +35,6 @@ Thumbs.db
 
 # Lockfile Deno local (format non lu par l'edge runtime Supabase ; versions figées dans deno.json)
 supabase/functions/**/deno.lock
+
+# Reprise des forfaits de l’ancienne appli (données du client, généré par npm run import:forfaits)
+forfaits-legacy.sql

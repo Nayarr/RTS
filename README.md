@@ -94,3 +94,13 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
   (jamais dans le code), puis réglage « Lecture automatique des étiquettes » activé par la direction.
   Sans clé, la photo est gardée et la date se saisit à la main.
 - **Production : o2switch** (plus tard).
+
+## Reprise des forfaits de l’ancienne appli
+
+1. Dans l’ancienne appli, la direction télécharge la sauvegarde (bouton « Sauvegarde », fichier
+   `sauvegarde_rts_atelier_AAAA-MM-JJ.json`).
+2. `npm run import:forfaits -- sauvegarde_rts_atelier_AAAA-MM-JJ.json` écrit `forfaits-legacy.sql`
+   (et liste les forfaits ignorés : sans nom ou sans temps barème).
+3. Coller ce script dans l’éditeur SQL du projet Supabase (recette, puis production) et l’exécuter.
+   Il est rejouable sans doublon : chaque forfait est repris par son identifiant de l’ancienne appli ;
+   un forfait déjà saisi à la main sous le même nom est rattaché au lieu d’être doublé.

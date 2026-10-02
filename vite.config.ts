@@ -87,7 +87,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
     css: false,
     // Valeurs factices : les tests unitaires n'appellent jamais Supabase (modules simulés).
     env: {
