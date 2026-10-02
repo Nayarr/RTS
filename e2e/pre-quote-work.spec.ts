@@ -46,7 +46,8 @@ async function diagnosticWithQuote(plate: string) {
       position: 1,
       line_type: 'labor',
       description: 'Diagnostic freinage',
-      estimated_hours: 1,
+      // Expertise d'1 h en tout (avec le contrôle) : facturer ou offrir reste au choix du bureau
+      estimated_hours: 0.5,
     },
     {
       repair_order_id: order.id,
@@ -82,10 +83,10 @@ test('devis accepté : le bureau facture le diagnostic et offre le contrôle', a
   await page.getByRole('button', { name: 'Accepté' }).click();
   await page.getByRole('button', { name: 'Enregistrer l’accord' }).click();
 
-  // La décision s'ouvre toute seule dès l'acceptation, prix proposé = 1 h × 90 €/h (taux PL)
+  // La décision s'ouvre toute seule dès l'acceptation, prix proposé = 0,5 h × 90 €/h (taux PL)
   const dialog = page.getByRole('dialog', { name: 'Travaux réalisés avant le devis' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel('Prix HT de « Diagnostic freinage »')).toHaveValue('90,00');
+  await expect(dialog.getByLabel('Prix HT de « Diagnostic freinage »')).toHaveValue('45,00');
   await dialog.getByLabel('Prix HT de « Diagnostic freinage »').fill('80');
   await dialog.getByLabel('Décision pour « Contrôle géométrie »').selectOption('offered');
   await dialog.getByRole('button', { name: 'Valider' }).click();
