@@ -88,7 +88,23 @@ export interface PublicPortal {
   }[];
 }
 
-export type PublicDocument = PublicQuote | PublicInvoice | PublicPortal;
+/** Demande de signature d'un OR (client absent, lien e-mail). */
+export interface PublicSignature {
+  type: 'signature';
+  company: PublicCompany;
+  number: string;
+  status: 'pending' | 'signed' | 'cancelled' | 'expired';
+  expires_at: string;
+  signed_at: string | null;
+  signer_name: string | null;
+  client_name: string | null;
+  vehicle_plate: string | null;
+  requested_work: string;
+  planned_date: string | null;
+  mileage: number | null;
+}
+
+export type PublicDocument = PublicQuote | PublicInvoice | PublicPortal | PublicSignature;
 
 /** Document ouvert par le client avec le lien reçu (sans compte). null si le lien est inconnu. */
 export async function fetchPublicDocument(token: string): Promise<PublicDocument | null> {

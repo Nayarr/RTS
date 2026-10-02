@@ -2957,6 +2957,85 @@ export type Database = {
         };
         Relationships: [];
       };
+      signature_requests: {
+        Row: {
+          channel: Database['public']['Enums']['signature_channel'];
+          created_at: string;
+          created_by: string | null;
+          expires_at: string;
+          id: string;
+          public_token: string | null;
+          repair_order_id: string;
+          signature_file_id: string | null;
+          signed_at: string | null;
+          signer_name: string | null;
+          status: Database['public']['Enums']['signature_request_status'];
+          signature_request_json: Json | null;
+        };
+        Insert: {
+          channel: Database['public']['Enums']['signature_channel'];
+          created_at?: string;
+          created_by?: string | null;
+          expires_at: string;
+          id?: string;
+          public_token?: string | null;
+          repair_order_id: string;
+          signature_file_id?: string | null;
+          signed_at?: string | null;
+          signer_name?: string | null;
+          status?: Database['public']['Enums']['signature_request_status'];
+        };
+        Update: {
+          channel?: Database['public']['Enums']['signature_channel'];
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          public_token?: string | null;
+          repair_order_id?: string;
+          signature_file_id?: string | null;
+          signed_at?: string | null;
+          signer_name?: string | null;
+          status?: Database['public']['Enums']['signature_request_status'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'signature_requests_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_signature_file_id_fkey';
+            columns: ['signature_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       subcontracts: {
         Row: {
           cost_ht: number;
@@ -4471,6 +4550,14 @@ export type Database = {
         Returns: string;
       };
       apply_package_keywords: { Args: { p_repair_order_id: string }; Returns: string[] };
+      apply_repair_order_signature: {
+        Args: {
+          p_request: Database['public']['Tables']['signature_requests']['Row'];
+          p_signature_file_id: string;
+          p_signer_name: string;
+        };
+        Returns: undefined;
+      };
       assert_confirmed_file: {
         Args: { p_category: Database['public']['Enums']['file_category']; p_file_id: string };
         Returns: undefined;
@@ -4489,6 +4576,7 @@ export type Database = {
         Args: { p_category: Database['public']['Enums']['file_category'] };
         Returns: boolean;
       };
+      cancel_signature_request: { Args: { p_request_id: string }; Returns: undefined };
       claim_push_batch: { Args: { p_limit?: number }; Returns: Json };
       clear_technician_pin: { Args: { p_technician_id: string }; Returns: undefined };
       client_message_label: {
@@ -4717,6 +4805,11 @@ export type Database = {
       issue_invoice: { Args: { p_invoice_id: string }; Returns: string };
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
       kiosk_exit_code_is_set: { Args: Record<PropertyKey, never>; Returns: boolean };
+      kiosk_pending_signature: { Args: Record<PropertyKey, never>; Returns: Json };
+      kiosk_sign_repair_order: {
+        Args: { p_request_id: string; p_signature_file_id: string; p_signer_name: string };
+        Returns: undefined;
+      };
       kiosk_too_many_attempts: { Args: Record<PropertyKey, never>; Returns: boolean };
       labor_rate_for: {
         Args: { p_client_id: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
@@ -4851,6 +4944,10 @@ export type Database = {
         Args: { p_accept: boolean; p_signature_file_id?: string; p_signer_name: string; p_token: string };
         Returns: Json;
       };
+      public_sign_repair_order: {
+        Args: { p_signature_file_id: string; p_signer_name: string; p_token: string };
+        Returns: Json;
+      };
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
       purge_files: { Args: Record<PropertyKey, never>; Returns: number };
       queue_push: {
@@ -4894,9 +4991,14 @@ export type Database = {
         Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent?: string };
         Returns: undefined;
       };
+      repair_order_signature_request: { Args: { p_repair_order_id: string }; Returns: Json };
       repair_order_status_label: {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };
         Returns: string;
+      };
+      request_repair_order_signature: {
+        Args: { p_channel: Database['public']['Enums']['signature_channel']; p_repair_order_id: string };
+        Returns: Json;
       };
       required_photo_labels: {
         Args: { p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
@@ -5050,6 +5152,10 @@ export type Database = {
       share_client_portal: { Args: { p_client_id: string }; Returns: string };
       share_invoice: { Args: { p_invoice_id: string }; Returns: string };
       share_quote: { Args: { p_quote_id: string }; Returns: string };
+      signature_request_json: {
+        Args: { p_request: Database['public']['Tables']['signature_requests']['Row'] };
+        Returns: Json;
+      };
       start_timer: {
         Args: { p_repair_order_id: string };
         Returns: {
@@ -5222,6 +5328,8 @@ export type Database = {
         'assigned' | 'in_progress' | 'work_done' | 'quote_pending' | 'to_invoice' | 'invoiced';
       rest_group: 'A' | 'B';
       ro_line_kind: 'done' | 'planned';
+      signature_channel: 'kiosk' | 'email';
+      signature_request_status: 'pending' | 'signed' | 'cancelled';
       subcontract_status: 'sent' | 'returned';
       vehicle_type: 'pl' | 'vul' | 'remorque';
       warranty_status: 'to_return' | 'sent' | 'accepted' | 'refused' | 'refunded';
@@ -5382,6 +5490,8 @@ export const Constants = {
       ],
       rest_group: ['A', 'B'],
       ro_line_kind: ['done', 'planned'],
+      signature_channel: ['kiosk', 'email'],
+      signature_request_status: ['pending', 'signed', 'cancelled'],
       subcontract_status: ['sent', 'returned'],
       vehicle_type: ['pl', 'vul', 'remorque'],
       warranty_status: ['to_return', 'sent', 'accepted', 'refused', 'refunded'],

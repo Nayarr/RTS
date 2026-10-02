@@ -2,13 +2,24 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { AlertTriangle, CalendarDays, CheckCircle2, Gauge, Hash, Package } from 'lucide-react';
 import { StoredImage } from '@/features/files/StoredImage';
+import type { SignatureChannel } from '@/features/signature/api';
+import { SignatureRequestPanel } from '@/features/signature/SignatureRequestPanel';
 import type { RepairOrderOverview } from '../api';
 import { formatDate, VEHICLE_TYPES } from '../constants';
 import { StatusBadge } from '../StatusBadge';
 import { TaskList } from '../TaskList';
 
-/** En-tête de la fiche OR : véhicule, client, statut, tâche demandée, signature du client. */
-export function OrderHeader({ order }: { order: RepairOrderOverview }) {
+/**
+ * En-tête de la fiche OR : véhicule, client, statut, tâche demandée, signature du client (ou sa
+ * demande sur la borne / par e-mail). `autoSignature` : demande choisie à la création de l'OR.
+ */
+export function OrderHeader({
+  order,
+  autoSignature,
+}: {
+  order: RepairOrderOverview;
+  autoSignature?: SignatureChannel | null;
+}) {
   return (
     <section data-slot="card" className="card" aria-label="Véhicule et demande">
       <div className="card-b row top flex-wrap gap-7 px-6 py-[22px]">
@@ -79,10 +90,12 @@ export function OrderHeader({ order }: { order: RepairOrderOverview }) {
               className="h-24 w-full rounded-[7px] border bg-white object-contain"
             />
           </div>
-        ) : (
+        ) : order.status === 'invoiced' ? (
           <p className="row w-[250px] gap-1.5 text-[13px] font-semibold text-destructive">
             <AlertTriangle className="i xs" /> Aucune signature client enregistrée.
           </p>
+        ) : (
+          <SignatureRequestPanel order={order} autoRequest={autoSignature} />
         )}
       </div>
     </section>

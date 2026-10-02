@@ -11,7 +11,7 @@ import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import { ObjectStorage, storageConfigFromEnv } from '../_shared/storage.ts';
-import { decodeSignature, signatureKey } from './signature.ts';
+import { decodeSignature, signatureKey } from '../_shared/signature.ts';
 
 z.config(z.locales.fr());
 

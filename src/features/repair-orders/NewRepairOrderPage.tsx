@@ -37,10 +37,31 @@ import { cn } from '@/lib/utils';
 
 const UNASSIGNED = 'none';
 
+/** Où le client signe : sur cet écran, sur la borne (client sur place) ou par lien e-mail (client absent). */
+type SignatureMode = 'screen' | 'borne' | 'email';
+const SIGNATURE_MODES: { value: SignatureMode; label: string; hint: string }[] = [
+  {
+    value: 'screen',
+    label: 'Sur cet écran',
+    hint: 'Accord du client pour l’intervention, signé sur l’écran.',
+  },
+  {
+    value: 'borne',
+    label: 'Sur la borne',
+    hint: 'Client sur place : la demande s’affiche sur la borne pendant 1 minute, dès la création de l’OR.',
+  },
+  {
+    value: 'email',
+    label: 'Par e-mail',
+    hint: 'Client absent : un lien de signature (valable 7 jours) est prêt à envoyer dès la création de l’OR.',
+  },
+];
+
 /** Nouvel ordre de réparation (bureau). */
 export function NewRepairOrderPage() {
   const navigate = useNavigate();
   const signature = useSignaturePad();
+  const [signatureMode, setSignatureMode] = useState<SignatureMode>('screen');
   const technicians = useActiveTechnicians();
   const [pendingValues, setPendingValues] = useState<NewRepairOrderValues | null>(null);
 
@@ -73,7 +94,7 @@ export function NewRepairOrderPage() {
 
   const create = useRepairOrderMutation(
     async (values: NewRepairOrderValues) => {
-      const blob = await signature.toBlob();
+      const blob = signatureMode === 'screen' ? await signature.toBlob() : null;
       const signatureFileId = blob
         ? await uploadFile(blob, { category: 'signature', name: 'signature-client.png' })
         : null;
@@ -86,7 +107,10 @@ export function NewRepairOrderPage() {
     create.mutate(values, {
       onSuccess: (order) => {
         toast.success(`${order.number} créé pour ${values.plate.toUpperCase()}`);
-        void navigate(`/or/${order.id}`);
+        // Borne / e-mail : la fiche OR lance la demande de signature dès son ouverture.
+        void navigate(
+          signatureMode === 'screen' ? `/or/${order.id}` : `/or/${order.id}?signature=${signatureMode}`,
+        );
       },
     });
 
@@ -307,19 +331,36 @@ export function NewRepairOrderPage() {
               <h2 className="h2" id="new-ro-signature">
                 <PenLine className="i" /> Signature client
               </h2>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={signature.clear}
-                disabled={signature.isEmpty}
-              >
-                Effacer
-              </Button>
+              {signatureMode === 'screen' && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={signature.clear}
+                  disabled={signature.isEmpty}
+                >
+                  Effacer
+                </Button>
+              )}
             </div>
             <div className="card-b col gap-2.5">
-              <p className="hint">Accord du client pour l’intervention, signé sur l’écran.</p>
-              <SignaturePad pad={signature} label="Zone de signature du client" showClear={false} />
+              <div className="seg self-start" role="group" aria-label="Où le client signe-t-il ?">
+                {SIGNATURE_MODES.map((mode) => (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    className={cn(signatureMode === mode.value && 'on')}
+                    aria-pressed={signatureMode === mode.value}
+                    onClick={() => setSignatureMode(mode.value)}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+              <p className="hint">{SIGNATURE_MODES.find((mode) => mode.value === signatureMode)?.hint}</p>
+              {signatureMode === 'screen' && (
+                <SignaturePad pad={signature} label="Zone de signature du client" showClear={false} />
+              )}
             </div>
           </section>
           <div className="alert s-blue">
