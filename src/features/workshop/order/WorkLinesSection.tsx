@@ -1,4 +1,6 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Lock, Plus, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { RoLine } from '@/features/repair-orders/api';
@@ -16,6 +18,11 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
   const update = useWorkshopMutation(repairOrderId, (patch: LinePatch) => updateLine(line.id, patch));
   const remove = useWorkshopMutation(repairOrderId, () => deleteLine(line.id), 'Tâche supprimée');
   const editable = !locked && EDITABLE_TYPES.includes(line.line_type);
+  // Travail effectué finalement non fait (forfait compris) : le technicien peut le retirer.
+  const removable = editable || (!locked && line.kind === 'done' && line.line_type === 'package');
+  // Travail repris du devis accepté : retrait confirmé (il ne sera pas facturé).
+  const fromQuote = line.source_quote_line_id !== null;
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const time = timeOptionValue(line.estimated_hours, line.estimate_is_minimum);
 
   return (
@@ -35,11 +42,17 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
           }}
         />
         {line.line_type === 'package' && <span className="tag ml-1.5 self-start">Forfait</span>}
+        {line.estimate_locked && (
+          <span className="hint row ml-1.5 gap-1" id={`line-${line.id}-locked`}>
+            <Lock className="size-3" /> Temps fixé par le devis
+          </span>
+        )}
       </div>
       <select
         aria-label="Temps estimé"
+        aria-describedby={line.estimate_locked ? `line-${line.id}-locked` : undefined}
         className="inp h-9! w-auto shrink-0 text-[13px]!"
-        disabled={locked}
+        disabled={locked || line.estimate_locked}
         value={time}
         onChange={(event) => update.mutate(parseTimeOption(event.target.value))}
       >
@@ -55,16 +68,28 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
           </option>
         ))}
       </select>
-      {editable && (
+      {removable && (
         <button
           type="button"
           className="ibtn sm ghost shrink-0 text-muted-foreground"
           aria-label="Supprimer la tâche"
           disabled={remove.isPending}
-          onClick={() => remove.mutate(undefined)}
+          onClick={() => (fromQuote ? setConfirmRemove(true) : remove.mutate(undefined))}
         >
           <Trash2 className="i s" />
         </button>
+      )}
+      {fromQuote && (
+        <ConfirmDialog
+          open={confirmRemove}
+          onOpenChange={setConfirmRemove}
+          title="Retirer ce travail ?"
+          description={`« ${displayDescription(line)} » n’a finalement pas été fait : il est retiré de l’OR et ne sera pas facturé. Le bureau le voit dans l’historique.`}
+          confirmLabel="Retirer"
+          destructive
+          pending={remove.isPending}
+          onConfirm={() => remove.mutate(undefined, { onSuccess: () => setConfirmRemove(false) })}
+        />
       )}
     </li>
   );

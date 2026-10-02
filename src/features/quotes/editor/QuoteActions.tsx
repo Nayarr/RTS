@@ -12,8 +12,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useActiveTechnicians } from '@/features/repair-orders/hooks';
+import { todayIso } from '@/features/repair-orders/schemas';
 import {
   assignQuoteNumber,
   createRepairOrderFromQuote,
@@ -31,8 +33,20 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
   const navigate = useNavigate();
   const technicians = useActiveTechnicians();
   const [technicianId, setTechnicianId] = useState('');
+  const [plannedDate, setPlannedDate] = useState(todayIso());
+  const [plannedStart, setPlannedStart] = useState('');
+  const [plannedEnd, setPlannedEnd] = useState('');
+  const timeError =
+    plannedEnd && (!plannedStart || plannedEnd <= plannedStart)
+      ? 'L’heure de fin doit être après l’heure de début'
+      : null;
   const create = useQuoteMutation(async () => {
-    const id = await createRepairOrderFromQuote(quote.id, technicianId || null);
+    const id = await createRepairOrderFromQuote(quote.id, {
+      technicianId: technicianId || null,
+      plannedDate: plannedDate || null,
+      plannedStart: plannedStart || null,
+      plannedEnd: plannedEnd || null,
+    });
     await navigate(`/or/${id}`);
   }, 'OR créé avec les travaux du devis');
 
@@ -42,7 +56,8 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
         <DialogHeader>
           <DialogTitle>Créer l’OR</DialogTitle>
           <DialogDescription>
-            Un nouvel OR reprend les travaux à prévoir du devis ; les pièces passent « À commander ».
+            Les travaux du devis deviennent les travaux effectués de l’OR, avec leur temps estimé ; les pièces
+            passent « À commander ».
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
@@ -61,11 +76,56 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
             ))}
           </select>
         </div>
+        <fieldset className="col gap-2">
+          <legend className="lbl mb-2">Début de l’OR</legend>
+          <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+            <div className="field">
+              <Label htmlFor="quote-planned-date">Date</Label>
+              <Input
+                id="quote-planned-date"
+                type="date"
+                value={plannedDate}
+                onChange={(event) => setPlannedDate(event.target.value)}
+              />
+            </div>
+            <div className="field">
+              <Label htmlFor="quote-planned-start">Heure de début</Label>
+              <Input
+                id="quote-planned-start"
+                type="time"
+                value={plannedStart}
+                onChange={(event) => setPlannedStart(event.target.value)}
+              />
+            </div>
+            <div className="field">
+              <Label htmlFor="quote-planned-end">Heure de fin</Label>
+              <Input
+                id="quote-planned-end"
+                type="time"
+                aria-invalid={timeError ? true : undefined}
+                aria-describedby={timeError ? 'quote-planned-error' : undefined}
+                value={plannedEnd}
+                onChange={(event) => setPlannedEnd(event.target.value)}
+              />
+            </div>
+          </div>
+          {timeError ? (
+            <p id="quote-planned-error" className="err">
+              {timeError}
+            </p>
+          ) : (
+            <span className="hint">
+              {technicianId
+                ? 'Le technicien est prévenu à la création, avec ce début prévu.'
+                : 'Sans heure, l’OR va dans les OR « flexibles » du technicien.'}
+            </span>
+          )}
+        </fieldset>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Annuler
           </Button>
-          <Button disabled={create.isPending} onClick={() => create.mutate(undefined)}>
+          <Button disabled={create.isPending || Boolean(timeError)} onClick={() => create.mutate(undefined)}>
             Créer l’OR
           </Button>
         </DialogFooter>

@@ -295,8 +295,25 @@ describe('éditeur de devis', () => {
     const dialog = screen.getByRole('dialog', { name: 'Créer l’OR' });
     await within(dialog).findByRole('option', { name: 'Alice' });
     await userEvent.selectOptions(within(dialog).getByLabelText('Technicien'), 't1');
+    // Début de l'OR choisi avant que le technicien soit prévenu ; fin avant le début refusée
+    await userEvent.clear(within(dialog).getByLabelText('Date'));
+    await userEvent.type(within(dialog).getByLabelText('Date'), '2026-10-05');
+    await userEvent.type(within(dialog).getByLabelText('Heure de début'), '08:30');
+    await userEvent.type(within(dialog).getByLabelText('Heure de fin'), '07:00');
+    expect(within(dialog).getByText('L’heure de fin doit être après l’heure de début')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Créer l’OR' })).toBeDisabled();
+    await userEvent.clear(within(dialog).getByLabelText('Heure de fin'));
+    await userEvent.type(within(dialog).getByLabelText('Heure de fin'), '12:00');
+    expect(within(dialog).getByText(/Le technicien est prévenu à la création/)).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Créer l’OR' }));
-    await waitFor(() => expect(createRepairOrderFromQuote).toHaveBeenCalledWith('q1', 't1'));
+    await waitFor(() =>
+      expect(createRepairOrderFromQuote).toHaveBeenCalledWith('q1', {
+        technicianId: 't1',
+        plannedDate: '2026-10-05',
+        plannedStart: '08:30',
+        plannedEnd: '12:00',
+      }),
+    );
     expect(await screen.findByRole('heading', { name: 'Fiche OR' })).toBeInTheDocument();
   });
 });

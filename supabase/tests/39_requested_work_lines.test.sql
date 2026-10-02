@@ -19,8 +19,8 @@ select public.create_repair_order_from_quote(:'quote', null) as ro \gset
 select is((select requested_work from public.repair_orders where id = :'ro'),
           E'Remplacement Barre d''accouplement\nRemplacement Extincteur 1 kg cabine / 2 kg cabine',
           'Une tâche par ligne (titre de chaque travail, sans les lignes de texte libre)');
-select is((select count(*)::int from public.ro_lines where repair_order_id = :'ro' and kind = 'planned'), 3,
-          'Les lignes du devis restent reprises sur l''OR');
+select is((select count(*)::int from public.ro_lines where repair_order_id = :'ro' and kind = 'done'), 3,
+          'Les lignes du devis restent reprises sur l''OR (en travaux effectués)');
 
 select * from finish();
 rollback;
