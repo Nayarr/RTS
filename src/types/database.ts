@@ -2708,6 +2708,7 @@ export type Database = {
           description: string;
           discount_percent: number;
           estimate_is_minimum: boolean;
+          estimate_locked: boolean;
           estimated_hours: number | null;
           id: string;
           kind: Database['public']['Enums']['ro_line_kind'];
@@ -2737,6 +2738,7 @@ export type Database = {
           description?: string;
           discount_percent?: number;
           estimate_is_minimum?: boolean;
+          estimate_locked?: boolean;
           estimated_hours?: number | null;
           id?: string;
           kind: Database['public']['Enums']['ro_line_kind'];
@@ -2766,6 +2768,7 @@ export type Database = {
           description?: string;
           discount_percent?: number;
           estimate_is_minimum?: boolean;
+          estimate_locked?: boolean;
           estimated_hours?: number | null;
           id?: string;
           kind?: Database['public']['Enums']['ro_line_kind'];
@@ -4625,7 +4628,13 @@ export type Database = {
       };
       create_repair_order_from_appointment: { Args: { p_appointment_id: string }; Returns: string };
       create_repair_order_from_quote: {
-        Args: { p_quote_id: string; p_technician_id?: string };
+        Args: {
+          p_planned_date?: string;
+          p_planned_end?: string;
+          p_planned_start?: string;
+          p_quote_id: string;
+          p_technician_id?: string;
+        };
         Returns: string;
       };
       current_app_role: {
@@ -4835,6 +4844,7 @@ export type Database = {
         Args: { p_body?: string; p_link?: string; p_profile_ids: string[]; p_tag?: string; p_title: string };
         Returns: number;
       };
+      quote_time_is_adjustable: { Args: { p_description: string }; Returns: boolean };
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
         Returns: {

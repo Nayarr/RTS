@@ -124,11 +124,25 @@ export async function setQuoteResponse(id: string, status: 'accepted' | 'refused
   if (error) throw error;
 }
 
-/** OR créé avec les travaux acceptés (ou devis sans OR transformé). Renvoie l'id de l'OR. */
-export async function createRepairOrderFromQuote(id: string, technicianId: string | null): Promise<string> {
+export interface OrderFromQuoteInput {
+  technicianId: string | null;
+  /** Début prévu (AAAA-MM-JJ, HH:MM) : annoncé au technicien dès la création. */
+  plannedDate: string | null;
+  plannedStart: string | null;
+  plannedEnd: string | null;
+}
+
+/**
+ * OR créé avec les travaux acceptés (ou devis sans OR transformé) : les travaux du devis deviennent
+ * les travaux effectués, avec leur temps estimé. Renvoie l'id de l'OR.
+ */
+export async function createRepairOrderFromQuote(id: string, input: OrderFromQuoteInput): Promise<string> {
   const { data, error } = await supabase.rpc('create_repair_order_from_quote', {
     p_quote_id: id,
-    p_technician_id: technicianId ?? undefined,
+    p_technician_id: input.technicianId ?? undefined,
+    p_planned_date: input.plannedDate ?? undefined,
+    p_planned_start: input.plannedStart ?? undefined,
+    p_planned_end: input.plannedEnd ?? undefined,
   });
   if (error) throw error;
   return data;

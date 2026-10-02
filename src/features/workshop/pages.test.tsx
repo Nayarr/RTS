@@ -17,6 +17,7 @@ import { fakeSession, renderRoutes } from '@/test/render';
 import {
   addLine,
   completeRepairOrder,
+  deleteLine,
   fetchMyRepairOrders,
   fetchSeen,
   fetchVehicleDeadlines,
@@ -47,6 +48,7 @@ vi.mock('./api', async (importOriginal) => ({
   startTimer: vi.fn(),
   addLine: vi.fn(),
   updateLine: vi.fn(),
+  deleteLine: vi.fn(),
   completeRepairOrder: vi.fn(),
 }));
 // Congés du technicien (section de l'accueil) : aucun.
@@ -91,6 +93,8 @@ const line = (overrides: Partial<RoLine>): RoLine =>
     estimate_is_minimum: false,
     standard_hours: null,
     quantity: 1,
+    estimate_locked: false,
+    source_quote_line_id: null,
     ...overrides,
   }) as RoLine;
 
@@ -226,6 +230,46 @@ describe('fiche OR technicien', () => {
     const [addDone] = screen.getAllByRole('button', { name: /Ajouter une tâche/ });
     await userEvent.click(addDone!);
     expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1);
+  });
+
+  it('OR issu d’un devis : temps fixé (sauf extincteurs), travail non fait retiré après confirmation', async () => {
+    vi.mocked(deleteLine).mockResolvedValue();
+    setup('/atelier/or/ro1', {
+      order: order({ status: 'in_progress' }),
+      lines: [
+        line({
+          id: 'q1',
+          line_type: 'package',
+          description: 'Forfait vidange PL',
+          estimated_hours: 1.5,
+          estimate_locked: true,
+          source_quote_line_id: 'ql1',
+        }),
+        line({
+          id: 'q2',
+          position: 1,
+          description: 'Remplacement Extincteur 6 kg camion',
+          estimated_hours: 0.3,
+          source_quote_line_id: 'ql2',
+        }),
+      ],
+    });
+
+    const done = (await screen.findByRole('heading', { name: 'Travaux effectués' })).closest<HTMLElement>(
+      '[data-slot="card"]',
+    )!;
+    const [locked, adjustable] = within(done).getAllByRole('combobox', { name: 'Temps estimé' });
+    expect(locked).toBeDisabled();
+    expect(locked).toHaveAccessibleDescription('Temps fixé par le devis');
+    expect(adjustable).toBeEnabled();
+
+    // Le forfait finalement non fait se retire, après confirmation
+    const [removePackage] = within(done).getAllByRole('button', { name: 'Supprimer la tâche' });
+    await userEvent.click(removePackage!);
+    const confirm = screen.getByRole('dialog', { name: 'Retirer ce travail ?' });
+    expect(confirm).toHaveTextContent('« vidange PL » n’a finalement pas été fait');
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Retirer' }));
+    await waitFor(() => expect(deleteLine).toHaveBeenCalledWith('q1'));
   });
 
   it('travaux terminés : demande si un devis est nécessaire', async () => {
