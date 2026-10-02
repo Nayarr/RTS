@@ -1919,3 +1919,64 @@
     }
   }
 }
+
+@layer components {
+  /* Info-bulle d'un histogramme (statistiques, trésorerie) */
+  .chart-tip {
+    position: absolute;
+    z-index: 5;
+    min-width: 210px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: var(--pop);
+    font-size: 12.5px;
+    line-height: 1.35;
+    pointer-events: none;
+    animation: rts-fade var(--dur-1) var(--ease-out);
+  }
+  .chart-tip-t {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .chart-tip dl {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+  }
+  .chart-tip dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .chart-tip dt {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted-foreground);
+  }
+  .chart-tip dt i {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+  }
+  .chart-tip dd {
+    margin: 0;
+    font-weight: 500;
+  }
+  .chart-tip .total {
+    margin-top: 3px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+  }
+  .chart-tip .total dt,
+  .chart-tip .total dd {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+}

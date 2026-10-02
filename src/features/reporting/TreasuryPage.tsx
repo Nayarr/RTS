@@ -86,8 +86,16 @@ export function TreasuryPage() {
                     key: week.starts_on,
                     label: shortDayLabel(week.starts_on),
                     valueLabel: week.amount > 0 ? formatEuroRounded(week.amount) : '',
-                    title: `Semaine du ${shortDayLabel(week.starts_on)} : ${formatEuro(week.amount)}`,
+                    title: `Semaine du ${shortDayLabel(week.starts_on)}`,
                     segments: [{ value: week.amount, fill: 'var(--primary)' }],
+                    details: [
+                      {
+                        label: 'Encaissements attendus TTC',
+                        value: formatEuro(week.amount),
+                        fill: 'var(--primary)',
+                        total: true,
+                      },
+                    ],
                   }))}
                 />
               </div>

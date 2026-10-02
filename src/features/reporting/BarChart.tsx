@@ -1,18 +1,32 @@
+import { useState, type CSSProperties } from 'react';
+import { cn } from '@/lib/utils';
 import { compactAmount } from './domain';
+
+export interface ChartDetail {
+  label: string;
+  value: string;
+  /** Pastille de couleur (segment correspondant de la barre). */
+  fill?: string;
+  /** Ligne de total : séparée et en gras. */
+  total?: boolean;
+}
 
 export interface ChartBar {
   key: string;
   label: string;
   /** Valeur affichée au-dessus de la barre (vide : rien). */
   valueLabel: string;
+  /** Titre de l'info-bulle au survol de la colonne. */
   title: string;
   /** Segments empilés, du bas vers le haut. */
   segments: { value: number; fill: string }[];
+  /** Détail affiché au survol de la colonne. */
+  details?: ChartDetail[];
 }
 
 /**
  * Histogramme de la maquette (SVG) : grille horizontale, graduations « 40k », barres arrondies,
- * libellé sous chaque barre et valeur au-dessus.
+ * libellé sous chaque barre et valeur au-dessus. Survol (ou appui) d'une colonne : son détail.
  */
 export function BarChart({
   bars,
@@ -25,6 +39,7 @@ export function BarChart({
   height?: number;
   barWidth?: number;
 }) {
+  const [active, setActive] = useState<number | null>(null);
   const width = 1060;
   const left = 44;
   const top = 20;
@@ -34,9 +49,26 @@ export function BarChart({
   const ticks = [1, 2 / 3, 1 / 3, 0];
   const slot = (width - left) / Math.max(1, bars.length);
   const scale = (value: number) => (value / max) * (bottom - top);
+  const shown = active === null ? undefined : bars[active];
+
+  // Info-bulle à côté de la colonne (à droite sur la première moitié, à gauche ensuite) : la barre reste visible.
+  const tipStyle = (index: number): CSSProperties => {
+    const onRight = index < bars.length / 2;
+    const edge = onRight
+      ? left + (index + 1) * slot - (slot - barWidth) / 2 + 8
+      : left + index * slot + (slot - barWidth) / 2 - 8;
+    return onRight
+      ? { left: `${(edge / width) * 100}%`, top: 4 }
+      : { right: `${((width - edge) / width) * 100}%`, top: 4 };
+  };
 
   return (
-    <figure aria-label={label} className="m-0">
+    <figure
+      aria-label={label}
+      className="relative m-0"
+      // Au doigt, l'info-bulle reste affichée après l'appui (un nouvel appui sur la colonne la ferme).
+      onPointerLeave={(event) => event.pointerType !== 'touch' && setActive(null)}
+    >
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full [&_text]:fill-muted-foreground [&_text]:font-sans [&_text]:text-[11.5px]"
@@ -58,8 +90,24 @@ export function BarChart({
           const x = left + index * slot + (slot - barWidth) / 2;
           let y = bottom;
           return (
-            <g key={bar.key}>
-              <title>{bar.title}</title>
+            <g
+              key={bar.key}
+              data-bar={bar.key}
+              className={cn(active !== null && active !== index && 'opacity-45')}
+            >
+              {/* Zone de survol : toute la hauteur de la colonne, pas seulement la barre */}
+              <rect
+                x={left + index * slot + 2}
+                y={0}
+                width={slot - 4}
+                height={bottom + 32}
+                rx="6"
+                className={cn('fill-transparent', active === index && 'fill-hover!')}
+                onPointerEnter={(event) => event.pointerType !== 'touch' && setActive(index)}
+                onPointerDown={(event) =>
+                  setActive((current) => (current === index && event.pointerType === 'touch' ? null : index))
+                }
+              />
               {bar.segments.map((segment, segmentIndex) => {
                 const h = scale(segment.value);
                 y -= h;
@@ -71,11 +119,12 @@ export function BarChart({
                     width={barWidth}
                     height={h}
                     rx="4"
+                    className="pointer-events-none"
                     style={{ fill: segment.fill }}
                   />
                 ) : null;
               })}
-              <text x={x + barWidth / 2} y={bottom + 24} textAnchor="middle">
+              <text x={x + barWidth / 2} y={bottom + 24} textAnchor="middle" className="pointer-events-none">
                 {bar.label}
               </text>
               {bar.valueLabel && (
@@ -83,7 +132,7 @@ export function BarChart({
                   x={x + barWidth / 2}
                   y={bottom - scale(totals[index] ?? 0) - 6}
                   textAnchor="middle"
-                  className="fill-foreground! font-semibold"
+                  className="pointer-events-none fill-foreground! font-semibold"
                 >
                   {bar.valueLabel}
                 </text>
@@ -92,6 +141,24 @@ export function BarChart({
           );
         })}
       </svg>
+      {shown && active !== null && (
+        <div role="tooltip" className="chart-tip" style={tipStyle(active)}>
+          <b className="chart-tip-t">{shown.title}</b>
+          {shown.details && (
+            <dl>
+              {shown.details.map((detail) => (
+                <div key={detail.label} className={cn(detail.total && 'total')}>
+                  <dt>
+                    {detail.fill && <i style={{ background: detail.fill }} />}
+                    {detail.label}
+                  </dt>
+                  <dd className="num">{detail.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
+      )}
     </figure>
   );
 }

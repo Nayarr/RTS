@@ -1,8 +1,17 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
 import { fetchMonthlyStatistics, fetchTreasury, type MonthlyStatistics, type TreasuryOverview } from './api';
-import { barPercent, compactAmount, delayTone, formatDelay, monthLabel, shortDayLabel } from './domain';
+import {
+  barPercent,
+  compactAmount,
+  delayTone,
+  formatDelay,
+  monthLabel,
+  monthLongLabel,
+  shortDayLabel,
+} from './domain';
 import { StatisticsPage } from './StatisticsPage';
 import { TreasuryPage } from './TreasuryPage';
 
@@ -60,6 +69,7 @@ beforeEach(() => {
 describe('pilotage : règles', () => {
   it('libellés, montants compacts, hauteur des barres, délais', () => {
     expect(monthLabel('2026-09-01')).toBe('sept. 26');
+    expect(monthLongLabel('2026-09-01')).toBe('Septembre 2026');
     expect(shortDayLabel('2026-10-05')).toBe('05/10');
     expect(compactAmount(12_540)).toBe('12,5k');
     expect(compactAmount(0)).toBe('');
@@ -83,6 +93,31 @@ describe('pilotage : écrans', () => {
     expect(rows[0]).toHaveTextContent(/sept\. 26\s*1\s*600\s€\s*400\s€\s*150\s€\s*−100\s€\s*900\s€/);
     expect(rows[1]).toHaveTextContent(/août 26\s*4\s*3\s000\s€\s*1\s200\s€\s*350\s€\s*—\s*4\s200\s€/);
     expect(screen.getByRole('link', { name: 'Statistiques' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('statistiques : le survol d’une colonne affiche le détail du mois', async () => {
+    const { container } = renderRoutes([{ path: '/pilotage/statistiques', element: <StatisticsPage /> }], {
+      initialPath: '/pilotage/statistiques',
+    });
+    await screen.findByRole('figure', { name: 'Chiffre d’affaires HT par mois' });
+    const column = (key: string) => container.querySelector(`[data-bar="${key}"] rect`)!;
+
+    await userEvent.hover(column('2026-09-01'));
+    const tip = screen.getByRole('tooltip');
+    expect(within(tip).getByText('Septembre 2026')).toBeInTheDocument();
+    expect(tip).toHaveTextContent(/Main d’œuvre \/ forfaits\s*600\s€/);
+    expect(tip).toHaveTextContent(/Pièces\s*400\s€/);
+    expect(tip).toHaveTextContent(/Marge pièces\s*150\s€/);
+    expect(tip).toHaveTextContent(/Avoirs\s*−100\s€/);
+    expect(tip).toHaveTextContent(/Total HT · 1 facture\s*900\s€/);
+
+    // Autre colonne : son propre détail (pas d'avoir ce mois-là)
+    await userEvent.hover(column('2026-08-01'));
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/Août 2026.*Total HT · 4 factures\s*4\s200\s€/);
+    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Avoirs');
+
+    await userEvent.unhover(screen.getByRole('figure', { name: 'Chiffre d’affaires HT par mois' }));
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('trésorerie : chiffres clés, semaines, retards et habitudes', async () => {
