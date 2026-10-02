@@ -19,6 +19,8 @@ import { formatQuantity, parseDecimal } from '@/lib/numbers';
 import { repairOrdersKey } from './hooks';
 import {
   fetchPreQuoteWork,
+  forcedDecision,
+  isForced,
   lineTitle,
   preQuoteWorkKey,
   settlementMessage,
@@ -36,8 +38,11 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [decisions, setDecisions] = useState<Record<string, PreQuoteDecision>>(() =>
-    Object.fromEntries(work.lines.map((line) => [line.id, 'billed'])),
+    Object.fromEntries(
+      work.lines.map((line) => [line.id, isForced(work, line) ? forcedDecision(line) : 'billed']),
+    ),
   );
+  const freeLines = work.lines.filter((line) => !isForced(work, line));
   const [prices, setPrices] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       work.lines.map((line) => [line.id, Number(line.suggested_price).toFixed(2).replace('.', ',')]),
@@ -72,8 +77,13 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
     onError: (error) => toast.error(errorMessage(error)),
   });
 
+  // « Tout facturer / tout offrir » : seulement les lignes laissées au choix du bureau.
   const setAll = (decision: PreQuoteDecision) =>
-    setDecisions(Object.fromEntries(work.lines.map((line) => [line.id, decision])));
+    setDecisions((current) => ({
+      ...current,
+      ...Object.fromEntries(freeLines.map((line) => [line.id, decision])),
+    }));
+  const hours = formatQuantity(work.expertise_hours);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -88,18 +98,30 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setAll('billed')}>
-            Tout facturer
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setAll('offered')}>
-            Tout offrir
-          </Button>
-        </div>
+        {work.expertise_hours > 0 && (
+          <p className="alert s-blue" role="note">
+            {work.first_hour_offered
+              ? `Expertise de ${hours} h : facturée moins 1 h. La première heure est offerte, elle figure sur la facture avec 100 % de remise.`
+              : `Expertise de ${hours} h (1 h ou moins) : à toi de choisir de l’offrir ou de la facturer.`}
+          </p>
+        )}
+
+        {freeLines.length > 0 && (
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setAll('billed')}>
+              Tout facturer
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setAll('offered')}>
+              Tout offrir
+            </Button>
+          </div>
+        )}
 
         <ul className="divide-y" aria-label="Travaux réalisés avant le devis">
           {work.lines.map((line) => {
             const title = lineTitle(line.description);
+            const forced = isForced(work, line);
+            const offeredOnly = forced && decisions[line.id] === 'offered';
             return (
               <li key={line.id} className="space-y-2 py-3">
                 <p className="font-semibold">
@@ -111,10 +133,20 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
                     </span>
                   ) : null}
                 </p>
+                {forced && (
+                  <p className="hint">
+                    {offeredOnly
+                      ? `Offert : compris dans la première heure d’expertise.`
+                      : line.offered_hours > 0
+                        ? `${formatQuantity(line.billed_hours ?? 0)} h facturée(s), ${formatQuantity(line.offered_hours)} h offerte(s) (1re heure d’expertise).`
+                        : `${formatQuantity(line.billed_hours ?? 0)} h facturée(s).`}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-2">
                   <select
                     aria-label={`Décision pour « ${title} »`}
                     className="inp w-auto min-w-44 flex-1"
+                    disabled={forced}
                     value={decisions[line.id]}
                     onChange={(event) =>
                       setDecisions((current) => ({
@@ -126,16 +158,20 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
                     <option value="billed">Facturer</option>
                     <option value="offered">Offrir (geste commercial)</option>
                   </select>
-                  <Input
-                    aria-label={`Prix HT de « ${title} »`}
-                    inputMode="decimal"
-                    className="h-10 w-28 text-right"
-                    value={prices[line.id] ?? ''}
-                    onChange={(event) =>
-                      setPrices((current) => ({ ...current, [line.id]: event.target.value }))
-                    }
-                  />
-                  <span className="text-sm">€ HT</span>
+                  {!offeredOnly && (
+                    <>
+                      <Input
+                        aria-label={`Prix HT de « ${title} »`}
+                        inputMode="decimal"
+                        className="h-10 w-28 text-right"
+                        value={prices[line.id] ?? ''}
+                        onChange={(event) =>
+                          setPrices((current) => ({ ...current, [line.id]: event.target.value }))
+                        }
+                      />
+                      <span className="text-sm">€ HT</span>
+                    </>
+                  )}
                 </div>
               </li>
             );

@@ -1,9 +1,10 @@
 import { supabase } from '@/lib/supabase';
 
 /**
- * Travaux réalisés avant le devis (diagnostic, contrôle…) : une fois le devis accepté,
- * le bureau décide pour chaque ligne de la facturer (facture séparée émise tout de
+ * Travaux réalisés avant le devis (expertise : diagnostic, contrôle…) : une fois le devis
+ * accepté, le bureau décide pour chaque ligne de la facturer (facture séparée émise tout de
  * suite) ou de l'offrir (geste commercial, visible sur la facture avec 100 % de remise).
+ * Plus d'1 h d'expertise : facturée moins 1 h, la première heure est offerte d'office.
  */
 export type PreQuoteDecision = 'billed' | 'offered';
 
@@ -11,6 +12,12 @@ export interface PreQuoteLine {
   id: string;
   description: string;
   hours: number | null;
+  /** Main-d'œuvre avec un temps : compte dans le temps d'expertise. */
+  is_labor: boolean;
+  /** Part de la première heure offerte (plus d'1 h d'expertise). */
+  offered_hours: number;
+  billed_hours: number | null;
+  /** Prix proposé de la part facturée. */
   suggested_price: number;
 }
 
@@ -19,8 +26,19 @@ export interface PreQuoteWork {
   repair_order_number: string;
   quote_id: string;
   quote_number: string | null;
+  /** Temps d'expertise : heures de main-d'œuvre réalisées avant le devis. */
+  expertise_hours: number;
+  /** Plus d'1 h d'expertise : facturée moins 1 h (décision imposée sur la main-d'œuvre). */
+  first_hour_offered: boolean;
   lines: PreQuoteLine[];
 }
+
+/** Ligne dont la décision est imposée par la règle de l'expertise (plus d'1 h). */
+export const isForced = (work: PreQuoteWork, line: PreQuoteLine) => work.first_hour_offered && line.is_labor;
+
+/** Décision imposée : facturée s'il reste du temps après la première heure offerte. */
+export const forcedDecision = (line: PreQuoteLine): PreQuoteDecision =>
+  (line.billed_hours ?? 0) > 0 ? 'billed' : 'offered';
 
 export interface PreQuoteChoice {
   line_id: string;

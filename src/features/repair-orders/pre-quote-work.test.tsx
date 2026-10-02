@@ -19,14 +19,78 @@ vi.mock('./pre-quote-work', async (importOriginal) => ({
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
+// Expertise d'1 h tout juste : au choix du bureau
 const work: PreQuoteWork = {
   repair_order_id: 'ro1',
   repair_order_number: 'OR00012',
   quote_id: 'q1',
   quote_number: 'DV00034',
+  expertise_hours: 1,
+  first_hour_offered: false,
   lines: [
-    { id: 'l1', description: 'Diagnostic freinage\nDétail du technicien', hours: 1.5, suggested_price: 135 },
-    { id: 'l2', description: 'Contrôle sécurité', hours: null, suggested_price: 60 },
+    {
+      id: 'l1',
+      description: 'Diagnostic freinage\nDétail du technicien',
+      hours: 1,
+      is_labor: true,
+      offered_hours: 0,
+      billed_hours: 1,
+      suggested_price: 90,
+    },
+    {
+      id: 'l2',
+      description: 'Contrôle sécurité',
+      hours: null,
+      is_labor: false,
+      offered_hours: 0,
+      billed_hours: null,
+      suggested_price: 60,
+    },
+  ],
+};
+
+// Expertise de 2,5 h : facturée moins 1 h (1re heure offerte sur les premières lignes)
+const longWork: PreQuoteWork = {
+  ...work,
+  expertise_hours: 2.5,
+  first_hour_offered: true,
+  lines: [
+    {
+      id: 'e1',
+      description: 'Lecture valise',
+      hours: 0.5,
+      is_labor: true,
+      offered_hours: 0.5,
+      billed_hours: 0,
+      suggested_price: 45,
+    },
+    {
+      id: 'e2',
+      description: 'Recherche de fuite',
+      hours: 1,
+      is_labor: true,
+      offered_hours: 0.5,
+      billed_hours: 0.5,
+      suggested_price: 45,
+    },
+    {
+      id: 'e3',
+      description: 'Essai routier',
+      hours: 1,
+      is_labor: true,
+      offered_hours: 0,
+      billed_hours: 1,
+      suggested_price: 90,
+    },
+    {
+      id: 'e4',
+      description: 'Contrôle sécurité',
+      hours: null,
+      is_labor: false,
+      offered_hours: 0,
+      billed_hours: null,
+      suggested_price: 60,
+    },
   ],
 };
 
@@ -63,7 +127,10 @@ describe('travaux réalisés avant le devis', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Travaux réalisés avant le devis' });
     const price = within(dialog).getByLabelText('Prix HT de « Diagnostic freinage »');
-    expect(price).toHaveValue('135,00'); // taux horaire × temps
+    expect(within(dialog).getByRole('note')).toHaveTextContent(
+      'Expertise de 1 h (1 h ou moins) : à toi de choisir de l’offrir ou de la facturer.',
+    );
+    expect(price).toHaveValue('90,00'); // taux horaire × temps
     await userEvent.clear(price);
     await userEvent.type(price, '120,50');
     await userEvent.selectOptions(
@@ -94,6 +161,49 @@ describe('travaux réalisés avant le devis', () => {
     await userEvent.clear(within(dialog).getByLabelText('Prix HT de « Contrôle sécurité »'));
     expect(within(dialog).getByText('Indique un prix pour chaque ligne à facturer.')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Valider' })).toBeDisabled();
+  });
+
+  it('plus d’1 h d’expertise : facturée moins 1 h, la première heure offerte d’office', async () => {
+    vi.mocked(fetchPreQuoteWork).mockResolvedValue(longWork);
+    vi.mocked(settlePreQuoteWork).mockResolvedValue({
+      invoice_id: 'inv2',
+      invoice_number: 'F11891',
+      billed: 2,
+      offered: 2,
+    });
+    renderCard(true);
+    const dialog = await screen.findByRole('dialog', { name: 'Travaux réalisés avant le devis' });
+    expect(within(dialog).getByRole('note')).toHaveTextContent(
+      'Expertise de 2,5 h : facturée moins 1 h. La première heure est offerte',
+    );
+
+    // Main-d'œuvre : décision imposée
+    const first = within(dialog).getByLabelText('Décision pour « Lecture valise »');
+    expect(first).toBeDisabled();
+    expect(first).toHaveValue('offered');
+    expect(within(dialog).queryByLabelText('Prix HT de « Lecture valise »')).toBeNull();
+    expect(
+      within(dialog).getByText('Offert : compris dans la première heure d’expertise.'),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Décision pour « Recherche de fuite »')).toHaveValue('billed');
+    expect(within(dialog).getByLabelText('Prix HT de « Recherche de fuite »')).toHaveValue('45,00');
+    expect(
+      within(dialog).getByText('0,5 h facturée(s), 0,5 h offerte(s) (1re heure d’expertise).'),
+    ).toBeInTheDocument();
+
+    // « Tout offrir » : seulement le forfait, laissé au choix
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Tout offrir' }));
+    expect(within(dialog).getByLabelText('Décision pour « Contrôle sécurité »')).toHaveValue('offered');
+    expect(within(dialog).getByLabelText('Décision pour « Essai routier »')).toHaveValue('billed');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider' }));
+    await waitFor(() =>
+      expect(settlePreQuoteWork).toHaveBeenCalledWith('ro1', [
+        { line_id: 'e1', decision: 'offered', price: 45 },
+        { line_id: 'e2', decision: 'billed', price: 45 },
+        { line_id: 'e3', decision: 'billed', price: 90 },
+        { line_id: 'e4', decision: 'offered', price: 60 },
+      ]),
+    );
   });
 
   it('messages de confirmation', () => {

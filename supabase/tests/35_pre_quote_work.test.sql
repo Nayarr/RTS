@@ -40,8 +40,8 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');  -- réception
 select public.pre_quote_work('50000000-0000-0000-0000-000000000001') as pending \gset
 select is(:'pending'::jsonb ->> 'quote_number', 'DV90001', 'Devis accepté : décision à prendre');
 select is(jsonb_array_length(:'pending'::jsonb -> 'lines'), 2, 'Travaux effectués seulement (ni texte, ni travaux à prévoir)');
-select is((:'pending'::jsonb -> 'lines' -> 0 ->> 'suggested_price')::numeric, 135.00,
-          'Prix proposé : 1,5 h × 90 €/h (taux PL)');
+select is((:'pending'::jsonb -> 'lines' -> 0 ->> 'suggested_price')::numeric, 45.00,
+          'Expertise de 1,5 h : prix proposé pour la part facturée, 0,5 h × 90 €/h (taux PL), 1re heure offerte');
 select is((:'pending'::jsonb -> 'lines' -> 1 ->> 'suggested_price')::numeric, 60.00, 'Forfait : son prix');
 select is(public.pre_quote_work('50000000-0000-0000-0000-000000000003'), null, 'Devis pas encore accepté : rien à décider');
 
@@ -67,8 +67,9 @@ select results_eq(
   format($$ select description, unit_price, discount_percent from public.invoice_lines where invoice_id = %L order by position $$,
          :'settled'::jsonb ->> 'invoice_id'),
   $$ values ('Diagnostic freinage', 120.00::numeric, 0.00::numeric),
+            ('Diagnostic freinage — 1re heure d''expertise offerte', 90.00::numeric, 100.00::numeric),
             ('Contrôle sécurité — offert (geste commercial)', 60.00::numeric, 100.00::numeric) $$,
-  'Ligne offerte visible avec 100 % de remise');
+  'Lignes offertes (1re heure d''expertise, forfait) visibles avec 100 % de remise');
 select is((select status::text from public.repair_orders where id = '50000000-0000-0000-0000-000000000001'), 'invoiced',
           'OR de diagnostic facturé');
 select is((select done_line_decision::text from public.quote_lines
