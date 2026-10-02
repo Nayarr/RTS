@@ -9,15 +9,21 @@ const ACCEPTED = 'image/jpeg,image/png,image/webp';
  * Prise de photo pour un OR : appareil photo (téléphone / tablette) ou galerie,
  * compression puis envoi. `label` = emplacement (« Face avant », « Pièces »…).
  */
-export function usePhotoCapture(repairOrderId: string) {
+export function usePhotoCapture(
+  repairOrderId: string,
+  { onUploaded }: { onUploaded?: (label: string, fileId: string) => void } = {},
+) {
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
   const [label, setLabel] = useState<string | null>(null);
 
   const upload = useWorkshopMutation(
     repairOrderId,
-    async ({ file, label }: { file: File; label: string }) =>
-      addPhoto(repairOrderId, await compressImage(file), label),
+    async ({ file, label }: { file: File; label: string }) => {
+      const fileId = await addPhoto(repairOrderId, await compressImage(file), label);
+      onUploaded?.(label, fileId);
+      return fileId;
+    },
     'Photo ajoutée',
   );
 

@@ -98,6 +98,14 @@ export class ObjectStorage {
     };
   }
 
+  /** Lecture directe par la fonction (ex. photo d'étiquette envoyée à l'assistant de lecture). */
+  async get(bucket: string, key: string): Promise<Uint8Array<ArrayBuffer> | null> {
+    const response = await this.#client.fetch(this.#endpoint + objectPath(bucket, key), { method: 'GET' });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`GET ${response.status}`);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
   /** Envoi direct par la fonction (petits fichiers reçus par elle, ex. signature d'un devis en ligne). */
   async put(bucket: string, key: string, body: Uint8Array<ArrayBuffer>, contentType: string): Promise<void> {
     const response = await this.#client.fetch(this.#endpoint + objectPath(bucket, key), {

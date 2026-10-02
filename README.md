@@ -89,4 +89,8 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
   `R2_ENDPOINT` (`https://<id-de-compte>.r2.cloudflarestorage.com`), `R2_BUCKET`, `R2_ACCESS_KEY_ID`,
   `R2_SECRET_ACCESS_KEY`, définis par `npx supabase secrets set`. Le bucket doit autoriser en CORS
   l'origine de l'appli (méthodes `GET`, `PUT`, en-tête `Content-Type`).
+- **Lecture automatique des étiquettes** (date du contrôle hayon lue sur la photo) : Edge Function
+  `label-read`, assistant Claude. Secret `ANTHROPIC_API_KEY` défini par `npx supabase secrets set`
+  (jamais dans le code), puis réglage « Lecture automatique des étiquettes » activé par la direction.
+  Sans clé, la photo est gardée et la date se saisit à la main.
 - **Production : o2switch** (plus tard).
