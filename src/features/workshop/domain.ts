@@ -38,25 +38,46 @@ export function seenState(order: RepairOrderOverview, seenAt: string | undefined
 
 const RECENT_DONE_DAYS = 7;
 
+export type MyDay = {
+  /** Prévus les jours précédents et pas terminés : reportés au jour même, jusqu'à leur fin. */
+  carriedOver: RepairOrderOverview[];
+  /** Prévus aujourd'hui à une heure donnée, par heure de début puis de fin. */
+  timed: RepairOrderOverview[];
+  /** Sans heure précisée (ou sans date) : à caser dans la journée. */
+  flexible: RepairOrderOverview[];
+  /** Terminés ces 7 derniers jours. */
+  recentlyDone: RepairOrderOverview[];
+};
+
+const byTime = (a: RepairOrderOverview, b: RepairOrderOverview) =>
+  `${a.planned_date ?? ''}${a.planned_start ?? ''}${a.planned_end ?? '99'}`.localeCompare(
+    `${b.planned_date ?? ''}${b.planned_start ?? ''}${b.planned_end ?? '99'}`,
+  );
+
 /**
- * Liste du technicien : OR à faire (planifiés d'abord, par heure, puis les plus récents),
- * et OR terminés des 7 derniers jours.
+ * Journée du technicien : seulement les OR du jour (ceux prévus plus tard restent masqués jusqu'à
+ * leur date), les OR pas terminés des jours précédents, triés par heure, et une catégorie
+ * « flexible » pour ceux sans heure. Un OR commencé reste affiché quelle que soit sa date.
  */
-export function splitMyOrders(orders: RepairOrderOverview[], now = Date.now()) {
-  const active = orders
-    .filter((order) => OPEN_STATUSES.includes(order.status))
-    .sort((a, b) => {
-      if (a.planned_start && b.planned_start) {
-        return `${a.planned_date}${a.planned_start}`.localeCompare(`${b.planned_date}${b.planned_start}`);
-      }
-      if (a.planned_start) return -1;
-      if (b.planned_start) return 1;
-      return b.created_at.localeCompare(a.created_at);
-    });
+export function planMyDay(orders: RepairOrderOverview[], today: string, now = Date.now()): MyDay {
+  const day: MyDay = { carriedOver: [], timed: [], flexible: [], recentlyDone: [] };
   const limit = now - RECENT_DONE_DAYS * 86_400_000;
-  const recentlyDone = orders
-    .filter((order) => !OPEN_STATUSES.includes(order.status))
-    .filter((order) => new Date(order.updated_at ?? order.created_at).getTime() >= limit)
-    .sort((a, b) => (b.updated_at ?? b.created_at).localeCompare(a.updated_at ?? a.created_at));
-  return { active, recentlyDone };
+  for (const order of orders) {
+    if (!OPEN_STATUSES.includes(order.status)) {
+      if (new Date(order.updated_at ?? order.created_at).getTime() >= limit) day.recentlyDone.push(order);
+      continue;
+    }
+    const started = order.status === 'in_progress' || Boolean(order.running_since);
+    if (!order.planned_date) day.flexible.push(order);
+    else if (order.planned_date < today) day.carriedOver.push(order);
+    else if (order.planned_date > today && !started) continue;
+    else if (order.planned_date === today && order.planned_start) day.timed.push(order);
+    else day.flexible.push(order);
+  }
+  day.carriedOver.sort(byTime);
+  day.timed.sort(byTime);
+  // Les plus anciens d'abord : ils attendent depuis plus longtemps.
+  day.flexible.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  day.recentlyDone.sort((a, b) => (b.updated_at ?? b.created_at).localeCompare(a.updated_at ?? a.created_at));
+  return day;
 }
