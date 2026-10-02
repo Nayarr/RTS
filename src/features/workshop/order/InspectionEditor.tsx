@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { saveInspection } from '../api';
 import { useWorkshopMutation } from '../hooks';
+import { TailgateLabelDialog } from './TailgateLabelDialog';
 import type { PhotoCapture } from './use-photo-capture';
 
 const SAVE_DELAY_MS = 600;
@@ -104,6 +105,9 @@ export function InspectionEditor({
   capture,
   photoLabels,
   locked,
+  vehicleId,
+  tailgateScan,
+  onTailgateScanDone,
 }: {
   repairOrderId: string;
   initial: InspectionData | null;
@@ -111,6 +115,10 @@ export function InspectionEditor({
   /** Libellés des photos déjà prises sur l'OR (photo obligatoire du hayon HS). */
   photoLabels: string[];
   locked: boolean;
+  vehicleId: string;
+  /** Photo de l'étiquette du hayon à lire automatiquement (réglage de la direction). */
+  tailgateScan?: string | null;
+  onTailgateScanDone?: () => void;
 }) {
   const [data, setData] = useState<InspectionData>(initial ?? {});
   const save = useWorkshopMutation(repairOrderId, (next: InspectionData) =>
@@ -313,6 +321,16 @@ export function InspectionEditor({
         disabled={locked}
         onChange={(value) => update((current) => ({ ...current, probleme_electrique: value }))}
       />
+      {tailgateScan && (
+        <TailgateLabelDialog
+          key={tailgateScan}
+          fileId={tailgateScan}
+          repairOrderId={repairOrderId}
+          vehicleId={vehicleId}
+          onApply={(verdict) => setIn('controles', 'hayon', verdict)}
+          onClose={() => onTailgateScanDone?.()}
+        />
+      )}
     </section>
   );
 }

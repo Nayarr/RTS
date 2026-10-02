@@ -134,10 +134,11 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
               <Switch id="label_scan_enabled" checked={field.value} onCheckedChange={field.onChange} />
               <span className="col gap-0">
                 <Label htmlFor="label_scan_enabled" className="text-sm font-bold">
-                  Lecture automatique des étiquettes de pièces (photo)
+                  Lecture automatique des étiquettes (photo)
                 </Label>
                 <span className="hint">
-                  Le technicien photographie l’étiquette, la désignation et la référence sont remplies.
+                  Le technicien photographie l’étiquette du contrôle hayon : la prochaine échéance est lue et
+                  proposée, il la vérifie avant de valider.
                 </span>
               </span>
             </div>

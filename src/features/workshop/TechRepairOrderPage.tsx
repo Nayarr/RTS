@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,8 @@ import { OPEN_STATUSES, VEHICLE_TYPES } from '@/features/repair-orders/constants
 import { useRepairOrder } from '@/features/repair-orders/hooks';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { TaskList } from '@/features/repair-orders/TaskList';
-import { markSeen } from './api';
-import { finishBlockers } from './domain';
+import { fetchLabelScanEnabled, markSeen } from './api';
+import { finishBlockers, TAILGATE_PHOTO_LABEL } from './domain';
 import { seenKey } from './hooks';
 import { DeadlinesSection } from './order/DeadlinesSection';
 import { FinishSection } from './order/FinishSection';
@@ -28,7 +28,18 @@ export function TechRepairOrderPage() {
   const detail = useRepairOrder(id);
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const capture = usePhotoCapture(id);
+  // Étiquette du hayon photographiée : date lue automatiquement si la direction l'a activé.
+  const labelScan = useQuery({
+    queryKey: ['label-scan-enabled'],
+    queryFn: fetchLabelScanEnabled,
+    staleTime: 300_000,
+  });
+  const [tailgateScan, setTailgateScan] = useState<string | null>(null);
+  const capture = usePhotoCapture(id, {
+    onUploaded: (label, fileId) => {
+      if (label === TAILGATE_PHOTO_LABEL && labelScan.data) setTailgateScan(fileId);
+    },
+  });
 
   // Ouverture de l'OR : les badges « Nouveau » / « Modifié » disparaissent.
   const assignmentChangedAt = detail.data?.order.assignment_changed_at;
@@ -105,6 +116,9 @@ export function TechRepairOrderPage() {
         capture={capture}
         photoLabels={photos.map((photo) => photo.label)}
         locked={locked}
+        vehicleId={order.vehicle_id}
+        tailgateScan={tailgateScan}
+        onTailgateScanDone={() => setTailgateScan(null)}
       />
       <DeadlinesSection repairOrderId={order.id} vehicleId={order.vehicle_id} locked={locked} />
       {!locked && (

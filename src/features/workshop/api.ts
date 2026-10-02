@@ -1,3 +1,4 @@
+import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 import type { Json } from '@/types/database';
 import { uploadFile } from '@/features/files/api';
@@ -87,6 +88,27 @@ export async function addPhoto(repairOrderId: string, file: File, label: string)
     .from('ro_photos')
     .insert({ repair_order_id: repairOrderId, file_id: fileId, label });
   if (error) throw error;
+  return fileId;
+}
+
+/** Réglage de la direction : lecture automatique des étiquettes photographiées. */
+export async function fetchLabelScanEnabled(): Promise<boolean> {
+  const { data, error } = await supabase.from('app_settings').select('label_scan_enabled').maybeSingle();
+  if (error) return false;
+  return data?.label_scan_enabled ?? false;
+}
+
+export interface TailgateLabelReading {
+  /** Prochaine échéance (lue, sinon dernier contrôle + 6 mois), ou null si rien de lisible. */
+  next_due_date: string | null;
+  last_control_date: string | null;
+  label_text: string;
+  confidence: 'haute' | 'moyenne' | 'faible';
+}
+
+/** Lecture de l'étiquette du contrôle hayon par l'assistant (Edge Function « label-read »). */
+export async function readTailgateLabel(fileId: string) {
+  return invokeFunction<TailgateLabelReading>('label-read', { file_id: fileId, kind: 'tailgate' });
 }
 
 export async function deletePhoto(photoId: string) {

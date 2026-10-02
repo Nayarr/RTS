@@ -1,6 +1,7 @@
 import type { RepairOrderOverview, RoLine } from '@/features/repair-orders/api';
 import { OPEN_STATUSES } from '@/features/repair-orders/constants';
 import type { InspectionData } from '@/features/repair-orders/inspection';
+import { todayIso } from '@/features/repair-orders/schemas';
 
 /** Estimations proposées au technicien (comme l'ancienne appli, plus 0,5 h) ; « 12h+ » = au moins 12 h. */
 export const TIME_OPTIONS = [
@@ -139,4 +140,19 @@ export function planMyDay(orders: RepairOrderOverview[], today: string, now = Da
   day.flexible.sort((a, b) => a.created_at.localeCompare(b.created_at));
   day.recentlyDone.sort((a, b) => (b.updated_at ?? b.created_at).localeCompare(a.updated_at ?? a.created_at));
   return day;
+}
+
+// ---------------------------------------------------------------- Étiquette du contrôle hayon
+
+/** Jours entre aujourd'hui et l'échéance (négatif : dépassée). */
+export function daysUntil(date: string, today = todayIso()) {
+  return Math.round((Date.parse(`${date}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86_400_000);
+}
+
+/** Comme l'ancienne appli : échéance dans 30 jours ou moins → contrôle hayon « HS » (à faire). */
+export function tailgateVerdict(date: string, today = todayIso()) {
+  const days = daysUntil(date, today);
+  if (days < 0) return { value: 'HS' as const, label: `À FAIRE — dépassé depuis ${-days} j` };
+  if (days <= 30) return { value: 'HS' as const, label: `À FAIRE — échéance dans ${days} j` };
+  return { value: 'OK' as const, label: `OK — valable encore ${days} jours` };
 }

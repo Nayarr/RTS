@@ -450,6 +450,14 @@ verify_jwt = false
 import_map = "./functions/files/deno.json"
 entrypoint = "./functions/files/index.ts"
 
+[functions.label-read]
+enabled = true
+# Lecture de l'étiquette du contrôle hayon par l'assistant Claude (secret ANTHROPIC_API_KEY).
+# Le jeton de l'appelant est vérifié dans la fonction elle-même (withSupabase({ auth: "user" })).
+verify_jwt = false
+import_map = "./functions/label-read/deno.json"
+entrypoint = "./functions/label-read/index.ts"
+
 [functions.files-purge]
 enabled = true
 # Appelée par la tâche planifiée purge_files() : secret partagé vérifié dans la fonction.
