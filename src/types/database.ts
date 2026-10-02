@@ -381,6 +381,7 @@ export type Database = {
       clients: {
         Row: {
           billing_address: string | null;
+          contact_name: string | null;
           created_at: string;
           discount_percent: number | null;
           email: string | null;
@@ -390,6 +391,7 @@ export type Database = {
           name: string;
           name_key: string | null;
           notes: string | null;
+          other_phones: NonNullable<Json>;
           phone: string | null;
           portal_token: string | null;
           siren: string | null;
@@ -397,6 +399,7 @@ export type Database = {
         };
         Insert: {
           billing_address?: string | null;
+          contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
           email?: string | null;
@@ -406,6 +409,7 @@ export type Database = {
           name: string;
           name_key?: never;
           notes?: string | null;
+          other_phones?: NonNullable<Json>;
           phone?: string | null;
           portal_token?: string | null;
           siren?: string | null;
@@ -413,6 +417,7 @@ export type Database = {
         };
         Update: {
           billing_address?: string | null;
+          contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
           email?: string | null;
@@ -422,6 +427,7 @@ export type Database = {
           name?: string;
           name_key?: never;
           notes?: string | null;
+          other_phones?: NonNullable<Json>;
           phone?: string | null;
           portal_token?: string | null;
           siren?: string | null;
@@ -3542,6 +3548,7 @@ export type Database = {
         Row: {
           balance_due: number | null;
           billing_address: string | null;
+          contact_name: string | null;
           created_at: string | null;
           discount_percent: number | null;
           email: string | null;
@@ -3553,6 +3560,7 @@ export type Database = {
           name_key: string | null;
           notes: string | null;
           orders_count: number | null;
+          other_phones: Json | null;
           overdue_invoices_count: number | null;
           phone: string | null;
           portal_token: string | null;
@@ -5147,6 +5155,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      valid_client_phones: { Args: { p_phones: Json }; Returns: boolean };
       verify_kiosk_exit_code: { Args: { p_code: string }; Returns: boolean };
       workshop_board: { Args: Record<PropertyKey, never>; Returns: Json };
     };

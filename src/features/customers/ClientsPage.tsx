@@ -8,19 +8,29 @@ import { formatEuro } from '@/lib/numbers';
 import { usePagination } from '@/lib/use-pagination';
 import type { ClientOverview } from './api';
 import { CustomersTabs } from './CustomersTabs';
-import { daysSince } from './domain';
+import { daysSince, otherPhones } from './domain';
 import { useClients } from './hooks';
 
 type Filter = 'all' | 'unpaid';
 
 const PAGE_SIZE = 20;
 
+const digits = (value: string) => value.replace(/\D/g, '');
+
+/** Recherche : nom, contact, e-mail, SIREN et tous les numéros (espaces et points ignorés). */
 const matches = (client: ClientOverview, search: string) => {
   if (!search) return true;
   const text = search.toLowerCase();
-  return [client.name, client.email, client.phone, client.siren].some((value) =>
-    (value ?? '').toLowerCase().includes(text),
-  );
+  const phones = [client.phone, ...otherPhones(client.other_phones).map((entry) => entry.phone)];
+  if (
+    [client.name, client.contact_name, client.email, client.siren, ...phones].some((value) =>
+      (value ?? '').toLowerCase().includes(text),
+    )
+  ) {
+    return true;
+  }
+  const searchDigits = digits(search);
+  return searchDigits.length >= 3 && phones.some((phone) => digits(phone ?? '').includes(searchDigits));
 };
 
 /** Liste des clients : véhicules, OR, chiffre d'affaires, impayés, dernière visite. */
@@ -58,7 +68,7 @@ export function ClientsPage() {
             <SearchField
               className="sm:w-[340px]"
               aria-label="Rechercher un client"
-              placeholder="Nom, e-mail, téléphone, SIREN…"
+              placeholder="Nom, contact, e-mail, téléphone, SIREN…"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />

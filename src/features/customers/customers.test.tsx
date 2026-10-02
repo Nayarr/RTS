@@ -29,9 +29,11 @@ import { ClientsPage } from './ClientsPage';
 import { DeadlinesPage } from './DeadlinesPage';
 import {
   clientFromForm,
+  clientSchema,
   clientToForm,
   deadlineStatus,
   mileageHistory,
+  otherPhones,
   vehicleFromForm,
   vehicleToForm,
 } from './domain';
@@ -68,7 +70,9 @@ const client = (overrides: Partial<ClientOverview> = {}): ClientOverview =>
     id: 'c1',
     name: 'Transports Martin',
     email: 'compta@martin.fr',
+    contact_name: null,
     phone: null,
+    other_phones: [],
     billing_address: '1 rue du Port, 95190 Goussainville',
     siren: '123456789',
     discount_percent: null,
@@ -194,12 +198,32 @@ describe('clients et véhicules : règles', () => {
     expect(clientFromForm(values, false)).toEqual({
       name: 'Transports Martin',
       email: 'compta@martin.fr',
+      contact_name: null,
       phone: null,
+      other_phones: [],
       billing_address: '1 rue du Port, 95190 Goussainville',
       siren: '123456789',
       notes: null,
     });
     expect(clientFromForm(values, true)).toMatchObject({ discount_percent: 5.5, hourly_rate: 85 });
+  });
+
+  it('fiche client : autres numéros lus et enregistrés avec leur libellé', () => {
+    expect(
+      otherPhones([{ label: 'Comptabilité', phone: '01 23 45 67 89' }, { phone: 'sans libellé' }, null]),
+    ).toEqual([{ label: 'Comptabilité', phone: '01 23 45 67 89' }]);
+    expect(otherPhones(null)).toEqual([]);
+    const values = {
+      ...clientToForm(client({ other_phones: [{ label: 'Comptabilité', phone: '01 23 45 67 89' }] })),
+      contact_name: ' M. Martin ',
+      other_phones: [{ label: ' Chef d’atelier ', phone: ' 06 11 22 33 44 ' }],
+    };
+    expect(clientFromForm(values, false)).toMatchObject({
+      contact_name: 'M. Martin',
+      other_phones: [{ label: 'Chef d’atelier', phone: '06 11 22 33 44' }],
+    });
+    const missing = clientSchema.safeParse({ ...values, other_phones: [{ label: '', phone: '06' }] });
+    expect(missing.success).toBe(false);
   });
 
   it('fiche véhicule : plaque mise en forme, VIN en majuscules, dates vides à null', () => {
@@ -224,6 +248,7 @@ describe('clients et véhicules : écrans', () => {
       client({
         id: 'c2',
         name: 'Logistique Durand',
+        other_phones: [{ label: 'Comptabilité', phone: '01 33 44 55 66' }],
         balance_due: 0,
         overdue_invoices_count: 0,
         last_visit: null,
@@ -237,7 +262,13 @@ describe('clients et véhicules : écrans', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Avec impayés 1' }));
     expect(screen.queryByRole('row', { name: /Logistique Durand/ })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Tous 2' }));
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher un client' }), 'durand');
+    const search = screen.getByRole('searchbox', { name: 'Rechercher un client' });
+    await userEvent.type(search, 'durand');
+    expect(screen.getByRole('row', { name: /Logistique Durand/ })).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Transports Martin/ })).toBeNull();
+    // Un autre numéro, tapé sans espaces, retrouve le client
+    await userEvent.clear(search);
+    await userEvent.type(search, '0133445566');
     expect(screen.getByRole('row', { name: /Logistique Durand/ })).toBeInTheDocument();
     expect(screen.queryByRole('row', { name: /Transports Martin/ })).toBeNull();
   });
@@ -263,11 +294,27 @@ describe('clients et véhicules : écrans', () => {
     expect(screen.queryByRole('button', { name: 'Supprimer' })).toBeNull();
     expect(screen.getByRole('link', { name: /^GH-512-RT/ })).toHaveAttribute('href', '/vehicules/v1');
 
-    await userEvent.type(screen.getByLabelText('Téléphone'), '0102030405');
+    await userEvent.type(screen.getByLabelText('Contact de référence'), 'Paul Martin');
+    await userEvent.type(screen.getByLabelText('Téléphone du contact'), '0102030405');
+    // Autres numéros : libellé obligatoire
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter un numéro' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter un numéro' }));
+    const first = screen.getByRole('group', { name: 'Autre numéro 1' });
+    await userEvent.type(within(first).getByLabelText('Numéro'), '01 99 88 77 66');
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer l’autre numéro 2' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await within(first).findByText('Indique à qui est ce numéro')).toBeInTheDocument();
+    expect(updateClient).not.toHaveBeenCalled();
+
+    await userEvent.type(within(first).getByLabelText('Libellé'), 'Comptabilité');
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() => expect(updateClient).toHaveBeenCalled());
     const patch = vi.mocked(updateClient).mock.calls[0]?.[1];
-    expect(patch).toMatchObject({ phone: '0102030405' });
+    expect(patch).toMatchObject({
+      contact_name: 'Paul Martin',
+      phone: '0102030405',
+      other_phones: [{ label: 'Comptabilité', phone: '01 99 88 77 66' }],
+    });
     expect(patch).not.toHaveProperty('hourly_rate');
     expect(patch).not.toHaveProperty('discount_percent');
   });
