@@ -1,8 +1,14 @@
-import type { RepairOrderOverview } from '@/features/repair-orders/api';
+import type { RepairOrderOverview, RoLine } from '@/features/repair-orders/api';
 import { OPEN_STATUSES } from '@/features/repair-orders/constants';
+import type { InspectionData } from '@/features/repair-orders/inspection';
 
-/** Estimations proposées au technicien (comme l'ancienne appli) ; « 12h+ » = au moins 12 h. */
-export const TIME_OPTIONS = [...Array.from({ length: 13 }, (_, hours) => `${hours}h`), '12h+'] as const;
+/** Estimations proposées au technicien (comme l'ancienne appli, plus 0,5 h) ; « 12h+ » = au moins 12 h. */
+export const TIME_OPTIONS = [
+  '0h',
+  '0.5h',
+  ...Array.from({ length: 12 }, (_, hours) => `${hours + 1}h`),
+  '12h+',
+] as const;
 
 /** Valeur du sélecteur ↔ colonnes estimated_hours / estimate_is_minimum. */
 export function timeOptionValue(hours: number | null, isMinimum: boolean): string {
@@ -20,11 +26,64 @@ export function parseTimeOption(value: string): {
   return { estimated_hours: Number(match[1].replace(',', '.')), estimate_is_minimum: match[2] === '+' };
 }
 
-/** Options du sélecteur, en gardant une valeur existante hors liste (ex. 0,5 h saisie au bureau). */
+const optionHours = (option: string) => parseTimeOption(option).estimated_hours ?? 0;
+
+/** Options du sélecteur, en gardant à sa place une valeur existante hors liste (ex. 1,5 h saisie au bureau). */
 export function timeOptionsFor(current: string): string[] {
-  return current && !(TIME_OPTIONS as readonly string[]).includes(current)
-    ? [TIME_OPTIONS[0], current, ...TIME_OPTIONS.slice(1)]
-    : [...TIME_OPTIONS];
+  if (!current || (TIME_OPTIONS as readonly string[]).includes(current)) return [...TIME_OPTIONS];
+  const index = TIME_OPTIONS.findIndex((option) => optionHours(option) > optionHours(current));
+  const at = index === -1 ? TIME_OPTIONS.length - 1 : index;
+  return [...TIME_OPTIONS.slice(0, at), current, ...TIME_OPTIONS.slice(at)];
+}
+
+/** Libellé affiché d'une option : « 0,5 h », « 12 h et plus ». */
+export const timeOptionLabel = (option: string) =>
+  option.endsWith('+') ? `${option.slice(0, -2)} h et plus` : `${option.slice(0, -1).replace('.', ',')} h`;
+
+// ---------------------------------------------------------------- Clôture de l'OR
+
+/** Photo exigée quand l'étiquette du contrôle hayon est HS (même libellé que le bouton photo). */
+export const TAILGATE_PHOTO_LABEL = 'Étiquette contrôle hayon';
+
+const hasTime = (line: RoLine) =>
+  line.estimated_hours !== null ||
+  // Forfait à prévoir : son temps barème suffit pour le devis.
+  (line.kind === 'planned' && line.line_type === 'package' && line.standard_hours !== null);
+
+const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? 's' : ''}`;
+
+/**
+ * Ce qu'il reste à compléter avant « Travaux terminés » (mêmes règles que la base) : temps estimé de
+ * chaque tâche, taille des pneus à 50 % ou HS, photo de l'étiquette du contrôle hayon HS.
+ */
+export function finishBlockers(
+  lines: RoLine[],
+  inspection: InspectionData | null,
+  photoLabels: string[],
+): string[] {
+  const blockers: string[] = [];
+  const timed = (kind: RoLine['kind']) =>
+    lines.filter(
+      (line) =>
+        line.kind === kind && (line.line_type === 'labor' || line.line_type === 'package') && !hasTime(line),
+    ).length;
+  const done = timed('done');
+  const planned = timed('planned');
+  if (done) blockers.push(`Temps estimé manquant : ${plural(done, 'tâche')} des travaux effectués`);
+  if (planned) blockers.push(`Temps estimé manquant : ${plural(planned, 'tâche')} à prévoir`);
+  for (const [side, label] of [
+    ['avant', 'avant'],
+    ['arriere', 'arrière'],
+  ] as const) {
+    const state = inspection?.pneus?.[`${side}_etat`];
+    if ((state === '50' || state === 'HS') && !inspection?.pneus?.[`${side}_taille`]?.trim()) {
+      blockers.push(`Taille des pneus ${label} obligatoire (${state === 'HS' ? 'HS' : '50 %'})`);
+    }
+  }
+  if (inspection?.controles?.hayon === 'HS' && !photoLabels.includes(TAILGATE_PHOTO_LABEL)) {
+    blockers.push('Photo de l’étiquette contrôle hayon obligatoire (HS)');
+  }
+  return blockers;
 }
 
 export type SeenState = 'new' | 'updated' | null;

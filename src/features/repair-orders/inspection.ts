@@ -46,7 +46,13 @@ export const CHECK_FIELDS = [
 ] as const;
 
 /** Contrôles pour lesquels le technicien peut photographier l'étiquette. */
-export const CHECK_PHOTO_FIELDS = ['hayon', 'extincteur1', 'extincteur2', 'extincteur6'] as const;
+export const CHECK_PHOTO_FIELDS = [
+  'etiquettes',
+  'hayon',
+  'extincteur1',
+  'extincteur2',
+  'extincteur6',
+] as const;
 
 export const WARNING_LIGHT_FIELDS = [
   ['moteur', 'Moteur'],

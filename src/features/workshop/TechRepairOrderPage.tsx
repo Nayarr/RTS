@@ -9,6 +9,7 @@ import { useRepairOrder } from '@/features/repair-orders/hooks';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { TaskList } from '@/features/repair-orders/TaskList';
 import { markSeen } from './api';
+import { finishBlockers } from './domain';
 import { seenKey } from './hooks';
 import { DeadlinesSection } from './order/DeadlinesSection';
 import { FinishSection } from './order/FinishSection';
@@ -102,10 +103,20 @@ export function TechRepairOrderPage() {
         repairOrderId={order.id}
         initial={inspection}
         capture={capture}
+        photoLabels={photos.map((photo) => photo.label)}
         locked={locked}
       />
       <DeadlinesSection repairOrderId={order.id} vehicleId={order.vehicle_id} locked={locked} />
-      {!locked && <FinishSection repairOrderId={order.id} />}
+      {!locked && (
+        <FinishSection
+          repairOrderId={order.id}
+          blockers={finishBlockers(
+            lines,
+            inspection,
+            photos.map((photo) => photo.label),
+          )}
+        />
+      )}
     </div>
   );
 }

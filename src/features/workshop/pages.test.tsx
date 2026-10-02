@@ -5,7 +5,13 @@ import { toast } from 'sonner';
 import { describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
-import { fetchRepairOrder, type RepairOrderOverview, type RoLine } from '@/features/repair-orders/api';
+import {
+  fetchRepairOrder,
+  type RepairOrderOverview,
+  type RoLine,
+  type RoPhoto,
+} from '@/features/repair-orders/api';
+import type { InspectionData } from '@/features/repair-orders/inspection';
 import type * as RoApi from '@/features/repair-orders/api';
 import { fakeSession, renderRoutes } from '@/test/render';
 import {
@@ -88,7 +94,10 @@ const line = (overrides: Partial<RoLine>): RoLine =>
     ...overrides,
   }) as RoLine;
 
-const setup = (path: string, detail?: { order: RepairOrderOverview; lines?: RoLine[] }) => {
+const setup = (
+  path: string,
+  detail?: { order: RepairOrderOverview; lines?: RoLine[]; inspection?: InspectionData; photos?: string[] },
+) => {
   vi.mocked(fetchProfile).mockResolvedValue({
     id: '00000000-0000-0000-0000-0000000000a1',
     email: 'alice@test.fr',
@@ -105,8 +114,8 @@ const setup = (path: string, detail?: { order: RepairOrderOverview; lines?: RoLi
     vi.mocked(fetchRepairOrder).mockResolvedValue({
       order: detail.order,
       lines: detail.lines ?? [],
-      photos: [],
-      inspection: null,
+      photos: (detail.photos ?? []).map((label, index) => ({ id: `p${index}`, label }) as RoPhoto),
+      inspection: detail.inspection ?? null,
       timeEntries: [],
     });
   }
@@ -232,6 +241,51 @@ describe('fiche OR technicien', () => {
     await userEvent.click(finish);
     await waitFor(() => expect(completeRepairOrder).toHaveBeenCalledWith('ro1', true));
     expect(await screen.findByRole('heading', { name: 'Mes ordres de réparation' })).toBeInTheDocument();
+  });
+
+  it('travaux terminés : ce qu’il reste à compléter est listé, le bouton attend', async () => {
+    vi.mocked(fetchMyRepairOrders).mockResolvedValue([]);
+    setup('/atelier/or/ro1', {
+      order: order({ status: 'in_progress' }),
+      lines: [line({}), line({ id: 'l2', kind: 'planned', description: 'Remplacement plaquettes' })],
+      inspection: { pneus: { avant_etat: 'HS' }, controles: { hayon: 'HS' } },
+      photos: ['Extincteur 1 kg cabine'],
+    });
+
+    const blockers = await screen.findByRole('status', { name: 'À compléter avant de terminer' });
+    expect(
+      within(blockers)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      'Temps estimé manquant : 1 tâche des travaux effectués',
+      'Temps estimé manquant : 1 tâche à prévoir',
+      'Taille des pneus avant obligatoire (HS)',
+      'Photo de l’étiquette contrôle hayon obligatoire (HS)',
+    ]);
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Devis nécessaire ?' })).getByRole('button', { name: 'NON' }),
+    );
+    expect(screen.getByRole('button', { name: /Travaux terminés/ })).toBeDisabled();
+
+    // Signalé à l'endroit à corriger
+    expect(screen.getByRole('textbox', { name: 'Taille pneus avant' })).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    expect(screen.getByText('Taille obligatoire : pneus à HS.')).toBeInTheDocument();
+    expect(screen.getByText('Étiquette HS : photo obligatoire avant de terminer l’OR.')).toBeInTheDocument();
+    // Photo de l'étiquette : simple icône, sur la ligne OK / HS (angles morts compris)
+    for (const label of ['Étiquettes angles morts', 'Étiquette contrôle hayon', 'Extincteur 6 kg camion']) {
+      expect(
+        screen.getByRole('button', { name: new RegExp(`^Photo de l’étiquette « ${label} »`) }),
+      ).toHaveTextContent('');
+    }
+    expect(
+      screen.getByRole('button', { name: 'Photo de l’étiquette « Extincteur 1 kg cabine » (déjà prise)' }),
+    ).toBeInTheDocument();
+    // 0,5 h proposé dans la liste des temps
+    expect(screen.getAllByRole('option', { name: '0,5 h' }).length).toBeGreaterThan(0);
   });
 
   it('pièces prévues par le bureau : état de commande, sans prix ni édition', async () => {
