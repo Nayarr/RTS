@@ -62,7 +62,7 @@ test('fiche client : coordonnées, véhicules et OR ; fiche véhicule : carte gr
 
   await expect(page.getByRole('heading', { name: clientName })).toBeVisible();
   await expect(page.getByLabel('Remise client (%)')).toHaveCount(0); // réservé à la direction
-  await page.getByLabel('Téléphone').fill('01 02 03 04 05');
+  await page.getByLabel('Téléphone du contact').fill('01 02 03 04 05');
   await page.getByLabel('Adresse de facturation').fill('3 rue du Test, 95190 Goussainville');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page.getByText('Fiche client enregistrée')).toBeVisible();
