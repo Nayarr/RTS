@@ -1,4 +1,4 @@
-// Signature dessinée par le client sur la page du devis : image PNG envoyée en data URL.
+// Signature dessinée par le client sur une page publique (devis, OR) : image PNG envoyée en data URL.
 
 export const MAX_SIGNATURE_BYTES = 1024 * 1024; // même limite que les signatures du bureau
 

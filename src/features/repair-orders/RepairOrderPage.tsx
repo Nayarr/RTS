@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Link, useParams } from 'react-router';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { SubcontractsCard } from './detail/SubcontractsCard';
 import { TimeCard } from './detail/TimeCard';
 import { useRepairOrder, useRepairOrderMutation, useRepairOrderSupplies } from './hooks';
 import { PreQuoteWorkCard } from './PreQuoteWorkCard';
+import type { SignatureChannel } from '@/features/signature/api';
 
 /** Travaux terminés (ou devis à faire) : l'OR passe en « Facture à faire ». */
 function ValidateButton({ order }: { order: RepairOrderOverview }) {
@@ -43,6 +44,15 @@ export function RepairOrderPage() {
   const supplies = useRepairOrderSupplies(id);
   const { data: profile } = useProfile();
   const isDirection = profile?.role === 'direction';
+  // Signature choisie à la création de l'OR (?signature=borne|email) : lancée une fois, puis retirée de l'adresse.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [autoSignature] = useState<SignatureChannel | null>(() => {
+    const value = searchParams.get('signature');
+    return value === 'borne' ? 'kiosk' : value === 'email' ? 'email' : null;
+  });
+  useEffect(() => {
+    if (searchParams.has('signature')) setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const header = (number?: string, actions?: ReactNode) => (
     <PageHeader
@@ -101,7 +111,7 @@ export function RepairOrderPage() {
           <ValidateButton order={order} />
         </>,
       )}
-      <OrderHeader order={order} />
+      <OrderHeader order={order} autoSignature={autoSignature} />
       <OfficeInfoForm order={order} />
       <div className="split grid-cols-1! xl:grid-cols-[minmax(0,1fr)_380px]!">
         <div className="col gap-5">

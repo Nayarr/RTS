@@ -13,6 +13,8 @@ import { DEADLINE_BADGE_CLASS, DEADLINE_TONE_CLASS, deadlineStatus } from '@/fea
 import { PAYMENT_STATUS_META } from '@/features/invoices/domain';
 import { formatDate, formatDateTime } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
+import { TaskList } from '@/features/repair-orders/TaskList';
+import { signRepairOrderOnline } from '@/features/signature/api';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import {
@@ -23,6 +25,7 @@ import {
   type PublicPortal,
   type PublicQuote,
   type PublicQuoteLine,
+  type PublicSignature,
 } from './api';
 
 type TableLine = Pick<
@@ -563,6 +566,139 @@ function PortalDocument({ portal }: { portal: PublicPortal }) {
   );
 }
 
+/** Signature de l'OR par le client absent : nom + signature dessinée. */
+function SignatureForm({ token }: { token: string }) {
+  const queryClient = useQueryClient();
+  const pad = useSignaturePad();
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const sign = useMutation({
+    mutationFn: () =>
+      signRepairOrderOnline({ token, signer_name: name.trim(), signature: pad.toDataUrl() ?? '' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-document', token] }),
+    onError: (err) =>
+      setError(
+        err instanceof Error ? err.message : 'Impossible d’enregistrer votre signature. Contactez l’atelier.',
+      ),
+  });
+
+  const submit = () => {
+    setError(null);
+    if (!name.trim()) return setError('Merci d’indiquer votre nom.');
+    if (pad.isEmpty) return setError('Merci de signer dans le cadre ci-dessous.');
+    sign.mutate();
+  };
+
+  return (
+    <section data-slot="card" className="card print:hidden" aria-labelledby="signature-title">
+      <div className="card-h flex-wrap">
+        <h2 className="h2 text-[22px]!" id="signature-title">
+          Accord avant intervention
+        </h2>
+        <span className="hint">L’atelier sera prévenu dès votre signature.</span>
+      </div>
+      <div className="card-b col gap-4 sm:px-6! sm:py-[22px]!">
+        <div className="field max-w-[400px]">
+          <Label htmlFor="signer-name">Votre nom</Label>
+          <Input
+            id="signer-name"
+            autoComplete="name"
+            className="h-12 text-[15px]!"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </div>
+        <div className="field">
+          <span className="lbl">Signez dans le cadre ci-dessous :</span>
+          <div className="relative">
+            <SignaturePad pad={pad} label="Signature du client" showClear={false} />
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="absolute top-2.5 right-2.5"
+              onClick={pad.clear}
+              disabled={pad.isEmpty}
+            >
+              Effacer
+            </Button>
+          </div>
+        </div>
+        {error && (
+          <p role="alert" className="err">
+            {error}
+          </p>
+        )}
+        <Button size="lg" className="self-end" disabled={sign.isPending} onClick={submit}>
+          <PenLine /> Signer l’ordre de réparation
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function SignatureDocument({ request, token }: { request: PublicSignature; token: string }) {
+  const { company } = request;
+  return (
+    <>
+      <PublicHeader company={company} subtitle={companyAddress(company)}>
+        {request.status === 'signed' && <span className="badge lg s-ok">Signé</span>}
+      </PublicHeader>
+      <main className="col mx-auto w-full max-w-[880px] gap-5 px-3 py-5 sm:py-8">
+        <article data-slot="card" className="card overflow-hidden">
+          <DocumentHead
+            title="ORDRE DE RÉPARATION"
+            meta={
+              <>
+                N° {request.number}
+                {request.planned_date && ` · intervention prévue le ${formatDate(request.planned_date)}`}
+              </>
+            }
+            aside={
+              <>
+                <span>
+                  <span className="muted">Client :</span> <b>{request.client_name ?? '—'}</b>
+                </span>
+                <span>
+                  <span className="muted">Véhicule :</span>{' '}
+                  <b className="plate">{request.vehicle_plate ?? '—'}</b>
+                </span>
+              </>
+            }
+          />
+          <div className="col gap-2 px-5 py-5 sm:px-7">
+            <span className="overline">Travaux demandés</span>
+            <TaskList text={request.requested_work} className="text-[15px] leading-normal" />
+          </div>
+        </article>
+
+        {request.status === 'pending' && (
+          <>
+            <Notice tone="s-blue">
+              En signant, vous autorisez l’atelier à réaliser les travaux ci-dessus. Lien valable jusqu’au{' '}
+              {formatDate(request.expires_at)}.
+            </Notice>
+            <SignatureForm token={token} />
+          </>
+        )}
+        {request.status === 'signed' && (
+          <Notice tone="s-ok">
+            Signé{request.signer_name && ` par ${request.signer_name}`}
+            {request.signed_at && ` le ${formatDate(request.signed_at)}`}. Merci, l’atelier a bien reçu votre
+            accord.
+          </Notice>
+        )}
+        {(request.status === 'expired' || request.status === 'cancelled') && (
+          <Notice tone="s-grey">
+            Ce lien de signature n’est plus valable : contactez l’atelier pour en recevoir un nouveau.
+          </Notice>
+        )}
+      </main>
+    </>
+  );
+}
+
 /** Page publique ouverte avec le lien reçu par e-mail ou SMS (sans compte). */
 export function PublicDocumentPage() {
   const { token = '' } = useParams();
@@ -580,6 +716,7 @@ export function PublicDocumentPage() {
   else if (data?.type === 'quote') content = <QuoteDocument quote={data} token={token} />;
   else if (data?.type === 'invoice') content = <InvoiceDocument invoice={data} />;
   else if (data?.type === 'portal') content = <PortalDocument portal={data} />;
+  else if (data?.type === 'signature') content = <SignatureDocument request={data} token={token} />;
   else content = message('Ce document est introuvable ou le lien a expiré.');
 
   return <div className="min-h-dvh bg-background print:bg-white">{content}</div>;

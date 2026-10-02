@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { signOut } from '@/features/auth/api';
 import { uploadFile } from '@/features/files/api';
+import { KioskSignatureDialog } from '@/features/signature/KioskSignatureDialog';
 import { setTvMode } from '@/features/workshop-board/domain';
 import { cn } from '@/lib/utils';
 import { fetchCompanyName, kioskClock, verifyExitCode } from './api';
@@ -106,6 +107,9 @@ export function KioskPage() {
   useEffect(() => {
     if (exitOpen) return;
     const onKey = (event: KeyboardEvent) => {
+      // Saisie dans un champ (nom du client dans la fenêtre de signature) : pas pour le code PIN.
+      if (event.target instanceof HTMLElement && event.target.closest('input, textarea, [role="dialog"]'))
+        return;
       if (/^\d$/.test(event.key)) press(event.key);
       else if (event.key === 'Enter') press('OK');
       else if (event.key === 'Backspace' && !busy) setPin((current) => current.slice(0, -1));
@@ -213,6 +217,8 @@ export function KioskPage() {
         <Settings className="size-[18px]" />
       </button>
       {exitOpen && <ExitDialog onClose={() => setExitOpen(false)} />}
+      {/* Signature demandée par l'accueil (client sur place) */}
+      <KioskSignatureDialog />
     </div>
   );
 }
