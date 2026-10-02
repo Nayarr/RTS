@@ -79,9 +79,10 @@ export function OrderHeader({
           </div>
         </div>
 
+        {/* Colonne signature : sa 1re ligne a la hauteur de la plaque (h-11), au niveau du statut. */}
         {order.customer_signature_file_id ? (
           <div className="col w-[250px] gap-2">
-            <span className="row gap-1.5 text-[13px] font-semibold text-success">
+            <span className="row min-h-11 gap-1.5 text-[13px] font-semibold text-success">
               <CheckCircle2 className="i xs" /> Signature client (accord avant intervention)
             </span>
             <StoredImage
@@ -91,7 +92,7 @@ export function OrderHeader({
             />
           </div>
         ) : order.status === 'invoiced' ? (
-          <p className="row w-[250px] gap-1.5 text-[13px] font-semibold text-destructive">
+          <p className="row min-h-11 w-[250px] gap-1.5 text-[13px] font-semibold text-destructive">
             <AlertTriangle className="i xs" /> Aucune signature client enregistrée.
           </p>
         ) : (

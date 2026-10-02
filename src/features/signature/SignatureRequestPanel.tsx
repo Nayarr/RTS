@@ -132,7 +132,7 @@ export function SignatureRequestPanel({
     <div className="col w-[250px] gap-2" aria-label="Signature du client">
       {kioskPending && seconds > 0 ? (
         <div className="col gap-1.5" role="status">
-          <span className="row gap-1.5 text-[13px] font-semibold">
+          <span className="row min-h-11 gap-1.5 text-[13px] font-semibold">
             <Tablet className="i xs" /> En attente sur la borne… {seconds} s
           </span>
           <div className="h-1.5 overflow-hidden rounded bg-muted">
@@ -153,7 +153,7 @@ export function SignatureRequestPanel({
         </div>
       ) : (
         <>
-          <p className="row gap-1.5 text-[13px] font-semibold text-destructive">
+          <p className="row min-h-11 gap-1.5 text-[13px] font-semibold text-destructive">
             <AlertTriangle className="i xs" />
             {kioskExpired || (kioskPending && seconds === 0)
               ? 'Pas signé sur la borne dans la minute.'
