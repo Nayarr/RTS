@@ -5,6 +5,7 @@ import { StoredImage } from '@/features/files/StoredImage';
 import type { RepairOrderOverview } from '../api';
 import { formatDate, VEHICLE_TYPES } from '../constants';
 import { StatusBadge } from '../StatusBadge';
+import { TaskList } from '../TaskList';
 
 /** En-tête de la fiche OR : véhicule, client, statut, tâche demandée, signature du client. */
 export function OrderHeader({ order }: { order: RepairOrderOverview }) {
@@ -40,7 +41,7 @@ export function OrderHeader({ order }: { order: RepairOrderOverview }) {
             </div>
           </div>
 
-          <p className="text-[15px] leading-normal whitespace-pre-line">{order.requested_work}</p>
+          <TaskList text={order.requested_work} className="text-[15px] leading-normal" />
 
           <div className="row wrap muted gap-[18px] text-[13.5px]">
             <span className="row gap-1.5">

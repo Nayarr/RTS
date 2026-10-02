@@ -17,6 +17,7 @@ import {
 } from './constants';
 import { useRepairOrders } from './hooks';
 import { StatusBadge } from './StatusBadge';
+import { taskSummary } from './tasks';
 
 type Filter = 'active' | 'all' | 'parts' | RepairOrderStatus;
 
@@ -215,7 +216,7 @@ export function RepairOrdersPage() {
                         </div>
                         <StatusBadge status={order.status} />
                       </div>
-                      <p className="line-clamp-2">{order.requested_work}</p>
+                      <p className="line-clamp-2">{taskSummary(order.requested_work)}</p>
                       <div className="row between wrap gap-2 text-[13px]">
                         <Technician order={order} />
                         <span className="muted">

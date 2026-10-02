@@ -125,7 +125,8 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
         </div>
       </Link>
       {isOffice && <GlobalSearch />}
-      <nav className="nav overflow-y-auto!" aria-label="Navigation principale">
+      <nav className="nav" aria-label="Navigation principale">
+        {/* Toujours visible en haut du menu : seuls les groupes défilent dessous. */}
         <Link
           to="/"
           className={cn('ni', current === '/' && 'on')}
@@ -135,10 +136,12 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
           <House className="size-[18px]" />
           <span>{isOffice ? 'Tableau de bord' : 'Accueil'}</span>
         </Link>
-        {ops.length > 0 && <div className="overline">Opérations</div>}
-        {ops.map(renderGroup)}
-        {mgmt.length > 0 && <div className="overline">Gestion</div>}
-        {mgmt.map(renderGroup)}
+        <div className="nav-scroll">
+          {ops.length > 0 && <div className="overline">Opérations</div>}
+          {ops.map(renderGroup)}
+          {mgmt.length > 0 && <div className="overline">Gestion</div>}
+          {mgmt.map(renderGroup)}
+        </div>
       </nav>
       <div className="side-foot">
         {role === 'direction' && (

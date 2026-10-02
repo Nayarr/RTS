@@ -7,6 +7,7 @@ import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { formatDate, formatDuration } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
+import { taskSummary } from '@/features/repair-orders/tasks';
 import { cn } from '@/lib/utils';
 import { seenState, splitMyOrders, type SeenState } from './domain';
 import { useMyRepairOrders, useSeen } from './hooks';
@@ -45,7 +46,7 @@ function OrderCard({
         </span>
         <StatusBadge status={order.status} />
       </div>
-      <span className="line-clamp-3 text-sm">{order.requested_work}</span>
+      <span className="line-clamp-3 text-sm">{taskSummary(order.requested_work)}</span>
       <span className="hint row wrap gap-x-1.5">
         {[order.client_name, planned].filter(Boolean).join(' · ')}
         {order.worked_seconds > 0 && (
@@ -70,7 +71,7 @@ function RunningCard({ order }: { order: RepairOrderOverview }) {
       </span>
       <span className="col min-w-0 grow gap-0">
         <b>Chrono en cours · {order.plate}</b>
-        <span className="truncate text-[12.5px] opacity-80">{order.requested_work}</span>
+        <span className="truncate text-[12.5px] opacity-80">{taskSummary(order.requested_work)}</span>
       </span>
       <b className="num font-display text-[22px]">{formatDuration(order.worked_seconds)}</b>
     </Link>

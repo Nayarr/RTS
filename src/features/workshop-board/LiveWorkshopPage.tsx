@@ -10,6 +10,7 @@ import { useProfile } from '@/features/auth/useProfile';
 import { formatDuration } from '@/features/repair-orders/constants';
 import { useRepairOrders } from '@/features/repair-orders/hooks';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
+import { taskSummary } from '@/features/repair-orders/tasks';
 import { cn } from '@/lib/utils';
 import { exitCodeIsSet } from './api';
 import { setTvMode, workshopOrders } from './domain';
@@ -148,7 +149,9 @@ export function LiveWorkshopPage() {
                       <span className="sr-only"> — Technicien : {order.technician_name ?? '—'}</span>
                     </span>
                     {order.requested_work && (
-                      <span className="muted truncate text-[12.5px]">{order.requested_work}</span>
+                      <span className="muted truncate text-[12.5px]">
+                        {taskSummary(order.requested_work)}
+                      </span>
                     )}
                     {order.running_since ? (
                       <span className="row warn-t gap-1.5 text-[12.5px] font-semibold">
