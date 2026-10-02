@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Lock, Plus, Trash2 } from 'lucide-react';
+import { Lock, Mic, Plus, Square, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { RoLine } from '@/features/repair-orders/api';
+import { useDictation } from '@/lib/use-dictation';
+import { cn } from '@/lib/utils';
 import { addLine, deleteLine, updateLine, type LinePatch } from '../api';
 import { parseTimeOption, timeOptionLabel, timeOptionsFor, timeOptionValue } from '../domain';
 import { useWorkshopMutation } from '../hooks';
@@ -111,29 +114,55 @@ function LineGroup({
   /** Bouton « + » seul (titre long). */
   compactAdd?: boolean;
 }) {
-  const add = useWorkshopMutation(repairOrderId, () =>
-    addLine(repairOrderId, kind, Math.max(-1, ...lines.map((line) => line.position)) + 1),
+  const nextPosition = Math.max(-1, ...lines.map((line) => line.position)) + 1;
+  const add = useWorkshopMutation(repairOrderId, (description: string) =>
+    addLine(repairOrderId, kind, nextPosition, description),
   );
+  // Dictée : la phrase prononcée devient une nouvelle tâche.
+  const dictation = useDictation({
+    onFinal: (text) => add.mutate(text, { onSuccess: () => toast.success(`Tâche ajoutée : ${text}`) }),
+    onError: (message) => toast.error(message),
+  });
   const headingId = `tech-lines-${kind}`;
   return (
     <section data-slot="card" className="card sec" aria-labelledby={headingId}>
       <div className="sec-t">
         <h2 id={headingId}>{title}</h2>
         {!locked && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            aria-label="Ajouter une tâche"
-            disabled={add.isPending}
-            onClick={() => add.mutate(undefined)}
-          >
-            <Plus />
-            {!compactAdd && 'Ajouter'}
-          </Button>
+          <div className="row shrink-0 gap-1.5">
+            {dictation.supported && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn(dictation.listening && 'border-destructive text-destructive')}
+                aria-label={dictation.listening ? 'Arrêter la dictée' : 'Dicter une tâche'}
+                aria-pressed={dictation.listening}
+                onClick={dictation.listening ? dictation.stop : dictation.start}
+              >
+                {dictation.listening ? <Square className="fill-current" /> : <Mic />}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label="Ajouter une tâche"
+              disabled={add.isPending}
+              onClick={() => add.mutate('')}
+            >
+              <Plus />
+              {!compactAdd && 'Ajouter'}
+            </Button>
+          </div>
         )}
       </div>
+      {dictation.listening && (
+        <p className="dictating" role="status">
+          <span className="dot" aria-hidden />
+          {dictation.interim ? `« ${dictation.interim} »` : 'J’écoute… dis la tâche, puis attends.'}
+        </p>
+      )}
       {lines.length === 0 ? (
         <p className="hint">Aucune tâche ajoutée pour l’instant.</p>
       ) : (

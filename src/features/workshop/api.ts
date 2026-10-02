@@ -105,10 +105,15 @@ export async function saveInspection(repairOrderId: string, data: InspectionData
   if (error) throw error;
 }
 
-export async function addLine(repairOrderId: string, kind: RoLine['kind'], position: number) {
+export async function addLine(
+  repairOrderId: string,
+  kind: RoLine['kind'],
+  position: number,
+  description = '',
+) {
   const { data, error } = await supabase
     .from('ro_lines')
-    .insert({ repair_order_id: repairOrderId, kind, position, line_type: 'labor', description: '' })
+    .insert({ repair_order_id: repairOrderId, kind, position, line_type: 'labor', description })
     .select()
     .single();
   if (error) throw error;
