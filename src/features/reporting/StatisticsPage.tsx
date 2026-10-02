@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchMonthlyStatistics } from './api';
 import { BarChart } from './BarChart';
-import { compactAmount, formatEuroRounded, monthLabel } from './domain';
+import { compactAmount, formatEuroRounded, monthLabel, monthLongLabel } from './domain';
 import { ReportingHeader } from './ReportingTabs';
 
 const LABOR_FILL = 'var(--primary)';
@@ -72,10 +72,27 @@ export function StatisticsPage() {
                     key: m.month,
                     label: monthLabel(m.month),
                     valueLabel: compactAmount(m.labor_ht + m.parts_ht),
-                    title: `${monthLabel(m.month)} — main d’œuvre ${formatEuroRounded(m.labor_ht)}, pièces ${formatEuroRounded(m.parts_ht)}`,
+                    title: monthLongLabel(m.month),
                     segments: [
                       { value: m.labor_ht, fill: LABOR_FILL },
                       { value: m.parts_ht, fill: PARTS_FILL },
+                    ],
+                    details: [
+                      {
+                        label: 'Main d’œuvre / forfaits',
+                        value: formatEuroRounded(m.labor_ht),
+                        fill: LABOR_FILL,
+                      },
+                      { label: 'Pièces', value: formatEuroRounded(m.parts_ht), fill: PARTS_FILL },
+                      { label: 'Marge pièces', value: formatEuroRounded(m.parts_margin_ht) },
+                      ...(m.credit_notes_ht > 0
+                        ? [{ label: 'Avoirs', value: `−${formatEuroRounded(m.credit_notes_ht)}` }]
+                        : []),
+                      {
+                        label: `Total HT · ${m.invoice_count} facture${m.invoice_count > 1 ? 's' : ''}`,
+                        value: formatEuroRounded(m.total_ht),
+                        total: true,
+                      },
                     ],
                   }))}
                 />

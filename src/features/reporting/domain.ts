@@ -16,6 +16,16 @@ export const monthLabel = (month: string) =>
   });
 
 /** « 2026-09-28 » → « 28/09 » */
+/** « Septembre 2026 » (titre du détail d'un mois). */
+export const monthLongLabel = (month: string) => {
+  const text = new Date(`${month}T00:00:00Z`).toLocaleDateString('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
 export const shortDayLabel = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
 
 /** Montant au-dessus d'une barre : « 12,5k », rien si nul. */
