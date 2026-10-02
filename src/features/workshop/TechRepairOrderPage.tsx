@@ -7,6 +7,7 @@ import { useProfile } from '@/features/auth/useProfile';
 import { OPEN_STATUSES, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useRepairOrder } from '@/features/repair-orders/hooks';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
+import { TaskList } from '@/features/repair-orders/TaskList';
 import { markSeen } from './api';
 import { seenKey } from './hooks';
 import { DeadlinesSection } from './order/DeadlinesSection';
@@ -83,7 +84,7 @@ export function TechRepairOrderPage() {
       )}
 
       <section data-slot="card" className="card sec" aria-label="Travaux demandés">
-        <p className="text-[14.5px] leading-[1.45] whitespace-pre-line">{order.requested_work}</p>
+        <TaskList text={order.requested_work} className="text-[14.5px] leading-[1.45]" />
       </section>
 
       <TimerSection order={order} loadedAt={detail.dataUpdatedAt} locked={locked} />

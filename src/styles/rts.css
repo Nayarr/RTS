@@ -1089,6 +1089,18 @@
     min-height: 0;
     overflow: hidden;
   }
+  .nav-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* La barre de défilement se loge dans la marge de la barre latérale : les liens gardent leur largeur */
+    margin-right: -10px;
+    scrollbar-gutter: stable;
+  }
   .nav .overline {
     padding: 14px 10px 4px;
     font-size: 11.5px;

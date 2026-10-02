@@ -16,6 +16,7 @@ import { initials } from '@/app/nav';
 import { verifyExitCode } from '@/features/kiosk/api';
 import { technicianColor } from '@/features/planning/domain';
 import { useKioskMode } from '@/features/kiosk/use-kiosk-mode';
+import { taskSummary } from '@/features/repair-orders/tasks';
 import { cn } from '@/lib/utils';
 import { fetchWorkshopBoard } from './api';
 import { boardColumns, cardMeta, expectedVehicles, setTvMode } from './domain';
@@ -153,7 +154,7 @@ export function TvPage() {
               column.cards.map((card) => (
                 <article key={card.id} aria-label={card.plate} className={cn('tcard', card.running && 'run')}>
                   <span className="p">{card.plate}</span>
-                  <span className="t line-clamp-2">{card.task.slice(0, 70)}</span>
+                  <span className="t line-clamp-2">{taskSummary(card.task).slice(0, 70)}</span>
                   <span className="m">{cardMeta(card)}</span>
                 </article>
               ))

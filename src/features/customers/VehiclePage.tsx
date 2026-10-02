@@ -18,6 +18,7 @@ import { AppointmentDialog } from '@/features/planning/AppointmentDialog';
 import { formatDate, formatPlate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
+import { taskSummary } from '@/features/repair-orders/tasks';
 import { updateVehicle, type VehicleDetail } from './api';
 import {
   DEADLINE_LABELS,
@@ -245,7 +246,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                           </td>
                           <td className="num">{formatDate(order.created_at)}</td>
                           <td className="max-w-[320px] truncate whitespace-nowrap">
-                            {work || order.requested_work}
+                            {work || taskSummary(order.requested_work)}
                           </td>
                           <td className="r num">
                             {order.mileage ? order.mileage.toLocaleString('fr-FR') : '—'}
