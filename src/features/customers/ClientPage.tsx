@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -31,7 +31,7 @@ import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { deleteClient, updateClient, type ClientDetail } from './api';
-import { clientFromForm, clientSchema, clientToForm, type ClientValues } from './domain';
+import { clientFromForm, clientSchema, clientToForm, MAX_OTHER_PHONES, type ClientValues } from './domain';
 import { useClient, useCustomerMutation } from './hooks';
 
 /** OR regroupables sur une facture : terminés ou à facturer. */
@@ -60,10 +60,12 @@ function ClientView({ detail }: { detail: ClientDetail }) {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
   } = useForm<ClientValues>({ resolver: zodResolver(clientSchema), defaultValues: clientToForm(client) });
+  const phones = useFieldArray({ control, name: 'other_phones' });
   const save = useCustomerMutation(
     (values: ClientValues) => updateClient(client.id, clientFromForm(values, isDirection)),
     'Fiche client enregistrée',
@@ -184,15 +186,74 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                   error={errors.email?.message}
                   {...register('email')}
                 />
-                <FormField
-                  id="client-phone"
-                  label="Téléphone"
-                  type="tel"
-                  placeholder="06 12 34 56 78"
-                  className="num"
-                  {...register('phone')}
-                />
               </div>
+              <fieldset className="col gap-3">
+                <legend className="lbl mb-2.5">Téléphones</legend>
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  <FormField
+                    id="client-contact"
+                    label="Contact de référence"
+                    placeholder="Nom du contact"
+                    error={errors.contact_name?.message}
+                    {...register('contact_name')}
+                  />
+                  <FormField
+                    id="client-phone"
+                    label="Téléphone du contact"
+                    type="tel"
+                    placeholder="06 12 34 56 78"
+                    className="num"
+                    hint="Numéro utilisé pour les SMS"
+                    {...register('phone')}
+                  />
+                </div>
+                {phones.fields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    role="group"
+                    aria-label={`Autre numéro ${index + 1}`}
+                    className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-start gap-2.5 sm:gap-3.5"
+                  >
+                    <FormField
+                      id={`client-other-label-${index}`}
+                      label="Libellé"
+                      placeholder="Comptabilité"
+                      error={errors.other_phones?.[index]?.label?.message}
+                      {...register(`other_phones.${index}.label`)}
+                    />
+                    <FormField
+                      id={`client-other-phone-${index}`}
+                      label="Numéro"
+                      type="tel"
+                      placeholder="01 23 45 67 89"
+                      className="num"
+                      error={errors.other_phones?.[index]?.phone?.message}
+                      {...register(`other_phones.${index}.phone`)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="mt-[19px]"
+                      aria-label={`Retirer l’autre numéro ${index + 1}`}
+                      onClick={() => phones.remove(index)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+                {phones.fields.length < MAX_OTHER_PHONES && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="self-start"
+                    onClick={() => phones.append({ label: '', phone: '' }, { shouldFocus: true })}
+                  >
+                    <Plus /> Ajouter un numéro
+                  </Button>
+                )}
+              </fieldset>
               <FormField
                 id="client-address"
                 label="Adresse de facturation"

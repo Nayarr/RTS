@@ -73,10 +73,36 @@ export function daysSince(iso: string | null | undefined, now = new Date()): num
 const cappedDecimal = (label: string, max: number) =>
   decimalField().refine((value) => (decimalValue(value) ?? 0) <= max, `${label} : ${max} au maximum`);
 
+export interface ClientPhone {
+  label: string;
+  phone: string;
+}
+
+/** Autres numéros enregistrés (colonne JSON) : seulement les entrées complètes. */
+export function otherPhones(value: unknown): ClientPhone[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry: unknown) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const { label, phone } = entry as Record<string, unknown>;
+    return typeof label === 'string' && typeof phone === 'string' ? [{ label, phone }] : [];
+  });
+}
+
+export const MAX_OTHER_PHONES = 10;
+
 export const clientSchema = z.object({
   name: z.string().trim().min(1, 'Indique le nom du client').max(120),
   email: z.union([z.literal(''), z.string().trim().email('E-mail invalide')]),
+  contact_name: z.string().trim().max(120),
   phone: z.string().trim().max(30),
+  other_phones: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1, 'Indique à qui est ce numéro').max(60),
+        phone: z.string().trim().min(1, 'Indique le numéro').max(30, '30 caractères au maximum'),
+      }),
+    )
+    .max(MAX_OTHER_PHONES),
   billing_address: z.string().trim().max(300),
   siren: z
     .string()
@@ -93,7 +119,9 @@ export type ClientValues = z.infer<typeof clientSchema>;
 export const clientToForm = (client: ClientOverview): ClientValues => ({
   name: client.name,
   email: client.email ?? '',
+  contact_name: client.contact_name ?? '',
   phone: client.phone ?? '',
+  other_phones: otherPhones(client.other_phones),
   billing_address: client.billing_address ?? '',
   siren: client.siren ?? '',
   discount_percent: decimalText(client.discount_percent),
@@ -107,7 +135,12 @@ export function clientFromForm(values: ClientValues, withPricing: boolean): Tabl
   return {
     name: values.name.trim(),
     email: text(values.email),
+    contact_name: text(values.contact_name),
     phone: text(values.phone),
+    other_phones: values.other_phones.map(({ label, phone }) => ({
+      label: label.trim(),
+      phone: phone.trim(),
+    })),
     billing_address: text(values.billing_address),
     siren: text(values.siren.replace(/\s/g, '')),
     notes: text(values.notes),
