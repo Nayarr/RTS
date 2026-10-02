@@ -4813,6 +4813,19 @@ export type Database = {
           suggested_price: number;
         }[];
       };
+      pre_quote_work_split: {
+        Args: { p_repair_order_id: string };
+        Returns: {
+          billed_hours: number;
+          description: string;
+          hours: number;
+          id: string;
+          is_labor: boolean;
+          offered_hours: number;
+          ord: number;
+          suggested_price: number;
+        }[];
+      };
       profiles_with_roles: {
         Args: { p_roles: Database['public']['Enums']['app_role'][] };
         Returns: string[];
