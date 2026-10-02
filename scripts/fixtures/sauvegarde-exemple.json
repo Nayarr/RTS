@@ -1,0 +1,38 @@
+{
+  "exported_at": "2026-10-01T10:00:00Z",
+  "app": "RTS Atelier",
+  "collections": {},
+  "config": {
+    "forfaits": {
+      "list": [
+        {
+          "id": "exemple-disques",
+          "nom": "Forfait exemple disques et plaquettes arrière PL",
+          "categorie": "pl",
+          "temps": "3h30",
+          "prix": "340,50",
+          "detail": "Dépose des roues arrière\nRemplacement des disques et plaquettes d'origine",
+          "motscles": "disque arriere, plaquette arriere",
+          "champs": ["disques_arriere", "plaquettes_arriere"]
+        },
+        {
+          "id": "exemple-vidange",
+          "nom": "Forfait exemple vidange",
+          "categorie": "toutes",
+          "temps": "1h",
+          "prix": "",
+          "detail": "",
+          "motscles": "vidange",
+          "champs": []
+        },
+        {
+          "id": "exemple-incomplet",
+          "nom": "Forfait exemple sans temps",
+          "categorie": "vul",
+          "temps": "",
+          "prix": "10"
+        }
+      ]
+    }
+  }
+}

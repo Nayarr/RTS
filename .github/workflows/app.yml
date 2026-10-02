@@ -129,6 +129,17 @@ jobs:
             exit 1
           }
 
+      - name: Reprise des forfaits de l'ancienne appli (script SQL rejouable sans doublon)
+        run: |
+          DB_URL=$(supabase status -o json | jq -r .DB_URL)
+          npm run import:forfaits -- scripts/fixtures/sauvegarde-exemple.json /tmp/forfaits-legacy.sql
+          # Deux passages : le second met à jour sans rien doubler
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f /tmp/forfaits-legacy.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f /tmp/forfaits-legacy.sql
+          count=$(psql "$DB_URL" -At -c "select count(*) from public.service_packages where legacy_id like 'forfait:exemple-%'")
+          test "$count" = "2" || { echo "::error title=Reprise des forfaits::$count forfait(s) au lieu de 2"; exit 1; }
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -q -c "delete from public.service_packages where legacy_id like 'forfait:exemple-%'"
+
       - name: Configurer l'appli sur la base locale
         run: |
           supabase status -o json | jq -r '"VITE_SUPABASE_URL=\(.API_URL)", "VITE_SUPABASE_PUBLISHABLE_KEY=\(.PUBLISHABLE_KEY)"' >> "$GITHUB_ENV"
