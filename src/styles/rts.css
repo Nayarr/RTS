@@ -271,6 +271,16 @@
     gap: 6px;
     min-width: 0;
   }
+  /* Safari iOS donne une largeur minimale aux champs date et heure : ils débordaient de leur colonne */
+  input[type='date'],
+  input[type='time'] {
+    min-width: 0;
+    max-width: 100%;
+  }
+  input[type='date']::-webkit-date-and-time-value,
+  input[type='time']::-webkit-date-and-time-value {
+    text-align: left;
+  }
   .field > label,
   .lbl {
     font-size: 13px;
@@ -660,6 +670,19 @@
     display: block;
     font-size: 12.5px;
     color: var(--muted-foreground);
+  }
+  /* Pastille dans un bloc à deux lignes : reste centrée et garde sa couleur */
+  .c2 .badge,
+  .c2 .tag {
+    display: inline-flex;
+    width: fit-content;
+    font-size: 12px;
+  }
+  .c2 .badge {
+    color: color-mix(in srgb, var(--c, #6b7280) 78%, #000);
+  }
+  .dark .c2 .badge {
+    color: color-mix(in srgb, var(--c, #6b7280) 45%, #fff);
   }
   .plate {
     font-family: var(--font-sans);
