@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { fleetKey } from './fleet-hooks';
-import { fetchBusyPeriods, fetchMissing, fetchRental, fetchRentals, type RentalPhase } from './rental-api';
+import {
+  fetchBusyPeriods,
+  fetchMissing,
+  fetchRental,
+  fetchRentals,
+  fetchRepairOrderLoans,
+  type RentalPhase,
+} from './rental-api';
 
 export const rentalsKey = ['rentals'] as const;
 
@@ -36,3 +43,9 @@ export function useRentalMutation<T, R = unknown>(fn: (value: T) => Promise<R>, 
     onError: (error) => toast.error(error instanceof Error ? error.message : 'Enregistrement impossible'),
   });
 }
+
+export const useRepairOrderLoans = (repairOrderId: string) =>
+  useQuery({
+    queryKey: [...rentalsKey, 'repair-order', repairOrderId],
+    queryFn: () => fetchRepairOrderLoans(repairOrderId),
+  });

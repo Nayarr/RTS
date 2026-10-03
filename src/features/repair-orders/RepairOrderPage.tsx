@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { RepairOrderInvoiceCard } from '@/features/invoices/RepairOrderInvoiceCard';
 import { PrepareQuoteButton, RepairOrderQuotesCard } from '@/features/quotes/RepairOrderQuotesCard';
+import { RepairOrderLoanCard } from '@/features/rentals/RepairOrderLoanCard';
 import { updateRepairOrder, type RepairOrderOverview } from './api';
 import { ClientMessagesCard } from './detail/ClientMessagesCard';
 import { ConsumablesCard } from './detail/ConsumablesCard';
@@ -146,6 +147,7 @@ export function RepairOrderPage() {
         <div className="col gap-5">
           <TimeCard order={order} loadedAt={detail.dataUpdatedAt} showComparison={isDirection} />
           <RepairOrderInvoiceCard order={order} />
+          <RepairOrderLoanCard repairOrderId={order.id} clientId={order.client_id} editable={editable} />
           <RepairOrderQuotesCard order={order} />
           <ClientMessagesCard order={order} />
           <HistoryCard repairOrderId={order.id} />
