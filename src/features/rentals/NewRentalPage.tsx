@@ -33,6 +33,8 @@ export function NewRentalPage() {
   const today = todayIso();
 
   const [kind, setKind] = useState<RentalKind>(params.get('type') === 'pret' ? 'loan' : 'rental');
+  // Prêt lancé depuis la fiche OR : rattaché à cet OR
+  const repairOrderId = kind === 'loan' ? params.get('or') : null;
   const [search, setSearch] = useState('');
   const [clientId, setClientId] = useState(params.get('client') ?? '');
   const [category, setCategory] = useState<FleetCategory | null>(null);
@@ -86,6 +88,7 @@ export function NewRentalPage() {
     const days = rentalDays(from, to);
     return createRental({
       kind,
+      repair_order_id: repairOrderId,
       client_id: client.id,
       fleet_vehicle_id: vehicle.id,
       departure_at: from,
@@ -157,6 +160,13 @@ export function NewRentalPage() {
             ))}
           </div>
         </section>
+
+        {repairOrderId && (
+          <p className="alert s-blue">
+            <Wrench className="i" />
+            <span>Prêt rattaché à l’OR : il apparaîtra sur la fiche de l’intervention.</span>
+          </p>
+        )}
 
         <section data-slot="card" className="card" aria-labelledby="rental-client">
           <div className="card-h">

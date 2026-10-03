@@ -198,3 +198,15 @@ export async function cancelRental(rentalId: string) {
   const { error } = await supabase.rpc('cancel_rental', { p_rental_id: rentalId });
   if (error) throw error;
 }
+
+/** Prêts rattachés à un OR (véhicule de courtoisie pendant l'intervention). */
+export async function fetchRepairOrderLoans(repairOrderId: string): Promise<RentalOverview[]> {
+  const { data, error } = await supabase
+    .from('v_rentals_overview')
+    .select('*')
+    .eq('repair_order_id', repairOrderId)
+    .neq('status', 'cancelled')
+    .order('departure_at', { ascending: false });
+  if (error) throw error;
+  return data as RentalOverview[];
+}
