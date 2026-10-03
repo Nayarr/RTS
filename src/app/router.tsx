@@ -94,6 +94,28 @@ export const routes: RouteObject[] = [
                     lazy: page(() => import('@/features/customers/VehiclePage'), 'VehiclePage'),
                   },
                   {
+                    path: '/location/flotte',
+                    lazy: page(() => import('@/features/rentals/FleetPage'), 'FleetPage'),
+                  },
+                  {
+                    path: '/location/flotte/nouveau',
+                    lazy: page(
+                      () => import('@/features/rentals/FleetVehicleFormPage'),
+                      'FleetVehicleFormPage',
+                    ),
+                  },
+                  {
+                    path: '/location/flotte/:id',
+                    lazy: page(() => import('@/features/rentals/FleetVehiclePage'), 'FleetVehiclePage'),
+                  },
+                  {
+                    path: '/location/flotte/:id/modifier',
+                    lazy: page(
+                      () => import('@/features/rentals/FleetVehicleFormPage'),
+                      'FleetVehicleFormPage',
+                    ),
+                  },
+                  {
                     path: '/contrats',
                     lazy: page(() => import('@/features/contracts/ContractsPage'), 'ContractsPage'),
                   },
