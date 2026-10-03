@@ -85,7 +85,7 @@ export function LeavePage() {
                           <span className="av">{initials(leave.technician_name ?? '')}</span>
                           <span className="c2">
                             <b>{leave.technician_name}</b>
-                            <span className="badge s-warn h-5 px-2 text-[11px]">En attente</span>
+                            <span className="badge s-warn h-5 px-2 text-[11px]!">En attente</span>
                           </span>
                         </span>
                         <span className="col gap-0.5">
