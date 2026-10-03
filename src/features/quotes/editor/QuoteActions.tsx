@@ -26,6 +26,7 @@ import {
 import { useQuoteMutation } from '../hooks';
 import { useQuotePdf } from '../use-quote-pdf';
 import { ShareQuoteButton } from './ShareQuoteButton';
+import { InspectionRequiredToggle } from '@/features/repair-orders/InspectionRequiredToggle';
 
 type Confirm = 'accepted' | 'refused' | 'delete' | null;
 
@@ -36,6 +37,7 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
   const [plannedDate, setPlannedDate] = useState(todayIso());
   const [plannedStart, setPlannedStart] = useState('');
   const [plannedEnd, setPlannedEnd] = useState('');
+  const [inspectionRequired, setInspectionRequired] = useState(false);
   const timeError =
     plannedEnd && (!plannedStart || plannedEnd <= plannedStart)
       ? 'L’heure de fin doit être après l’heure de début'
@@ -46,6 +48,7 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
       plannedDate: plannedDate || null,
       plannedStart: plannedStart || null,
       plannedEnd: plannedEnd || null,
+      inspectionRequired,
     });
     await navigate(`/or/${id}`);
   }, 'OR créé avec les travaux du devis');
@@ -56,8 +59,8 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
         <DialogHeader>
           <DialogTitle>Créer l’OR</DialogTitle>
           <DialogDescription>
-            Les travaux du devis deviennent les travaux effectués de l’OR, avec leur temps estimé ; les pièces
-            passent « À commander ».
+            Les travaux du devis deviennent les travaux effectués de l’OR, facturés au temps du devis ; le
+            technicien y saisit le temps réellement passé. Les pièces passent « À commander ».
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
@@ -121,6 +124,11 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
             </span>
           )}
         </fieldset>
+        <InspectionRequiredToggle
+          id="quote-inspection-required"
+          checked={inspectionRequired}
+          onCheckedChange={setInspectionRequired}
+        />
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Annuler

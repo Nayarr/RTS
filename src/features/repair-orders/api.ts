@@ -149,6 +149,8 @@ export interface NewRepairOrderInput {
   planned_start: string | null;
   planned_end: string | null;
   signature_file_id: string | null;
+  /** Direction : fiche de contrôle complète exigée avant « Travaux terminés ». */
+  inspection_required?: boolean;
 }
 
 export async function createRepairOrder(input: NewRepairOrderInput): Promise<Tables<'repair_orders'>> {
@@ -163,6 +165,7 @@ export async function createRepairOrder(input: NewRepairOrderInput): Promise<Tab
     p_planned_start: input.planned_start ?? undefined,
     p_planned_end: input.planned_end ?? undefined,
     p_signature_file_id: input.signature_file_id ?? undefined,
+    p_inspection_required: input.inspection_required ?? false,
   });
   if (error) throw error;
   return data;

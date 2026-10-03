@@ -1,6 +1,6 @@
 import type { RepairOrderOverview, RoLine } from '@/features/repair-orders/api';
 import { OPEN_STATUSES } from '@/features/repair-orders/constants';
-import type { InspectionData } from '@/features/repair-orders/inspection';
+import { inspectionMissingPoints, type InspectionData } from '@/features/repair-orders/inspection';
 import { todayIso } from '@/features/repair-orders/schemas';
 
 /** Estimations proposées au technicien (comme l'ancienne appli, plus 0,5 h) ; « 12h+ » = au moins 12 h. */
@@ -55,12 +55,15 @@ const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? '
 
 /**
  * Ce qu'il reste à compléter avant « Travaux terminés » (mêmes règles que la base) : temps estimé de
- * chaque tâche, taille des pneus à 50 % ou HS, photo de l'étiquette du contrôle hayon HS.
+ * chaque tâche, taille des pneus à 50 % ou HS, photo de l'étiquette du contrôle hayon HS, et tous les
+ * points de la fiche quand la direction l'exige.
  */
 export function finishBlockers(
   lines: RoLine[],
   inspection: InspectionData | null,
   photoLabels: string[],
+  /** Fiche de contrôle complète exigée par la direction. */
+  inspectionRequired = false,
 ): string[] {
   const blockers: string[] = [];
   const timed = (kind: RoLine['kind']) =>
@@ -83,6 +86,12 @@ export function finishBlockers(
   }
   if (inspection?.controles?.hayon === 'HS' && !photoLabels.includes(TAILGATE_PHOTO_LABEL)) {
     blockers.push('Photo de l’étiquette contrôle hayon obligatoire (HS)');
+  }
+  const missingPoints = inspectionRequired ? inspectionMissingPoints(inspection) : 0;
+  if (missingPoints) {
+    blockers.push(
+      `Fiche de contrôle complète exigée : ${plural(missingPoints, 'point')} OK / 50 % / HS non renseigné${missingPoints > 1 ? 's' : ''}`,
+    );
   }
   return blockers;
 }

@@ -6,6 +6,7 @@ import {
   CHECK_FIELDS,
   CHECK_PHOTO_FIELDS,
   FLUID_FIELDS,
+  inspectionMissingPoints,
   OK_HS_OPTIONS,
   WARNING_LIGHT_FIELDS,
   WEAR_FIELDS,
@@ -106,6 +107,7 @@ export function InspectionEditor({
   photoLabels,
   locked,
   vehicleId,
+  required = false,
   tailgateScan,
   onTailgateScanDone,
 }: {
@@ -116,11 +118,14 @@ export function InspectionEditor({
   photoLabels: string[];
   locked: boolean;
   vehicleId: string;
+  /** Fiche complète exigée par la direction : tous les points OK / 50 % / HS avant de terminer. */
+  required?: boolean;
   /** Photo de l'étiquette du hayon à lire automatiquement (réglage de la direction). */
   tailgateScan?: string | null;
   onTailgateScanDone?: () => void;
 }) {
   const [data, setData] = useState<InspectionData>(initial ?? {});
+  const missingPoints = inspectionMissingPoints(data);
   const save = useWorkshopMutation(repairOrderId, (next: InspectionData) =>
     saveInspection(repairOrderId, next),
   );
@@ -170,6 +175,13 @@ export function InspectionEditor({
             : 'Enregistrée automatiquement. HS ou 50 % ajoute la réparation à prévoir.'}
         </span>
       </div>
+      {required && (
+        <p className={cn('alert', missingPoints ? 's-warn' : 's-ok')} role="status">
+          {missingPoints
+            ? `Fiche complète exigée par la direction : ${missingPoints} point${missingPoints > 1 ? 's' : ''} OK / 50 % / HS à renseigner.`
+            : 'Fiche complète exigée par la direction : tous les points sont renseignés.'}
+        </p>
+      )}
 
       {FLUID_FIELDS.map(([key, label]) => {
         const fluid = data.niveaux?.[key];

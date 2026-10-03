@@ -312,6 +312,7 @@ describe('éditeur de devis', () => {
         plannedDate: '2026-10-05',
         plannedStart: '08:30',
         plannedEnd: '12:00',
+        inspectionRequired: false,
       }),
     );
     expect(await screen.findByRole('heading', { name: 'Fiche OR' })).toBeInTheDocument();

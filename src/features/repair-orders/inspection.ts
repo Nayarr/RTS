@@ -102,3 +102,16 @@ export function countAlerts(data: InspectionData | null | undefined): number {
     (data.probleme_electrique === 'OUI' ? 1 : 0)
   );
 }
+
+/**
+ * Points OK / 50 % / HS non renseignés (usure, état des pneus, contrôles), comme la base
+ * (inspection_missing_points) : exigés quand la direction impose la fiche complète.
+ */
+export function inspectionMissingPoints(data: InspectionData | null | undefined): number {
+  const wear = WEAR_FIELDS.filter(([key]) => !['OK', '50', 'HS'].includes(data?.usure?.[key] ?? '')).length;
+  const tyres = (['avant_etat', 'arriere_etat'] as const).filter(
+    (key) => !['OK', '50', 'HS'].includes(data?.pneus?.[key] ?? ''),
+  ).length;
+  const checks = CHECK_FIELDS.filter(([key]) => !['OK', 'HS'].includes(data?.controles?.[key] ?? '')).length;
+  return wear + tyres + checks;
+}

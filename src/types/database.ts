@@ -2357,6 +2357,7 @@ export type Database = {
           created_by: string | null;
           customer_signature_file_id: string | null;
           id: string;
+          inspection_required: boolean;
           intervention_type: Database['public']['Enums']['intervention_type'];
           legacy_id: string | null;
           maintenance_contract_id: string | null;
@@ -2387,6 +2388,7 @@ export type Database = {
           created_by?: string | null;
           customer_signature_file_id?: string | null;
           id?: string;
+          inspection_required?: boolean;
           intervention_type?: Database['public']['Enums']['intervention_type'];
           legacy_id?: string | null;
           maintenance_contract_id?: string | null;
@@ -2417,6 +2419,7 @@ export type Database = {
           created_by?: string | null;
           customer_signature_file_id?: string | null;
           id?: string;
+          inspection_required?: boolean;
           intervention_type?: Database['public']['Enums']['intervention_type'];
           legacy_id?: string | null;
           maintenance_contract_id?: string | null;
@@ -4158,6 +4161,7 @@ export type Database = {
           customer_signature_file_id: string | null;
           declared_hours: number | null;
           id: string | null;
+          inspection_required: boolean | null;
           intervention_type: Database['public']['Enums']['intervention_type'] | null;
           legacy_id: string | null;
           maintenance_contract_id: string | null;
@@ -4173,6 +4177,7 @@ export type Database = {
           planned_start: string | null;
           plate: string | null;
           plate_key: string | null;
+          pre_quote_work_settled_at: string | null;
           requested_work: string | null;
           roadside_address: string | null;
           roadside_km: number | null;
@@ -4591,6 +4596,7 @@ export type Database = {
           created_by: string | null;
           customer_signature_file_id: string | null;
           id: string;
+          inspection_required: boolean;
           intervention_type: Database['public']['Enums']['intervention_type'];
           legacy_id: string | null;
           maintenance_contract_id: string | null;
@@ -4664,6 +4670,7 @@ export type Database = {
       create_repair_order: {
         Args: {
           p_client_name: string;
+          p_inspection_required?: boolean;
           p_mileage?: number;
           p_planned_date?: string;
           p_planned_end?: string;
@@ -4683,6 +4690,7 @@ export type Database = {
           created_by: string | null;
           customer_signature_file_id: string | null;
           id: string;
+          inspection_required: boolean;
           intervention_type: Database['public']['Enums']['intervention_type'];
           legacy_id: string | null;
           maintenance_contract_id: string | null;
@@ -4714,6 +4722,7 @@ export type Database = {
       create_repair_order_from_appointment: { Args: { p_appointment_id: string }; Returns: string };
       create_repair_order_from_quote: {
         Args: {
+          p_inspection_required?: boolean;
           p_planned_date?: string;
           p_planned_end?: string;
           p_planned_start?: string;
@@ -4781,6 +4790,7 @@ export type Database = {
       generate_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       global_search: { Args: { p_query: string }; Returns: Json };
+      inspection_missing_points: { Args: { p_data: Json }; Returns: number };
       inspection_wear_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
       invoiced_ro_lines: {
         Args: { p_from: string; p_to: string };
@@ -4832,6 +4842,7 @@ export type Database = {
           created_by: string | null;
           customer_signature_file_id: string | null;
           id: string;
+          inspection_required: boolean;
           intervention_type: Database['public']['Enums']['intervention_type'];
           legacy_id: string | null;
           maintenance_contract_id: string | null;
@@ -5203,6 +5214,7 @@ export type Database = {
           created_by: string | null;
           customer_signature_file_id: string | null;
           id: string;
+          inspection_required: boolean;
           intervention_type: Database['public']['Enums']['intervention_type'];
           legacy_id: string | null;
           maintenance_contract_id: string | null;

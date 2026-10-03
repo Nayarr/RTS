@@ -117,6 +117,7 @@ export function TechRepairOrderPage() {
         photoLabels={photos.map((photo) => photo.label)}
         locked={locked}
         vehicleId={order.vehicle_id}
+        required={order.inspection_required === true}
         tailgateScan={tailgateScan}
         onTailgateScanDone={() => setTailgateScan(null)}
       />
@@ -128,6 +129,7 @@ export function TechRepairOrderPage() {
             lines,
             inspection,
             photos.map((photo) => photo.label),
+            order.inspection_required === true,
           )}
         />
       )}
