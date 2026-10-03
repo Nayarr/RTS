@@ -20,7 +20,10 @@ export interface PlanningTechnician {
 }
 
 export interface PlanningData {
+  /** OR planifiés à une heure précise (blocs de la grille). */
   orders: RepairOrderOverview[];
+  /** OR prévus un jour donné sans horaire, pas encore terminés (étiquettes sous la date). */
+  untimedOrders: RepairOrderOverview[];
   appointments: Appointment[];
   technicians: PlanningTechnician[];
   leaves: LeaveSpan[];
@@ -31,12 +34,7 @@ export interface PlanningData {
 /** Tout ce qu'affiche le planning entre deux dates incluses. */
 export async function fetchPlanning(from: string, to: string): Promise<PlanningData> {
   const [orders, appointments, technicians, leaves, settings] = await Promise.all([
-    supabase
-      .from('v_repair_orders_overview')
-      .select('*')
-      .gte('planned_date', from)
-      .lte('planned_date', to)
-      .not('planned_start', 'is', null),
+    supabase.from('v_repair_orders_overview').select('*').gte('planned_date', from).lte('planned_date', to),
     supabase
       .from('v_appointments_overview')
       .select('*')
@@ -65,8 +63,12 @@ export async function fetchPlanning(from: string, to: string): Promise<PlanningD
   for (const result of [orders, appointments, technicians, leaves]) if (result.error) throw result.error;
   if (settings.error) throw settings.error;
   const { rest_reference_monday, ...hours } = settings.data;
+  const planned = (orders.data ?? []) as RepairOrderOverview[];
   return {
-    orders: (orders.data ?? []) as RepairOrderOverview[],
+    orders: planned.filter((order) => order.planned_start),
+    untimedOrders: planned.filter(
+      (order) => !order.planned_start && (order.status === 'assigned' || order.status === 'in_progress'),
+    ),
     appointments: (appointments.data ?? []) as Appointment[],
     technicians: technicians.data ?? [],
     leaves: leaves.data ?? [],
