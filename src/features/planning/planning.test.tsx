@@ -30,6 +30,7 @@ import {
   needsReminder,
   periodDays,
   periodLabel,
+  planningMechanics,
   restingGroup,
   technicianColor,
   technicianOffLabel,
@@ -202,6 +203,20 @@ describe('planning : règles', () => {
     expect(technicianColor({ display_name: 'Alice', color: '#123456' })).toBe('#123456');
     expect(technicianColor({ display_name: 'Bruno', color: null })).toMatch(/^#[0-9A-F]{6}$/);
     expect(technicianColor(null)).toBe('#6B7280');
+  });
+
+  it('mécaniciens du planning : sans les comptes Direction et Réception', () => {
+    expect(
+      planningMechanics([
+        { id: 't1', display_name: 'Alice', profile: { role: 'technician' } },
+        { id: 't2', display_name: 'Patron', profile: { role: 'direction' } },
+        { id: 't3', display_name: 'Accueil', profile: { role: 'reception' } },
+        { id: 't4', display_name: 'Intérimaire', profile: null },
+      ]),
+    ).toEqual([
+      { id: 't1', display_name: 'Alice' },
+      { id: 't4', display_name: 'Intérimaire' },
+    ]);
   });
 
   it('rappel la veille, message de l’ancienne appli', () => {
