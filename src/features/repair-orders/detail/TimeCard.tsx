@@ -1,9 +1,6 @@
 import type { RepairOrderOverview } from '../api';
-import { formatDuration, formatHours } from '../constants';
+import { formatShortDuration } from '../constants';
 import { useLiveSeconds } from '../use-live-seconds';
-
-/** « 2h 05 » : chrono compact de la maquette. */
-const compactDuration = (seconds: number) => formatDuration(seconds).replace(/min$/, '').trim();
 
 /** Temps passé ; comparatif badgé / déclaré pour la direction (comme l'ancienne appli). */
 export function TimeCard({
@@ -34,20 +31,20 @@ export function TimeCard({
             <span className="hint">Badgé (chrono)</span>
             <span className="kpi-v text-2xl">
               {order.running_since && <span className="warn-t animate-pulse text-lg">●</span>}
-              {compactDuration(seconds)}
+              {formatShortDuration(seconds)}
             </span>
           </div>
           {showComparison && (
             <>
               <div className="col gap-0.5">
                 <span className="hint">Déclaré</span>
-                <span className="kpi-v text-2xl">{formatHours(order.declared_hours)}</span>
+                <span className="kpi-v text-2xl">{formatShortDuration(order.declared_hours * 3600)}</span>
               </div>
               <div className="col gap-0.5">
                 <span className="hint">Écart</span>
                 <span className={`kpi-v text-2xl ${favorable ? 'up' : 'down'}`}>
                   {delta >= 0 ? '+' : '−'}
-                  {Math.abs(delta).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h
+                  {formatShortDuration(Math.abs(delta) * 3600)}
                 </span>
               </div>
             </>
