@@ -79,8 +79,14 @@ describe('billingSchema', () => {
       payment_terms_days: 30,
       quote_validity_days: 30,
       invoice_legal_mentions: ' Pas d’escompte. \n\nTVA sur les encaissements.\n',
+      supplies_fee_ht: '',
     };
     expect(billingSchema.safeParse(values).success).toBe(true);
+    expect(billingFromForm(values).supplies_fee_ht).toBeNull();
+    expect(billingFromForm({ ...values, supplies_fee_ht: ' 12,50 ' }).supplies_fee_ht).toBe(12.5);
+    expect(messages(billingSchema.safeParse({ ...values, supplies_fee_ht: '15 €' }))).toEqual([
+      'Montant en euros (ex : 15 ou 12,50)',
+    ]);
     expect(billingFromForm(values).invoice_legal_mentions).toEqual([
       'Pas d’escompte.',
       'TVA sur les encaissements.',
@@ -93,6 +99,7 @@ describe('billingSchema', () => {
       payment_terms_days: Number.NaN,
       quote_validity_days: 0,
       invoice_legal_mentions: '',
+      supplies_fee_ht: '',
     });
     expect(messages(result)).toEqual(
       expect.arrayContaining(['Taux entre 0 et 100', 'Nombre de jours attendu', '1 jour minimum']),

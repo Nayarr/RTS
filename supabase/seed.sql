@@ -73,3 +73,7 @@ insert into public.parts (designation, brand, manufacturer_ref, oem_ref, supplie
 -- (CRON_SECRET dans config.toml). En production, ces deux secrets sont créés à la main.
 select vault.create_secret('http://supabase_kong_rts-atelier:8000', 'project_url');
 select vault.create_secret('rts-local-cron-secret-0000', 'cron_secret');
+
+-- Ligne automatique « Fournitures et recyclage » coupée en local et en CI : les montants des tests
+-- restent ceux des documents saisis (la fonction a ses propres tests, qui la réactivent).
+update public.company_settings set supplies_fee_ht = null;

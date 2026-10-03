@@ -45,6 +45,7 @@ const settings: Settings = {
     quote_validity_days: 30,
     invoice_legal_mentions: ['TVA sur les encaissements.'],
     logo_file_id: null,
+    supplies_fee_ht: 15,
     updated_at: '2026-09-28T00:00:00Z',
   },
   laborRates: [
