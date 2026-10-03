@@ -119,7 +119,7 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   await page.goto(`/or/${order.id}`);
   await expect(page.getByText('Terminé atelier').first()).toBeVisible();
   const declared = page.getByText('Déclaré', { exact: true }).locator('..');
-  await expect(declared.getByText('2 h', { exact: true })).toBeVisible();
+  await expect(declared.getByText('2h', { exact: true })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Face avant', exact: true })).toBeVisible();
   await expect(page.getByText('1 point à surveiller.')).toBeVisible();
   await expect(page.getByText('Badgeage démarré')).toBeVisible();
