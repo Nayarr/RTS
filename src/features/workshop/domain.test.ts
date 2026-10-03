@@ -11,6 +11,7 @@ import {
   timeOptionsFor,
   timeOptionValue,
 } from './domain';
+import { CHECK_FIELDS, inspectionMissingPoints, WEAR_FIELDS } from '@/features/repair-orders/inspection';
 
 const order = (overrides: Partial<RepairOrderOverview>): RepairOrderOverview =>
   ({
@@ -78,6 +79,21 @@ describe('clôture de l’OR par le technicien', () => {
       'Temps réel manquant : 2 tâches des travaux effectués',
       'Temps estimé manquant : 2 tâches à prévoir',
     ]);
+  });
+
+  it('fiche complète exigée par la direction : tous les points OK / 50 % / HS', () => {
+    const partial = { usure: { plaquettes_avant: 'OK' }, pneus: { avant_etat: 'OK', arriere_etat: 'OK' } };
+    expect(finishBlockers([], partial, [])).toEqual([]);
+    expect(finishBlockers([], partial, [], true)).toEqual([
+      'Fiche de contrôle complète exigée : 12 points OK / 50 % / HS non renseignés',
+    ]);
+    const complete = {
+      usure: Object.fromEntries(WEAR_FIELDS.map(([key]) => [key, 'OK'])),
+      pneus: { avant_etat: 'OK', arriere_etat: '50', arriere_taille: '315/80/22.5' },
+      controles: Object.fromEntries(CHECK_FIELDS.map(([key]) => [key, 'OK'])),
+    };
+    expect(inspectionMissingPoints(complete)).toBe(0);
+    expect(finishBlockers([], complete, [], true)).toEqual([]);
   });
 
   it('pneus à 50 % ou HS : taille obligatoire ; étiquette hayon HS : photo obligatoire', () => {

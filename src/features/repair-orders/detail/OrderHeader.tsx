@@ -1,6 +1,14 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
-import { AlertTriangle, CalendarDays, CheckCircle2, Gauge, Hash, Package } from 'lucide-react';
+import {
+  AlertTriangle,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  Gauge,
+  Hash,
+  Package,
+} from 'lucide-react';
 import { StoredImage } from '@/features/files/StoredImage';
 import type { SignatureChannel } from '@/features/signature/api';
 import { SignatureRequestPanel } from '@/features/signature/SignatureRequestPanel';
@@ -43,6 +51,11 @@ export function OrderHeader({
               <span className="muted">{VEHICLE_TYPES[order.vehicle_type]}</span>
             </div>
             <div className="row ml-auto gap-2">
+              {order.inspection_required && (
+                <span className="badge lg" title="Exigé par la direction : tous les points OK / 50 % / HS">
+                  <ClipboardCheck className="i xs" /> Fiche complète exigée
+                </span>
+              )}
               {(order.parts_pending_count ?? 0) > 0 && (
                 <span className="badge lg s-bad">
                   <Package className="i xs" /> Attente pièces ({order.parts_pending_count})

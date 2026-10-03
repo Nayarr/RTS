@@ -25,6 +25,7 @@ import { uploadFile } from '@/features/files/api';
 import { createRepairOrder } from './api';
 import { formatPlate, STATUS_META, VEHICLE_TYPES } from './constants';
 import { useActiveTechnicians, useClientSuggestions, useKnownVehicle, useRepairOrderMutation } from './hooks';
+import { InspectionRequiredToggle } from './InspectionRequiredToggle';
 import {
   newRepairOrderDefaults,
   newRepairOrderSchema,
@@ -62,6 +63,7 @@ export function NewRepairOrderPage() {
   const navigate = useNavigate();
   const signature = useSignaturePad();
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('screen');
+  const [inspectionRequired, setInspectionRequired] = useState(false);
   const technicians = useActiveTechnicians();
   const [pendingValues, setPendingValues] = useState<NewRepairOrderValues | null>(null);
 
@@ -98,7 +100,10 @@ export function NewRepairOrderPage() {
       const signatureFileId = blob
         ? await uploadFile(blob, { category: 'signature', name: 'signature-client.png' })
         : null;
-      return createRepairOrder(toNewRepairOrderInput(values, signatureFileId));
+      return createRepairOrder({
+        ...toNewRepairOrderInput(values, signatureFileId),
+        inspection_required: inspectionRequired,
+      });
     },
     null, // notification avec le numéro d'OR ci-dessous
   );
@@ -323,6 +328,12 @@ export function NewRepairOrderPage() {
               />
             </div>
           </section>
+
+          <InspectionRequiredToggle
+            id="new-ro-inspection-required"
+            checked={inspectionRequired}
+            onCheckedChange={setInspectionRequired}
+          />
         </div>
 
         <div className="col gap-5">

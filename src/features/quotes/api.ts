@@ -130,6 +130,8 @@ export interface OrderFromQuoteInput {
   plannedDate: string | null;
   plannedStart: string | null;
   plannedEnd: string | null;
+  /** Direction : fiche de contrôle complète exigée avant « Travaux terminés ». */
+  inspectionRequired?: boolean;
 }
 
 /**
@@ -143,6 +145,7 @@ export async function createRepairOrderFromQuote(id: string, input: OrderFromQuo
     p_planned_date: input.plannedDate ?? undefined,
     p_planned_start: input.plannedStart ?? undefined,
     p_planned_end: input.plannedEnd ?? undefined,
+    p_inspection_required: input.inspectionRequired ?? false,
   });
   if (error) throw error;
   return data;
