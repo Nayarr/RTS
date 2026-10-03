@@ -9,6 +9,8 @@ import { fetchActiveTechnicians } from '@/features/repair-orders/api';
 import type * as RepairOrdersApi from '@/features/repair-orders/api';
 import { addDays } from '@/features/planning/domain';
 import { todayIso } from '@/features/repair-orders/schemas';
+import { fetchFleet, type FleetVehicle } from '@/features/rentals/fleet-api';
+import type * as FleetApi from '@/features/rentals/fleet-api';
 import { fakeSession, renderRoutes } from '@/test/render';
 import {
   deleteClient,
@@ -57,6 +59,10 @@ vi.mock('@/features/auth/api', async (importOriginal) => ({
 vi.mock('@/features/repair-orders/api', async (importOriginal) => ({
   ...(await importOriginal<typeof RepairOrdersApi>()),
   fetchActiveTechnicians: vi.fn(),
+}));
+vi.mock('@/features/rentals/fleet-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof FleetApi>()),
+  fetchFleet: vi.fn(),
 }));
 vi.mock('@/features/files/hooks', () => ({
   useUploadFile: () => ({ mutate: vi.fn(), isPending: false }),
@@ -170,6 +176,7 @@ beforeEach(() => {
   vi.mocked(updateClient).mockResolvedValue(undefined);
   vi.mocked(updateVehicle).mockResolvedValue(undefined);
   vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
+  vi.mocked(fetchFleet).mockResolvedValue([]);
 });
 
 // ---------------------------------------------------------------- Règles
@@ -396,5 +403,53 @@ describe('clients et véhicules : écrans', () => {
     expect(within(item).getByRole('link', { name: 'GH-512-RT' })).toHaveAttribute('href', '/vehicules/v1');
     expect(item).toHaveTextContent('Contrôle hayon20/09/2020Transports Martin');
     expect(item).toHaveTextContent(/Dépassé/);
+  });
+
+  it('échéances de la flotte de location : assurance expirée (bloqué), vidange proche', async () => {
+    vi.mocked(fetchDeadlines).mockResolvedValue([]);
+    const fleetVehicle = (overrides: Partial<FleetVehicle>) =>
+      ({
+        id: 'f1',
+        plate: 'GA-552-TR',
+        brand: 'Krone',
+        model: 'Profi Liner',
+        category: 'trailer',
+        mileage: null,
+        next_service_km: null,
+        ct_due_date: null,
+        insurance_due_date: null,
+        in_maintenance: false,
+        is_active: true,
+        ...overrides,
+      }) as FleetVehicle;
+    vi.mocked(fetchFleet).mockResolvedValue([
+      fleetVehicle({ insurance_due_date: addDays(todayIso(), -5) }),
+      fleetVehicle({
+        id: 'f2',
+        plate: 'GE-781-UV',
+        brand: 'Renault',
+        model: 'Master',
+        category: 'van',
+        mileage: 48_210,
+        next_service_km: 50_000,
+      }),
+      fleetVehicle({ id: 'f3', plate: 'XX-000-XX', insurance_due_date: '2020-01-01', is_active: false }),
+    ]);
+    renderAs('reception', '/vehicules/echeances', <DeadlinesPage />, '/vehicules/echeances');
+    await userEvent.click(await screen.findByRole('button', { name: /Flotte de location 2/ }));
+    const table = await screen.findByRole('table', { name: 'Échéances de la flotte' });
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(2);
+    const [insurance, service] = rows as [HTMLElement, HTMLElement];
+    expect(insurance).toHaveTextContent(/GA-552-TRKrone Profi LinerAssurance.*Expirée depuis 5 joursBloqué/);
+    expect(within(insurance).getByRole('link', { name: /Ajouter l’attestation/ })).toHaveAttribute(
+      'href',
+      '/location/flotte/f1',
+    );
+    expect(service).toHaveTextContent(/GE-781-UV.*Vidange.*50.000 km.*Dans 1.790 km.*Disponible/);
+
+    await userEvent.click(within(service).getByRole('button', { name: /Prendre rendez-vous/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Nouveau rendez-vous' });
+    expect(within(dialog).getByLabelText('Immatriculation')).toHaveValue('GE-781-UV');
   });
 });

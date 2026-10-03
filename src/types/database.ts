@@ -868,6 +868,180 @@ export type Database = {
           },
         ];
       };
+      fleet_documents: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          file_id: string;
+          fleet_vehicle_id: string;
+          id: string;
+          kind: Database['public']['Enums']['fleet_document_kind'];
+          label: string;
+          valid_until: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          file_id: string;
+          fleet_vehicle_id: string;
+          id?: string;
+          kind: Database['public']['Enums']['fleet_document_kind'];
+          label: string;
+          valid_until?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          file_id?: string;
+          fleet_vehicle_id?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['fleet_document_kind'];
+          label?: string;
+          valid_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_documents_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fleet_documents_file_id_fkey';
+            columns: ['file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fleet_documents_fleet_vehicle_id_fkey';
+            columns: ['fleet_vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'fleet_vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fleet_vehicles: {
+        Row: {
+          brand: string;
+          category: Database['public']['Enums']['fleet_category'];
+          cleaning_fee: number;
+          created_at: string;
+          ct_due_date: string | null;
+          daily_rate: number;
+          deposit: number;
+          extra_km_price: number | null;
+          first_registration: string | null;
+          franchise: number | null;
+          fuel_price_per_liter: number;
+          fuel_type: string | null;
+          id: string;
+          in_maintenance: boolean;
+          insurance_due_date: string | null;
+          is_active: boolean;
+          km_included_per_day: number | null;
+          late_fee_per_hour: number;
+          license_category: string;
+          loanable: boolean;
+          maintenance_note: string | null;
+          mileage: number | null;
+          model: string;
+          month_rate: number | null;
+          next_service_km: number | null;
+          notes: string | null;
+          photo_file_id: string | null;
+          plate: string;
+          plate_key: string | null;
+          tank_liters: number | null;
+          updated_at: string;
+          vin: string | null;
+          week_rate: number | null;
+          weekend_rate: number | null;
+        };
+        Insert: {
+          brand: string;
+          category: Database['public']['Enums']['fleet_category'];
+          cleaning_fee?: number;
+          created_at?: string;
+          ct_due_date?: string | null;
+          daily_rate: number;
+          deposit?: number;
+          extra_km_price?: number | null;
+          first_registration?: string | null;
+          franchise?: number | null;
+          fuel_price_per_liter?: number;
+          fuel_type?: string | null;
+          id?: string;
+          in_maintenance?: boolean;
+          insurance_due_date?: string | null;
+          is_active?: boolean;
+          km_included_per_day?: number | null;
+          late_fee_per_hour?: number;
+          license_category?: string;
+          loanable?: boolean;
+          maintenance_note?: string | null;
+          mileage?: number | null;
+          model: string;
+          month_rate?: number | null;
+          next_service_km?: number | null;
+          notes?: string | null;
+          photo_file_id?: string | null;
+          plate: string;
+          plate_key?: never;
+          tank_liters?: number | null;
+          updated_at?: string;
+          vin?: string | null;
+          week_rate?: number | null;
+          weekend_rate?: number | null;
+        };
+        Update: {
+          brand?: string;
+          category?: Database['public']['Enums']['fleet_category'];
+          cleaning_fee?: number;
+          created_at?: string;
+          ct_due_date?: string | null;
+          daily_rate?: number;
+          deposit?: number;
+          extra_km_price?: number | null;
+          first_registration?: string | null;
+          franchise?: number | null;
+          fuel_price_per_liter?: number;
+          fuel_type?: string | null;
+          id?: string;
+          in_maintenance?: boolean;
+          insurance_due_date?: string | null;
+          is_active?: boolean;
+          km_included_per_day?: number | null;
+          late_fee_per_hour?: number;
+          license_category?: string;
+          loanable?: boolean;
+          maintenance_note?: string | null;
+          mileage?: number | null;
+          model?: string;
+          month_rate?: number | null;
+          next_service_km?: number | null;
+          notes?: string | null;
+          photo_file_id?: string | null;
+          plate?: string;
+          plate_key?: never;
+          tank_liters?: number | null;
+          updated_at?: string;
+          vin?: string | null;
+          week_rate?: number | null;
+          weekend_rate?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_vehicles_photo_file_id_fkey';
+            columns: ['photo_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inspections: {
         Row: {
           data: NonNullable<Json>;
@@ -4790,6 +4964,10 @@ export type Database = {
           storage_key: string;
         }[];
       };
+      fleet_vehicle_block_reason: {
+        Args: { p_on: string; p_vehicle: Database['public']['Tables']['fleet_vehicles']['Row'] };
+        Returns: string;
+      };
       generate_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       global_search: { Args: { p_query: string }; Returns: Json };
@@ -5324,6 +5502,15 @@ export type Database = {
         | 'label_scan'
         | 'logo'
         | 'other';
+      fleet_category: 'tractor' | 'trailer' | 'van' | 'car';
+      fleet_document_kind:
+        | 'registration'
+        | 'insurance'
+        | 'technical_inspection'
+        | 'accident_report'
+        | 'maintenance_book'
+        | 'fuel_card'
+        | 'other';
       intervention_type: 'workshop' | 'roadside';
       invoice_status: 'draft' | 'issued';
       labor_category: 'pl' | 'vul' | 'remorque' | 'tolerie';
@@ -5478,6 +5665,16 @@ export const Constants = {
         'document_pdf',
         'label_scan',
         'logo',
+        'other',
+      ],
+      fleet_category: ['tractor', 'trailer', 'van', 'car'],
+      fleet_document_kind: [
+        'registration',
+        'insurance',
+        'technical_inspection',
+        'accident_report',
+        'maintenance_book',
+        'fuel_card',
         'other',
       ],
       intervention_type: ['workshop', 'roadside'],

@@ -1,4 +1,4 @@
-import { ChartColumn, Clock, Package, Receipt, Users, Wrench, type LucideIcon } from 'lucide-react';
+import { ChartColumn, Clock, KeyRound, Package, Receipt, Users, Wrench, type LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/features/auth/roles';
 import type { OfficeDashboard } from '@/features/dashboard/api';
 import { STATUS_ORDER } from '@/features/repair-orders/constants';
@@ -51,6 +51,13 @@ export const GROUPS: NavGroup[] = [
       { to: '/vehicules/echeances', label: 'Échéances' },
       { to: '/contrats', label: 'Contrats' },
     ],
+  },
+  {
+    id: 'location',
+    section: 'ops',
+    label: 'Location',
+    icon: KeyRound,
+    items: [{ to: '/location/flotte', label: 'Flotte' }],
   },
   {
     id: 'facturation',
