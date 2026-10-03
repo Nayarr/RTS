@@ -12,6 +12,7 @@ import {
 import { fetchSettings } from '@/features/settings/api';
 import { fetchQuote, shareQuote, type QuoteOverview } from '../api';
 import { quoteShareMessage } from '../domain';
+import { quotePdfFile } from '../quote-attachment';
 import { useQuoteMutation } from '../hooks';
 
 interface Prepared {
@@ -73,6 +74,10 @@ export function ShareQuoteButton({ quote, disabled }: { quote: QuoteOverview; di
           senderEmail={prepared.senderEmail}
           contact={prepared.contact}
           onContactSave={saveContact}
+          attachments={{
+            label: `le devis ${prepared.number ?? ''} (PDF)`,
+            load: async () => [await quotePdfFile(quote.id)],
+          }}
           onClose={() => setPrepared(null)}
         />
       )}

@@ -1,11 +1,14 @@
-import { useState, type MouseEvent } from 'react';
-import { Copy, Mail, MessageSquare } from 'lucide-react';
+import { useRef, useState, type MouseEvent } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Copy, Loader2, Mail, MessageSquare, Paperclip, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { FormField } from '@/components/FormField';
+import type { PdfFile } from '@/components/PdfPreviewDialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { fetchMailSendEnabled, mailSendEnabledKey, sendMail } from '@/lib/mail';
 import { sendLinks, type ContactValues, type SendLinkMessage } from '@/lib/send-links';
 
 interface SendLinkDialogProps {
@@ -18,14 +21,20 @@ interface SendLinkDialogProps {
   senderEmail: string | null;
   contact: ContactValues;
   onContactSave: (contact: ContactValues) => void;
-  /** Appelé quand l'envoi part par e-mail ou par SMS (traçabilité). */
-  onSend?: ((channel: 'email' | 'sms', contact: ContactValues) => void) | undefined;
+  /**
+   * Appelé quand l'envoi part par e-mail ou par SMS (traçabilité).
+   * `providerMessageId` : identifiant Resend quand l'appli a envoyé l'e-mail elle-même.
+   */
+  onSend?:
+    ((channel: 'email' | 'sms', contact: ContactValues, providerMessageId?: string) => void) | undefined;
+  /** PDF joints quand l'appli envoie l'e-mail (devis, facture, contrat). */
+  attachments?: { label: string; load: () => Promise<PdfFile[]> } | undefined;
   onClose: () => void;
 }
 
 /**
  * Envoi d'un lien ou d'un message au client (devis à signer, facture, rappel) : l'appli prépare le message,
- * la messagerie de l'atelier l'envoie (comme l'ancienne appli).
+ * puis l'envoie elle-même (réglage de la direction, service Resend) ou ouvre la messagerie de l'atelier.
  */
 export function SendLinkDialog({
   title,
@@ -36,10 +45,21 @@ export function SendLinkDialog({
   contact: initial,
   onContactSave,
   onSend,
+  attachments,
   onClose,
 }: SendLinkDialogProps) {
   const [contact, setContact] = useState(initial);
+  const [attach, setAttach] = useState(true);
   const links = sendLinks(message, contact, senderEmail);
+  const mailEnabled = useQuery({
+    queryKey: mailSendEnabledKey,
+    queryFn: fetchMailSendEnabled,
+    staleTime: 60_000,
+  });
+  const direct = mailEnabled.data === true;
+  // Même clé tant que l'envoi ne change pas : un nouvel essai n'envoie pas l'e-mail deux fois.
+  const idempotency = useRef<{ payload: string; key: string } | null>(null);
+
   const save = () => {
     if (contact.email.trim() !== initial.email.trim() || contact.phone.trim() !== initial.phone.trim()) {
       onContactSave(contact);
@@ -61,6 +81,27 @@ export function SendLinkDialog({
     send('email')();
   };
 
+  const sendNow = useMutation({
+    mutationFn: async () => {
+      const to = contact.email.trim();
+      const withFiles = Boolean(attachments) && attach;
+      const payload = `${to}|${withFiles}`;
+      if (idempotency.current?.payload !== payload) {
+        idempotency.current = { payload, key: crypto.randomUUID() };
+      }
+      const files = withFiles && attachments ? await attachments.load() : [];
+      return sendMail({ to, message, attachments: files, idempotencyKey: idempotency.current.key });
+    },
+    onSuccess: ({ id }) => {
+      toast.success(`E-mail envoyé à ${contact.email.trim()}`);
+      save();
+      onSend?.('email', contact, id);
+      onClose();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'E-mail non envoyé'),
+  });
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email.trim());
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -70,8 +111,17 @@ export function SendLinkDialog({
         </DialogHeader>
         {senderEmail && (
           <p className="text-sm text-muted-foreground">
-            À envoyer depuis <strong>{senderEmail}</strong> : vérifie que c’est bien le compte expéditeur
-            choisi dans ta messagerie.
+            {direct ? (
+              <>
+                Envoyé par l’appli au nom de l’atelier : les réponses du client arrivent sur{' '}
+                <strong>{senderEmail}</strong>.
+              </>
+            ) : (
+              <>
+                À envoyer depuis <strong>{senderEmail}</strong> : vérifie que c’est bien le compte expéditeur
+                choisi dans ta messagerie.
+              </>
+            )}
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-2">
@@ -101,7 +151,27 @@ export function SendLinkDialog({
           </div>
         )}
         <div className="flex flex-col gap-2">
-          <Button asChild>
+          {direct && (
+            <>
+              {attachments && (
+                <label className="row cursor-pointer gap-2.5 text-[13.5px]">
+                  <input
+                    type="checkbox"
+                    checked={attach}
+                    onChange={(event) => setAttach(event.target.checked)}
+                  />
+                  <Paperclip className="i xs" /> Joindre {attachments.label}
+                </label>
+              )}
+              <Button disabled={!validEmail || sendNow.isPending} onClick={() => sendNow.mutate()}>
+                {sendNow.isPending ? <Loader2 className="animate-spin" /> : <Send />} Envoyer l’e-mail
+                maintenant
+              </Button>
+              {!validEmail && <span className="hint">Renseigne l’e-mail du client pour l’envoyer.</span>}
+              <span className="mt-1 overline">Ou par ta messagerie</span>
+            </>
+          )}
+          <Button variant={direct ? 'outline' : 'default'} asChild>
             <a href={links.mailto} onClick={sendByEmailApp}>
               <Mail /> Envoyer par e-mail (messagerie de l’ordinateur)
             </a>

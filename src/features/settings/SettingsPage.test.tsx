@@ -75,6 +75,7 @@ const settings: Settings = {
     rest_reference_monday: null,
     clock_photo_retention_months: 3,
     label_scan_enabled: false,
+    mail_send_enabled: false,
     last_backup_at: null,
     updated_at: '2026-09-28T00:00:00Z',
   },

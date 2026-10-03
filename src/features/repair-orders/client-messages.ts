@@ -91,6 +91,8 @@ export async function recordClientMessage(input: {
   channel: 'email' | 'sms';
   recipient: string | null;
   message: SendLinkMessage;
+  /** Identifiant Resend : e-mail envoyé par l'appli. */
+  providerMessageId?: string | undefined;
 }) {
   const { error } = await supabase.from('client_messages').insert({
     repair_order_id: input.repairOrderId,
@@ -99,6 +101,7 @@ export async function recordClientMessage(input: {
     recipient: input.recipient,
     subject: input.channel === 'email' ? input.message.subject : null,
     body: input.channel === 'email' ? input.message.body : input.message.sms,
+    provider_message_id: input.providerMessageId ?? null,
   });
   if (error) throw error;
 }

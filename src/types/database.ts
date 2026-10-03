@@ -16,6 +16,7 @@ export type Database = {
           late_tolerance: string;
           lunch_end: string;
           lunch_start: string;
+          mail_send_enabled: boolean;
           overtime_start: string;
           rest_reference_monday: string | null;
           roadside_flat_fee: number;
@@ -37,6 +38,7 @@ export type Database = {
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
+          mail_send_enabled?: boolean;
           overtime_start?: string;
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
@@ -58,6 +60,7 @@ export type Database = {
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
+          mail_send_enabled?: boolean;
           overtime_start?: string;
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
@@ -922,6 +925,44 @@ export type Database = {
             columns: ['verso_file_id'];
             isOneToOne: false;
             referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      email_deliveries: {
+        Row: {
+          attachments: string[];
+          id: string;
+          provider_message_id: string | null;
+          recipient: string;
+          sent_at: string;
+          sent_by: string | null;
+          subject: string;
+        };
+        Insert: {
+          attachments?: string[];
+          id?: string;
+          provider_message_id?: string | null;
+          recipient: string;
+          sent_at?: string;
+          sent_by?: string | null;
+          subject: string;
+        };
+        Update: {
+          attachments?: string[];
+          id?: string;
+          provider_message_id?: string | null;
+          recipient?: string;
+          sent_at?: string;
+          sent_by?: string | null;
+          subject?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'email_deliveries_sent_by_fkey';
+            columns: ['sent_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];

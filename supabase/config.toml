@@ -458,6 +458,14 @@ verify_jwt = false
 import_map = "./functions/label-read/deno.json"
 entrypoint = "./functions/label-read/index.ts"
 
+[functions.mail-send]
+enabled = true
+# Envoi des e-mails au client par Resend (secrets RESEND_API_KEY et MAIL_FROM).
+# Le jeton de l'appelant est vérifié dans la fonction elle-même (withSupabase({ auth: "user" })).
+verify_jwt = false
+import_map = "./functions/mail-send/deno.json"
+entrypoint = "./functions/mail-send/index.ts"
+
 [functions.files-purge]
 enabled = true
 # Appelée par la tâche planifiée purge_files() : secret partagé vérifié dans la fonction.

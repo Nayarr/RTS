@@ -98,12 +98,13 @@ export function ClientPortalButtons({ clientId, clientName }: { clientId: string
           senderEmail={prepared.senderEmail}
           contact={prepared.contact}
           onContactSave={(contact) => void saveContact(contact)}
-          onSend={(channel, contact) =>
+          onSend={(channel, contact, providerMessageId) =>
             record.mutate({
               clientId,
               channel,
               recipient: (channel === 'email' ? contact.email : contact.phone).trim() || null,
               message: prepared.message,
+              providerMessageId,
             })
           }
           onClose={() => setPrepared(null)}
