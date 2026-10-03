@@ -98,6 +98,30 @@ export const routes: RouteObject[] = [
                     lazy: page(() => import('@/features/customers/VehiclePage'), 'VehiclePage'),
                   },
                   {
+                    path: '/location',
+                    lazy: page(() => import('@/features/rentals/RentalsOverviewPage'), 'RentalsOverviewPage'),
+                  },
+                  {
+                    path: '/location/contrats',
+                    lazy: page(() => import('@/features/rentals/RentalsPage'), 'RentalsPage'),
+                  },
+                  {
+                    path: '/location/nouvelle',
+                    lazy: page(() => import('@/features/rentals/NewRentalPage'), 'NewRentalPage'),
+                  },
+                  {
+                    path: '/location/contrats/:id',
+                    lazy: page(() => import('@/features/rentals/RentalPage'), 'RentalPage'),
+                  },
+                  {
+                    path: '/location/contrats/:id/depart',
+                    lazy: page(() => import('@/features/rentals/RentalDeparturePage'), 'RentalDeparturePage'),
+                  },
+                  {
+                    path: '/location/contrats/:id/retour',
+                    lazy: page(() => import('@/features/rentals/RentalReturnPage'), 'RentalReturnPage'),
+                  },
+                  {
                     path: '/location/flotte',
                     lazy: page(() => import('@/features/rentals/FleetPage'), 'FleetPage'),
                   },
