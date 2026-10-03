@@ -51,6 +51,15 @@ export function formatDuration(totalSeconds: number | null | undefined): string 
   return hours > 0 ? `${hours}h ${String(minutes).padStart(2, '0')}min` : `${minutes} min`;
 }
 
+/** Durée en heures et minutes, avec son unité : 540 s → « 9 min », 5400 s → « 1h30 », 7200 s → « 2h ». */
+export function formatShortDuration(totalSeconds: number | null | undefined): string {
+  const minutesTotal = Math.max(0, Math.round((totalSeconds ?? 0) / 60));
+  const hours = Math.floor(minutesTotal / 60);
+  const minutes = minutesTotal % 60;
+  if (hours === 0) return `${minutes} min`;
+  return minutes === 0 ? `${hours}h` : `${hours}h${String(minutes).padStart(2, '0')}`;
+}
+
 /** Heures décimales lisibles : 1.5 → « 1,5 h ». */
 export const formatHours = (hours: number | null | undefined) =>
   `${(hours ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} h`;
