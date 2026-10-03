@@ -45,6 +45,7 @@ import {
 } from './rental-domain';
 import { useMissing, useRental, useRentalMutation } from './rental-hooks';
 import { buildRentalPdf } from './rental-pdf';
+import { RemoteSignature } from './RentalSend';
 import { Stepper } from './ui';
 
 /** Départ d'un contrat réservé : permis, tarifs, état des lieux, signature, puis remise des clés. */
@@ -603,6 +604,10 @@ function ContractStep({ detail }: { detail: RentalDetail }) {
               >
                 Enregistrer la signature
               </Button>
+              <div className="col gap-2 border-t pt-3">
+                <span className="text-[13px] font-semibold">Client absent ?</span>
+                <RemoteSignature detail={detail} />
+              </div>
             </>
           )}
           {rental.kind === 'loan' && !rental.signature_file_id && (

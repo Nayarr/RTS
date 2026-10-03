@@ -2838,6 +2838,7 @@ export type Database = {
           number: string;
           periods: number;
           planned_return_at: string;
+          public_token: string | null;
           rate_period: string;
           repair_order_id: string | null;
           returned_at: string | null;
@@ -2847,6 +2848,7 @@ export type Database = {
           terms_accepted: boolean;
           unit_price: number;
           updated_at: string;
+          rental_public_json: Json | null;
         };
         Insert: {
           billable?: boolean;
@@ -2874,6 +2876,7 @@ export type Database = {
           number: string;
           periods?: number;
           planned_return_at: string;
+          public_token?: string | null;
           rate_period?: string;
           repair_order_id?: string | null;
           returned_at?: string | null;
@@ -2910,6 +2913,7 @@ export type Database = {
           number?: string;
           periods?: number;
           planned_return_at?: string;
+          public_token?: string | null;
           rate_period?: string;
           repair_order_id?: string | null;
           returned_at?: string | null;
@@ -3679,7 +3683,8 @@ export type Database = {
           expires_at: string;
           id: string;
           public_token: string | null;
-          repair_order_id: string;
+          rental_id: string | null;
+          repair_order_id: string | null;
           signature_file_id: string | null;
           signed_at: string | null;
           signer_name: string | null;
@@ -3693,7 +3698,8 @@ export type Database = {
           expires_at: string;
           id?: string;
           public_token?: string | null;
-          repair_order_id: string;
+          rental_id?: string | null;
+          repair_order_id?: string | null;
           signature_file_id?: string | null;
           signed_at?: string | null;
           signer_name?: string | null;
@@ -3706,7 +3712,8 @@ export type Database = {
           expires_at?: string;
           id?: string;
           public_token?: string | null;
-          repair_order_id?: string;
+          rental_id?: string | null;
+          repair_order_id?: string | null;
           signature_file_id?: string | null;
           signed_at?: string | null;
           signer_name?: string | null;
@@ -3718,6 +3725,20 @@ export type Database = {
             columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'rentals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_rentals_overview';
             referencedColumns: ['id'];
           },
           {
@@ -5414,6 +5435,14 @@ export type Database = {
         Returns: string;
       };
       apply_package_keywords: { Args: { p_repair_order_id: string }; Returns: string[] };
+      apply_rental_signature: {
+        Args: {
+          p_request: Database['public']['Tables']['signature_requests']['Row'];
+          p_signature_file_id: string;
+          p_signer_name: string;
+        };
+        Returns: undefined;
+      };
       apply_repair_order_signature: {
         Args: {
           p_request: Database['public']['Tables']['signature_requests']['Row'];
@@ -5829,6 +5858,10 @@ export type Database = {
         Args: { p_accept: boolean; p_signature_file_id?: string; p_signer_name: string; p_token: string };
         Returns: Json;
       };
+      public_sign_link: {
+        Args: { p_signature_file_id: string; p_signer_name: string; p_token: string };
+        Returns: Json;
+      };
       public_sign_repair_order: {
         Args: { p_signature_file_id: string; p_signer_name: string; p_token: string };
         Returns: Json;
@@ -5883,11 +5916,17 @@ export type Database = {
         Args: { p_phase: Database['public']['Enums']['rental_phase']; p_rental_id: string };
         Returns: boolean;
       };
+      rental_public_json: {
+        Args: { p_rental: Database['public']['Tables']['rentals']['Row'] };
+        Returns: Json;
+      };
+      rental_signature_request: { Args: { p_rental_id: string }; Returns: Json };
       repair_order_signature_request: { Args: { p_repair_order_id: string }; Returns: Json };
       repair_order_status_label: {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };
         Returns: string;
       };
+      request_rental_signature: { Args: { p_rental_id: string }; Returns: Json };
       request_repair_order_signature: {
         Args: { p_channel: Database['public']['Enums']['signature_channel']; p_repair_order_id: string };
         Returns: Json;
@@ -6045,6 +6084,7 @@ export type Database = {
       share_client_portal: { Args: { p_client_id: string }; Returns: string };
       share_invoice: { Args: { p_invoice_id: string }; Returns: string };
       share_quote: { Args: { p_quote_id: string }; Returns: string };
+      share_rental: { Args: { p_rental_id: string }; Returns: string };
       signature_request_json: {
         Args: { p_request: Database['public']['Tables']['signature_requests']['Row'] };
         Returns: Json;

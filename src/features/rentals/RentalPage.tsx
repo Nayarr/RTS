@@ -48,6 +48,7 @@ import {
 } from './rental-domain';
 import { useRental, useRentalMutation } from './rental-hooks';
 import { buildRentalPdf } from './rental-pdf';
+import { RemoteSignature, RentalInvoiceCard, SendContractButton } from './RentalSend';
 import { Kpi } from './ui';
 
 /** Fiche d'un contrat de location ou de prêt : parties, véhicule, état des lieux, suivi. */
@@ -140,6 +141,7 @@ function RentalView({ detail }: { detail: RentalDetail }) {
               {pdfPending ? <Loader2 className="animate-spin" /> : <FileText />}{' '}
               {rental.kind === 'loan' ? 'Bon de prêt' : 'Contrat PDF'}
             </Button>
+            <SendContractButton detail={detail} />
             {rental.status === 'active' && (
               <Button variant="outline" onClick={() => setExtending(true)}>
                 <CalendarClock /> Prolonger
@@ -397,6 +399,22 @@ function RentalView({ detail }: { detail: RentalDetail }) {
               ))}
             </ol>
           </section>
+          {rental.status === 'reserved' && !rental.signed_at && (
+            <section data-slot="card" className="card" aria-labelledby="rental-signature">
+              <div className="card-h">
+                <h2 className="h2" id="rental-signature">
+                  Signature du client
+                </h2>
+              </div>
+              <div className="card-b col gap-2">
+                <span className="hint">
+                  À signer au comptoir au départ, ou à distance si le client ne vient pas lui-même.
+                </span>
+                <RemoteSignature detail={detail} />
+              </div>
+            </section>
+          )}
+          {rental.invoice_id && <RentalInvoiceCard invoiceId={rental.invoice_id} />}
           <NotesCard detail={detail} />
         </aside>
       </div>
