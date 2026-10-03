@@ -44,9 +44,9 @@ select results_eq(
 select is((select client_id from public.create_repair_order('EF-456-GH', 'remorque', '', 'Éclairage')),
           '20000000-0000-0000-0000-000000000001'::uuid, 'Sans client saisi, l''OR prend le client du véhicule');
 
--- Date prévue ignorée sans heure de début (comme l'ancienne appli)
-select is((select planned_date from public.create_repair_order('IJ-789-KL', 'vul', null, 'Contrôle', null, null, '2026-10-02')),
-          null, 'Date prévue sans heure de début : non planifié');
+-- Date prévue gardée sans heure de début (OR « flexible » ce jour-là)
+select is((select row(planned_date, planned_start) from public.create_repair_order('IJ-789-KL', 'vul', null, 'Contrôle', null, null, '2026-10-02')),
+          row('2026-10-02'::date, null::time), 'Date prévue sans heure de début : gardée, sans heure');
 
 -- ---------------------------------------------------------------- Validations
 select throws_like($$ select public.create_repair_order(' - ', 'pl', null, 'Freins') $$,

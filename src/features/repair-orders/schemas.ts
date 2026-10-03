@@ -58,7 +58,7 @@ export const toNewRepairOrderInput = (
   requested_work: values.requested_work.trim(),
   mileage: values.mileage ? Number(values.mileage) : null,
   technician_id: values.technician_id || null,
-  planned_date: values.planned_start ? values.planned_date || null : null,
+  planned_date: values.planned_date || null,
   planned_start: values.planned_start || null,
   planned_end: values.planned_start ? values.planned_end || null : null,
   signature_file_id: signatureFileId,

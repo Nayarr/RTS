@@ -69,7 +69,7 @@ describe('nouvel OR', () => {
     expect(messages({ planned_end: '09:00' })).toEqual(['Indique l’heure de début']);
   });
 
-  it('sans heure de début, pas de date planifiée (comme l’ancienne appli)', () => {
+  it('sans heure de début, la date prévue est gardée', () => {
     expect(toNewRepairOrderInput(values, null)).toEqual({
       plate: 'GH-512-RT',
       vehicle_type: 'pl',
@@ -77,7 +77,7 @@ describe('nouvel OR', () => {
       requested_work: 'Freins',
       mileage: null,
       technician_id: null,
-      planned_date: null,
+      planned_date: '2026-10-01',
       planned_start: null,
       planned_end: null,
       signature_file_id: null,
