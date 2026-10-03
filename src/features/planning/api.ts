@@ -1,7 +1,7 @@
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/database';
-import type { LeaveSpan, RestGroup, WorkdayHours } from './domain';
+import { planningMechanics, type LeaveSpan, type RestGroup, type WorkdayHours } from './domain';
 
 type AppointmentRow = Tables<'v_appointments_overview'>;
 type Guaranteed =
@@ -43,7 +43,7 @@ export async function fetchPlanning(from: string, to: string): Promise<PlanningD
       .lte('scheduled_date', to),
     supabase
       .from('technicians')
-      .select('id, display_name, color, rest_group')
+      .select('id, display_name, color, rest_group, profile:profiles(role)')
       .eq('is_active', true)
       .eq('exclude_from_planning', false)
       .order('sort_order')
@@ -70,7 +70,7 @@ export async function fetchPlanning(from: string, to: string): Promise<PlanningD
       (order) => !order.planned_start && (order.status === 'assigned' || order.status === 'in_progress'),
     ),
     appointments: (appointments.data ?? []) as Appointment[],
-    technicians: technicians.data ?? [],
+    technicians: planningMechanics(technicians.data ?? []),
     leaves: leaves.data ?? [],
     hours,
     restReferenceMonday: rest_reference_monday,

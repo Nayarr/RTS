@@ -193,3 +193,17 @@ export function appointmentReminderMessage(
     sms: `Rappel RDV ${company.legal_name} ${date} à ${time} pour ${plate}. ${company.address_line}, ${company.city}.`,
   };
 }
+
+/**
+ * Mécaniciens du planning : un compte Direction ou Réception rattaché à une fiche technicien
+ * (pour pointer, par exemple) n'est pas un mécanicien et n'a pas de colonne.
+ */
+export function planningMechanics<T extends { profile?: { role: string } | null }>(
+  technicians: T[],
+): Omit<T, 'profile'>[] {
+  return technicians
+    .filter(
+      (technician) => technician.profile?.role !== 'direction' && technician.profile?.role !== 'reception',
+    )
+    .map(({ profile: _profile, ...technician }) => technician);
+}
