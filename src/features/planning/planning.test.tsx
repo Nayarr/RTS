@@ -121,6 +121,7 @@ const appointment = (overrides: Partial<Appointment> = {}): Appointment =>
 
 const planning = (overrides: Partial<PlanningData> = {}): PlanningData => ({
   orders: [order()],
+  untimedOrders: [],
   appointments: [appointment()],
   technicians: TECHNICIANS,
   leaves: [{ technician_id: 't2', leave_type: 'paid_leave', starts_on: '2026-10-06', ends_on: '2026-10-06' }],
@@ -280,6 +281,47 @@ describe('planning : écran', () => {
         name: /Rendez-vous 09:00/,
       }),
     ).toBeInTheDocument();
+  });
+
+  it('OR sans horaire : étiquettes sous la date (semaine) et sous le technicien (jour)', async () => {
+    const untimed = order({ id: 'ro2', plate: 'SH-100-AA', planned_start: null, planned_end: null });
+    const other = order({
+      id: 'ro3',
+      plate: 'SH-200-BB',
+      technician_id: 't2',
+      technician_name: 'Bruno',
+      planned_date: '2026-10-08',
+      planned_start: null,
+      planned_end: null,
+    });
+    vi.mocked(fetchPlanning).mockResolvedValue(planning({ untimedOrders: [untimed, other] }));
+    renderPlanning();
+    const tuesday = await screen.findByTestId('planning-untimed-2026-10-06');
+    const chip = within(tuesday).getByRole('link', { name: /SH-100-AA/ });
+    expect(chip).toHaveAttribute('href', '/or/ro2');
+    expect(chip).toHaveAttribute('title', 'Prévu ce jour, sans horaire — Alice');
+    expect(within(screen.getByTestId('planning-untimed-2026-10-08')).getByRole('link')).toHaveTextContent(
+      'SH-200-BB',
+    );
+    // Pas de bloc dans la grille horaire
+    expect(within(screen.getByTestId('planning-column-2026-10-06')).queryByText('SH-100-AA')).toBeNull();
+    expect(screen.getByText('OR prévu ce jour-là sans horaire')).toBeInTheDocument();
+  });
+
+  it('OR sans horaire, vue jour : sous le technicien concerné', async () => {
+    const untimed = order({ id: 'ro2', plate: 'SH-100-AA', planned_start: null, planned_end: null });
+    vi.mocked(fetchPlanning).mockResolvedValue(planning({ untimedOrders: [untimed] }));
+    renderPlanning('?vue=jour&date=2026-10-06');
+    expect(
+      within(await screen.findByTestId('planning-untimed-t1')).getByRole('link', { name: /SH-100-AA/ }),
+    ).toBeInTheDocument();
+    expect(within(screen.getByTestId('planning-untimed-t2')).queryAllByRole('link')).toHaveLength(0);
+  });
+
+  it('sans OR sans horaire, pas de ligne « Sans horaire »', async () => {
+    renderPlanning();
+    await screen.findByTestId('planning-column-2026-10-06');
+    expect(screen.queryByText('Sans horaire')).toBeNull();
   });
 
   it('assigner un OR à un technicien', async () => {

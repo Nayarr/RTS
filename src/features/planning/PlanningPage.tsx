@@ -46,6 +46,8 @@ interface Column {
   offLabel: string | null;
   lunch: [number, number] | null;
   blocks: Block[];
+  /** OR prévus ce jour-là sans horaire (étiquettes pointillées sous l'en-tête). */
+  untimed: RepairOrderOverview[];
 }
 
 type OpenDialog =
@@ -85,7 +87,7 @@ function buildColumns(
   data: PlanningData,
   onAssign: (date: string, technicianId?: string) => void,
 ): Column[] {
-  const { technicians, orders, appointments, leaves, hours, restReferenceMonday } = data;
+  const { technicians, orders, untimedOrders, appointments, leaves, hours, restReferenceMonday } = data;
   const offLabel = (technician: PlanningTechnician, day: string) =>
     technicianOffLabel(technician, day, leaves, restReferenceMonday);
 
@@ -124,6 +126,7 @@ function buildColumns(
         blocks: closed
           ? []
           : [...orderBlocks(orders, day, () => true), ...appointmentBlocks(appointments, day, () => true)],
+        untimed: untimedOrders.filter((order) => order.planned_date === day),
       };
     });
   }
@@ -169,6 +172,9 @@ function buildColumns(
             ...orderBlocks(orders, day, (order) => order.technician_id === technician.id),
             ...appointmentBlocks(appointments, day, (item) => item.technician_id === technician.id),
           ],
+      untimed: untimedOrders.filter(
+        (order) => order.planned_date === day && order.technician_id === technician.id,
+      ),
     };
   });
   if (unassigned.length) {
@@ -179,6 +185,7 @@ function buildColumns(
       offLabel: null,
       lunch: null,
       blocks: unassigned,
+      untimed: [],
     });
   }
   return columns;
@@ -369,6 +376,10 @@ export function PlanningPage() {
                 <span className="size-3.5 rounded border bg-muted" />
                 Pause déjeuner
               </span>
+              <span className="row gap-1.5">
+                <span className="size-3.5 rounded border border-dashed border-muted-foreground" />
+                OR prévu ce jour-là sans horaire
+              </span>
               <span>Couleur du bloc = technicien. Clique sur « + » pour assigner un OR.</span>
             </p>
           </>
@@ -427,6 +438,48 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
             </div>
           ))}
         </div>
+        {columns.some((column) => column.untimed.length > 0) && (
+          <div className="flex min-h-10 border-b bg-card">
+            <div className="flex w-14 shrink-0 items-center justify-end pr-2 text-right text-[10.5px] leading-[1.15] text-muted-foreground">
+              Sans horaire
+            </div>
+            {columns.map((column) => (
+              <ul
+                key={column.key}
+                aria-label={`OR sans horaire — ${column.key}`}
+                data-testid={`planning-untimed-${column.key}`}
+                className={cn(
+                  'flex min-w-0 flex-1 flex-wrap content-start gap-1 border-l p-1.5',
+                  column.closed && 'bg-muted',
+                )}
+              >
+                {column.untimed.map((order) => (
+                  <li key={order.id} className="min-w-0">
+                    <Link
+                      to={`/or/${order.id}`}
+                      className="flex max-w-full items-center gap-1 truncate rounded-md border border-dashed border-muted-foreground/70 bg-card px-1.5 py-0.5 text-[11.5px] font-semibold hover:bg-muted"
+                      title={`Prévu ce jour, sans horaire — ${order.technician_name ?? 'non assigné'}`}
+                    >
+                      <span
+                        className="tdot shrink-0"
+                        style={
+                          {
+                            '--c': technicianColor(
+                              order.technician_name
+                                ? { display_name: order.technician_name, color: order.technician_color }
+                                : null,
+                            ),
+                          } as CSSProperties
+                        }
+                      />
+                      <span className="truncate">{order.plate}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        )}
         <div className="flex pt-2 pb-2.5">
           <div className="relative w-14 shrink-0" style={{ height: totalHeight }}>
             {hours.map((hour, index) => (
