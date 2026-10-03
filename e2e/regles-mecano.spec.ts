@@ -131,6 +131,11 @@ test('fiche de contrôle sur téléphone : photo à droite de OK / HS, échéanc
   const ct = await page.getByLabel('Prochain contrôle technique').boundingBox();
   const tailgate = await page.getByLabel('Prochain contrôle hayon').boundingBox();
   expect(tailgate?.x).toBe(ct?.x);
-  expect(tailgate?.width).toBe(ct?.width);
   expect(tailgate?.y ?? 0).toBeGreaterThan((ct?.y ?? 0) + (ct?.height ?? 0));
+  // Photo du contrôle technique : sur la ligne de sa date, à droite
+  const ctPhoto = await page.getByRole('button', { name: /^Photo du contrôle technique/ }).boundingBox();
+  expect(
+    Math.abs((ctPhoto?.y ?? 0) + (ctPhoto?.height ?? 0) / 2 - ((ct?.y ?? 0) + (ct?.height ?? 0) / 2)),
+  ).toBeLessThan(2);
+  expect(ctPhoto?.x ?? 0).toBeGreaterThan((ct?.x ?? 0) + (ct?.width ?? 0));
 });
