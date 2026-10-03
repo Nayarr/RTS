@@ -381,12 +381,18 @@ export type Database = {
       clients: {
         Row: {
           billing_address: string | null;
+          birth_date: string | null;
+          birth_place: string | null;
+          civility: string | null;
           contact_name: string | null;
           created_at: string;
           discount_percent: number | null;
           email: string | null;
+          first_name: string | null;
           hourly_rate: number | null;
           id: string;
+          kind: Database['public']['Enums']['client_kind'];
+          last_name: string | null;
           legacy_key: string | null;
           name: string;
           name_key: string | null;
@@ -399,12 +405,18 @@ export type Database = {
         };
         Insert: {
           billing_address?: string | null;
+          birth_date?: string | null;
+          birth_place?: string | null;
+          civility?: string | null;
           contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
           email?: string | null;
+          first_name?: string | null;
           hourly_rate?: number | null;
           id?: string;
+          kind?: Database['public']['Enums']['client_kind'];
+          last_name?: string | null;
           legacy_key?: string | null;
           name: string;
           name_key?: never;
@@ -417,12 +429,18 @@ export type Database = {
         };
         Update: {
           billing_address?: string | null;
+          birth_date?: string | null;
+          birth_place?: string | null;
+          civility?: string | null;
           contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
           email?: string | null;
+          first_name?: string | null;
           hourly_rate?: number | null;
           id?: string;
+          kind?: Database['public']['Enums']['client_kind'];
+          last_name?: string | null;
           legacy_key?: string | null;
           name?: string;
           name_key?: never;
@@ -814,6 +832,99 @@ export type Database = {
           prefix?: string;
         };
         Relationships: [];
+      };
+      driving_licenses: {
+        Row: {
+          birth_date: string | null;
+          birth_place: string | null;
+          categories: string[];
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          first_name: string;
+          id: string;
+          issued_on: string | null;
+          last_name: string;
+          license_number: string | null;
+          read_automatically: boolean;
+          recto_file_id: string | null;
+          updated_at: string;
+          valid_until: string | null;
+          verso_file_id: string | null;
+        };
+        Insert: {
+          birth_date?: string | null;
+          birth_place?: string | null;
+          categories?: string[];
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          first_name: string;
+          id?: string;
+          issued_on?: string | null;
+          last_name: string;
+          license_number?: string | null;
+          read_automatically?: boolean;
+          recto_file_id?: string | null;
+          updated_at?: string;
+          valid_until?: string | null;
+          verso_file_id?: string | null;
+        };
+        Update: {
+          birth_date?: string | null;
+          birth_place?: string | null;
+          categories?: string[];
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          first_name?: string;
+          id?: string;
+          issued_on?: string | null;
+          last_name?: string;
+          license_number?: string | null;
+          read_automatically?: boolean;
+          recto_file_id?: string | null;
+          updated_at?: string;
+          valid_until?: string | null;
+          verso_file_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'driving_licenses_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_recto_file_id_fkey';
+            columns: ['recto_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_verso_file_id_fkey';
+            columns: ['verso_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       files: {
         Row: {
@@ -3807,12 +3918,18 @@ export type Database = {
         Row: {
           balance_due: number | null;
           billing_address: string | null;
+          birth_date: string | null;
+          birth_place: string | null;
+          civility: string | null;
           contact_name: string | null;
           created_at: string | null;
           discount_percent: number | null;
           email: string | null;
+          first_name: string | null;
           hourly_rate: number | null;
           id: string | null;
+          kind: Database['public']['Enums']['client_kind'] | null;
+          last_name: string | null;
           last_visit: string | null;
           legacy_key: string | null;
           name: string | null;
@@ -5003,6 +5120,15 @@ export type Database = {
         Args: { p_client_id: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: number;
       };
+      license_block_reason: {
+        Args: {
+          p_license: Database['public']['Tables']['driving_licenses']['Row'];
+          p_required: string;
+          p_until: string;
+        };
+        Returns: string;
+      };
+      license_covers: { Args: { p_categories: string[]; p_required: string }; Returns: boolean };
       line_net_ht: {
         Args: {
           p_discount_percent: number;
@@ -5480,6 +5606,7 @@ export type Database = {
     Enums: {
       app_role: 'direction' | 'reception' | 'technician' | 'kiosk';
       appointment_status: 'planned' | 'converted' | 'cancelled';
+      client_kind: 'pro' | 'individual';
       client_message_type:
         | 'vehicle_received'
         | 'quote_available'
@@ -5643,6 +5770,7 @@ export const Constants = {
     Enums: {
       app_role: ['direction', 'reception', 'technician', 'kiosk'],
       appointment_status: ['planned', 'converted', 'cancelled'],
+      client_kind: ['pro', 'individual'],
       client_message_type: [
         'vehicle_received',
         'quote_available',

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useProfile } from '@/features/auth/useProfile';
 import { GroupedInvoiceDialog } from '@/features/invoices/GroupedInvoiceDialog';
+import { ClientLicensesCard } from '@/features/rentals/ClientLicensesCard';
 import { ClientPortalButtons } from './ClientPortalButtons';
 import { InvoiceStatusBadge } from '@/features/invoices/PaymentStatusBadge';
 import { QuoteStatusBadge } from '@/features/quotes/QuoteStatusBadge';
@@ -31,7 +32,14 @@ import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { deleteClient, updateClient, type ClientDetail } from './api';
-import { clientFromForm, clientSchema, clientToForm, MAX_OTHER_PHONES, type ClientValues } from './domain';
+import {
+  CLIENT_KIND_LABELS,
+  clientFromForm,
+  clientSchema,
+  clientToForm,
+  MAX_OTHER_PHONES,
+  type ClientValues,
+} from './domain';
 import { useClient, useCustomerMutation } from './hooks';
 
 /** OR regroupables sur une facture : terminés ou à facturer. */
@@ -66,6 +74,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
     formState: { errors, isDirty },
   } = useForm<ClientValues>({ resolver: zodResolver(clientSchema), defaultValues: clientToForm(client) });
   const phones = useFieldArray({ control, name: 'other_phones' });
+  const individual = useWatch({ control, name: 'kind' }) === 'individual';
   const save = useCustomerMutation(
     (values: ClientValues) => updateClient(client.id, clientFromForm(values, isDirection)),
     'Fiche client enregistrée',
@@ -93,7 +102,12 @@ function ClientView({ detail }: { detail: ClientDetail }) {
           </span>
         }
         crumbs={[{ label: 'Clients', to: '/clients' }, { label: 'Fiche client' }]}
-        title={client.name}
+        title={
+          <span className="row flex-wrap gap-x-3 gap-y-1">
+            {client.name}
+            <span className="tag text-[12.5px]">{CLIENT_KIND_LABELS[client.kind ?? 'pro']}</span>
+          </span>
+        }
         actions={
           <>
             {isDirection && (
@@ -167,17 +181,63 @@ function ClientView({ detail }: { detail: ClientDetail }) {
               </Button>
             </div>
             <div className="card-b col gap-3.5">
+              {individual && (
+                <div className="grid gap-3.5 sm:grid-cols-3">
+                  <div className="field">
+                    <Label htmlFor="client-civility">Civilité</Label>
+                    <select id="client-civility" className="inp" {...register('civility')}>
+                      <option value="">—</option>
+                      <option value="Mme">Mme</option>
+                      <option value="M.">M.</option>
+                    </select>
+                  </div>
+                  <FormField
+                    id="client-last-name"
+                    label="Nom"
+                    error={errors.last_name?.message}
+                    {...register('last_name')}
+                  />
+                  <FormField
+                    id="client-first-name"
+                    label="Prénom"
+                    error={errors.first_name?.message}
+                    {...register('first_name')}
+                  />
+                  <FormField
+                    id="client-birth-date"
+                    label="Date de naissance"
+                    type="date"
+                    error={errors.birth_date?.message}
+                    {...register('birth_date')}
+                  />
+                  <FormField
+                    id="client-birth-place"
+                    label="Lieu de naissance"
+                    error={errors.birth_place?.message}
+                    {...register('birth_place')}
+                  />
+                </div>
+              )}
               <div className="grid gap-3.5 sm:grid-cols-2">
-                <FormField id="client-name" label="Nom" error={errors.name?.message} {...register('name')} />
-                <FormField
-                  id="client-siren"
-                  label="SIREN"
-                  inputMode="numeric"
-                  placeholder="123 456 789"
-                  className="num"
-                  error={errors.siren?.message}
-                  {...register('siren')}
-                />
+                {!individual && (
+                  <FormField
+                    id="client-name"
+                    label="Nom"
+                    error={errors.name?.message}
+                    {...register('name')}
+                  />
+                )}
+                {!individual && (
+                  <FormField
+                    id="client-siren"
+                    label="SIREN"
+                    inputMode="numeric"
+                    placeholder="123 456 789"
+                    className="num"
+                    error={errors.siren?.message}
+                    {...register('siren')}
+                  />
+                )}
                 <FormField
                   id="client-email"
                   label="E-mail"
@@ -190,16 +250,18 @@ function ClientView({ detail }: { detail: ClientDetail }) {
               <fieldset className="col gap-3">
                 <legend className="lbl mb-2.5">Téléphones</legend>
                 <div className="grid gap-3.5 sm:grid-cols-2">
-                  <FormField
-                    id="client-contact"
-                    label="Contact de référence"
-                    placeholder="Nom du contact"
-                    error={errors.contact_name?.message}
-                    {...register('contact_name')}
-                  />
+                  {!individual && (
+                    <FormField
+                      id="client-contact"
+                      label="Contact de référence"
+                      placeholder="Nom du contact"
+                      error={errors.contact_name?.message}
+                      {...register('contact_name')}
+                    />
+                  )}
                   <FormField
                     id="client-phone"
-                    label="Téléphone du contact"
+                    label={individual ? 'Téléphone mobile' : 'Téléphone du contact'}
                     type="tel"
                     placeholder="06 12 34 56 78"
                     className="num"
@@ -256,7 +318,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
               </fieldset>
               <FormField
                 id="client-address"
-                label="Adresse de facturation"
+                label={individual ? 'Adresse' : 'Adresse de facturation'}
                 placeholder="N°, rue, code postal, ville"
                 {...register('billing_address')}
               />
@@ -291,6 +353,14 @@ function ClientView({ detail }: { detail: ClientDetail }) {
         </section>
 
         <div className="col gap-5">
+          <ClientLicensesCard
+            client={{
+              id: client.id,
+              kind: client.kind ?? 'pro',
+              first_name: client.first_name,
+              last_name: client.last_name,
+            }}
+          />
           <section data-slot="card" className="card" aria-labelledby="client-portal">
             <div className="card-h">
               <h2 className="h2" id="client-portal">

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { formatPlate, normalizeKey } from '@/features/repair-orders/constants';
 import { decimalField, decimalText, decimalValue } from '@/lib/numbers';
-import type { TablesUpdate } from '@/types/database';
+import type { TablesInsert, TablesUpdate } from '@/types/database';
 import type { ClientOverview, VehicleOverview } from './api';
 
 // ---------------------------------------------------------------- Échéances
@@ -90,33 +90,70 @@ export function otherPhones(value: unknown): ClientPhone[] {
 
 export const MAX_OTHER_PHONES = 10;
 
-export const clientSchema = z.object({
-  name: z.string().trim().min(1, 'Indique le nom du client').max(120),
-  email: z.union([z.literal(''), z.string().trim().email('E-mail invalide')]),
-  contact_name: z.string().trim().max(120),
-  phone: z.string().trim().max(30),
-  other_phones: z
-    .array(
-      z.object({
-        label: z.string().trim().min(1, 'Indique à qui est ce numéro').max(60),
-        phone: z.string().trim().min(1, 'Indique le numéro').max(30, '30 caractères au maximum'),
-      }),
-    )
-    .max(MAX_OTHER_PHONES),
-  billing_address: z.string().trim().max(300),
-  siren: z
-    .string()
-    .refine(
-      (value) => /^(\d{9}|\d{14})?$/.test(value.replace(/\s/g, '')),
-      'SIREN : 9 chiffres (ou SIRET : 14)',
-    ),
-  discount_percent: cappedDecimal('Remise', 100),
-  hourly_rate: decimalField(),
-  notes: z.string().max(2000),
-});
+const identityFields = {
+  kind: z.enum(['pro', 'individual']),
+  civility: z.enum(['', 'M.', 'Mme']),
+  first_name: z.string().trim().max(60),
+  last_name: z.string().trim().max(60),
+  birth_date: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, 'Date invalide'),
+  birth_place: z.string().trim().max(100),
+};
+
+/** Pro : raison sociale obligatoire ; particulier : nom et prénom. */
+function requireIdentity(
+  values: { kind: 'pro' | 'individual'; name: string; first_name: string; last_name: string },
+  ctx: z.RefinementCtx,
+) {
+  if (values.kind === 'pro' && !values.name.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['name'], message: 'Indique le nom du client' });
+  }
+  if (values.kind === 'individual') {
+    if (!values.last_name.trim())
+      ctx.addIssue({ code: 'custom', path: ['last_name'], message: 'Indique le nom' });
+    if (!values.first_name.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['first_name'], message: 'Indique le prénom' });
+    }
+  }
+}
+
+const sirenField = z
+  .string()
+  .refine(
+    (value) => /^(\d{9}|\d{14})?$/.test(value.replace(/\s/g, '')),
+    'SIREN : 9 chiffres (ou SIRET : 14)',
+  );
+
+export const clientSchema = z
+  .object({
+    ...identityFields,
+    name: z.string().trim().max(120),
+    email: z.union([z.literal(''), z.string().trim().email('E-mail invalide')]),
+    contact_name: z.string().trim().max(120),
+    phone: z.string().trim().max(30),
+    other_phones: z
+      .array(
+        z.object({
+          label: z.string().trim().min(1, 'Indique à qui est ce numéro').max(60),
+          phone: z.string().trim().min(1, 'Indique le numéro').max(30, '30 caractères au maximum'),
+        }),
+      )
+      .max(MAX_OTHER_PHONES),
+    billing_address: z.string().trim().max(300),
+    siren: sirenField,
+    discount_percent: cappedDecimal('Remise', 100),
+    hourly_rate: decimalField(),
+    notes: z.string().max(2000),
+  })
+  .superRefine(requireIdentity);
 export type ClientValues = z.infer<typeof clientSchema>;
 
 export const clientToForm = (client: ClientOverview): ClientValues => ({
+  kind: client.kind ?? 'pro',
+  civility: client.civility === 'M.' || client.civility === 'Mme' ? client.civility : '',
+  first_name: client.first_name ?? '',
+  last_name: client.last_name ?? '',
+  birth_date: client.birth_date ?? '',
+  birth_place: client.birth_place ?? '',
   name: client.name,
   email: client.email ?? '',
   contact_name: client.contact_name ?? '',
@@ -133,7 +170,7 @@ export const clientToForm = (client: ClientOverview): ClientValues => ({
 export function clientFromForm(values: ClientValues, withPricing: boolean): TablesUpdate<'clients'> {
   const text = (value: string) => value.trim() || null;
   return {
-    name: values.name.trim(),
+    ...identityFromForm(values),
     email: text(values.email),
     contact_name: text(values.contact_name),
     phone: text(values.phone),
@@ -192,3 +229,82 @@ export function vehicleFromForm(values: VehicleValues): TablesUpdate<'vehicles'>
     notes: text(values.notes),
   };
 }
+
+type IdentityValues = Pick<
+  ClientValues,
+  'kind' | 'civility' | 'first_name' | 'last_name' | 'birth_date' | 'birth_place' | 'name'
+>;
+
+/** Identité enregistrée : un particulier n'a pas de raison sociale (nom affiché « Prénom Nom » par la base). */
+function identityFromForm(values: IdentityValues): TablesUpdate<'clients'> {
+  const text = (value: string) => value.trim() || null;
+  if (values.kind === 'pro') {
+    return {
+      kind: 'pro',
+      name: values.name.trim(),
+      civility: null,
+      first_name: null,
+      last_name: null,
+      birth_date: null,
+      birth_place: null,
+    };
+  }
+  return {
+    kind: 'individual',
+    name: `${values.first_name.trim()} ${values.last_name.trim()}`,
+    civility: values.civility || null,
+    first_name: values.first_name.trim(),
+    last_name: values.last_name.trim(),
+    birth_date: values.birth_date || null,
+    birth_place: text(values.birth_place),
+  };
+}
+
+// ---------------------------------------------------------------- Nouveau client
+
+export const newClientSchema = z
+  .object({
+    ...identityFields,
+    name: z.string().trim().max(120),
+    contact_name: z.string().trim().max(120),
+    siren: sirenField,
+    phone: z.string().trim().max(30),
+    email: z.union([z.literal(''), z.string().trim().email('E-mail invalide')]),
+    billing_address: z.string().trim().max(300),
+    notes: z.string().max(2000),
+  })
+  .superRefine(requireIdentity);
+export type NewClientValues = z.infer<typeof newClientSchema>;
+
+export const emptyNewClient = (kind: 'pro' | 'individual'): NewClientValues => ({
+  kind,
+  civility: '',
+  first_name: '',
+  last_name: '',
+  birth_date: '',
+  birth_place: '',
+  name: '',
+  contact_name: '',
+  siren: '',
+  phone: '',
+  email: '',
+  billing_address: '',
+  notes: '',
+});
+
+export function newClientFromForm(values: NewClientValues): TablesInsert<'clients'> {
+  const text = (value: string) => value.trim() || null;
+  const identity = identityFromForm(values);
+  return {
+    ...identity,
+    name: identity.name ?? values.name.trim(),
+    contact_name: values.kind === 'pro' ? text(values.contact_name) : null,
+    siren: values.kind === 'pro' ? text(values.siren.replace(/\s/g, '')) : null,
+    phone: text(values.phone),
+    email: text(values.email),
+    billing_address: text(values.billing_address),
+    notes: text(values.notes),
+  };
+}
+
+export const CLIENT_KIND_LABELS = { pro: 'Pro', individual: 'Particulier' } as const;

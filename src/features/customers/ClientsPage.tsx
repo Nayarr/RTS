@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { initials } from '@/app/nav';
 import { PageHeader } from '@/app/PageHeader';
 import { FilterChips, Pager, SearchField, TableFooterBar } from '@/components/ListControls';
+import { Button } from '@/components/ui/button';
 import { formatEuro } from '@/lib/numbers';
 import { usePagination } from '@/lib/use-pagination';
 import type { ClientOverview } from './api';
 import { CustomersTabs } from './CustomersTabs';
-import { daysSince, otherPhones } from './domain';
+import { CLIENT_KIND_LABELS, daysSince, otherPhones } from './domain';
 import { useClients } from './hooks';
 
-type Filter = 'all' | 'unpaid';
+type Filter = 'all' | 'pro' | 'individual' | 'unpaid';
 
 const PAGE_SIZE = 20;
 
@@ -42,11 +43,15 @@ export function ClientsPage() {
   const list = useMemo(
     () =>
       (clients.data ?? []).filter(
-        (client) => matches(client, search.trim()) && (filter === 'all' || client.balance_due > 0),
+        (client) =>
+          matches(client, search.trim()) &&
+          (filter === 'all' ||
+            (filter === 'unpaid' ? client.balance_due > 0 : (client.kind ?? 'pro') === filter)),
       ),
     [clients.data, search, filter],
   );
   const unpaid = (clients.data ?? []).filter((client) => client.balance_due > 0).length;
+  const individuals = (clients.data ?? []).filter((client) => client.kind === 'individual').length;
   const pages = usePagination(list, PAGE_SIZE, `${filter}|${search}`);
 
   return (
@@ -55,9 +60,16 @@ export function ClientsPage() {
         crumbs={[{ label: 'Clients et véhicules' }, { label: 'Clients' }]}
         title="Clients"
         actions={
-          <span className="sub hidden md:inline">
-            Fiches clients, historique, impayés et échéances des véhicules
-          </span>
+          <>
+            <span className="sub hidden md:inline">
+              Fiches clients, historique, impayés et échéances des véhicules
+            </span>
+            <Button asChild>
+              <Link to="/clients/nouveau">
+                <Plus /> Nouveau client
+              </Link>
+            </Button>
+          </>
         }
       />
 
@@ -78,6 +90,8 @@ export function ClientsPage() {
               onChange={setFilter}
               options={[
                 { value: 'all', label: 'Tous', count: clients.data?.length ?? 0 },
+                { value: 'pro', label: 'Pros', count: (clients.data?.length ?? 0) - individuals },
+                { value: 'individual', label: 'Particuliers', count: individuals },
                 { value: 'unpaid', label: 'Avec impayés', count: unpaid, color: '#B5453A' },
               ]}
             />
@@ -121,7 +135,14 @@ export function ClientsPage() {
                             {initials(client.name)}
                           </span>
                           <span className="c2">
-                            <b>{client.name}</b>
+                            <b>
+                              {client.name}
+                              {client.kind === 'individual' && (
+                                <span className="tag ml-2 align-middle text-[11px]">
+                                  {CLIENT_KIND_LABELS.individual}
+                                </span>
+                              )}
+                            </b>
                             {client.email && <span>{client.email}</span>}
                           </span>
                         </Link>
