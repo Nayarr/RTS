@@ -63,6 +63,16 @@ export function BillingForm({ company }: { company: CompanySettings }) {
           {...register('quote_validity_days', { valueAsNumber: true })}
         />
       </div>
+      <FormField
+        id="supplies_fee_ht"
+        label="Ligne « Fournitures et recyclage » (€ HT)"
+        inputMode="decimal"
+        className="num sm:max-w-[16rem]"
+        placeholder="Aucune"
+        hint="Ajoutée à chaque nouveau devis et nouvelle facture, supprimable et modifiable sur le document. Vide : pas de ligne."
+        error={errors.supplies_fee_ht?.message}
+        {...register('supplies_fee_ht')}
+      />
       <div className="field">
         <Label htmlFor="invoice_legal_mentions">Mentions légales des factures (une par ligne)</Label>
         <Textarea

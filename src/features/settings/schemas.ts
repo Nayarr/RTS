@@ -82,6 +82,10 @@ export const billingSchema = z.object({
     .max(365),
   /** Une mention par ligne. */
   invoice_legal_mentions: z.string().max(5000),
+  /** Montant HT de la ligne « Fournitures et recyclage » ; vide = aucune ligne. */
+  supplies_fee_ht: z
+    .string()
+    .regex(/^\s*(\d{1,6}([.,]\d{1,2})?)?\s*$/, 'Montant en euros (ex : 15 ou 12,50)'),
 });
 export type BillingValues = z.infer<typeof billingSchema>;
 
@@ -90,10 +94,12 @@ export const billingToForm = (c: CompanySettings): BillingValues => ({
   payment_terms_days: c.payment_terms_days,
   quote_validity_days: c.quote_validity_days,
   invoice_legal_mentions: c.invoice_legal_mentions.join('\n'),
+  supplies_fee_ht: c.supplies_fee_ht === null ? '' : String(c.supplies_fee_ht).replace('.', ','),
 });
 
 export const billingFromForm = (v: BillingValues) => ({
   ...v,
+  supplies_fee_ht: v.supplies_fee_ht.trim() ? Number(v.supplies_fee_ht.trim().replace(',', '.')) : null,
   invoice_legal_mentions: v.invoice_legal_mentions
     .split('\n')
     .map((line) => line.trim())

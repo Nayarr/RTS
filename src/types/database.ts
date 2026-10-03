@@ -524,6 +524,7 @@ export type Database = {
           share_capital: string | null;
           siren: string | null;
           siret: string | null;
+          supplies_fee_ht: number | null;
           updated_at: string;
           vat_number: string | null;
         };
@@ -545,6 +546,7 @@ export type Database = {
           share_capital?: string | null;
           siren?: string | null;
           siret?: string | null;
+          supplies_fee_ht?: number | null;
           updated_at?: string;
           vat_number?: string | null;
         };
@@ -566,6 +568,7 @@ export type Database = {
           share_capital?: string | null;
           siren?: string | null;
           siret?: string | null;
+          supplies_fee_ht?: number | null;
           updated_at?: string;
           vat_number?: string | null;
         };
