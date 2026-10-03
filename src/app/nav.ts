@@ -57,7 +57,11 @@ export const GROUPS: NavGroup[] = [
     section: 'ops',
     label: 'Location',
     icon: KeyRound,
-    items: [{ to: '/location/flotte', label: 'Flotte' }],
+    items: [
+      { to: '/location', label: 'Vue d’ensemble' },
+      { to: '/location/contrats', label: 'Locations' },
+      { to: '/location/flotte', label: 'Flotte' },
+    ],
   },
   {
     id: 'facturation',

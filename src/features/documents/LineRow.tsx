@@ -13,6 +13,7 @@ const TYPE_LABELS: Partial<Record<LineType, string>> = {
   subcontract: 'Sous-traitance',
   consumable: 'Consommable',
   travel: 'Déplacement',
+  rental: 'Location',
 };
 
 /** Champ intégré au tableau (maquette) : sans bord, le bord apparaît au survol. */

@@ -13,7 +13,16 @@ import { CATEGORY_META } from './fleet-domain';
 
 /** Écrans de la rubrique Location (une URL par écran). */
 export function LocationTabs() {
-  return <SectionNav label="Location" links={[{ to: '/location/flotte', label: 'Flotte' }]} />;
+  return (
+    <SectionNav
+      label="Location"
+      links={[
+        { to: '/location', label: 'Vue d’ensemble' },
+        { to: '/location/contrats', label: 'Locations' },
+        { to: '/location/flotte', label: 'Flotte' },
+      ]}
+    />
+  );
 }
 
 /** Photo du véhicule, sinon pictogramme de sa catégorie. */
@@ -125,5 +134,54 @@ export function DocumentUploadButton({
         {children}
       </Button>
     </>
+  );
+}
+
+/** Étapes d'un assistant (contrat, retour) : faites, en cours, à venir ; cliquables si `onSelect`. */
+export function Stepper({
+  steps,
+  current,
+  done = [],
+  onSelect,
+}: {
+  steps: string[];
+  current: number;
+  done?: number[];
+  onSelect?: (index: number) => void;
+}) {
+  return (
+    <ol className="row flex-wrap gap-x-2 gap-y-2" aria-label="Étapes">
+      {steps.map((label, index) => {
+        const on = index === current;
+        const finished = done.includes(index);
+        const content = (
+          <>
+            <span
+              className={cn(
+                'grid size-6 shrink-0 place-items-center rounded-full border text-xs font-bold',
+                on && 'border-primary bg-primary text-primary-foreground',
+                !on && finished && 'border-primary text-primary',
+                !on && !finished && 'text-muted-foreground',
+              )}
+            >
+              {index + 1}
+            </span>
+            <span className={cn('text-[13px]', on ? 'font-semibold' : 'text-muted-foreground')}>{label}</span>
+          </>
+        );
+        return (
+          <li key={label} className="row gap-2" aria-current={on ? 'step' : undefined}>
+            {index > 0 && <span className="hidden h-px w-6 bg-border sm:block" aria-hidden />}
+            {onSelect ? (
+              <button type="button" className="row cursor-pointer gap-2" onClick={() => onSelect(index)}>
+                {content}
+              </button>
+            ) : (
+              content
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }

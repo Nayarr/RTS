@@ -381,12 +381,18 @@ export type Database = {
       clients: {
         Row: {
           billing_address: string | null;
+          birth_date: string | null;
+          birth_place: string | null;
+          civility: string | null;
           contact_name: string | null;
           created_at: string;
           discount_percent: number | null;
           email: string | null;
+          first_name: string | null;
           hourly_rate: number | null;
           id: string;
+          kind: Database['public']['Enums']['client_kind'];
+          last_name: string | null;
           legacy_key: string | null;
           name: string;
           name_key: string | null;
@@ -399,12 +405,18 @@ export type Database = {
         };
         Insert: {
           billing_address?: string | null;
+          birth_date?: string | null;
+          birth_place?: string | null;
+          civility?: string | null;
           contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
           email?: string | null;
+          first_name?: string | null;
           hourly_rate?: number | null;
           id?: string;
+          kind?: Database['public']['Enums']['client_kind'];
+          last_name?: string | null;
           legacy_key?: string | null;
           name: string;
           name_key?: never;
@@ -417,12 +429,18 @@ export type Database = {
         };
         Update: {
           billing_address?: string | null;
+          birth_date?: string | null;
+          birth_place?: string | null;
+          civility?: string | null;
           contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
           email?: string | null;
+          first_name?: string | null;
           hourly_rate?: number | null;
           id?: string;
+          kind?: Database['public']['Enums']['client_kind'];
+          last_name?: string | null;
           legacy_key?: string | null;
           name?: string;
           name_key?: never;
@@ -814,6 +832,99 @@ export type Database = {
           prefix?: string;
         };
         Relationships: [];
+      };
+      driving_licenses: {
+        Row: {
+          birth_date: string | null;
+          birth_place: string | null;
+          categories: string[];
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          first_name: string;
+          id: string;
+          issued_on: string | null;
+          last_name: string;
+          license_number: string | null;
+          read_automatically: boolean;
+          recto_file_id: string | null;
+          updated_at: string;
+          valid_until: string | null;
+          verso_file_id: string | null;
+        };
+        Insert: {
+          birth_date?: string | null;
+          birth_place?: string | null;
+          categories?: string[];
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          first_name: string;
+          id?: string;
+          issued_on?: string | null;
+          last_name: string;
+          license_number?: string | null;
+          read_automatically?: boolean;
+          recto_file_id?: string | null;
+          updated_at?: string;
+          valid_until?: string | null;
+          verso_file_id?: string | null;
+        };
+        Update: {
+          birth_date?: string | null;
+          birth_place?: string | null;
+          categories?: string[];
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          first_name?: string;
+          id?: string;
+          issued_on?: string | null;
+          last_name?: string;
+          license_number?: string | null;
+          read_automatically?: boolean;
+          recto_file_id?: string | null;
+          updated_at?: string;
+          valid_until?: string | null;
+          verso_file_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'driving_licenses_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_recto_file_id_fkey';
+            columns: ['recto_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'driving_licenses_verso_file_id_fkey';
+            columns: ['verso_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       files: {
         Row: {
@@ -1426,6 +1537,7 @@ export type Database = {
           number: string | null;
           pdf_file_id: string | null;
           public_token: string | null;
+          rental_id: string | null;
           service_date: string | null;
           status: Database['public']['Enums']['invoice_status'];
           total_ht: number | null;
@@ -1453,6 +1565,7 @@ export type Database = {
           number?: string | null;
           pdf_file_id?: string | null;
           public_token?: string | null;
+          rental_id?: string | null;
           service_date?: string | null;
           status?: Database['public']['Enums']['invoice_status'];
           total_ht?: number | null;
@@ -1480,6 +1593,7 @@ export type Database = {
           number?: string | null;
           pdf_file_id?: string | null;
           public_token?: string | null;
+          rental_id?: string | null;
           service_date?: string | null;
           status?: Database['public']['Enums']['invoice_status'];
           total_ht?: number | null;
@@ -1543,6 +1657,20 @@ export type Database = {
             columns: ['pdf_file_id'];
             isOneToOne: false;
             referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'rentals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_rentals_overview';
             referencedColumns: ['id'];
           },
         ];
@@ -2473,6 +2601,415 @@ export type Database = {
             columns: ['vehicle_id'];
             isOneToOne: false;
             referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      rental_damages: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          label: string;
+          phase: Database['public']['Enums']['rental_phase'];
+          photo_file_id: string | null;
+          rental_id: string;
+          x: number;
+          y: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label: string;
+          phase: Database['public']['Enums']['rental_phase'];
+          photo_file_id?: string | null;
+          rental_id: string;
+          x: number;
+          y: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label?: string;
+          phase?: Database['public']['Enums']['rental_phase'];
+          photo_file_id?: string | null;
+          rental_id?: string;
+          x?: number;
+          y?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rental_damages_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_damages_photo_file_id_fkey';
+            columns: ['photo_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_damages_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'rentals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_damages_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_rentals_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      rental_inspections: {
+        Row: {
+          clean: boolean | null;
+          equipment: string[];
+          fuel_eighths: number | null;
+          id: string;
+          inspected_at: string;
+          inspected_by: string | null;
+          mileage: number | null;
+          notes: string | null;
+          phase: Database['public']['Enums']['rental_phase'];
+          rental_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          clean?: boolean | null;
+          equipment?: string[];
+          fuel_eighths?: number | null;
+          id?: string;
+          inspected_at?: string;
+          inspected_by?: string | null;
+          mileage?: number | null;
+          notes?: string | null;
+          phase: Database['public']['Enums']['rental_phase'];
+          rental_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          clean?: boolean | null;
+          equipment?: string[];
+          fuel_eighths?: number | null;
+          id?: string;
+          inspected_at?: string;
+          inspected_by?: string | null;
+          mileage?: number | null;
+          notes?: string | null;
+          phase?: Database['public']['Enums']['rental_phase'];
+          rental_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rental_inspections_inspected_by_fkey';
+            columns: ['inspected_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_inspections_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'rentals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_inspections_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_rentals_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      rental_photos: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          file_id: string;
+          id: string;
+          phase: Database['public']['Enums']['rental_phase'];
+          rental_id: string;
+          slot: Database['public']['Enums']['rental_photo_slot'];
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          file_id: string;
+          id?: string;
+          phase: Database['public']['Enums']['rental_phase'];
+          rental_id: string;
+          slot: Database['public']['Enums']['rental_photo_slot'];
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          file_id?: string;
+          id?: string;
+          phase?: Database['public']['Enums']['rental_phase'];
+          rental_id?: string;
+          slot?: Database['public']['Enums']['rental_photo_slot'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rental_photos_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_photos_file_id_fkey';
+            columns: ['file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_photos_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'rentals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rental_photos_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_rentals_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      rental_sequences: {
+        Row: {
+          kind: Database['public']['Enums']['rental_kind'];
+          last_value: number;
+          year: number;
+        };
+        Insert: {
+          kind: Database['public']['Enums']['rental_kind'];
+          last_value?: number;
+          year: number;
+        };
+        Update: {
+          kind?: Database['public']['Enums']['rental_kind'];
+          last_value?: number;
+          year?: number;
+        };
+        Relationships: [];
+      };
+      rentals: {
+        Row: {
+          billable: boolean;
+          cleaning_fee: number | null;
+          client_id: string;
+          closed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          departed_at: string | null;
+          departure_at: string;
+          deposit: number;
+          deposit_mode: string | null;
+          discount_percent: number;
+          driving_license_id: string | null;
+          extra_km_price: number | null;
+          fleet_vehicle_id: string;
+          franchise: number | null;
+          fuel_price_per_liter: number | null;
+          id: string;
+          invoice_id: string | null;
+          kind: Database['public']['Enums']['rental_kind'];
+          km_included: number | null;
+          late_fee_per_hour: number | null;
+          notes: string | null;
+          number: string;
+          periods: number;
+          planned_return_at: string;
+          rate_period: string;
+          repair_order_id: string | null;
+          returned_at: string | null;
+          signature_file_id: string | null;
+          signed_at: string | null;
+          status: Database['public']['Enums']['rental_status'];
+          terms_accepted: boolean;
+          unit_price: number;
+          updated_at: string;
+        };
+        Insert: {
+          billable?: boolean;
+          cleaning_fee?: number | null;
+          client_id: string;
+          closed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          departed_at?: string | null;
+          departure_at: string;
+          deposit?: number;
+          deposit_mode?: string | null;
+          discount_percent?: number;
+          driving_license_id?: string | null;
+          extra_km_price?: number | null;
+          fleet_vehicle_id: string;
+          franchise?: number | null;
+          fuel_price_per_liter?: number | null;
+          id?: string;
+          invoice_id?: string | null;
+          kind?: Database['public']['Enums']['rental_kind'];
+          km_included?: number | null;
+          late_fee_per_hour?: number | null;
+          notes?: string | null;
+          number: string;
+          periods?: number;
+          planned_return_at: string;
+          rate_period?: string;
+          repair_order_id?: string | null;
+          returned_at?: string | null;
+          signature_file_id?: string | null;
+          signed_at?: string | null;
+          status?: Database['public']['Enums']['rental_status'];
+          terms_accepted?: boolean;
+          unit_price?: number;
+          updated_at?: string;
+        };
+        Update: {
+          billable?: boolean;
+          cleaning_fee?: number | null;
+          client_id?: string;
+          closed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          departed_at?: string | null;
+          departure_at?: string;
+          deposit?: number;
+          deposit_mode?: string | null;
+          discount_percent?: number;
+          driving_license_id?: string | null;
+          extra_km_price?: number | null;
+          fleet_vehicle_id?: string;
+          franchise?: number | null;
+          fuel_price_per_liter?: number | null;
+          id?: string;
+          invoice_id?: string | null;
+          kind?: Database['public']['Enums']['rental_kind'];
+          km_included?: number | null;
+          late_fee_per_hour?: number | null;
+          notes?: string | null;
+          number?: string;
+          periods?: number;
+          planned_return_at?: string;
+          rate_period?: string;
+          repair_order_id?: string | null;
+          returned_at?: string | null;
+          signature_file_id?: string | null;
+          signed_at?: string | null;
+          status?: Database['public']['Enums']['rental_status'];
+          terms_accepted?: boolean;
+          unit_price?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rentals_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_driving_license_id_fkey';
+            columns: ['driving_license_id'];
+            isOneToOne: false;
+            referencedRelation: 'driving_licenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_fleet_vehicle_id_fkey';
+            columns: ['fleet_vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'fleet_vehicles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'rentals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_signature_file_id_fkey';
+            columns: ['signature_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
             referencedColumns: ['id'];
           },
         ];
@@ -3807,12 +4344,18 @@ export type Database = {
         Row: {
           balance_due: number | null;
           billing_address: string | null;
+          birth_date: string | null;
+          birth_place: string | null;
+          civility: string | null;
           contact_name: string | null;
           created_at: string | null;
           discount_percent: number | null;
           email: string | null;
+          first_name: string | null;
           hourly_rate: number | null;
           id: string | null;
+          kind: Database['public']['Enums']['client_kind'] | null;
+          last_name: string | null;
           last_visit: string | null;
           legacy_key: string | null;
           name: string | null;
@@ -4318,6 +4861,148 @@ export type Database = {
           },
         ];
       };
+      v_rentals_overview: {
+        Row: {
+          billable: boolean | null;
+          brand: string | null;
+          category: Database['public']['Enums']['fleet_category'] | null;
+          cleaning_fee: number | null;
+          client_id: string | null;
+          client_kind: Database['public']['Enums']['client_kind'] | null;
+          client_name: string | null;
+          client_phone: string | null;
+          closed_at: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          departed_at: string | null;
+          departure_at: string | null;
+          deposit: number | null;
+          deposit_mode: string | null;
+          discount_percent: number | null;
+          driving_license_id: string | null;
+          estimated_ht: number | null;
+          extra_km_price: number | null;
+          fleet_vehicle_id: string | null;
+          franchise: number | null;
+          fuel_price_per_liter: number | null;
+          id: string | null;
+          invoice_id: string | null;
+          invoice_number: string | null;
+          is_late: boolean | null;
+          kind: Database['public']['Enums']['rental_kind'] | null;
+          km_included: number | null;
+          late_fee_per_hour: number | null;
+          model: string | null;
+          notes: string | null;
+          number: string | null;
+          periods: number | null;
+          planned_return_at: string | null;
+          plate: string | null;
+          rate_period: string | null;
+          repair_order_id: string | null;
+          repair_order_number: string | null;
+          returned_at: string | null;
+          signature_file_id: string | null;
+          signed_at: string | null;
+          status: Database['public']['Enums']['rental_status'] | null;
+          terms_accepted: boolean | null;
+          unit_price: number | null;
+          updated_at: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rentals_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_driving_license_id_fkey';
+            columns: ['driving_license_id'];
+            isOneToOne: false;
+            referencedRelation: 'driving_licenses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_fleet_vehicle_id_fkey';
+            columns: ['fleet_vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'fleet_vehicles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'rentals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_signature_file_id_fkey';
+            columns: ['signature_file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       v_repair_order_time: {
         Row: {
           repair_order_id: string | null;
@@ -4755,6 +5440,7 @@ export type Database = {
         Args: { p_category: Database['public']['Enums']['file_category'] };
         Returns: boolean;
       };
+      cancel_rental: { Args: { p_rental_id: string }; Returns: undefined };
       cancel_signature_request: { Args: { p_request_id: string }; Returns: undefined };
       claim_push_batch: { Args: { p_limit?: number }; Returns: Json };
       clear_technician_pin: { Args: { p_technician_id: string }; Returns: undefined };
@@ -4762,6 +5448,7 @@ export type Database = {
         Args: { p_type: Database['public']['Enums']['client_message_type'] };
         Returns: string;
       };
+      close_rental: { Args: { p_lines: Json; p_rental_id: string }; Returns: string };
       complete_repair_order: {
         Args: { p_quote_needed?: boolean; p_repair_order_id: string };
         Returns: {
@@ -5003,6 +5690,15 @@ export type Database = {
         Args: { p_client_id: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: number;
       };
+      license_block_reason: {
+        Args: {
+          p_license: Database['public']['Tables']['driving_licenses']['Row'];
+          p_required: string;
+          p_until: string;
+        };
+        Returns: string;
+      };
+      license_covers: { Args: { p_categories: string[]; p_required: string }; Returns: boolean };
       line_net_ht: {
         Args: {
           p_discount_percent: number;
@@ -5179,6 +5875,14 @@ export type Database = {
         Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent?: string };
         Returns: undefined;
       };
+      rental_missing: {
+        Args: { p_phase: Database['public']['Enums']['rental_phase']; p_rental_id: string };
+        Returns: string[];
+      };
+      rental_phase_open: {
+        Args: { p_phase: Database['public']['Enums']['rental_phase']; p_rental_id: string };
+        Returns: boolean;
+      };
       repair_order_signature_request: { Args: { p_repair_order_id: string }; Returns: Json };
       repair_order_status_label: {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };
@@ -5193,6 +5897,7 @@ export type Database = {
         Returns: string[];
       };
       reset_client_portal: { Args: { p_client_id: string }; Returns: string };
+      return_rental: { Args: { p_rental_id: string; p_returned_at: string }; Returns: undefined };
       save_appointment: {
         Args: {
           p_client_name: string;
@@ -5344,6 +6049,7 @@ export type Database = {
         Args: { p_request: Database['public']['Tables']['signature_requests']['Row'] };
         Returns: Json;
       };
+      start_rental: { Args: { p_rental_id: string }; Returns: undefined };
       start_timer: {
         Args: { p_repair_order_id: string };
         Returns: {
@@ -5480,6 +6186,7 @@ export type Database = {
     Enums: {
       app_role: 'direction' | 'reception' | 'technician' | 'kiosk';
       appointment_status: 'planned' | 'converted' | 'cancelled';
+      client_kind: 'pro' | 'individual';
       client_message_type:
         | 'vehicle_received'
         | 'quote_available'
@@ -5516,12 +6223,16 @@ export type Database = {
       labor_category: 'pl' | 'vul' | 'remorque' | 'tolerie';
       leave_status: 'requested' | 'approved' | 'rejected';
       leave_type: 'paid_leave' | 'sick' | 'training' | 'other';
-      line_type: 'labor' | 'package' | 'part' | 'consumable' | 'subcontract' | 'travel' | 'text';
+      line_type: 'labor' | 'package' | 'part' | 'consumable' | 'subcontract' | 'travel' | 'text' | 'rental';
       message_channel: 'email' | 'sms' | 'other';
       part_order_status: 'to_order' | 'ordered' | 'received';
       payment_method: 'bank_transfer' | 'check' | 'card' | 'cash' | 'bill_of_exchange' | 'direct_debit';
       quote_section: 'done' | 'planned';
       quote_status: 'draft' | 'in_progress' | 'sent' | 'accepted' | 'refused';
+      rental_kind: 'rental' | 'loan';
+      rental_phase: 'departure' | 'return';
+      rental_photo_slot: 'front' | 'back' | 'left' | 'right' | 'dashboard' | 'closeup';
+      rental_status: 'reserved' | 'active' | 'returned' | 'closed' | 'cancelled';
       repair_order_status:
         'assigned' | 'in_progress' | 'work_done' | 'quote_pending' | 'to_invoice' | 'invoiced';
       rest_group: 'A' | 'B';
@@ -5643,6 +6354,7 @@ export const Constants = {
     Enums: {
       app_role: ['direction', 'reception', 'technician', 'kiosk'],
       appointment_status: ['planned', 'converted', 'cancelled'],
+      client_kind: ['pro', 'individual'],
       client_message_type: [
         'vehicle_received',
         'quote_available',
@@ -5682,12 +6394,16 @@ export const Constants = {
       labor_category: ['pl', 'vul', 'remorque', 'tolerie'],
       leave_status: ['requested', 'approved', 'rejected'],
       leave_type: ['paid_leave', 'sick', 'training', 'other'],
-      line_type: ['labor', 'package', 'part', 'consumable', 'subcontract', 'travel', 'text'],
+      line_type: ['labor', 'package', 'part', 'consumable', 'subcontract', 'travel', 'text', 'rental'],
       message_channel: ['email', 'sms', 'other'],
       part_order_status: ['to_order', 'ordered', 'received'],
       payment_method: ['bank_transfer', 'check', 'card', 'cash', 'bill_of_exchange', 'direct_debit'],
       quote_section: ['done', 'planned'],
       quote_status: ['draft', 'in_progress', 'sent', 'accepted', 'refused'],
+      rental_kind: ['rental', 'loan'],
+      rental_phase: ['departure', 'return'],
+      rental_photo_slot: ['front', 'back', 'left', 'right', 'dashboard', 'closeup'],
+      rental_status: ['reserved', 'active', 'returned', 'closed', 'cancelled'],
       repair_order_status: [
         'assigned',
         'in_progress',
