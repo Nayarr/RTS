@@ -63,7 +63,7 @@ async function acceptedQuote(plate: string, clientName: string) {
   return quote.id;
 }
 
-test('OR créé depuis un devis : début prévu, travaux au temps du devis, travail non fait retiré', async ({
+test('OR créé depuis un devis : début prévu, temps réel saisi (facturé au temps du devis), travail non fait retiré', async ({
   page,
 }, testInfo) => {
   test.slow();
@@ -103,11 +103,13 @@ test('OR créé depuis un devis : début prévu, travaux au temps du devis, trav
   await expect(tasks).toHaveCount(2);
   await expect(tasks.first()).toHaveValue('Vidange moteur et filtres');
   const times = done.getByRole('combobox', { name: 'Temps réel' });
-  // Facturé au temps du devis ; le temps réel reste à saisir par le technicien
+  // Facturé au temps du devis ; le technicien saisit le temps réellement passé
   await expect(times.first()).toHaveValue('');
   await expect(times.first()).toHaveAccessibleDescription(
     'Devis : 1,5 h (facturé) — indique le temps réel passé',
   );
+  await times.first().selectOption('2h');
+  await expect(times.first()).toHaveValue('2h');
 
   // L'extincteur n'a finalement pas été changé : retiré après confirmation
   await done.getByRole('button', { name: 'Supprimer la tâche' }).nth(1).click();
@@ -126,4 +128,9 @@ test('OR créé depuis un devis : début prévu, travaux au temps du devis, trav
   await expect(
     page.getByText('Travail retiré par le technicien (non fait) : Remplacement Extincteur 6 kg camion'),
   ).toBeVisible();
+  // Intervention : temps réel du technicien, facturé au temps du devis
+  const work = page.getByRole('region', { name: 'Intervention atelier' });
+  await expect(work.getByRole('listitem').filter({ hasText: 'Vidange moteur et filtres' })).toContainText(
+    '2 h réelfacturé 1,5 h',
+  );
 });
