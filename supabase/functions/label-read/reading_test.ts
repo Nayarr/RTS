@@ -1,6 +1,7 @@
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertMatch } from '@std/assert';
 import { inspectionReadingPrompt, validVin } from './inspection-reading.ts';
 import { addMonths, nextDueDate, readingPrompt, validDate } from './reading.ts';
+import { checkedLicense, licenseReadingPrompt } from './license-reading.ts';
 
 const TODAY = '2026-10-02';
 const reading = (next: string, last: string) => ({
@@ -46,4 +47,43 @@ Deno.test('contrôle technique : VIN de 17 caractères sans I, O ni Q', () => {
   const prompt = inspectionReadingPrompt(TODAY);
   assertEquals(prompt.includes('à présenter avant le'), true);
   assertEquals(prompt.includes('VIN'), true);
+});
+
+Deno.test('permis : valeurs lues contrôlées (dates, numéro, catégories), permis expiré gardé', () => {
+  const read = checkedLicense(
+    {
+      last_name: ' MARTIN ',
+      first_name: 'Julie',
+      birth_date: '1991-03-14',
+      birth_place: 'Pontoise',
+      license_number: '9103 9520 0123',
+      issued_on: '2010-06-22',
+      valid_until: '2024-06-22',
+      categories: ['B', 'BE', 'B', 'C'],
+      confidence: 'haute',
+    },
+    TODAY,
+  );
+  assertEquals(read, {
+    last_name: 'MARTIN',
+    first_name: 'Julie',
+    birth_date: '1991-03-14',
+    birth_place: 'Pontoise',
+    license_number: '910395200123',
+    issued_on: '2010-06-22',
+    valid_until: '2024-06-22',
+    categories: ['B', 'BE', 'C'],
+    confidence: 'haute',
+  });
+  const blurry = checkedLicense(
+    { ...read, birth_date: '2030-01-01', license_number: '12', issued_on: '22/06/2010', valid_until: '' },
+    TODAY,
+  );
+  assertEquals([blurry.birth_date, blurry.license_number, blurry.issued_on, blurry.valid_until], [
+    null,
+    null,
+    null,
+    null,
+  ]);
+  assertMatch(licenseReadingPrompt(TODAY), /Nous sommes le 2026-10-02/);
 });

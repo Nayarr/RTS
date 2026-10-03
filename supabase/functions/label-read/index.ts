@@ -1,9 +1,10 @@
 // =============================================================================
 // Edge Function « label-read » : lecture automatique de l'étiquette du contrôle hayon
-// (kind « tailgate ») ou du contrôle technique (kind « technical_inspection » : échéance et VIN).
+// (kind « tailgate »), du contrôle technique (kind « technical_inspection » : échéance et VIN)
+// ou d'un permis de conduire (kind « driving_license » : recto et verso, identité et catégories).
 //
-// Appelée par la fiche OR du technicien juste après la photo (réglage « Lecture automatique
-// des étiquettes » activé par la direction). La photo est relue dans le stockage avec les
+// Appelée par la fiche OR du technicien juste après la photo, ou par le comptoir de location
+// après le scan du permis (réglage « Lecture automatique des étiquettes » activé par la direction). La photo est relue dans le stockage avec les
 // droits de l'appelant, puis envoyée à l'assistant Claude qui renvoie ce qu'il a lu (JSON
 // imposé). Le technicien vérifie avant d'enregistrer.
 // Clé de l'assistant : secret ANTHROPIC_API_KEY du projet (sans clé : lecture indisponible).
@@ -14,13 +15,21 @@ import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import { ObjectStorage, storageConfigFromEnv } from '../_shared/storage.ts';
 import { INSPECTION_READING_SCHEMA, inspectionReadingPrompt, validVin } from './inspection-reading.ts';
+import {
+  checkedLicense,
+  LICENSE_CATEGORIES,
+  LICENSE_READING_SCHEMA,
+  licenseReadingPrompt,
+} from './license-reading.ts';
 import { nextDueDate, READING_SCHEMA, readingPrompt, validDate } from './reading.ts';
 
 z.config(z.locales.fr());
 
 const requestSchema = z.object({
   file_id: z.guid(),
-  kind: z.enum(['tailgate', 'technical_inspection']),
+  kind: z.enum(['tailgate', 'technical_inspection', 'driving_license']),
+  // Verso du permis (kind « driving_license »)
+  verso_file_id: z.guid().optional(),
 });
 
 const readingSchema = z.object({
@@ -29,6 +38,18 @@ const readingSchema = z.object({
   label_text: z.string().max(500),
   confidence: z.enum(['haute', 'moyenne', 'faible']),
   vin: z.string().max(100).optional(),
+});
+
+const licenseSchema = z.object({
+  last_name: z.string().max(100),
+  first_name: z.string().max(100),
+  birth_date: z.string(),
+  birth_place: z.string().max(100),
+  license_number: z.string().max(40),
+  issued_on: z.string(),
+  valid_until: z.string(),
+  categories: z.array(z.enum(LICENSE_CATEGORIES)).max(20),
+  confidence: z.enum(['haute', 'moyenne', 'faible']),
 });
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -68,24 +89,41 @@ export default {
       .maybeSingle();
     if (!settings?.label_scan_enabled) return fail(409, 'Lecture automatique désactivée dans les réglages');
 
-    // Photo lue avec les droits de l'appelant : seules celles qu'il peut voir
-    const { data: file, error } = await ctx.supabase
-      .from('files')
-      .select('bucket, storage_key, mime_type')
-      .eq('id', parsed.data.file_id)
-      .is('deleted_at', null)
-      .not('uploaded_at', 'is', null)
-      .maybeSingle();
-    if (error || !file) return fail(404, 'Photo introuvable');
-    if (!IMAGE_TYPES.includes(file.mime_type as ImageType)) {
-      return fail(400, 'Format de photo non pris en charge');
+    const license = parsed.data.kind === 'driving_license';
+    if (license && !parsed.data.verso_file_id) return fail(400, 'Photographie aussi le verso du permis');
+
+    // Photos lues avec les droits de l'appelant : seules celles qu'il peut voir
+    const images = [];
+    for (const id of license ? [parsed.data.file_id, parsed.data.verso_file_id] : [parsed.data.file_id]) {
+      const { data: file, error } = await ctx.supabase
+        .from('files')
+        .select('bucket, storage_key, mime_type')
+        .eq('id', id ?? '')
+        .is('deleted_at', null)
+        .not('uploaded_at', 'is', null)
+        .maybeSingle();
+      if (error || !file) return fail(404, 'Photo introuvable');
+      if (!IMAGE_TYPES.includes(file.mime_type as ImageType)) {
+        return fail(400, 'Format de photo non pris en charge');
+      }
+      const bytes = await storage.get(file.bucket, file.storage_key);
+      if (!bytes) return fail(404, 'Photo introuvable');
+      images.push({
+        type: 'image' as const,
+        source: { type: 'base64' as const, media_type: file.mime_type as ImageType, data: toBase64(bytes) },
+      });
     }
-    const bytes = await storage.get(file.bucket, file.storage_key);
-    if (!bytes) return fail(404, 'Photo introuvable');
 
     const today = parisToday();
     const inspection = parsed.data.kind === 'technical_inspection';
-    const document = inspection ? 'Contrôle technique' : 'Étiquette';
+    const document = license ? 'Permis' : inspection ? 'Contrôle technique' : 'Étiquette';
+    const schema = license ? LICENSE_READING_SCHEMA : inspection ? INSPECTION_READING_SCHEMA : READING_SCHEMA;
+    const prompt = license
+      ? licenseReadingPrompt(today)
+      : inspection
+      ? inspectionReadingPrompt(today)
+      : readingPrompt(today);
+    const manual = license ? 'complète les champs à la main' : 'saisis la date à la main';
     let message;
     try {
       message = await claude.beta.messages.create({
@@ -94,41 +132,38 @@ export default {
         // Refus de l'assistant : nouvelle tentative automatique sur le modèle recommandé
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
-        output_config: {
-          effort: 'low',
-          format: { type: 'json_schema', schema: inspection ? INSPECTION_READING_SCHEMA : READING_SCHEMA },
-        },
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: { type: 'base64', media_type: file.mime_type as ImageType, data: toBase64(bytes) },
-              },
-              { type: 'text', text: inspection ? inspectionReadingPrompt(today) : readingPrompt(today) },
-            ],
-          },
-        ],
+        output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+        messages: [{ role: 'user', content: [...images, { type: 'text', text: prompt }] }],
       });
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) return fail(503, 'Assistant de lecture occupé : réessaie');
       if (err instanceof Anthropic.APIError) {
         console.error('label-read', err.status, err.message);
-        return fail(502, 'Lecture impossible pour le moment : saisis la date à la main');
+        return fail(502, `Lecture impossible pour le moment : ${manual}`);
       }
       throw err;
     }
 
+    const unreadable = `${document} illisible : ${manual}`;
     if (message.stop_reason === 'refusal' || message.stop_reason === 'max_tokens') {
-      return fail(422, `${document} illisible : saisis la date à la main`);
+      return fail(422, unreadable);
     }
     const text = message.content.find((block) => block.type === 'text');
+    const raw = text?.type === 'text' ? text.text : '';
+
+    if (license) {
+      try {
+        return json(200, checkedLicense(licenseSchema.parse(JSON.parse(raw)), today));
+      } catch {
+        return fail(422, unreadable);
+      }
+    }
+
     let reading;
     try {
-      reading = readingSchema.parse(JSON.parse(text?.type === 'text' ? text.text : ''));
+      reading = readingSchema.parse(JSON.parse(raw));
     } catch {
-      return fail(422, `${document} illisible : saisis la date à la main`);
+      return fail(422, unreadable);
     }
 
     if (inspection) {

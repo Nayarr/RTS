@@ -203,7 +203,13 @@ describe('clients et véhicules : règles', () => {
   it('fiche client : remise et taux horaire envoyés seulement par la direction', () => {
     const values = { ...clientToForm(client()), siren: '123 456 789', discount_percent: '5,5', phone: ' ' };
     expect(clientFromForm(values, false)).toEqual({
+      kind: 'pro',
       name: 'Transports Martin',
+      civility: null,
+      first_name: null,
+      last_name: null,
+      birth_date: null,
+      birth_place: null,
       email: 'compta@martin.fr',
       contact_name: null,
       phone: null,
@@ -294,7 +300,7 @@ describe('clients et véhicules : écrans', () => {
   it('fiche client (réception) : coordonnées enregistrées sans les conditions commerciales', async () => {
     vi.mocked(fetchClient).mockResolvedValue(CLIENT_DETAIL);
     renderAs('reception', '/clients/c1', <ClientPage />, '/clients/:id');
-    expect(await screen.findByRole('heading', { name: 'Transports Martin' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Transports Martin/ })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(/146,40\s€Impayés TTC · 1 facture en retard/);
     expect(screen.queryByLabelText('Remise client (%)')).toBeNull();
     expect(screen.getByRole('button', { name: 'Facture groupée (2 OR)' })).toBeInTheDocument();

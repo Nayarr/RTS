@@ -1,7 +1,7 @@
 import type { InvoiceOverview } from '@/features/invoices/api';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { supabase } from '@/lib/supabase';
-import type { Tables, TablesUpdate } from '@/types/database';
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
 type ClientRow = Tables<'v_clients_overview'>;
 type ClientGuaranteed =
@@ -90,6 +90,13 @@ const duplicateMessage = (error: unknown, message: string) =>
   error && typeof error === 'object' && 'code' in error && error.code === '23505'
     ? new Error(message)
     : error;
+
+/** Nouveau client (pro ou particulier) ; renvoie son identifiant. */
+export async function createClient(input: TablesInsert<'clients'>): Promise<string> {
+  const { data, error } = await supabase.from('clients').insert(input).select('id').single();
+  if (error) throw duplicateMessage(error, 'Un autre client porte déjà ce nom');
+  return data.id;
+}
 
 export async function updateClient(id: string, patch: TablesUpdate<'clients'>) {
   const result = await supabase.from('clients').update(patch).eq('id', id).select('id');
