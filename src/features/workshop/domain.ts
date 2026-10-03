@@ -43,6 +43,15 @@ export const timeOptionLabel = (option: string) =>
 
 // ---------------------------------------------------------------- Clôture de l'OR
 
+/** Photo du contrôle technique (procès-verbal ou vignette), prise depuis les échéances du véhicule. */
+export const CT_PHOTO_LABEL = 'Contrôle technique';
+
+/** VIN mis en forme : majuscules, sans espaces ni tirets. */
+export const normalizeVin = (value: string) => value.replace(/[\s-]/g, '').toUpperCase();
+
+/** VIN valide : 17 caractères sans I, O ni Q (ISO 3779). */
+export const isVin = (value: string) => /^[A-HJ-NPR-Z0-9]{17}$/.test(value);
+
 /** Photo exigée quand l'étiquette du contrôle hayon est HS (même libellé que le bouton photo). */
 export const TAILGATE_PHOTO_LABEL = 'Étiquette contrôle hayon';
 

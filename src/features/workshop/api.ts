@@ -35,6 +35,9 @@ export interface VehicleDeadlines {
   tailgate_due_date: string | null;
 }
 
+/** Ce que l'OR peut changer sur le véhicule : échéances, et VIN lu sur le contrôle technique. */
+export type VehiclePatch = Partial<VehicleDeadlines> & { vin?: string | null };
+
 export async function fetchVehicleDeadlines(vehicleId: string): Promise<VehicleDeadlines | null> {
   const { data, error } = await supabase
     .from('vehicles')
@@ -55,7 +58,7 @@ export async function updateMileage(repairOrderId: string, mileage: number | nul
   if (error) throw error;
 }
 
-export async function updateDeadlines(repairOrderId: string, patch: Partial<VehicleDeadlines>) {
+export async function updateDeadlines(repairOrderId: string, patch: VehiclePatch) {
   const { error } = await supabase.rpc('update_vehicle_deadlines', {
     p_repair_order_id: repairOrderId,
     p_patch: patch as Json,
@@ -109,6 +112,24 @@ export interface TailgateLabelReading {
 /** Lecture de l'étiquette du contrôle hayon par l'assistant (Edge Function « label-read »). */
 export async function readTailgateLabel(fileId: string) {
   return invokeFunction<TailgateLabelReading>('label-read', { file_id: fileId, kind: 'tailgate' });
+}
+
+export interface TechnicalInspectionReading {
+  /** Date limite du prochain contrôle lue sur le document, ou null. */
+  next_due_date: string | null;
+  last_control_date: string | null;
+  /** VIN lu (17 caractères), ou null. */
+  vin: string | null;
+  label_text: string;
+  confidence: 'haute' | 'moyenne' | 'faible';
+}
+
+/** Lecture du contrôle technique (procès-verbal ou vignette) par l'assistant (Edge Function « label-read »). */
+export async function readTechnicalInspection(fileId: string) {
+  return invokeFunction<TechnicalInspectionReading>('label-read', {
+    file_id: fileId,
+    kind: 'technical_inspection',
+  });
 }
 
 export async function deletePhoto(photoId: string) {

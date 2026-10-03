@@ -9,9 +9,10 @@ import { useRepairOrder } from '@/features/repair-orders/hooks';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { TaskList } from '@/features/repair-orders/TaskList';
 import { fetchLabelScanEnabled, markSeen } from './api';
-import { finishBlockers, TAILGATE_PHOTO_LABEL } from './domain';
+import { CT_PHOTO_LABEL, finishBlockers, TAILGATE_PHOTO_LABEL } from './domain';
 import { seenKey } from './hooks';
 import { DeadlinesSection } from './order/DeadlinesSection';
+import { TechnicalInspectionDialog } from './order/TechnicalInspectionDialog';
 import { FinishSection } from './order/FinishSection';
 import { InspectionEditor } from './order/InspectionEditor';
 import { PartsSection } from './order/PartsSection';
@@ -35,9 +36,12 @@ export function TechRepairOrderPage() {
     staleTime: 300_000,
   });
   const [tailgateScan, setTailgateScan] = useState<string | null>(null);
+  // Contrôle technique photographié : échéance et VIN lus (même réglage).
+  const [ctScan, setCtScan] = useState<string | null>(null);
   const capture = usePhotoCapture(id, {
     onUploaded: (label, fileId) => {
       if (label === TAILGATE_PHOTO_LABEL && labelScan.data) setTailgateScan(fileId);
+      if (label === CT_PHOTO_LABEL && labelScan.data) setCtScan(fileId);
     },
   });
 
@@ -121,7 +125,22 @@ export function TechRepairOrderPage() {
         tailgateScan={tailgateScan}
         onTailgateScanDone={() => setTailgateScan(null)}
       />
-      <DeadlinesSection repairOrderId={order.id} vehicleId={order.vehicle_id} locked={locked} />
+      <DeadlinesSection
+        repairOrderId={order.id}
+        vehicleId={order.vehicle_id}
+        locked={locked}
+        capture={capture}
+        photoLabels={photos.map((photo) => photo.label)}
+      />
+      {ctScan && (
+        <TechnicalInspectionDialog
+          key={ctScan}
+          fileId={ctScan}
+          repairOrderId={order.id}
+          vehicleId={order.vehicle_id}
+          onClose={() => setCtScan(null)}
+        />
+      )}
       {!locked && (
         <FinishSection
           repairOrderId={order.id}

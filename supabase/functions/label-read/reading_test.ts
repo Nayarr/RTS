@@ -1,4 +1,5 @@
 import { assertEquals } from '@std/assert';
+import { inspectionReadingPrompt, validVin } from './inspection-reading.ts';
 import { addMonths, nextDueDate, readingPrompt, validDate } from './reading.ts';
 
 const TODAY = '2026-10-02';
@@ -35,4 +36,14 @@ Deno.test('consigne : date du jour et format attendu', () => {
   const prompt = readingPrompt(TODAY);
   assertEquals(prompt.includes('Nous sommes le 2026-10-02.'), true);
   assertEquals(prompt.includes('AAAA-MM-JJ'), true);
+});
+
+Deno.test('contrôle technique : VIN de 17 caractères sans I, O ni Q', () => {
+  assertEquals(validVin('vf6 1234-5678 901234'), 'VF612345678901234');
+  assertEquals(validVin('VF61234567890123O'), null);
+  assertEquals(validVin('VF6123'), null);
+  assertEquals(validVin(''), null);
+  const prompt = inspectionReadingPrompt(TODAY);
+  assertEquals(prompt.includes('à présenter avant le'), true);
+  assertEquals(prompt.includes('VIN'), true);
 });
