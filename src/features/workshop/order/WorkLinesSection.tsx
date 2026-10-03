@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Mic, Plus, Square, Trash2 } from 'lucide-react';
+import { Mic, Plus, Square, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import type { RoLine } from '@/features/repair-orders/api';
 import { useDictation } from '@/lib/use-dictation';
 import { cn } from '@/lib/utils';
 import { addLine, deleteLine, updateLine, type LinePatch } from '../api';
+import { formatHours } from '@/features/repair-orders/constants';
 import { parseTimeOption, timeOptionLabel, timeOptionsFor, timeOptionValue } from '../domain';
 import { useWorkshopMutation } from '../hooks';
 
@@ -27,6 +28,10 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
   const fromQuote = line.source_quote_line_id !== null;
   const [confirmRemove, setConfirmRemove] = useState(false);
   const time = timeOptionValue(line.estimated_hours, line.estimate_is_minimum);
+  // Travaux effectués : temps réellement passé (forfaits compris). À prévoir : temps estimé pour le devis.
+  const timeLabel = line.kind === 'done' ? 'Temps réel' : 'Temps estimé';
+  // Repris du devis accepté : facturé au temps du devis, quel que soit le temps réel.
+  const quotedHours = fromQuote && line.kind === 'done' ? line.billed_hours : null;
 
   return (
     <li className="row items-start gap-2 rounded-[7px] border p-2">
@@ -45,17 +50,17 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
           }}
         />
         {line.line_type === 'package' && <span className="tag ml-1.5 self-start">Forfait</span>}
-        {line.estimate_locked && (
-          <span className="hint row ml-1.5 gap-1" id={`line-${line.id}-locked`}>
-            <Lock className="size-3" /> Temps fixé par le devis
+        {quotedHours !== null && (
+          <span className="hint ml-1.5" id={`line-${line.id}-quoted`}>
+            Devis : {formatHours(quotedHours)} (facturé) — indique le temps réel passé
           </span>
         )}
       </div>
       <select
-        aria-label="Temps estimé"
-        aria-describedby={line.estimate_locked ? `line-${line.id}-locked` : undefined}
+        aria-label={timeLabel}
+        aria-describedby={quotedHours !== null ? `line-${line.id}-quoted` : undefined}
         className="inp h-9! w-auto shrink-0 text-[13px]!"
-        disabled={locked || line.estimate_locked}
+        disabled={locked}
         value={time}
         onChange={(event) => update.mutate(parseTimeOption(event.target.value))}
       >
@@ -63,7 +68,9 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
           {/* Forfait sans estimation : son temps barème s'applique */}
           {line.kind === 'planned' && line.line_type === 'package' && line.standard_hours !== null
             ? `Barème ${timeOptionLabel(`${line.standard_hours}h`)}`
-            : 'Estim. —'}
+            : line.kind === 'done'
+              ? 'Réel —'
+              : 'Estim. —'}
         </option>
         {timeOptionsFor(time).map((option) => (
           <option key={option} value={option}>
@@ -176,7 +183,7 @@ function LineGroup({
   );
 }
 
-/** Travaux effectués (avec le temps passé) et travaux / pièces à prévoir pour le devis. */
+/** Travaux effectués (avec le temps réel passé) et travaux / pièces à prévoir pour le devis. */
 export function WorkLinesSection({
   repairOrderId,
   lines,

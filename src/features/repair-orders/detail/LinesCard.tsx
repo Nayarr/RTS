@@ -15,12 +15,18 @@ function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
               <span className="tag self-start">{TYPE_LABELS[line.line_type]}</span>
             )}
           </span>
-          <span className="muted num shrink-0">
-            {line.estimated_hours === null
-              ? line.standard_hours === null
-                ? '—'
-                : `${formatHours(line.standard_hours)} (barème)`
-              : `${formatHours(line.estimated_hours)}${line.estimate_is_minimum ? '+' : ''}`}
+          <span className="col shrink-0 items-end gap-0.5">
+            <span className="muted num">
+              {line.estimated_hours === null
+                ? line.standard_hours === null || line.kind === 'done'
+                  ? '—'
+                  : `${formatHours(line.standard_hours)} (barème)`
+                : `${formatHours(line.estimated_hours)}${line.estimate_is_minimum ? '+' : ''}`}
+              {line.kind === 'done' && line.estimated_hours !== null && ' réel'}
+            </span>
+            {line.kind === 'done' && line.billed_hours !== null && (
+              <span className="hint num">facturé {formatHours(line.billed_hours)}</span>
+            )}
           </span>
         </li>
       ))}

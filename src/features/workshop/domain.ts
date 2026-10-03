@@ -70,7 +70,7 @@ export function finishBlockers(
     ).length;
   const done = timed('done');
   const planned = timed('planned');
-  if (done) blockers.push(`Temps estimé manquant : ${plural(done, 'tâche')} des travaux effectués`);
+  if (done) blockers.push(`Temps réel manquant : ${plural(done, 'tâche')} des travaux effectués`);
   if (planned) blockers.push(`Temps estimé manquant : ${plural(planned, 'tâche')} à prévoir`);
   for (const [side, label] of [
     ['avant', 'avant'],

@@ -2708,7 +2708,6 @@ export type Database = {
           description: string;
           discount_percent: number;
           estimate_is_minimum: boolean;
-          estimate_locked: boolean;
           estimated_hours: number | null;
           id: string;
           kind: Database['public']['Enums']['ro_line_kind'];
@@ -2738,7 +2737,6 @@ export type Database = {
           description?: string;
           discount_percent?: number;
           estimate_is_minimum?: boolean;
-          estimate_locked?: boolean;
           estimated_hours?: number | null;
           id?: string;
           kind: Database['public']['Enums']['ro_line_kind'];
@@ -2768,7 +2766,6 @@ export type Database = {
           description?: string;
           discount_percent?: number;
           estimate_is_minimum?: boolean;
-          estimate_locked?: boolean;
           estimated_hours?: number | null;
           id?: string;
           kind?: Database['public']['Enums']['ro_line_kind'];
@@ -4954,7 +4951,6 @@ export type Database = {
         Args: { p_body?: string; p_link?: string; p_profile_ids: string[]; p_tag?: string; p_title: string };
         Returns: number;
       };
-      quote_time_is_adjustable: { Args: { p_description: string }; Returns: boolean };
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
         Returns: {

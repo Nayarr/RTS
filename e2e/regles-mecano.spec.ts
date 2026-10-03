@@ -71,10 +71,11 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   await expect(doneTask).toHaveValue('');
   await doneTask.fill('Contrôle étiquettes');
   await doneTask.blur();
+  const realTime = page.getByRole('combobox', { name: 'Temps réel' });
+  await expect(realTime.first().getByRole('option', { name: '0,5 h' })).toHaveCount(1);
+  await realTime.first().selectOption('0.5h');
+  await expect(realTime.first()).toHaveValue('0.5h');
   const times = page.getByRole('combobox', { name: 'Temps estimé' });
-  await expect(times.first().getByRole('option', { name: '0,5 h' })).toHaveCount(1);
-  await times.first().selectOption('0.5h');
-  await expect(times.first()).toHaveValue('0.5h');
 
   // Terminer : ce qui manque est listé, le bouton attend
   await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'OUI' }).click();
@@ -100,7 +101,7 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   ).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText('Étiquette HS : photo obligatoire avant de terminer l’OR.')).toHaveCount(0);
 
-  for (const index of [1, 2]) {
+  for (const index of [0, 1]) {
     await times.nth(index).selectOption('1h');
     await expect(times.nth(index)).toHaveValue('1h');
   }
