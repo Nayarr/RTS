@@ -13,7 +13,7 @@ import {
   fetchSignatureRequest,
   kioskSign,
   requestSignature,
-  signRepairOrderOnline,
+  signOnline,
   type KioskSignatureRequest,
   type SignatureRequest,
 } from './api';
@@ -28,7 +28,7 @@ vi.mock('./api', async (importOriginal) => ({
   fetchSignatureRequest: vi.fn(),
   fetchKioskPendingSignature: vi.fn(),
   kioskSign: vi.fn(),
-  signRepairOrderOnline: vi.fn(),
+  signOnline: vi.fn(),
 }));
 vi.mock('@/features/public/api', async (importOriginal) => ({
   ...(await importOriginal<typeof PublicApi>()),
@@ -212,7 +212,7 @@ describe('signature : lien e-mail (page publique)', () => {
 
   it('le client absent signe en ligne, puis voit la confirmation', async () => {
     vi.mocked(fetchPublicDocument).mockResolvedValue(document());
-    vi.mocked(signRepairOrderOnline).mockResolvedValue({ status: 'signed' });
+    vi.mocked(signOnline).mockResolvedValue({ status: 'signed' });
     setup();
     expect(await screen.findByRole('heading', { name: 'ORDRE DE RÉPARATION' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Signer l’ordre de réparation' }));
@@ -224,7 +224,7 @@ describe('signature : lien e-mail (page publique)', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Signer l’ordre de réparation' }));
     await waitFor(() =>
-      expect(signRepairOrderOnline).toHaveBeenCalledWith({
+      expect(signOnline).toHaveBeenCalledWith({
         token: TOKEN,
         signer_name: 'Marie Dupont',
         signature: 'data:image/png;base64,SIGNATURE',

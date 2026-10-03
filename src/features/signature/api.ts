@@ -69,7 +69,7 @@ export async function kioskSign(requestId: string, signerName: string, signature
   if (error) throw error;
 }
 
-/** Lien e-mail : le client absent signe en ligne (page publique, sans compte). */
-export async function signRepairOrderOnline(body: { token: string; signer_name: string; signature: string }) {
+/** Lien e-mail : le client absent signe en ligne un OR ou un contrat de location (page publique, sans compte). */
+export async function signOnline(body: { token: string; signer_name: string; signature: string }) {
   return invokeFunction<{ status: 'signed' }>('ro-signature', body);
 }

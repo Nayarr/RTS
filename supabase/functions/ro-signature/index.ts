@@ -1,10 +1,11 @@
 // =============================================================================
-// Edge Function « ro-signature » : signature d'un OR par le client absent (lien e-mail).
+// Edge Function « ro-signature » : signature par le client absent (lien e-mail) d'un OR
+// ou d'un contrat de location.
 //
 // Appelée depuis la page publique de la demande de signature (sans compte, clé publique
-// de l'appli) : nom + signature dessinée (PNG), rangée dans R2 puis rattachée à l'OR.
-// Le jeton du lien identifie la demande ; les règles (lien valable, une seule signature)
-// sont vérifiées en base par public_sign_repair_order().
+// de l'appli) : nom + signature dessinée (PNG), rangée dans R2 puis rattachée à l'OR ou au
+// contrat. Le jeton du lien identifie la demande ; les règles (lien valable, une seule
+// signature) sont vérifiées en base par public_sign_link().
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
@@ -57,7 +58,7 @@ export default {
       category: 'signature',
       mime_type: 'image/png',
       size_bytes: bytes.length,
-      original_name: 'signature-or.png',
+      original_name: 'signature-client.png',
       uploaded_at: new Date().toISOString(),
     });
     if (fileError) {
@@ -65,7 +66,7 @@ export default {
       return sqlFailure(fileError);
     }
 
-    const { data, error } = await admin.rpc('public_sign_repair_order', {
+    const { data, error } = await admin.rpc('public_sign_link', {
       p_token: token,
       p_signer_name: signerName,
       p_signature_file_id: id,

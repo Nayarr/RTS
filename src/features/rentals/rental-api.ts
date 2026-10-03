@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { SignatureRequest } from '@/features/signature/api';
 import type { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import type { DrivingLicense } from './license-api';
 import type { FleetVehicle } from './fleet-api';
@@ -209,4 +210,27 @@ export async function fetchRepairOrderLoans(repairOrderId: string): Promise<Rent
     .order('departure_at', { ascending: false });
   if (error) throw error;
   return data as RentalOverview[];
+}
+
+// ---------------------------------------------------------------- Envoi au client
+
+/** Lien de signature à distance (valable 7 jours ; un lien encore valable est repris). */
+export async function requestRentalSignature(id: string): Promise<SignatureRequest> {
+  const { data, error } = await supabase.rpc('request_rental_signature', { p_rental_id: id });
+  if (error) throw error;
+  return data as unknown as SignatureRequest;
+}
+
+/** Dernière demande de signature à distance du contrat, ou null. */
+export async function fetchRentalSignatureRequest(id: string): Promise<SignatureRequest | null> {
+  const { data, error } = await supabase.rpc('rental_signature_request', { p_rental_id: id });
+  if (error) throw error;
+  return (data as unknown as SignatureRequest | null) ?? null;
+}
+
+/** Lien de consultation du contrat (créé au premier envoi). */
+export async function shareRental(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('share_rental', { p_rental_id: id });
+  if (error) throw error;
+  return data;
 }

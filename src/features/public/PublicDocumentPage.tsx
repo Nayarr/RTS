@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { CheckCircle2, FileSignature, FileText, Info, PenLine, Printer, XCircle } from 'lucide-react';
+import { FileSignature, FileText, PenLine, Printer } from 'lucide-react';
 import { initials } from '@/app/nav';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SignaturePad } from '@/components/SignaturePad';
@@ -14,19 +14,20 @@ import { PAYMENT_STATUS_META } from '@/features/invoices/domain';
 import { formatDate, formatDateTime } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { TaskList } from '@/features/repair-orders/TaskList';
-import { signRepairOrderOnline } from '@/features/signature/api';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import {
+  companyAddress,
   fetchPublicDocument,
   respondToQuote,
-  type PublicCompany,
   type PublicInvoice,
   type PublicPortal,
   type PublicQuote,
   type PublicQuoteLine,
   type PublicSignature,
 } from './api';
+import { DocumentHead, Notice, OnlineSignatureForm, PublicHeader } from './document-ui';
+import { RentalDocument } from './RentalDocument';
 
 type TableLine = Pick<
   PublicQuoteLine,
@@ -41,39 +42,6 @@ const PAYMENT_BADGE: Record<PublicPortal['invoices'][number]['payment_status'], 
   partial: 's-blue',
   overdue: 's-bad',
 };
-
-/** Bandeau du haut : identité de l'atelier, et à droite l'état du document ou le client. */
-function PublicHeader({
-  company,
-  subtitle,
-  wide = false,
-  children,
-}: {
-  company: PublicCompany;
-  subtitle: string;
-  wide?: boolean;
-  children?: ReactNode;
-}) {
-  return (
-    <header className="mbar h-[72px]! print:hidden">
-      <div
-        className={cn(
-          'mx-auto flex w-full items-center justify-between gap-3',
-          wide ? 'max-w-[1040px]' : 'max-w-[880px]',
-        )}
-      >
-        <div className="row min-w-0 gap-3">
-          <img src="/icons/icon-192.png" alt="" className="size-11 shrink-0 rounded-[7px] bg-white p-0.5" />
-          <div className="col min-w-0 gap-0">
-            <b className="truncate font-display text-xl uppercase">{company.legal_name}</b>
-            <span className="hint truncate">{subtitle}</span>
-          </div>
-        </div>
-        {children}
-      </div>
-    </header>
-  );
-}
 
 function LinesTable({ lines, title }: { lines: TableLine[]; title: string }) {
   if (lines.length === 0) return null;
@@ -226,19 +194,6 @@ function ResponseForm({ token }: { token: string }) {
   );
 }
 
-/** En-tête du document : titre (DEVIS, FACTURE), références, et client / véhicule à droite. */
-function DocumentHead({ title, meta, aside }: { title: string; meta: ReactNode; aside: ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-4 border-b px-5 py-6 sm:px-7">
-      <div className="col gap-1">
-        <h1 className="font-display text-[34px] leading-none font-bold tracking-[.06em]">{title}</h1>
-        <span className="hint">{meta}</span>
-      </div>
-      <div className="col gap-1.5 sm:text-right">{aside}</div>
-    </div>
-  );
-}
-
 function DocumentTotals({ totals }: { totals: { total_ht: number; total_vat: number; total_ttc: number } }) {
   return (
     <div className="flex justify-end border-t px-5 py-[18px] sm:px-7">
@@ -251,16 +206,6 @@ function DocumentTotals({ totals }: { totals: { total_ht: number; total_vat: num
         <dd className="num font-display text-[26px] font-bold">{formatEuro(totals.total_ttc)}</dd>
       </dl>
     </div>
-  );
-}
-
-function Notice({ tone, children }: { tone: 's-ok' | 's-bad' | 's-blue' | 's-grey'; children: ReactNode }) {
-  const Icon = tone === 's-ok' ? CheckCircle2 : tone === 's-bad' ? XCircle : Info;
-  return (
-    <p className={cn('alert font-semibold', tone)}>
-      <Icon className="i s shrink-0" />
-      <span>{children}</span>
-    </p>
   );
 }
 
@@ -334,10 +279,6 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
       </main>
     </>
   );
-}
-
-function companyAddress(company: PublicCompany) {
-  return `${company.address_line}, ${company.postal_code} ${company.city}`;
 }
 
 /** Facture consultée en ligne : imprimable ou enregistrable en PDF depuis le navigateur. */
@@ -566,78 +507,6 @@ function PortalDocument({ portal }: { portal: PublicPortal }) {
   );
 }
 
-/** Signature de l'OR par le client absent : nom + signature dessinée. */
-function SignatureForm({ token }: { token: string }) {
-  const queryClient = useQueryClient();
-  const pad = useSignaturePad();
-  const [name, setName] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const sign = useMutation({
-    mutationFn: () =>
-      signRepairOrderOnline({ token, signer_name: name.trim(), signature: pad.toDataUrl() ?? '' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-document', token] }),
-    onError: (err) =>
-      setError(
-        err instanceof Error ? err.message : 'Impossible d’enregistrer votre signature. Contactez l’atelier.',
-      ),
-  });
-
-  const submit = () => {
-    setError(null);
-    if (!name.trim()) return setError('Merci d’indiquer votre nom.');
-    if (pad.isEmpty) return setError('Merci de signer dans le cadre ci-dessous.');
-    sign.mutate();
-  };
-
-  return (
-    <section data-slot="card" className="card print:hidden" aria-labelledby="signature-title">
-      <div className="card-h flex-wrap">
-        <h2 className="h2 text-[22px]!" id="signature-title">
-          Accord avant intervention
-        </h2>
-        <span className="hint">L’atelier sera prévenu dès votre signature.</span>
-      </div>
-      <div className="card-b col gap-4 sm:px-6! sm:py-[22px]!">
-        <div className="field max-w-[400px]">
-          <Label htmlFor="signer-name">Votre nom</Label>
-          <Input
-            id="signer-name"
-            autoComplete="name"
-            className="h-12 text-[15px]!"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </div>
-        <div className="field">
-          <span className="lbl">Signez dans le cadre ci-dessous :</span>
-          <div className="relative">
-            <SignaturePad pad={pad} label="Signature du client" showClear={false} />
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="absolute top-2.5 right-2.5"
-              onClick={pad.clear}
-              disabled={pad.isEmpty}
-            >
-              Effacer
-            </Button>
-          </div>
-        </div>
-        {error && (
-          <p role="alert" className="err">
-            {error}
-          </p>
-        )}
-        <Button size="lg" className="self-end" disabled={sign.isPending} onClick={submit}>
-          <PenLine /> Signer l’ordre de réparation
-        </Button>
-      </div>
-    </section>
-  );
-}
-
 function SignatureDocument({ request, token }: { request: PublicSignature; token: string }) {
   const { company } = request;
   return (
@@ -679,7 +548,11 @@ function SignatureDocument({ request, token }: { request: PublicSignature; token
               En signant, vous autorisez l’atelier à réaliser les travaux ci-dessus. Lien valable jusqu’au{' '}
               {formatDate(request.expires_at)}.
             </Notice>
-            <SignatureForm token={token} />
+            <OnlineSignatureForm
+              token={token}
+              title="Accord avant intervention"
+              submitLabel="Signer l’ordre de réparation"
+            />
           </>
         )}
         {request.status === 'signed' && (
@@ -717,6 +590,8 @@ export function PublicDocumentPage() {
   else if (data?.type === 'invoice') content = <InvoiceDocument invoice={data} />;
   else if (data?.type === 'portal') content = <PortalDocument portal={data} />;
   else if (data?.type === 'signature') content = <SignatureDocument request={data} token={token} />;
+  else if (data?.type === 'rental' || data?.type === 'rental_signature')
+    content = <RentalDocument contract={data} token={token} />;
   else content = message('Ce document est introuvable ou le lien a expiré.');
 
   return <div className="min-h-dvh bg-background print:bg-white">{content}</div>;
