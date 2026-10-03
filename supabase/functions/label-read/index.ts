@@ -1,11 +1,11 @@
 // =============================================================================
-// Edge Function « label-read » : lecture automatique de l'étiquette du contrôle hayon.
+// Edge Function « label-read » : lecture automatique de l'étiquette du contrôle hayon
+// (kind « tailgate ») ou du contrôle technique (kind « technical_inspection » : échéance et VIN).
 //
-// Appelée par la fiche OR du technicien juste après la photo de l'étiquette (réglage
-// « Lecture automatique des étiquettes » activé par la direction). La photo est relue
-// dans le stockage avec les droits de l'appelant, puis envoyée à l'assistant Claude qui
-// renvoie les dates lues (JSON imposé). La fonction calcule la prochaine échéance ;
-// le technicien la vérifie avant de l'enregistrer.
+// Appelée par la fiche OR du technicien juste après la photo (réglage « Lecture automatique
+// des étiquettes » activé par la direction). La photo est relue dans le stockage avec les
+// droits de l'appelant, puis envoyée à l'assistant Claude qui renvoie ce qu'il a lu (JSON
+// imposé). Le technicien vérifie avant d'enregistrer.
 // Clé de l'assistant : secret ANTHROPIC_API_KEY du projet (sans clé : lecture indisponible).
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
@@ -13,13 +13,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import { ObjectStorage, storageConfigFromEnv } from '../_shared/storage.ts';
+import { INSPECTION_READING_SCHEMA, inspectionReadingPrompt, validVin } from './inspection-reading.ts';
 import { nextDueDate, READING_SCHEMA, readingPrompt, validDate } from './reading.ts';
 
 z.config(z.locales.fr());
 
 const requestSchema = z.object({
   file_id: z.guid(),
-  kind: z.literal('tailgate'),
+  kind: z.enum(['tailgate', 'technical_inspection']),
 });
 
 const readingSchema = z.object({
@@ -27,6 +28,7 @@ const readingSchema = z.object({
   next_due_date: z.string(),
   label_text: z.string().max(500),
   confidence: z.enum(['haute', 'moyenne', 'faible']),
+  vin: z.string().max(100).optional(),
 });
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -82,6 +84,8 @@ export default {
     if (!bytes) return fail(404, 'Photo introuvable');
 
     const today = parisToday();
+    const inspection = parsed.data.kind === 'technical_inspection';
+    const document = inspection ? 'Contrôle technique' : 'Étiquette';
     let message;
     try {
       message = await claude.beta.messages.create({
@@ -90,7 +94,10 @@ export default {
         // Refus de l'assistant : nouvelle tentative automatique sur le modèle recommandé
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: READING_SCHEMA } },
+        output_config: {
+          effort: 'low',
+          format: { type: 'json_schema', schema: inspection ? INSPECTION_READING_SCHEMA : READING_SCHEMA },
+        },
         messages: [
           {
             role: 'user',
@@ -99,7 +106,7 @@ export default {
                 type: 'image',
                 source: { type: 'base64', media_type: file.mime_type as ImageType, data: toBase64(bytes) },
               },
-              { type: 'text', text: readingPrompt(today) },
+              { type: 'text', text: inspection ? inspectionReadingPrompt(today) : readingPrompt(today) },
             ],
           },
         ],
@@ -114,16 +121,25 @@ export default {
     }
 
     if (message.stop_reason === 'refusal' || message.stop_reason === 'max_tokens') {
-      return fail(422, 'Étiquette illisible : saisis la date à la main');
+      return fail(422, `${document} illisible : saisis la date à la main`);
     }
     const text = message.content.find((block) => block.type === 'text');
     let reading;
     try {
       reading = readingSchema.parse(JSON.parse(text?.type === 'text' ? text.text : ''));
     } catch {
-      return fail(422, 'Étiquette illisible : saisis la date à la main');
+      return fail(422, `${document} illisible : saisis la date à la main`);
     }
 
+    if (inspection) {
+      return json(200, {
+        next_due_date: validDate(reading.next_due_date, today),
+        last_control_date: validDate(reading.last_control_date, today),
+        vin: validVin(reading.vin ?? ''),
+        label_text: reading.label_text.trim(),
+        confidence: reading.confidence,
+      });
+    }
     return json(200, {
       next_due_date: nextDueDate(reading, today),
       last_control_date: validDate(reading.last_control_date, today),

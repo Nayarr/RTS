@@ -137,8 +137,9 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
                   Lecture automatique des étiquettes (photo)
                 </Label>
                 <span className="hint">
-                  Le technicien photographie l’étiquette du contrôle hayon : la prochaine échéance est lue et
-                  proposée, il la vérifie avant de valider.
+                  Le technicien photographie l’étiquette du contrôle hayon ou le contrôle technique : la
+                  prochaine échéance (et le VIN du contrôle technique) est lue et proposée, il la vérifie
+                  avant de valider.
                 </span>
               </span>
             </div>
