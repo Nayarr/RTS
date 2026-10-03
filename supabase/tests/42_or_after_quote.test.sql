@@ -1,6 +1,6 @@
 -- =============================================================================
--- OR créé depuis un devis : travaux effectués au temps du devis, début prévu,
--- temps fixé pour le technicien (sauf étiquettes / extincteurs), travail retiré
+-- OR créé depuis un devis : travaux effectués facturés au temps du devis, début prévu,
+-- temps réel saisi par le technicien (forfaits compris), travail retiré
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -43,11 +43,11 @@ select ok((select body from public.push_outbox where profile_id = '00000000-0000
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
 
 select results_eq(
-  format($$ select line_type::text, estimated_hours, estimate_locked from public.ro_lines
+  format($$ select line_type::text, estimated_hours, billed_hours from public.ro_lines
             where repair_order_id = %L and kind = 'done' order by position $$, :'ro'),
-  $$ values ('labor', 3.00::numeric, true), ('package', 1.50, true), ('labor', 0.30, false),
-            ('labor', 0.50, false), ('labor', 1.00, true), ('text', null, false) $$,
-  'Travaux du devis -> travaux effectués avec leur temps ; fixé sauf étiquettes et extincteurs');
+  $$ values ('labor', null::numeric, 3.00::numeric), ('package', null, 1.50), ('labor', null, 0.30),
+            ('labor', null, 0.50), ('labor', null, 1.00), ('text', null, null) $$,
+  'Travaux du devis -> travaux effectués facturés au temps du devis ; temps réel à saisir');
 select results_eq(
   format($$ select kind::text, order_status::text from public.ro_lines where repair_order_id = %L and line_type = 'part' $$, :'ro'),
   $$ values ('planned', 'to_order') $$,
@@ -57,16 +57,18 @@ select is((select count(*)::int from public.ro_lines where repair_order_id = :'r
 
 -- ---------------------------------------------------------------- Technicien
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
-select throws_ok(format($$ update public.ro_lines set estimated_hours = 5 where repair_order_id = %L and position = 0 $$, :'ro'),
-  '42501', 'Temps fixé par le devis accepté : il ne peut pas être modifié', 'Temps du devis non modifiable');
-select throws_ok(format($$ update public.ro_lines set estimate_is_minimum = true where repair_order_id = %L and position = 1 $$, :'ro'),
-  '42501', 'Temps fixé par le devis accepté : il ne peut pas être modifié', 'Temps barème du forfait non modifiable');
-select lives_ok(format($$ update public.ro_lines set estimated_hours = 0.6 where repair_order_id = %L and position = 2 $$, :'ro'),
-  'Extincteurs : temps modifiable');
-select lives_ok(format($$ update public.ro_lines set estimated_hours = 1 where repair_order_id = %L and position = 3 $$, :'ro'),
-  'Étiquettes angles morts : temps modifiable');
-select throws_ok(format($$ update public.ro_lines set estimate_locked = false where repair_order_id = %L and position = 0 $$, :'ro'),
-  '42501', 'Modification non autorisée pour un technicien', 'Le verrou du temps ne se retire pas');
+select lives_ok(format($$ update public.ro_lines set estimated_hours = 4.5 where repair_order_id = %L and position = 0 $$, :'ro'),
+  'Temps réel saisi sur une réparation du devis');
+select lives_ok(format($$ update public.ro_lines set estimated_hours = 2 where repair_order_id = %L and position = 1 $$, :'ro'),
+  'Temps réel saisi sur un forfait');
+select is((select row(estimated_hours, billed_hours) from public.ro_lines where repair_order_id = :'ro' and position = 0 and kind = 'done'),
+          row(4.50::numeric(5,2), 3.00::numeric(6,2)), 'Le temps réel ne change pas le temps facturé (devis)');
+select throws_ok(format($$ update public.ro_lines set billed_hours = 5 where repair_order_id = %L and position = 0 $$, :'ro'),
+  '42501', 'Modification non autorisée pour un technicien', 'Le temps facturé reste réservé au bureau');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
+select is((select declared_hours from public.v_repair_orders_overview where id = :'ro'), 6.50::numeric,
+          'Charge déclarée : temps réels des travaux effectués');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
 
 select lives_ok(format($$ delete from public.ro_lines where repair_order_id = %L and position = 1 and kind = 'done' $$, :'ro'),
   'Forfait finalement non fait : le technicien le retire');

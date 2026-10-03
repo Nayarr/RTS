@@ -93,7 +93,7 @@ const line = (overrides: Partial<RoLine>): RoLine =>
     estimate_is_minimum: false,
     standard_hours: null,
     quantity: 1,
-    estimate_locked: false,
+    billed_hours: null,
     source_quote_line_id: null,
     ...overrides,
   }) as RoLine;
@@ -224,7 +224,7 @@ describe('fiche OR technicien', () => {
     vi.mocked(updateLine).mockResolvedValue();
     setup('/atelier/or/ro1', { order: order(), lines: [line({})] });
 
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Temps estimé' }), '12h+');
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Temps réel' }), '12h+');
     expect(updateLine).toHaveBeenCalledWith('l1', { estimated_hours: 12, estimate_is_minimum: true });
 
     const [addDone] = screen.getAllByRole('button', { name: /Ajouter une tâche/ });
@@ -232,8 +232,9 @@ describe('fiche OR technicien', () => {
     expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1, '');
   });
 
-  it('OR issu d’un devis : temps fixé (sauf extincteurs), travail non fait retiré après confirmation', async () => {
+  it('OR issu d’un devis : temps réel à saisir (forfait compris), travail non fait retiré après confirmation', async () => {
     vi.mocked(deleteLine).mockResolvedValue();
+    vi.mocked(updateLine).mockResolvedValue();
     setup('/atelier/or/ro1', {
       order: order({ status: 'in_progress' }),
       lines: [
@@ -241,15 +242,17 @@ describe('fiche OR technicien', () => {
           id: 'q1',
           line_type: 'package',
           description: 'Forfait vidange PL',
-          estimated_hours: 1.5,
-          estimate_locked: true,
+          estimated_hours: null,
+          standard_hours: 1.5,
+          billed_hours: 1.5,
           source_quote_line_id: 'ql1',
         }),
         line({
           id: 'q2',
           position: 1,
           description: 'Remplacement Extincteur 6 kg camion',
-          estimated_hours: 0.3,
+          estimated_hours: 0.5,
+          billed_hours: 0.3,
           source_quote_line_id: 'ql2',
         }),
       ],
@@ -258,10 +261,13 @@ describe('fiche OR technicien', () => {
     const done = (await screen.findByRole('heading', { name: 'Travaux effectués' })).closest<HTMLElement>(
       '[data-slot="card"]',
     )!;
-    const [locked, adjustable] = within(done).getAllByRole('combobox', { name: 'Temps estimé' });
-    expect(locked).toBeDisabled();
-    expect(locked).toHaveAccessibleDescription('Temps fixé par le devis');
-    expect(adjustable).toBeEnabled();
+    const [forfait, extincteur] = within(done).getAllByRole('combobox', { name: 'Temps réel' });
+    expect(forfait).toBeEnabled();
+    expect(forfait).toHaveValue('');
+    expect(forfait).toHaveAccessibleDescription('Devis : 1,5 h (facturé) — indique le temps réel passé');
+    expect(extincteur).toHaveValue('0.5h');
+    await userEvent.selectOptions(forfait!, '2h');
+    expect(updateLine).toHaveBeenCalledWith('q1', { estimated_hours: 2, estimate_is_minimum: false });
 
     // Le forfait finalement non fait se retire, après confirmation
     const [removePackage] = within(done).getAllByRole('button', { name: 'Supprimer la tâche' });
@@ -358,7 +364,7 @@ describe('fiche OR technicien', () => {
         .getAllByRole('listitem')
         .map((item) => item.textContent),
     ).toEqual([
-      'Temps estimé manquant : 1 tâche des travaux effectués',
+      'Temps réel manquant : 1 tâche des travaux effectués',
       'Temps estimé manquant : 1 tâche à prévoir',
       'Taille des pneus avant obligatoire (HS)',
       'Photo de l’étiquette contrôle hayon obligatoire (HS)',

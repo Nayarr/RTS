@@ -75,7 +75,7 @@ describe('clôture de l’OR par le technicien', () => {
       line({ kind: 'done', line_type: 'package', standard_hours: 2 }),
     ];
     expect(finishBlockers(lines, null, [])).toEqual([
-      'Temps estimé manquant : 2 tâches des travaux effectués',
+      'Temps réel manquant : 2 tâches des travaux effectués',
       'Temps estimé manquant : 2 tâches à prévoir',
     ]);
   });

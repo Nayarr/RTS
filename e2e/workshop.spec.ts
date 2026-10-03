@@ -92,11 +92,11 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   await expect(doneTask).toHaveValue('');
   await doneTask.fill('Remplacement plaquettes avant');
   await doneTask.blur();
-  await page.getByRole('combobox', { name: 'Temps estimé' }).first().selectOption('2h');
-  await expect(page.getByRole('combobox', { name: 'Temps estimé' }).first()).toHaveValue('2h');
+  await page.getByRole('combobox', { name: 'Temps réel' }).first().selectOption('2h');
+  await expect(page.getByRole('combobox', { name: 'Temps réel' }).first()).toHaveValue('2h');
   // Tâche à prévoir : son temps estimé aussi, sinon l'OR ne peut pas être terminé
-  await page.getByRole('combobox', { name: 'Temps estimé' }).nth(1).selectOption('1h');
-  await expect(page.getByRole('combobox', { name: 'Temps estimé' }).nth(1)).toHaveValue('1h');
+  await page.getByRole('combobox', { name: 'Temps estimé' }).first().selectOption('1h');
+  await expect(page.getByRole('combobox', { name: 'Temps estimé' }).first()).toHaveValue('1h');
 
   // Clôture : pas de devis
   await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'NON' }).click();

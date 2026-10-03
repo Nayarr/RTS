@@ -102,14 +102,12 @@ test('OR créé depuis un devis : début prévu, travaux au temps du devis, trav
   const tasks = done.getByRole('textbox', { name: 'Description de la tâche' });
   await expect(tasks).toHaveCount(2);
   await expect(tasks.first()).toHaveValue('Vidange moteur et filtres');
-  const times = done.getByRole('combobox', { name: 'Temps estimé' });
-  // Temps du devis fixé ; l'extincteur reste réglable
-  await expect(times.first()).toHaveValue('1.5h');
-  await expect(times.first()).toBeDisabled();
-  await expect(done.getByText('Temps fixé par le devis')).toHaveCount(1);
-  await expect(times.nth(1)).toBeEnabled();
-  await times.nth(1).selectOption('0.5h');
-  await expect(times.nth(1)).toHaveValue('0.5h');
+  const times = done.getByRole('combobox', { name: 'Temps réel' });
+  // Facturé au temps du devis ; le temps réel reste à saisir par le technicien
+  await expect(times.first()).toHaveValue('');
+  await expect(times.first()).toHaveAccessibleDescription(
+    'Devis : 1,5 h (facturé) — indique le temps réel passé',
+  );
 
   // L'extincteur n'a finalement pas été changé : retiré après confirmation
   await done.getByRole('button', { name: 'Supprimer la tâche' }).nth(1).click();
@@ -117,6 +115,8 @@ test('OR créé depuis un devis : début prévu, travaux au temps du devis, trav
   await expect(confirm).toContainText('Remplacement Extincteur 6 kg camion');
   await confirm.getByRole('button', { name: 'Retirer' }).click();
   await expect(tasks).toHaveCount(1);
+  // Le message « Tâche supprimée » couvre l'en-tête sur téléphone : on attend qu'il parte
+  await expect(page.getByText('Tâche supprimée')).toBeHidden({ timeout: 10_000 });
   await page.getByRole('link', { name: 'Retour à mes OR' }).click();
   await logout(page);
 

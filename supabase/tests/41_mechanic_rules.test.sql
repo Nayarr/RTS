@@ -25,7 +25,7 @@ insert into public.inspections (repair_order_id, data)
 values (:ro, '{"pneus": {"avant_etat": "HS", "arriere_etat": "50", "arriere_taille": " "}, "controles": {"hayon": "HS"}}');
 
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000041') $$,
-  'À compléter avant de terminer : Temps estimé manquant : 1 tâche des travaux effectués ; Temps estimé manquant : % tâches à prévoir ; %',
+  'À compléter avant de terminer : Temps réel manquant : 1 tâche des travaux effectués ; Temps estimé manquant : % tâches à prévoir ; %',
   'Tous les manques listés d''un coup : temps des travaux effectués et à prévoir');
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000041') $$,
   '%Taille des pneus avant obligatoire (HS) ; Taille des pneus arrière obligatoire (50 \%)%',
