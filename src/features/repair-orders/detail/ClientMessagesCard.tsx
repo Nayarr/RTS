@@ -122,13 +122,14 @@ export function ClientMessagesCard({ order }: { order: RepairOrderOverview }) {
           senderEmail={prepared.senderEmail}
           contact={prepared.contact}
           onContactSave={saveContact}
-          onSend={(channel, contact) =>
+          onSend={(channel, contact, providerMessageId) =>
             record.mutate({
               repairOrderId: order.id,
               type: prepared.type,
               channel,
               recipient: (channel === 'email' ? contact.email : contact.phone).trim() || null,
               message: prepared.message,
+              providerMessageId,
             })
           }
           onClose={() => setPrepared(null)}

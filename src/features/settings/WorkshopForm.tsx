@@ -148,6 +148,29 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
       </fieldset>
 
       <fieldset className="col gap-3">
+        <legend className="mb-3 overline">E-mails au client</legend>
+        <Controller
+          control={control}
+          name="mail_send_enabled"
+          render={({ field }) => (
+            <div className="row gap-3 rounded-xl border px-3.5 py-3">
+              <Switch id="mail_send_enabled" checked={field.value} onCheckedChange={field.onChange} />
+              <span className="col gap-0">
+                <Label htmlFor="mail_send_enabled" className="text-sm font-bold">
+                  Envoyer les e-mails depuis l’appli
+                </Label>
+                <span className="hint">
+                  Devis, factures, signatures, contrats et rappels partent en un clic, au nom de l’atelier,
+                  avec le PDF joint ; les réponses arrivent sur l’e-mail de l’entreprise. Sinon, l’appli ouvre
+                  ta messagerie avec le message prêt.
+                </span>
+              </span>
+            </div>
+          )}
+        />
+      </fieldset>
+
+      <fieldset className="col gap-3">
         <legend className="mb-3 overline">Dépannage</legend>
         <div className="grid gap-3.5 sm:grid-cols-3">
           {MONEY_FIELDS.map(({ name, label }) => (

@@ -12,6 +12,7 @@ import { fetchSettings } from '@/features/settings/api';
 import type { ContactValues, SendLinkMessage } from '@/lib/send-links';
 import { recordInvoiceReminder, shareInvoice, type InvoiceOverview } from './api';
 import { invoiceShareMessage, isOverdue } from './domain';
+import { invoicePdfFile } from './invoice-attachment';
 import { useInvoiceMutation } from './hooks';
 
 interface Prepared {
@@ -86,6 +87,10 @@ export function ShareInvoiceButtons({ invoice }: { invoice: InvoiceOverview }) {
           senderEmail={prepared.senderEmail}
           contact={prepared.contact}
           onContactSave={saveContact}
+          attachments={{
+            label: `la facture ${invoice.number ?? ''} (PDF)`,
+            load: async () => [await invoicePdfFile(invoice.id)],
+          }}
           onClose={() => setPrepared(null)}
         />
       )}

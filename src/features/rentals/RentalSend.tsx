@@ -23,6 +23,7 @@ import {
 } from './rental-api';
 import { rentalsKey } from './rental-hooks';
 import { rentalContractMessage, rentalSignatureMessage } from './rental-messages';
+import { buildRentalPdf } from './rental-pdf';
 
 interface Prepared {
   link: string;
@@ -172,6 +173,10 @@ export function SendContractButton({ detail }: { detail: RentalDetail }) {
           senderEmail={prepared.senderEmail}
           contact={prepared.contact}
           onContactSave={saveContact}
+          attachments={{
+            label: `${name} ${rental.number} (PDF, avec l’état des lieux)`,
+            load: async () => [await buildRentalPdf(detail)],
+          }}
           onClose={() => setPrepared(null)}
         />
       )}
