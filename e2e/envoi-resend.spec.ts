@@ -123,7 +123,9 @@ test('direction : envoi par l’appli activé, domaine et adresses d’envoi ré
   }
 });
 
-test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ page }, testInfo) => {
+test('contrat envoyé par l’appli : aperçu relu, objet et texte modifiés, PDF joint', async ({
+  page,
+}, testInfo) => {
   test.slow();
   const id = uid(testInfo);
   const contract = await reservedContract(id);
@@ -138,8 +140,23 @@ test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ pag
   ).toBeVisible();
   await expect(dialog.getByText(/réponses du client arrivent sur cette adresse/)).toBeVisible();
   await expect(dialog.getByRole('checkbox', { name: /Joindre le contrat/ })).toBeChecked();
-  await dialog.getByRole('button', { name: 'Envoyer l’e-mail' }).click();
 
+  // Le lien n'est pas dans le texte : il devient le bouton « Consulter le contrat »
+  const text = dialog.getByLabel('Message', { exact: true });
+  await expect(text).not.toHaveValue(/\/d\//);
+  await dialog.getByLabel('Objet').fill(`Contrat ${contract.number} : à garder`);
+  await text.fill(
+    'Bonjour,\n\nVoici votre contrat, à garder dans le camion.\n\nCordialement,\nRAPID TRUCK SERVICE',
+  );
+  await expect(dialog.getByText('Modifié', { exact: true })).toBeVisible();
+
+  if (testInfo.project.name.includes('mobile')) await dialog.getByRole('tab', { name: 'Aperçu' }).click();
+  const preview = dialog.getByRole('region', { name: 'Aperçu de l’e-mail' });
+  await expect(preview.getByRole('heading', { name: `Contrat ${contract.number} : à garder` })).toBeVisible();
+  await expect(preview.getByText(/Voici votre contrat, à garder dans le camion\./)).toBeVisible();
+  await expect(preview.getByText('Consulter le contrat', { exact: true })).toBeVisible();
+
+  await dialog.getByRole('button', { name: 'Envoyer l’e-mail' }).click();
   await expect(page.getByText(`E-mail envoyé à compta.${id}@e2e.fr`)).toBeVisible({ timeout: 20_000 });
   await expect(dialog).toBeHidden();
   expect(requests).toHaveLength(1);
@@ -155,31 +172,36 @@ test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ pag
   ];
   expect(sent.category).toBe('billing');
   expect(sent.to).toBe(`compta.${id}@e2e.fr`);
-  expect(sent.subject).toBe(`Votre contrat de location ${contract.number} · RAPID TRUCK SERVICE`);
+  expect(sent.subject).toBe(`Contrat ${contract.number} : à garder`);
+  expect(sent.text).toBe(
+    'Bonjour,\n\nVoici votre contrat, à garder dans le camion.\n\nCordialement,\nRAPID TRUCK SERVICE',
+  );
+  expect(sent.link.label).toBe('Consulter le contrat');
   expect(sent.link.url).toMatch(/\/d\/[0-9a-f]{64}$/);
   expect(sent.attachments).toHaveLength(1);
   expect(sent.attachments[0]?.filename).toMatch(/\.pdf$/);
   expect(sent.attachments[0]?.content.startsWith('JVBER')).toBe(true); // « %PDF »
 });
 
-test('envoi refusé par le service : message affiché, la messagerie reste proposée', async ({
+test('envoi refusé par le service : alerte dans la fenêtre, texte gardé, messagerie proposée', async ({
   page,
 }, testInfo) => {
   const id = uid(testInfo);
   const contract = await reservedContract(id);
-  await simulateMailService(page, {
-    status: 503,
-    body: { error: 'Envoi par l’appli pas encore configuré : passe par ta messagerie' },
-  });
+  await simulateMailService(page, { status: 503, body: { error: 'service d’envoi indisponible' } });
 
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/location/contrats/${contract.id}`);
   await page.getByRole('button', { name: 'Envoyer le contrat' }).click();
   const dialog = page.getByRole('dialog', { name: `Envoyer le contrat ${contract.number}` });
   await dialog.getByRole('checkbox', { name: /Joindre le contrat/ }).uncheck();
+  await dialog.getByLabel('Message', { exact: true }).fill('Bonjour, texte à garder.');
   await dialog.getByRole('button', { name: 'Envoyer l’e-mail' }).click();
-  await expect(dialog.getByRole('alert')).toContainText(
-    'Envoi par l’appli pas encore configuré : passe par ta messagerie',
+  await expect(dialog.getByRole('alert')).toContainText('E-mail non envoyé : service d’envoi indisponible');
+  await expect(dialog.getByLabel('Message', { exact: true })).toHaveValue('Bonjour, texte à garder.');
+  await expect(dialog.getByRole('button', { name: 'Réessayer' })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Ouvrir dans ma messagerie' })).toHaveAttribute(
+    'href',
+    /^mailto:compta\..+subject=.+body=Bonjour%2C%20texte%20%C3%A0%20garder\./,
   );
-  await expect(dialog.getByRole('link', { name: 'Ouvrir dans ma messagerie' })).toBeVisible();
 });
