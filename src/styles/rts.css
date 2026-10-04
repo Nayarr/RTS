@@ -1024,6 +1024,31 @@
     background: var(--c, var(--primary));
     border-radius: 2px;
   }
+  /* Charge atelier : limite de la période atteinte, la jauge passe en or avec un reflet qui défile */
+  .bar i.gauge-gold {
+    background: linear-gradient(90deg, #a87b12 0%, #c99a2e 35%, #f1d27a 50%, #c99a2e 65%, #a87b12 100%);
+    background-size: 200% 100%;
+    animation: gauge-shine 3.2s linear infinite;
+  }
+  .gold-text {
+    color: #a87b12;
+  }
+  .dark .gold-text {
+    color: #e2bd5b;
+  }
+  @keyframes gauge-shine {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bar i.gauge-gold {
+      animation: none;
+    }
+  }
   .hr {
     height: 1px;
     background: var(--border);
