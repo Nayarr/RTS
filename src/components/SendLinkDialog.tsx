@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { fetchMailSendEnabled, mailSendEnabledKey, sendMail } from '@/lib/mail';
+import { fetchMailSettings, mailSender, mailSettingsKey, sendMail, type MailCategory } from '@/lib/mail';
 import { sendLinks, type ContactValues, type SendLinkMessage } from '@/lib/send-links';
 
 interface SendLinkDialogProps {
@@ -17,8 +17,10 @@ interface SendLinkDialogProps {
   /** Lien de consultation ; absent pour un simple message (rappel de rendez-vous). */
   link?: string | undefined;
   message: SendLinkMessage;
-  /** Adresse d'envoi conseillée (celle de l'atelier). */
+  /** Adresse d'envoi conseillée (celle de l'atelier), si aucun domaine d'envoi n'est réglé. */
   senderEmail: string | null;
+  /** Type de message : facturation@ (devis, factures, contrats), atelier@ (infos, rappels), signature@. */
+  mailCategory: MailCategory;
   contact: ContactValues;
   onContactSave: (contact: ContactValues) => void;
   /**
@@ -41,7 +43,8 @@ export function SendLinkDialog({
   intro,
   link,
   message,
-  senderEmail,
+  senderEmail: companyEmail,
+  mailCategory,
   contact: initial,
   onContactSave,
   onSend,
@@ -50,13 +53,11 @@ export function SendLinkDialog({
 }: SendLinkDialogProps) {
   const [contact, setContact] = useState(initial);
   const [attach, setAttach] = useState(true);
+  const mailSettings = useQuery({ queryKey: mailSettingsKey, queryFn: fetchMailSettings, staleTime: 60_000 });
+  const direct = mailSettings.data?.enabled === true;
+  // Adresse du type de message (Réglages › Atelier), sinon l'e-mail de l'entreprise
+  const senderEmail = (mailSettings.data && mailSender(mailCategory, mailSettings.data)) ?? companyEmail;
   const links = sendLinks(message, contact, senderEmail);
-  const mailEnabled = useQuery({
-    queryKey: mailSendEnabledKey,
-    queryFn: fetchMailSendEnabled,
-    staleTime: 60_000,
-  });
-  const direct = mailEnabled.data === true;
   // Même clé tant que l'envoi ne change pas : un nouvel essai n'envoie pas l'e-mail deux fois.
   const idempotency = useRef<{ payload: string; key: string } | null>(null);
 
@@ -90,7 +91,13 @@ export function SendLinkDialog({
         idempotency.current = { payload, key: crypto.randomUUID() };
       }
       const files = withFiles && attachments ? await attachments.load() : [];
-      return sendMail({ to, message, attachments: files, idempotencyKey: idempotency.current.key });
+      return sendMail({
+        category: mailCategory,
+        to,
+        message,
+        attachments: files,
+        idempotencyKey: idempotency.current.key,
+      });
     },
     onSuccess: ({ id }) => {
       toast.success(`E-mail envoyé à ${contact.email.trim()}`);
@@ -111,7 +118,12 @@ export function SendLinkDialog({
         </DialogHeader>
         {senderEmail && (
           <p className="text-sm text-muted-foreground">
-            {direct ? (
+            {direct && mailSettings.data?.domain ? (
+              <>
+                Envoyé par l’appli depuis <strong>{senderEmail}</strong> : les réponses du client arrivent sur
+                cette adresse.
+              </>
+            ) : direct ? (
               <>
                 Envoyé par l’appli au nom de l’atelier : les réponses du client arrivent sur{' '}
                 <strong>{senderEmail}</strong>.

@@ -72,6 +72,7 @@ export function ShareQuoteButton({ quote, disabled }: { quote: QuoteOverview; di
           link={prepared.link}
           message={prepared.message}
           senderEmail={prepared.senderEmail}
+          mailCategory="billing"
           contact={prepared.contact}
           onContactSave={saveContact}
           attachments={{

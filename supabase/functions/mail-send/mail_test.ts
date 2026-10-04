@@ -6,6 +6,7 @@ import {
   resendFailure,
   resendPayload,
   senderAddress,
+  senderFor,
   textToHtml,
 } from './mail.ts';
 
@@ -80,6 +81,7 @@ Deno.test('HTML : texte échappé, liens cliquables, retours à la ligne', () =>
 Deno.test('requête Resend : expéditeur, réponse vers l’atelier, pièces jointes', () => {
   const payload = resendPayload(
     {
+      category: 'billing',
       to: 'client@exemple.fr',
       subject: 'Facture F00012',
       text: 'Bonjour',
@@ -94,7 +96,14 @@ Deno.test('requête Resend : expéditeur, réponse vers l’atelier, pièces joi
   assertEquals(payload.attachments, [{ filename: 'F00012.pdf', content: 'JVBERi0=' }]);
 
   const bare = resendPayload(
-    { to: 'client@exemple.fr', subject: 'Rappel', text: 'Bonjour', idempotency_key: KEY, attachments: [] },
+    {
+      category: 'workshop',
+      to: 'client@exemple.fr',
+      subject: 'Rappel',
+      text: 'Bonjour',
+      idempotency_key: KEY,
+      attachments: [],
+    },
     { name: 'RTS', address: 'atelier@cylindre.fr', replyTo: null },
   );
   assertEquals('reply_to' in bare, false);
@@ -107,4 +116,36 @@ Deno.test('erreurs de Resend traduites pour le bureau', () => {
   assertEquals(resendFailure(429, undefined).status, 429);
   assertEquals(resendFailure(403, 'domain not verified').status, 503);
   assertEquals(resendFailure(500, undefined).status, 502);
+});
+
+Deno.test('adresse d’envoi selon le type de message, domaine des réglages', () => {
+  const settings = {
+    mail_domain: 'rapidtruckservice.fr',
+    mail_billing_local: 'facturation',
+    mail_workshop_local: 'atelier',
+    mail_signature_local: 'signature',
+  };
+  const fallback = { from: 'atelier@cylindre.fr', replyTo: 'contact@rts.fr' };
+  assertEquals(senderFor('billing', settings, fallback), {
+    address: 'facturation@rapidtruckservice.fr',
+    replyTo: 'facturation@rapidtruckservice.fr',
+  });
+  assertEquals(senderFor('workshop', settings, fallback)?.address, 'atelier@rapidtruckservice.fr');
+  assertEquals(senderFor('signature', settings, fallback)?.address, 'signature@rapidtruckservice.fr');
+  // Sans domaine : adresse unique du secret, réponses vers l'e-mail de l'entreprise
+  assertEquals(senderFor('billing', { ...settings, mail_domain: null }, fallback), {
+    address: 'atelier@cylindre.fr',
+    replyTo: 'contact@rts.fr',
+  });
+  assertEquals(
+    senderFor('billing', { ...settings, mail_domain: null }, { from: undefined, replyTo: null }),
+    null,
+  );
+});
+
+Deno.test('type de message : atelier par défaut, valeur inconnue refusée', () => {
+  const base = { to: 'client@exemple.fr', subject: 'a', text: 'b', idempotency_key: KEY };
+  const parsed = requestSchema.safeParse(base);
+  assertEquals(parsed.success && parsed.data.category, 'workshop');
+  assertEquals(requestSchema.safeParse({ ...base, category: 'marketing' }).success, false);
 });

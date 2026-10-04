@@ -135,6 +135,13 @@ const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide');
 const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const hours = number('Nombre d’heures attendu').min(0).max(24, '24 h maximum');
 
+/** Début d'adresse e-mail (avant le @, le domaine est commun). */
+const mailLocal = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/, 'Début d’adresse seul, ex. facturation');
+
 export const workshopSchema = z
   .object({
     workday_start: time,
@@ -153,6 +160,14 @@ export const workshopSchema = z
     clock_photo_retention_months: z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]),
     label_scan_enabled: z.boolean(),
     mail_send_enabled: z.boolean(),
+    mail_domain: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^(([a-z0-9]([a-z0-9-]*[a-z0-9])?.)+[a-z]{2,})?$/, 'Domaine seul, ex. rapidtruckservice.fr'),
+    mail_billing_local: mailLocal,
+    mail_workshop_local: mailLocal,
+    mail_signature_local: mailLocal,
   })
   .superRefine((v, ctx) => {
     const order: [keyof typeof v, keyof typeof v, string][] = [
@@ -189,4 +204,8 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
     a.clock_photo_retention_months as WorkshopValues['clock_photo_retention_months'],
   label_scan_enabled: a.label_scan_enabled,
   mail_send_enabled: a.mail_send_enabled,
+  mail_domain: a.mail_domain ?? '',
+  mail_billing_local: a.mail_billing_local,
+  mail_workshop_local: a.mail_workshop_local,
+  mail_signature_local: a.mail_signature_local,
 });

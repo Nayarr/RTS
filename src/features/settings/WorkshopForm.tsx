@@ -1,4 +1,4 @@
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pickDirty } from '@/lib/forms';
 import { FormField } from '@/components/FormField';
@@ -24,6 +24,16 @@ const CLOCK_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
   { name: 'overtime_start', label: 'Heures sup. dès' },
 ];
 
+const MAIL_FIELDS: {
+  name: 'mail_billing_local' | 'mail_workshop_local' | 'mail_signature_local';
+  label: string;
+  hint: string;
+}[] = [
+  { name: 'mail_billing_local', label: 'Adresse facturation', hint: 'Devis, factures, contrats' },
+  { name: 'mail_workshop_local', label: 'Adresse atelier', hint: 'Véhicule prêt, rappels' },
+  { name: 'mail_signature_local', label: 'Adresse signature', hint: 'Liens de signature' },
+];
+
 const MONEY_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
   { name: 'roadside_flat_fee', label: 'Forfait déplacement (€ HT)' },
   { name: 'roadside_price_per_km', label: 'Prix au km (€ HT)' },
@@ -39,11 +49,15 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
     reset,
     formState: { errors, isDirty, dirtyFields },
   } = useForm<WorkshopValues>({ resolver: zodResolver(workshopSchema), values: workshopToForm(app) });
+  const mailDomain = useWatch({ control, name: 'mail_domain' });
 
-  const save = useSaveSettings(
-    (values: WorkshopValues) => updateAppSettings(pickDirty(values, dirtyFields)),
-    'Réglages de l’atelier enregistrés',
-  );
+  const save = useSaveSettings((values: WorkshopValues) => {
+    const { mail_domain, ...patch } = pickDirty(values, dirtyFields);
+    // Domaine vidé : retour à l'adresse unique réglée côté serveur
+    return updateAppSettings(
+      mail_domain === undefined ? patch : { ...patch, mail_domain: mail_domain || null },
+    );
+  }, 'Réglages de l’atelier enregistrés');
 
   return (
     <SectionCard
@@ -161,13 +175,34 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
                 </Label>
                 <span className="hint">
                   Devis, factures, signatures, contrats et rappels partent en un clic, au nom de l’atelier,
-                  avec le PDF joint ; les réponses arrivent sur l’e-mail de l’entreprise. Sinon, l’appli ouvre
-                  ta messagerie avec le message prêt.
+                  avec le PDF joint. Sinon, l’appli ouvre ta messagerie avec le message prêt.
                 </span>
               </span>
             </div>
           )}
         />
+        <FormField
+          id="mail_domain"
+          label="Domaine d’envoi"
+          placeholder="rapidtruckservice.fr"
+          autoComplete="off"
+          hint="Domaine vérifié chez Resend. Les réponses du client reviennent sur l’adresse qui a envoyé le message."
+          error={errors.mail_domain?.message}
+          {...register('mail_domain')}
+        />
+        <div className="grid gap-3.5 sm:grid-cols-3">
+          {MAIL_FIELDS.map(({ name, label, hint }) => (
+            <FormField
+              key={name}
+              id={name}
+              label={label}
+              hint={`${hint} · @${mailDomain || 'domaine'}`}
+              autoComplete="off"
+              error={errors[name]?.message}
+              {...register(name)}
+            />
+          ))}
+        </div>
       </fieldset>
 
       <fieldset className="col gap-3">

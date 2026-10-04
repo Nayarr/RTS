@@ -125,10 +125,32 @@ describe('workshopSchema', () => {
     clock_photo_retention_months: 3,
     label_scan_enabled: false,
     mail_send_enabled: false,
+    mail_domain: '',
+    mail_billing_local: 'facturation',
+    mail_workshop_local: 'atelier',
+    mail_signature_local: 'signature',
   };
 
   it('accepte les horaires actuels de l’atelier', () => {
     expect(workshopSchema.safeParse(workshop).success).toBe(true);
+  });
+
+  it('domaine et adresses d’envoi : en minuscules, domaine seul, début d’adresse seul', () => {
+    const ok = workshopSchema.safeParse({
+      ...workshop,
+      mail_domain: ' RapidTruckService.fr ',
+      mail_billing_local: 'Facturation',
+    });
+    expect(ok.success && [ok.data.mail_domain, ok.data.mail_billing_local]).toEqual([
+      'rapidtruckservice.fr',
+      'facturation',
+    ]);
+    expect(messages(workshopSchema.safeParse({ ...workshop, mail_domain: 'https://rts.fr' }))).toEqual([
+      'Domaine seul, ex. rapidtruckservice.fr',
+    ]);
+    expect(
+      messages(workshopSchema.safeParse({ ...workshop, mail_signature_local: 'signature@rts.fr' })),
+    ).toEqual(['Début d’adresse seul, ex. facturation']);
   });
 
   it('refuse des horaires incohérents', () => {

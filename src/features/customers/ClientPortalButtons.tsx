@@ -96,6 +96,7 @@ export function ClientPortalButtons({ clientId, clientName }: { clientId: string
           link={prepared.link}
           message={prepared.message}
           senderEmail={prepared.senderEmail}
+          mailCategory="workshop"
           contact={prepared.contact}
           onContactSave={(contact) => void saveContact(contact)}
           onSend={(channel, contact, providerMessageId) =>

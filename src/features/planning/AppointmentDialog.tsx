@@ -119,6 +119,7 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
         intro="Message de rappel pré-rédigé avec la date, l’heure et l’adresse de l’atelier."
         message={reminder.message}
         senderEmail={reminder.senderEmail}
+        mailCategory="workshop"
         contact={reminder.contact}
         onContactSave={saveContact}
         onClose={onClose}

@@ -2,16 +2,22 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchMailSendEnabled, sendMail } from '@/lib/mail';
+import { fetchMailSettings, sendMail, type MailSettings } from '@/lib/mail';
 import { SendLinkDialog } from './SendLinkDialog';
 
 vi.mock('@/lib/mail', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  fetchMailSendEnabled: vi.fn(),
+  fetchMailSettings: vi.fn(),
   sendMail: vi.fn(),
 }));
 
 const cleanups: (() => void)[] = [];
+const settings = (overrides: Partial<MailSettings> = {}): MailSettings => ({
+  enabled: false,
+  domain: null,
+  locals: { billing: 'facturation', workshop: 'atelier', signature: 'signature' },
+  ...overrides,
+});
 const PDF = { blob: new Blob(['%PDF']), fileName: 'F00012.pdf' };
 
 const renderDialog = (
@@ -30,6 +36,7 @@ const renderDialog = (
         intro="Message pré-rédigé."
         message={{ subject: 'Véhicule prêt', body: 'Bonjour', sms: 'Bonjour' }}
         senderEmail="atelier@rapidtruckservice.fr"
+        mailCategory="billing"
         contact={{ email, phone: '' }}
         onContactSave={vi.fn()}
         onSend={onSend}
@@ -54,7 +61,7 @@ const renderDialog = (
 };
 
 beforeEach(() => {
-  vi.mocked(fetchMailSendEnabled).mockResolvedValue(false);
+  vi.mocked(fetchMailSettings).mockResolvedValue(settings());
   vi.mocked(sendMail).mockReset();
 });
 
@@ -96,14 +103,14 @@ describe('fenêtre d’envoi', () => {
 
   it('envoi par l’appli désactivé : seulement la messagerie', async () => {
     renderDialog('client@exemple.fr');
-    await waitFor(() => expect(fetchMailSendEnabled).toHaveBeenCalled());
+    await waitFor(() => expect(fetchMailSettings).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: /Envoyer l’e-mail maintenant/ })).toBeNull();
     expect(screen.getByText(/vérifie que c’est bien le compte expéditeur/)).toBeInTheDocument();
   });
 });
 
 describe('envoi par l’appli (Resend)', () => {
-  beforeEach(() => vi.mocked(fetchMailSendEnabled).mockResolvedValue(true));
+  beforeEach(() => vi.mocked(fetchMailSettings).mockResolvedValue(settings({ enabled: true })));
 
   it('envoie l’e-mail avec le PDF joint, trace l’envoi et ferme la fenêtre', async () => {
     vi.mocked(sendMail).mockResolvedValue({ id: 're_123' });
@@ -114,11 +121,31 @@ describe('envoi par l’appli (Resend)', () => {
     await userEvent.click(screen.getByRole('button', { name: /Envoyer l’e-mail maintenant/ }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const sent = vi.mocked(sendMail).mock.calls[0]?.[0];
+    expect(sent?.category).toBe('billing');
     expect(sent?.to).toBe('client@exemple.fr');
     expect(sent?.message).toEqual({ subject: 'Véhicule prêt', body: 'Bonjour', sms: 'Bonjour' });
     expect(sent?.attachments).toEqual([PDF]);
     expect(sent?.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
     expect(onSend).toHaveBeenCalledWith('email', { email: 'client@exemple.fr', phone: '' }, 're_123');
+  });
+
+  it('domaine réglé : envoyé depuis l’adresse du type de message (facturation@)', async () => {
+    vi.mocked(fetchMailSettings).mockResolvedValue(
+      settings({ enabled: true, domain: 'rapidtruckservice.fr' }),
+    );
+    renderDialog('client@exemple.fr');
+    expect(await screen.findByText('facturation@rapidtruckservice.fr')).toBeInTheDocument();
+    expect(screen.getByText(/les réponses du client arrivent sur cette adresse/)).toBeInTheDocument();
+  });
+
+  it('envoi par la messagerie : Gmail ouvert sur l’adresse du type de message', async () => {
+    vi.mocked(fetchMailSettings).mockResolvedValue(settings({ domain: 'rapidtruckservice.fr' }));
+    renderDialog('client@exemple.fr');
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Ouvrir dans Gmail' }).getAttribute('href')).toContain(
+        'authuser=facturation%40rapidtruckservice.fr',
+      ),
+    );
   });
 
   it('pièce jointe décochée : le PDF n’est pas généré', async () => {

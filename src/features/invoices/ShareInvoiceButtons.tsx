@@ -85,6 +85,7 @@ export function ShareInvoiceButtons({ invoice }: { invoice: InvoiceOverview }) {
           link={prepared.link}
           message={prepared.message}
           senderEmail={prepared.senderEmail}
+          mailCategory="billing"
           contact={prepared.contact}
           onContactSave={saveContact}
           attachments={{

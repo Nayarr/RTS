@@ -3,10 +3,12 @@
 //
 // Appelée par le bureau depuis la fenêtre d'envoi (devis, facture, signature, contrat,
 // rappel…) quand la direction a activé « Envoyer les e-mails depuis l'appli ». Le message
-// part au nom de l'atelier (adresse MAIL_FROM d'un domaine vérifié chez Resend), les
-// réponses du client arrivent sur l'e-mail de l'atelier (Réglages › Entreprise).
-// Secrets : RESEND_API_KEY et MAIL_FROM (sans eux : envoi indisponible, la messagerie de
-// l'ordinateur reste proposée). Chaque envoi est gardé dans email_deliveries.
+// part au nom de l'atelier, depuis l'adresse de son type (Réglages › Atelier, domaine vérifié
+// chez Resend) : facturation@ (devis, factures, contrats), atelier@ (infos du véhicule,
+// rappels), signature@ (liens de signature) ; les réponses reviennent sur cette adresse.
+// Secrets : RESEND_API_KEY, et MAIL_FROM tant qu'aucun domaine n'est réglé (sans eux : envoi
+// indisponible, la messagerie de l'ordinateur reste proposée). Chaque envoi est gardé dans
+// email_deliveries.
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
@@ -18,6 +20,7 @@ import {
   requestSchema,
   resendFailure,
   resendPayload,
+  senderFor,
 } from './mail.ts';
 
 z.config(z.locales.fr());
@@ -33,14 +36,16 @@ const apiUrl = Deno.env.get('RESEND_API_URL') ?? 'https://api.resend.com';
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
     if (req.method !== 'POST') return fail(405, 'Méthode non autorisée');
-    if (!apiKey || !fromAddress) {
+    if (!apiKey) {
       return fail(503, 'Envoi par l’appli pas encore configuré : passe par ta messagerie');
     }
 
     const { data: isOffice } = await ctx.supabase.rpc('is_office');
     if (isOffice !== true) return fail(403, 'Accès réservé au bureau');
 
-    const { data: settings } = await ctx.supabase.from('app_settings').select('mail_send_enabled')
+    const { data: settings } = await ctx.supabase
+      .from('app_settings')
+      .select('mail_send_enabled, mail_domain, mail_billing_local, mail_workshop_local, mail_signature_local')
       .maybeSingle();
     if (!settings?.mail_send_enabled) return fail(409, 'Envoi par l’appli désactivé dans les réglages');
 
@@ -62,6 +67,11 @@ export default {
 
     const { data: company } = await ctx.supabase.from('company_settings').select('legal_name, email')
       .maybeSingle();
+    const sender = senderFor(request.category, settings, {
+      from: fromAddress,
+      replyTo: company?.email ?? null,
+    });
+    if (!sender) return fail(503, 'Renseigne le domaine d’envoi dans Réglages › Atelier');
     const response = await fetch(`${apiUrl}/emails`, {
       method: 'POST',
       headers: {
@@ -72,8 +82,8 @@ export default {
       body: JSON.stringify(
         resendPayload(request, {
           name: company?.legal_name ?? '',
-          address: fromAddress,
-          replyTo: company?.email ?? null,
+          address: sender.address,
+          replyTo: sender.replyTo,
         }),
       ),
     });
@@ -89,6 +99,7 @@ export default {
       recipient: request.to,
       subject: request.subject,
       attachments: request.attachments.map((file) => file.filename),
+      sender: sender.address,
       sent_by: ctx.userClaims?.id ?? null,
     });
     if (error) console.error(error); // e-mail parti : le journal ne bloque pas la réponse
