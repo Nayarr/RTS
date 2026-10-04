@@ -50,7 +50,7 @@ export function boardColumns(board: WorkshopBoard): BoardColumn[] {
   });
 }
 
-/** « ● En cours — 14:00→16:00 — 📦 attente pièces » */
+/** « ● En cours : 14:00→16:00 : 📦 attente pièces » */
 export function cardMeta(order: BoardOrder): string {
   const planned = hour(order.planned_start);
   return [
@@ -59,7 +59,7 @@ export function cardMeta(order: BoardOrder): string {
     order.parts_pending ? '📦 attente pièces' : null,
   ]
     .filter(Boolean)
-    .join(' — ');
+    .join(' · ');
 }
 
 /** « 10:30 AB-123-CD (Transports Dupont) • … » */

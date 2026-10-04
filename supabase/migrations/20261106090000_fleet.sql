@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — flotte de véhicules du garage (louables, ou prêtés pendant un OR)
+-- Location : flotte de véhicules du garage (louables, ou prêtés pendant un OR)
 --
 -- Véhicules propres au garage, distincts des véhicules des clients : tarifs de location,
 -- échéances (contrôle technique, assurance, vidange) et « boîte à gants » (documents du

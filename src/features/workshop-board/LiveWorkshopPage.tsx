@@ -123,7 +123,7 @@ export function LiveWorkshopPage() {
           >
             <div className="row mb-0.5 gap-2 border-b-[3px] border-(--c) px-1 pt-1 pb-1.5">
               <span className="av sm" style={{ '--c': lane.color } as CSSProperties}>
-                {lane.name === 'Non assigné' ? '—' : initials(lane.name)}
+                {lane.name === 'Non assigné' ? '-' : initials(lane.name)}
               </span>
               <b className="grow">{lane.name}</b>
               <span className="cnt bg-card">{lane.orders.length}</span>
@@ -133,7 +133,7 @@ export function LiveWorkshopPage() {
                 <li key={order.id} className="min-w-0">
                   <Link
                     to={`/or/${order.id}`}
-                    aria-label={`${order.plate} — ${order.number}`}
+                    aria-label={`${order.plate} · ${order.number}`}
                     className={cn(
                       'card col gap-2 px-3.5 py-3 hover:bg-hover',
                       order.running_since &&
@@ -145,8 +145,8 @@ export function LiveWorkshopPage() {
                       <StatusBadge status={order.status} className="h-[22px] px-2 text-[11.5px]" />
                     </div>
                     <span className="truncate text-[13px] font-medium">
-                      {order.client_name ?? '—'}
-                      <span className="sr-only"> — Technicien : {order.technician_name ?? '—'}</span>
+                      {order.client_name ?? '-'}
+                      <span className="sr-only"> · Technicien : {order.technician_name ?? '-'}</span>
                     </span>
                     {order.requested_work && (
                       <span className="muted truncate text-[12.5px]">

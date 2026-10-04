@@ -76,7 +76,7 @@ function SignatureForm({
       </div>
       <div className="col gap-1 rounded-[10px] border px-4 py-3">
         <span className="row wrap gap-x-3">
-          <b className="plate text-lg">{request.vehicle_plate ?? '—'}</b>
+          <b className="plate text-lg">{request.vehicle_plate ?? '-'}</b>
           <span className="muted">{request.client_name ?? ''}</span>
         </span>
         <TaskList text={request.requested_work} className="text-[15px]" />

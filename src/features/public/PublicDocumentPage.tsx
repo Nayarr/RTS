@@ -242,11 +242,11 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
             aside={
               <>
                 <span>
-                  <span className="muted">Client :</span> <b>{quote.client_name ?? '—'}</b>
+                  <span className="muted">Client :</span> <b>{quote.client_name ?? '-'}</b>
                 </span>
                 <span>
                   <span className="muted">Véhicule :</span>{' '}
-                  <b className="plate">{quote.vehicle_plate ?? '—'}</b>
+                  <b className="plate">{quote.vehicle_plate ?? '-'}</b>
                 </span>
               </>
             }
@@ -317,8 +317,8 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
           />
           <div className="row wrap gap-x-6 gap-y-1 border-b px-5 py-3.5 text-[13.5px] sm:px-7">
             <span>
-              <span className="muted">Véhicule :</span> <b>{invoice.vehicle_label ?? '—'}</b>
-              {invoice.mileage !== null && ` — ${invoice.mileage.toLocaleString('fr-FR')} km`}
+              <span className="muted">Véhicule :</span> <b>{invoice.vehicle_label ?? '-'}</b>
+              {invoice.mileage !== null && ` · ${invoice.mileage.toLocaleString('fr-FR')} km`}
             </span>
             {invoice.service_date && (
               <span>
@@ -341,7 +341,7 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
         {balance > 0.01 ? (
           <Notice tone="s-blue">
             Facture à régler avant le {formatDate(invoice.due_date)}
-            {balance < invoice.totals.total_ttc - 0.01 && ` — reste dû : ${formatEuro(balance)}`}. Merci de
+            {balance < invoice.totals.total_ttc - 0.01 && `, reste dû : ${formatEuro(balance)}`}. Merci de
             votre confiance.
           </Notice>
         ) : (
@@ -359,7 +359,7 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
 
 function Deadline({ label, date }: { label: string; date: string | null }) {
   const status = deadlineStatus(date, todayIso());
-  const text = `${label} : ${date ? formatDate(date) : '—'}`;
+  const text = `${label} : ${date ? formatDate(date) : '-'}`;
   if (!date || !status || status.tone === 'ok') {
     return <span className={cn('hint', status && DEADLINE_TONE_CLASS[status.tone])}>{text}</span>;
   }
@@ -395,7 +395,7 @@ function PortalDocument({ portal }: { portal: PublicPortal }) {
             <FileSignature className="i shrink-0" />
             <span className="grow">
               <b>Devis {quote.number} à valider</b>
-              {quote.vehicle_plate && <span className="muted"> — {quote.vehicle_plate}</span>}
+              {quote.vehicle_plate && <span className="muted"> · {quote.vehicle_plate}</span>}
             </span>
             <span className="btn sm pri">Voir et signer</span>
           </Link>
@@ -419,7 +419,7 @@ function PortalDocument({ portal }: { portal: PublicPortal }) {
                       <b className="plate">{vehicle.plate}</b>
                       {vehicle.in_workshop ? (
                         <b className="text-[13px] text-primary">
-                          À l’atelier — {vehicle.status_label}
+                          À l’atelier · {vehicle.status_label}
                           {vehicle.since && ` depuis le ${formatDate(vehicle.since)}`}
                         </b>
                       ) : (
@@ -497,10 +497,10 @@ function PortalDocument({ portal }: { portal: PublicPortal }) {
         </div>
 
         <p className="hint text-center">
-          Une question ? Contactez l’atelier {company.legal_name} — {company.address_line},{' '}
+          Une question ? Contactez l’atelier {company.legal_name} · {company.address_line},{' '}
           {company.postal_code} {company.city}
-          {company.phone && ` — ${company.phone}`}
-          {company.email && ` — ${company.email}`}
+          {company.phone && ` · ${company.phone}`}
+          {company.email && ` · ${company.email}`}
         </p>
       </main>
     </>
@@ -527,11 +527,11 @@ function SignatureDocument({ request, token }: { request: PublicSignature; token
             aside={
               <>
                 <span>
-                  <span className="muted">Client :</span> <b>{request.client_name ?? '—'}</b>
+                  <span className="muted">Client :</span> <b>{request.client_name ?? '-'}</b>
                 </span>
                 <span>
                   <span className="muted">Véhicule :</span>{' '}
-                  <b className="plate">{request.vehicle_plate ?? '—'}</b>
+                  <b className="plate">{request.vehicle_plate ?? '-'}</b>
                 </span>
               </>
             }

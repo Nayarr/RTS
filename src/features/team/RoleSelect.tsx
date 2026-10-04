@@ -27,7 +27,7 @@ export function RoleSelect({ value, onChange }: RoleSelectProps) {
           {ROLE_VALUES.map((role) => (
             <SelectItem key={role} value={role}>
               <span className="font-medium">{ROLE_LABELS[role]}</span>
-              <span className="text-muted-foreground"> — {ROLE_HINTS[role]}</span>
+              <span className="text-muted-foreground"> · {ROLE_HINTS[role]}</span>
             </SelectItem>
           ))}
         </SelectContent>

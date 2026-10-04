@@ -187,7 +187,7 @@ export function NewRentalPage() {
                 </span>
                 <span className="c2 grow">
                   <b>{client.name}</b>
-                  <span>{[client.phone, client.email].filter(Boolean).join(' · ') || '—'}</span>
+                  <span>{[client.phone, client.email].filter(Boolean).join(' · ') || '-'}</span>
                 </span>
                 <span className="tag">{client.kind === 'individual' ? 'Particulier' : 'Pro'}</span>
                 <Button variant="ghost" size="sm" onClick={() => setClientId('')}>

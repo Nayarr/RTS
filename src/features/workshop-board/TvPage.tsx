@@ -109,7 +109,7 @@ export function TvPage() {
           <img src="/icons/icon-192.png" alt="" className="size-[72px] rounded-xl bg-white p-[3px]" />
           <div className="col gap-0.5">
             <h1 className="font-display text-[42px] leading-none font-bold tracking-[.03em] uppercase">
-              {board.data?.company_name ?? 'Atelier'} — Atelier
+              {board.data?.company_name ?? 'Atelier'} · Atelier
             </h1>
             <span className="sub text-2xl! first-letter:uppercase">
               {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}

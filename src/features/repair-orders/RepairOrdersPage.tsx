@@ -162,7 +162,7 @@ export function RepairOrdersPage() {
                           <span>{order.number}</span>
                         </Link>
                       </td>
-                      <td>{order.client_name ?? '—'}</td>
+                      <td>{order.client_name ?? '-'}</td>
                       <td>
                         <Technician order={order} />
                       </td>

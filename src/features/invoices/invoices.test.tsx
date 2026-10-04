@@ -213,12 +213,12 @@ describe('règles de facturation', () => {
     };
     const sent = issued({ issued_at: '2026-08-23T10:00:00Z', due_date: '2026-09-22', balance_due: 124 });
     const share = invoiceShareMessage(sent, 'https://app/d/x', company, false);
-    expect(share.subject).toBe('Facture F11887 — RAPID TRUCK SERVICE');
+    expect(share.subject).toBe('Facture F11887 · RAPID TRUCK SERVICE');
     expect(share.body).toContain(
       "d'un montant de 720,00 € TTC (véhicule GH-512-RT), à régler avant le 22/09/2026 :",
     );
     const reminder = invoiceShareMessage(sent, 'https://app/d/x', company, true);
-    expect(reminder.subject).toBe('Relance — Facture F11887 — RAPID TRUCK SERVICE');
+    expect(reminder.subject).toBe('Relance · Facture F11887 · RAPID TRUCK SERVICE');
     expect(reminder.body).toContain(
       'la facture F11887 du 23/08/2026 (véhicule GH-512-RT), arrivée à échéance le 22/09/2026, reste impayée pour un montant de 124,00 € TTC.',
     );
@@ -442,7 +442,7 @@ describe('envoi et relance', () => {
     expect(recordInvoiceReminder).toHaveBeenCalledWith('i1');
     expect(within(dialog).getByRole('link', { name: /Envoyer par e-mail/ })).toHaveAttribute(
       'href',
-      expect.stringContaining('subject=Relance%20%E2%80%94%20Facture%20F11887'),
+      expect.stringContaining('subject=Relance%20%C2%B7%20Facture%20F11887'),
     );
   });
 });

@@ -176,8 +176,8 @@ begin
     select v_invoice_id, p_repair_order_id, (r ->> 'ord')::integer * 10,
            'labor',
            case when r ->> 'decision' = 'billed' then r ->> 'description'
-                when (r ->> 'forced')::boolean then (r ->> 'description') || ' — 1re heure d''expertise offerte'
-                else (r ->> 'description') || ' — offert (geste commercial)' end,
+                when (r ->> 'forced')::boolean then (r ->> 'description') || ' · 1re heure d''expertise offerte'
+                else (r ->> 'description') || ' · offert (geste commercial)' end,
            coalesce((r ->> 'price')::numeric, 0), 1,
            case when r ->> 'decision' = 'offered' then 100 else 0 end,
            v_vat, v_ro.vehicle_type::text::public.labor_category, (r ->> 'line_id')::uuid
@@ -186,7 +186,7 @@ begin
     insert into public.invoice_lines (invoice_id, repair_order_id, position, line_type, description, unit_price,
                                       quantity, discount_percent, vat_rate, labor_category, source_ro_line_id)
     select v_invoice_id, p_repair_order_id, (r ->> 'ord')::integer * 10 + 1,
-           'labor', (r ->> 'description') || ' — 1re heure d''expertise offerte',
+           'labor', (r ->> 'description') || ' · 1re heure d''expertise offerte',
            (r ->> 'offered_price')::numeric, 1, 100,
            v_vat, v_ro.vehicle_type::text::public.labor_category, (r ->> 'line_id')::uuid
     from jsonb_array_elements(v_rows) r

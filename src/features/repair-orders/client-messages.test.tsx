@@ -83,7 +83,7 @@ describe('messages au client : règles', () => {
 
   it('textes : prise en charge, devis avec ou sans lien, véhicule prêt (SMS sur une ligne)', () => {
     const ready = clientMessage('vehicle_ready', { plate: 'AB-123-CD', quoteLink: null }, company);
-    expect(ready.subject).toBe('Véhicule prêt — AB-123-CD — RAPID TRUCK SERVICE');
+    expect(ready.subject).toBe('Véhicule prêt · AB-123-CD · RAPID TRUCK SERVICE');
     expect(ready.body).toContain(
       'Votre véhicule AB-123-CD est prêt, vous pouvez venir le récupérer à l’atelier (19 rue Gaston Monmousseau, 95190 Goussainville)',
     );

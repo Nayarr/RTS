@@ -46,7 +46,7 @@ const euro = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR'
 const quantity = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
 
 export const formatEuro = (value: number | null | undefined) =>
-  value === null || value === undefined ? '—' : euro.format(value);
+  value === null || value === undefined ? '-' : euro.format(value);
 
 export const formatQuantity = (value: number) => quantity.format(value);
 

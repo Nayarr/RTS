@@ -75,7 +75,7 @@ interface ShareCompany {
 }
 
 const frDate = (value: string | null) =>
-  value ? new Date(value.length === 10 ? `${value}T12:00:00` : value).toLocaleDateString('fr-FR') : '—';
+  value ? new Date(value.length === 10 ? `${value}T12:00:00` : value).toLocaleDateString('fr-FR') : '-';
 const amount = (value: number | null) => `${(value ?? 0).toFixed(2).replace('.', ',')} €`;
 
 /** Message d'envoi ou de relance d'une facture (textes de l'ancienne appli). */
@@ -107,7 +107,7 @@ export function invoiceShareMessage(
       `${amount(invoice.total_ttc)} TTC (véhicule ${vehicle}), à régler avant le ${frDate(invoice.due_date)} :\n\n` +
       `${link}\n\nCordialement,\n${signature}`;
   return {
-    subject: `${reminder ? 'Relance — ' : ''}Facture ${number} — ${company.legal_name}`,
+    subject: `${reminder ? 'Relance · ' : ''}Facture ${number} · ${company.legal_name}`,
     body,
     sms:
       `${reminder ? 'Relance : ' : ''}Facture ${number} ${company.legal_name} ` +

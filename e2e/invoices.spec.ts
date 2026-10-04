@@ -63,7 +63,7 @@ test('facture d’un OR : brouillon, coordonnées, émission, PDF, paiement, avo
   await expect(page.getByText('OR validé : la facture est à faire.')).toBeVisible();
   await page.getByRole('button', { name: 'Facturer', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'FACTURE', exact: true })).toBeVisible();
-  await expect(page.getByText('Brouillon — numéro attribué à l’émission')).toBeVisible();
+  await expect(page.getByText('Brouillon : numéro attribué à l’émission')).toBeVisible();
 
   // Main d'œuvre reprise de l'OR, au taux PL
   const totals = page.getByLabel('Totaux');

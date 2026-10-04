@@ -107,18 +107,18 @@ export function VehiclesPage() {
                       </td>
                       <td className="b">
                         {[vehicle.brand, vehicle.model].filter(Boolean).join(' ') || (
-                          <span className="muted font-normal">—</span>
+                          <span className="muted font-normal">-</span>
                         )}
                       </td>
                       <td>
                         <span className="tag">{VEHICLE_TYPES[vehicle.vehicle_type]}</span>
                       </td>
                       <td>{vehicle.client_name ?? <span className="muted">sans client</span>}</td>
-                      <td className="muted num text-[12.5px]">{vehicle.vin ?? '—'}</td>
+                      <td className="muted num text-[12.5px]">{vehicle.vin ?? '-'}</td>
                       <td className="r num">
                         {vehicle.last_mileage !== null
                           ? `${vehicle.last_mileage.toLocaleString('fr-FR')} km`
-                          : '—'}
+                          : '-'}
                       </td>
                       <td>
                         {deadline ? (
@@ -130,7 +130,7 @@ export function VehiclesPage() {
                                 : `${deadline.kind} dans ${deadline.days} j`}
                           </span>
                         ) : (
-                          <span className="hint">—</span>
+                          <span className="hint">-</span>
                         )}
                       </td>
                       <td>

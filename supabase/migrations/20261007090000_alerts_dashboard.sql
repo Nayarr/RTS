@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Alertes (cloche) et tableau de bord du bureau
+-- RTS Atelier : Alertes (cloche) et tableau de bord du bureau
 --   - alertes de l'utilisateur connecté avec leur état « lu » ;
 --   - chiffres du tableau de bord calculés en une seule requête (droits de
 --     l'utilisateur appliqués : fonction en security invoker).

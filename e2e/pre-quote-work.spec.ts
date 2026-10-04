@@ -94,7 +94,7 @@ test('devis accepté : le bureau facture le diagnostic et offre le contrôle', a
   // Facture séparée émise et ouverte : ligne offerte visible avec 100 % de remise
   await expect(page.getByText(/Facture F\d+ émise \(travaux offerts inclus/)).toBeVisible();
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
-  await expect(page.getByText('Contrôle géométrie — offert (geste commercial)')).toBeVisible();
+  await expect(page.getByText('Contrôle géométrie · offert (geste commercial)')).toBeVisible();
 
   // L'OR de diagnostic est facturé, plus de bandeau
   await page.goto(`/or/${order.id}`);

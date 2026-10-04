@@ -152,7 +152,7 @@ test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ pag
   ];
   expect(sent.category).toBe('billing');
   expect(sent.to).toBe(`compta.${id}@e2e.fr`);
-  expect(sent.subject).toBe(`Votre contrat de location ${contract.number} — RAPID TRUCK SERVICE`);
+  expect(sent.subject).toBe(`Votre contrat de location ${contract.number} · RAPID TRUCK SERVICE`);
   expect(sent.text).toMatch(/\/d\/[0-9a-f]{64}/);
   expect(sent.attachments).toHaveLength(1);
   expect(sent.attachments[0]?.filename).toMatch(/\.pdf$/);

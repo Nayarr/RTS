@@ -18,10 +18,10 @@ const dayName = (iso: string) => {
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
-/** « Aujourd’hui — mercredi 30 septembre », « Demain — … », « Lundi 5 octobre ». */
+/** « Aujourd’hui : mercredi 30 septembre », « Demain : … », « Lundi 5 octobre ». */
 function dayLabel(iso: string, today: string) {
-  if (iso === today) return `Aujourd’hui — ${dayName(iso).toLowerCase()}`;
-  if (iso === addDays(today, 1)) return `Demain — ${dayName(iso).toLowerCase()}`;
+  if (iso === today) return `Aujourd’hui · ${dayName(iso).toLowerCase()}`;
+  if (iso === addDays(today, 1)) return `Demain · ${dayName(iso).toLowerCase()}`;
   return dayName(iso);
 }
 

@@ -139,8 +139,8 @@ export function DeadlinesPage() {
                             </Link>
                           </td>
                           <td className="b">{DEADLINE_LABELS[kind]}</td>
-                          <td className="num">{deadline.due_date ? frenchDate(deadline.due_date) : '—'}</td>
-                          <td>{deadline.client_name ?? '—'}</td>
+                          <td className="num">{deadline.due_date ? frenchDate(deadline.due_date) : '-'}</td>
+                          <td>{deadline.client_name ?? '-'}</td>
                           <td>
                             {status && (
                               <span className={`badge ${DEADLINE_BADGE_CLASS[status.tone]}`}>

@@ -37,12 +37,12 @@ describe('étiquette du contrôle hayon', () => {
     expect(daysUntil('2026-10-12', '2026-10-02')).toBe(10);
     expect(tailgateVerdict('2026-10-12', '2026-10-02')).toEqual({
       value: 'HS',
-      label: 'À FAIRE — échéance dans 10 j',
+      label: 'À FAIRE · échéance dans 10 j',
     });
-    expect(tailgateVerdict('2026-09-30', '2026-10-02').label).toBe('À FAIRE — dépassé depuis 2 j');
+    expect(tailgateVerdict('2026-09-30', '2026-10-02').label).toBe('À FAIRE · dépassé depuis 2 j');
     expect(tailgateVerdict('2027-03-31', '2026-10-02')).toEqual({
       value: 'OK',
-      label: 'OK — valable encore 180 jours',
+      label: 'OK · valable encore 180 jours',
     });
   });
 
@@ -50,18 +50,18 @@ describe('étiquette du contrôle hayon', () => {
     vi.mocked(readTailgateLabel).mockResolvedValue({
       next_due_date: '2099-03-31',
       last_control_date: '2098-09-01',
-      label_text: 'Contrôle hayon 09/2098 — prochain 03/2099',
+      label_text: 'Contrôle hayon 09/2098 · prochain 03/2099',
       confidence: 'haute',
     });
     vi.mocked(updateDeadlines).mockResolvedValue();
     const { onApply, onClose } = renderDialog();
 
     expect(
-      await screen.findByText('Lu sur l’étiquette : « Contrôle hayon 09/2098 — prochain 03/2099 »'),
+      await screen.findByText('Lu sur l’étiquette : « Contrôle hayon 09/2098 · prochain 03/2099 »'),
     ).toBeInTheDocument();
     expect(screen.getByText('01/09/2098')).toBeInTheDocument();
     expect(screen.getByLabelText('Prochain contrôle hayon (modifiable)')).toHaveValue('2099-03-31');
-    expect(screen.getByText(/^OK — valable encore/)).toBeInTheDocument();
+    expect(screen.getByText(/^OK · valable encore/)).toBeInTheDocument();
     expect(screen.queryByText(/Lecture incertaine/)).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
@@ -85,7 +85,7 @@ describe('étiquette du contrôle hayon', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Valider' })).toBeDisabled();
     await userEvent.type(screen.getByLabelText('Prochain contrôle hayon (modifiable)'), '2000-01-15');
-    expect(screen.getByText(/^À FAIRE — dépassé depuis/)).toBeInTheDocument();
+    expect(screen.getByText(/^À FAIRE · dépassé depuis/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Valider' })).toBeEnabled();
   });
 

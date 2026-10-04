@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Fiches clients et véhicules
+-- RTS Atelier : Fiches clients et véhicules
 --   - remise et taux horaire d'un client : réservés à la direction ;
 --   - carte grise d'un véhicule : fichier de la bonne catégorie, envoi confirmé ;
 --   - vues de lecture : clients (véhicules, OR, dernière visite, CA, reste dû),

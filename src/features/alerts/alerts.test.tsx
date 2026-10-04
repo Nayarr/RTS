@@ -32,7 +32,7 @@ const notification = (overrides: Partial<AppNotification>): AppNotification =>
     id: 'n1',
     type: 'overdue_invoice',
     title: 'Facture en retard : F11890',
-    body: 'Transports Martin — reste dû 324,00 € TTC',
+    body: 'Transports Martin · reste dû 324,00 € TTC',
     link: '/factures/i1',
     created_at: '2026-09-28T07:05:00Z',
     read_at: null,
@@ -72,7 +72,7 @@ describe('cloche des alertes', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Alertes (2 non lues)' }));
     const dialog = screen.getByRole('dialog', { name: 'Alertes' });
     expect(within(dialog).getAllByText('Nouvelle')).toHaveLength(2);
-    expect(within(dialog).getByText('Transports Martin — reste dû 324,00 € TTC')).toBeInTheDocument();
+    expect(within(dialog).getByText('Transports Martin · reste dû 324,00 € TTC')).toBeInTheDocument();
     expect(within(dialog).getAllByText('28/09/2026 09:05')).toHaveLength(3);
     await waitFor(() => expect(markNotificationsRead).toHaveBeenCalledWith(['n1', 'n2'], 'p1'));
   });

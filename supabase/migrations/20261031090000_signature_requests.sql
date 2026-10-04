@@ -235,8 +235,8 @@ begin
   select plate into v_plate from public.vehicles where id = v_ro.vehicle_id;
   insert into public.notifications (recipient_role, type, title, body, repair_order_id, link, dedupe_key)
   select role, 'signature_received', 'Signature reçue : ' || coalesce(v_plate, v_ro.number),
-         'OR ' || v_ro.number || case when p_request.channel = 'kiosk' then ' — signé sur la borne'
-                                      else ' — signé en ligne' end,
+         'OR ' || v_ro.number || case when p_request.channel = 'kiosk' then ' · signé sur la borne'
+                                      else ' · signé en ligne' end,
          v_ro.id, '/or/' || v_ro.id, 'signature-' || p_request.id || '-' || role
   from (values ('direction'::public.app_role), ('reception'::public.app_role)) roles(role)
   on conflict (dedupe_key) do nothing;

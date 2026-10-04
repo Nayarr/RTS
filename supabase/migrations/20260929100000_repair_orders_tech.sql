@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Ordres de réparation côté technicien
+-- RTS Atelier : Ordres de réparation côté technicien
 -- =============================================================================
 
 -- Photo retirée d'un OR : le fichier est marqué supprimé (objet purgé du stockage ensuite).

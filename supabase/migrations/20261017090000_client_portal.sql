@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Espace client en ligne
+-- RTS Atelier : Espace client en ligne
 --   Le lien (share_client_portal) et le contenu (public_get_document) existent
 --   déjà. Ajout : changer le lien d'un client, l'ancien cesse aussitôt de
 --   fonctionner (lien transmis par erreur à un tiers, par exemple).

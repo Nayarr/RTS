@@ -91,7 +91,7 @@ describe('pilotage : écrans', () => {
     );
     const rows = screen.getAllByRole('row').slice(1);
     expect(rows[0]).toHaveTextContent(/sept\. 26\s*1\s*600\s€\s*400\s€\s*150\s€\s*−100\s€\s*900\s€/);
-    expect(rows[1]).toHaveTextContent(/août 26\s*4\s*3\s000\s€\s*1\s200\s€\s*350\s€\s*—\s*4\s200\s€/);
+    expect(rows[1]).toHaveTextContent(/août 26\s*4\s*3\s000\s€\s*1\s200\s€\s*350\s€\s*-\s*4\s200\s€/);
     expect(screen.getByRole('link', { name: 'Statistiques' })).toHaveAttribute('aria-current', 'page');
   });
 

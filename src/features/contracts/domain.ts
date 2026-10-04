@@ -6,7 +6,7 @@ import { todayIso } from '@/features/repair-orders/schemas';
 import { decimalField, decimalText, decimalValue } from '@/lib/numbers';
 import type { Contract, ContractInput, ContractVehicle } from './api';
 
-/** « tous les 6 mois ou 30 000 km — 250,00 € HT / mois » */
+/** « tous les 6 mois ou 30 000 km : 250,00 € HT / mois » */
 export function contractTerms(
   contract: Pick<Contract, 'frequency_months' | 'frequency_km' | 'monthly_price_ht'>,
 ) {
@@ -21,7 +21,7 @@ export function contractTerms(
   const price = contract.monthly_price_ht
     ? `${contract.monthly_price_ht.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} HT / mois`
     : null;
-  return [frequency, price].filter(Boolean).join(' — ');
+  return [frequency, price].filter(Boolean).join(' · ');
 }
 
 export type VehicleServiceState = 'due' | 'planned' | 'up_to_date';

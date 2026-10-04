@@ -67,8 +67,8 @@ select results_eq(
   format($$ select description, unit_price, discount_percent from public.invoice_lines where invoice_id = %L order by position $$,
          :'settled'::jsonb ->> 'invoice_id'),
   $$ values ('Diagnostic freinage', 120.00::numeric, 0.00::numeric),
-            ('Diagnostic freinage — 1re heure d''expertise offerte', 90.00::numeric, 100.00::numeric),
-            ('Contrôle sécurité — offert (geste commercial)', 60.00::numeric, 100.00::numeric) $$,
+            ('Diagnostic freinage · 1re heure d''expertise offerte', 90.00::numeric, 100.00::numeric),
+            ('Contrôle sécurité · offert (geste commercial)', 60.00::numeric, 100.00::numeric) $$,
   'Lignes offertes (1re heure d''expertise, forfait) visibles avec 100 % de remise');
 select is((select status::text from public.repair_orders where id = '50000000-0000-0000-0000-000000000001'), 'invoiced',
           'OR de diagnostic facturé');

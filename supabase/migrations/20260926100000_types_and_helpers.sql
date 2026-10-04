@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 01. Extensions, types énumérés et fonctions utilitaires
+-- RTS Atelier : 01. Extensions, types énumérés et fonctions utilitaires
 -- =============================================================================
 -- Conventions du schéma :
 --   * identifiants SQL en anglais (snake_case), commentaires et libellés en français ;

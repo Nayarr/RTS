@@ -36,7 +36,7 @@ describe('contrôle technique lu sur la photo', () => {
       next_due_date: '2027-09-30',
       last_control_date: '2026-09-28',
       vin: 'VF612345678901234',
-      label_text: 'Contrôle favorable — à présenter avant le 30/09/2027',
+      label_text: 'Contrôle favorable · à présenter avant le 30/09/2027',
       confidence: 'haute',
     });
     vi.mocked(updateDeadlines).mockResolvedValue();
@@ -45,7 +45,7 @@ describe('contrôle technique lu sur la photo', () => {
     expect(await screen.findByLabelText('Prochain contrôle technique (modifiable)')).toHaveValue(
       '2027-09-30',
     );
-    expect(screen.getByLabelText('VIN — numéro d’identification (modifiable)')).toHaveValue(
+    expect(screen.getByLabelText('VIN · numéro d’identification (modifiable)')).toHaveValue(
       'VF612345678901234',
     );
     expect(screen.getByText('28/09/2026')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('contrôle technique lu sur la photo', () => {
     expect(
       await screen.findByText('Aucune date d’échéance trouvée sur la photo : saisis-la à la main.'),
     ).toBeInTheDocument();
-    const vin = screen.getByLabelText('VIN — numéro d’identification (modifiable)');
+    const vin = screen.getByLabelText('VIN · numéro d’identification (modifiable)');
     await userEvent.type(vin, 'vf6123');
     expect(screen.getByText('VIN : 17 caractères (lettres sauf I, O, Q, et chiffres)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Valider' })).toBeDisabled();

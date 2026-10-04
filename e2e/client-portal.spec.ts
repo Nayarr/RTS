@@ -52,7 +52,7 @@ test('le client consulte son espace en ligne ; le bureau peut changer le lien', 
   await page.goto(`/or/${order.id}`);
   await page.getByRole('link', { name: clientName }).first().click();
   await page.getByRole('button', { name: 'Envoyer le lien au client' }).click();
-  const share = page.getByRole('dialog', { name: `Espace client — ${clientName}` });
+  const share = page.getByRole('dialog', { name: `Espace client · ${clientName}` });
   const link = await share.getByLabel('Lien', { exact: true }).inputValue();
   expect(link).toMatch(/\/d\/[A-Za-z0-9_-]{32,}$/);
   await page.keyboard.press('Escape');
@@ -62,13 +62,13 @@ test('le client consulte son espace en ligne ; le bureau peut changer le lien', 
   await visitor.goto(link);
   await expect(visitor.getByRole('heading', { name: 'Bonjour' })).toBeVisible();
   await expect(visitor.getByText(clientName)).toBeVisible();
-  await expect(visitor.getByRole('listitem', { name: plate })).toContainText('À l’atelier — Assigné');
+  await expect(visitor.getByRole('listitem', { name: plate })).toContainText('À l’atelier · Assigné');
 
   // Nouveau lien : l'ancien ne fonctionne plus
   await page.getByRole('button', { name: 'Changer le lien' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Changer le lien' }).click();
   const newLink = await page
-    .getByRole('dialog', { name: `Espace client — ${clientName}` })
+    .getByRole('dialog', { name: `Espace client · ${clientName}` })
     .getByLabel('Lien', { exact: true })
     .inputValue();
   expect(newLink).not.toBe(link);

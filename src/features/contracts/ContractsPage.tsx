@@ -73,7 +73,7 @@ export function ContractsPage() {
             return (
               <li key={contract.id}>
                 <article
-                  aria-label={`${contract.client_name} — ${contract.service_description || 'Entretien'}`}
+                  aria-label={`${contract.client_name} · ${contract.service_description || 'Entretien'}`}
                   className="card overflow-hidden"
                 >
                   <div className="card-h items-start">
@@ -83,7 +83,7 @@ export function ContractsPage() {
                         className="h2 ul cursor-pointer text-left"
                         onClick={() => setDialog({ kind: 'contract', contract })}
                       >
-                        {contract.client_name} — {contract.service_description || 'Entretien'}
+                        {contract.client_name} · {contract.service_description || 'Entretien'}
                       </button>
                       <span className="hint">
                         {contractTerms(contract)}

@@ -50,9 +50,9 @@ select results_eq(
 select results_eq(
   format($$ select description, unit_price, discount_percent from public.invoice_lines where invoice_id = %L order by position $$,
          :'settled'::jsonb ->> 'invoice_id'),
-  $$ values ('Lecture valise — 1re heure d''expertise offerte', 45.00::numeric, 100.00::numeric),
+  $$ values ('Lecture valise · 1re heure d''expertise offerte', 45.00::numeric, 100.00::numeric),
             ('Recherche de fuite', 45.00, 0.00),
-            ('Recherche de fuite — 1re heure d''expertise offerte', 45.00, 100.00),
+            ('Recherche de fuite · 1re heure d''expertise offerte', 45.00, 100.00),
             ('Essai routier', 90.00, 0.00) $$,
   'La première heure offerte apparaît sur la facture avec 100 % de remise');
 select ok(exists (select 1 from public.ro_events where repair_order_id = '50000000-0000-0000-0000-000000000043'

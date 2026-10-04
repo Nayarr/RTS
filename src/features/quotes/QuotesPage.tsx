@@ -99,7 +99,7 @@ export function QuotesPage() {
     },
     {
       icon: <Percent className="i s" />,
-      value: rate === null ? '—' : `${rate} %`,
+      value: rate === null ? '-' : `${rate} %`,
       label: 'Taux d’acceptation (90 j)',
     },
   ];
@@ -193,10 +193,10 @@ export function QuotesPage() {
                         {quote.plate ? (
                           <span className="plate">{quote.plate}</span>
                         ) : (
-                          <span className="muted">—</span>
+                          <span className="muted">-</span>
                         )}
                       </td>
-                      <td>{quote.client_name ?? '—'}</td>
+                      <td>{quote.client_name ?? '-'}</td>
                       <td>
                         <QuoteStatusBadge status={quote.status} />
                       </td>
@@ -232,7 +232,7 @@ export function QuotesPage() {
                         <div className="col gap-0">
                           <b className="text-base">{quote.number ?? 'Sans numéro'}</b>
                           <span className="hint">
-                            {quote.client_name ?? '—'} · {quote.plate ?? 'sans véhicule'}
+                            {quote.client_name ?? '-'} · {quote.plate ?? 'sans véhicule'}
                           </span>
                         </div>
                         <QuoteStatusBadge status={quote.status} />

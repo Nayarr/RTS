@@ -106,7 +106,7 @@ export function TechnicalInspectionDialog({
               />
             </div>
             <div className="field">
-              <Label htmlFor="ct-scan-vin">VIN — numéro d’identification (modifiable)</Label>
+              <Label htmlFor="ct-scan-vin">VIN · numéro d’identification (modifiable)</Label>
               <Input
                 id="ct-scan-vin"
                 className="font-mono uppercase"

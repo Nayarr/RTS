@@ -53,7 +53,7 @@ const renderButtons = () =>
 describe('espace client : envoi du lien', () => {
   it('message de l’ancienne appli', () => {
     const message = portalMessage('https://rts/d/abc', company);
-    expect(message.subject).toBe('Votre espace client — RAPID TRUCK SERVICE');
+    expect(message.subject).toBe('Votre espace client · RAPID TRUCK SERVICE');
     expect(message.body).toContain('vos devis, vos factures et les échéances de contrôle technique');
     expect(message.body).toContain('https://rts/d/abc');
     expect(message.sms).toBe('Votre espace client RAPID TRUCK SERVICE : https://rts/d/abc');
@@ -65,7 +65,7 @@ describe('espace client : envoi du lien', () => {
     expect(screen.queryByRole('button', { name: 'Changer le lien' })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Envoyer le lien au client' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Espace client — Transports Dupont' });
+    const dialog = await screen.findByRole('dialog', { name: 'Espace client · Transports Dupont' });
     expect(shareClientPortal).toHaveBeenCalledWith('c1');
     expect(within(dialog).getByLabelText('Lien')).toHaveValue(
       `${window.location.origin}/d/${'t'.repeat(40)}`,
@@ -87,7 +87,7 @@ describe('espace client : envoi du lien', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Changer le lien' }));
     const confirm = screen.getByRole('dialog', { name: 'Changer le lien de l’espace client ?' });
     await userEvent.click(within(confirm).getByRole('button', { name: 'Changer le lien' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Espace client — Transports Dupont' });
+    const dialog = await screen.findByRole('dialog', { name: 'Espace client · Transports Dupont' });
     expect(resetClientPortal).toHaveBeenCalledWith('c1');
     expect(within(dialog).getByLabelText('Lien')).toHaveValue(
       `${window.location.origin}/d/${'n'.repeat(40)}`,

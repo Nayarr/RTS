@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — flotte du garage : accès réservé au bureau, plaque unique,
+-- Location : flotte du garage : accès réservé au bureau, plaque unique,
 -- boîte à gants, raison qui bloque la location (assurance / CT expirés, entretien)
 -- =============================================================================
 begin;

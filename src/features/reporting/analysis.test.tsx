@@ -206,7 +206,7 @@ describe('pilotage : écrans', () => {
     expect(alice).toHaveTextContent('Délai moyen2,5 j');
     const bruno = screen.getByRole('article', { name: 'Bruno' });
     expect(bruno).toHaveTextContent('0/100');
-    expect(bruno).toHaveTextContent('Rendement—');
+    expect(bruno).toHaveTextContent('Rendement-');
     expect(screen.getAllByRole('article').map((a) => a.getAttribute('aria-label'))).toEqual([
       'Alice',
       'Bruno',

@@ -15,7 +15,7 @@ import { PartDialog } from './PartDialog';
 /** Marge : en vert à partir de 20 % (comme l'ancienne appli). */
 function Margin({ part }: { part: Part }) {
   const margin = marginPercent(part.purchase_price, part.sale_price);
-  if (margin === null) return <span className="muted">—</span>;
+  if (margin === null) return <span className="muted">-</span>;
   return <span className={cn('badge', margin >= 20 ? 's-ok' : 's-bad')}>{margin} %</span>;
 }
 
@@ -87,14 +87,14 @@ export function PartsPage() {
                 {pages.items.map((part) => (
                   <tr key={part.id} aria-label={part.designation}>
                     <td className="b whitespace-normal">{part.designation}</td>
-                    <td>{part.brand ?? '—'}</td>
+                    <td>{part.brand ?? '-'}</td>
                     <td>
                       <span className="c2">
-                        <b className="num font-medium">{part.manufacturer_ref ?? '—'}</b>
+                        <b className="num font-medium">{part.manufacturer_ref ?? '-'}</b>
                         {part.oem_ref && <span>{part.oem_ref}</span>}
                       </span>
                     </td>
-                    <td>{part.supplier_name ?? '—'}</td>
+                    <td>{part.supplier_name ?? '-'}</td>
                     <td className="r num">{formatEuro(part.purchase_price)}</td>
                     <td className="r num b">{formatEuro(part.sale_price)}</td>
                     <td className="r">

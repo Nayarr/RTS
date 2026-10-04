@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Pilotage : rapport mensuel (direction)
+-- RTS Atelier : Pilotage : rapport mensuel (direction)
 --   Chiffres clés du mois, factures en retard et échéances véhicules proches.
 --   Les meilleurs clients et les techniciens viennent de profitability_report
 --   et technician_performance sur le même mois.

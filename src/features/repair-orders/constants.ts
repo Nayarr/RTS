@@ -67,7 +67,7 @@ export const formatHours = (hours: number | null | undefined) =>
 export const formatDate = (iso: string | null | undefined) =>
   iso
     ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : '—';
+    : '-';
 
 export const formatDateTime = (iso: string | null | undefined) =>
   iso
@@ -78,4 +78,4 @@ export const formatDateTime = (iso: string | null | undefined) =>
         hour: '2-digit',
         minute: '2-digit',
       })
-    : '—';
+    : '-';

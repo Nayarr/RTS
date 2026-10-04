@@ -49,7 +49,7 @@ test('planning : OR prévu sans horaire en étiquette sous la date et sous le te
   await page.goto(`/planning?vue=semaine&date=${date}`);
   const week = page.getByTestId(`planning-untimed-${date}`);
   const chip = week.getByRole('link', { name: new RegExp(plate) });
-  await expect(chip).toHaveAttribute('title', 'Prévu ce jour, sans horaire — Alice');
+  await expect(chip).toHaveAttribute('title', 'Prévu ce jour, sans horaire · Alice');
   // Pas de bloc horaire pour cet OR
   await expect(page.getByTestId(`planning-column-${date}`).getByText(plate)).toHaveCount(0);
 

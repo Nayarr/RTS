@@ -126,7 +126,7 @@ export function PackagesPage() {
                 </div>
                 <div className="tfoot">
                   <span className="hint">Prix forfaitaire HT</span>
-                  <b className="disp num text-[22px]">{pkg.price !== null ? formatEuro(pkg.price) : '—'}</b>
+                  <b className="disp num text-[22px]">{pkg.price !== null ? formatEuro(pkg.price) : '-'}</b>
                 </div>
               </article>
             </li>

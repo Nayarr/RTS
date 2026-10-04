@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Planning et rendez-vous
+-- RTS Atelier : Planning et rendez-vous
 --   - rendez-vous saisis librement (client / immatriculation retrouvés ou créés) ;
 --   - un rendez-vous converti en OR ou annulé ne bouge plus ;
 --   - « Le véhicule est arrivé : créer l'OR » tracé dans l'historique de l'OR ;

@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Gestion de l'équipe (comptes, rôles, techniciens, PIN)
+-- RTS Atelier : Gestion de l'équipe (comptes, rôles, techniciens, PIN)
 -- =============================================================================
 
 -- Enregistre le profil (et la fiche technicien) d'un compte qui vient d'être créé

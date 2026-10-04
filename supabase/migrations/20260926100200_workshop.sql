@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 03. Atelier : ordres de réparation (OR) et tout ce qui s'y rattache
+-- RTS Atelier : 03. Atelier : ordres de réparation (OR) et tout ce qui s'y rattache
 -- =============================================================================
 
 create table public.repair_orders (

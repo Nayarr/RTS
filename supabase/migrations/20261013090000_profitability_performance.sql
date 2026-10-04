@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Pilotage : rentabilité et performance des techniciens (direction)
+-- RTS Atelier : Pilotage : rentabilité et performance des techniciens (direction)
 --   Période [p_from, p_to[ en jours de Paris (null = sans limite), appliquée à la
 --   date d'émission des factures.
 --   Une ligne de facture sans OR est rattachée à l'OR de la facture quand celle-ci
@@ -87,7 +87,7 @@ begin
   )
   select
     ro.client_id,
-    coalesce(c.name, '—'),
+    coalesce(c.name, '-'),
     ro.vehicle_id,
     v.plate,
     count(*),

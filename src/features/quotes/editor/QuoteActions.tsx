@@ -71,7 +71,7 @@ function CreateRepairOrderDialog({ quote, onClose }: { quote: QuoteOverview; onC
             value={technicianId}
             onChange={(event) => setTechnicianId(event.target.value)}
           >
-            <option value="">— Non assigné —</option>
+            <option value="">Non assigné</option>
             {(technicians.data ?? []).map((technician) => (
               <option key={technician.id} value={technician.id}>
                 {technician.display_name}

@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Facturation (bureau)
+-- RTS Atelier : Facturation (bureau)
 --   - liste des factures (brouillons et émises) avec reste dû et OR concernés ;
 --   - paiement plafonné au reste dû.
 -- =============================================================================

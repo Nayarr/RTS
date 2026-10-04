@@ -17,7 +17,7 @@ describe('envoi d’un lien au client', () => {
       'https://app/d/abc',
       company,
     );
-    expect(message.subject).toBe('Devis DV00012 — RAPID TRUCK SERVICE');
+    expect(message.subject).toBe('Devis DV00012 · RAPID TRUCK SERVICE');
     expect(message.body).toContain('votre devis DV00012 pour le véhicule GH-512-RT.');
     expect(message.body).toContain('https://app/d/abc');
     expect(
@@ -32,11 +32,11 @@ describe('envoi d’un lien au client', () => {
 
   it('liens e-mail, Gmail, Outlook et SMS encodés (espaces, accents, retours à la ligne)', () => {
     const links = sendLinks(
-      { subject: 'Devis DV1 — RTS', body: 'Bonjour,\nà bientôt', sms: 'Votre devis : https://app/d/x' },
+      { subject: 'Devis DV1 · RTS', body: 'Bonjour,\nà bientôt', sms: 'Votre devis : https://app/d/x' },
       { email: ' client@exemple.fr ', phone: '06 12 34 56 78' },
     );
     expect(links.mailto).toBe(
-      'mailto:client@exemple.fr?subject=Devis%20DV1%20%E2%80%94%20RTS&body=Bonjour%2C%0A%C3%A0%20bient%C3%B4t',
+      'mailto:client@exemple.fr?subject=Devis%20DV1%20%C2%B7%20RTS&body=Bonjour%2C%0A%C3%A0%20bient%C3%B4t',
     );
     expect(links.gmail).toContain(
       'https://mail.google.com/mail/?view=cm&fs=1&to=client%40exemple.fr&su=Devis%20DV1',

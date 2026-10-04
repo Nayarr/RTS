@@ -54,12 +54,12 @@ export function SubcontractsCard({
                 type="button"
                 className="li w-full cursor-pointer text-left hover:bg-hover disabled:cursor-default disabled:hover:bg-transparent"
                 disabled={!editable}
-                aria-label={`${subcontract.service} — ${subcontract.supplier_name}`}
+                aria-label={`${subcontract.service} · ${subcontract.supplier_name}`}
                 onClick={() => setEditing(subcontract)}
               >
                 <span className="col grow gap-0.5">
                   <b>
-                    {subcontract.service} — {subcontract.supplier_name}
+                    {subcontract.service} · {subcontract.supplier_name}
                   </b>
                   <span className="muted text-[12.5px]">
                     {subcontract.expected_return_on &&

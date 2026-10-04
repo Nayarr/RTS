@@ -19,7 +19,7 @@ function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
             <span className="muted num">
               {line.estimated_hours === null
                 ? line.standard_hours === null || line.kind === 'done'
-                  ? '—'
+                  ? '-'
                   : `${formatHours(line.standard_hours)} (barème)`
                 : `${formatHours(line.estimated_hours)}${line.estimate_is_minimum ? '+' : ''}`}
               {line.kind === 'done' && line.estimated_hours !== null && ' réel'}

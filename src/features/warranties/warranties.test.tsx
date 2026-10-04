@@ -160,7 +160,7 @@ describe('garanties : écran', () => {
     renderPage();
     await userEvent.click(await screen.findByRole('button', { name: 'Étrier de frein AV' }));
     const dialog = screen.getByRole('dialog', { name: 'Retour / garantie' });
-    expect(dialog).toHaveTextContent('Pièce de l’OR OR00012 — GH-512-RT');
+    expect(dialog).toHaveTextContent('Pièce de l’OR OR00012 · GH-512-RT');
     await userEvent.selectOptions(within(dialog).getByLabelText('Statut'), 'accepted');
     await userEvent.type(within(dialog).getByLabelText(/Notes/), 'RMA 5521');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));

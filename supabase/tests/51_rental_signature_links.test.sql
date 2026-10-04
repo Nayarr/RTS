@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — signature du contrat par lien e-mail et lien de consultation du contrat
+-- Location : signature du contrat par lien e-mail et lien de consultation du contrat
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;

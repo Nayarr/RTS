@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 06. Logique métier : triggers et fonctions appelées par l'appli
+-- RTS Atelier : 06. Logique métier : triggers et fonctions appelées par l'appli
 -- =============================================================================
 -- Principe : toute écriture sensible (numérotation, émission de facture, badgeage,
 -- pointage, stock…) passe par une fonction exécutée côté base, en transaction,
@@ -465,7 +465,7 @@ begin
       ('controles.extincteur1',     'Extincteur 1 kg cabine',       0.3),
       ('controles.extincteur2',     'Extincteur 2 kg cabine',       0.3),
       ('controles.extincteur6',     'Extincteur 6 kg camion',       0.3),
-      ('controles.eclairage',       'Éclairage — ampoules',         null)
+      ('controles.eclairage',       'Éclairage, ampoules',         null)
     ) as f(key, label, hours)
   loop
     v_path := string_to_array(v_field.key, '.');
@@ -771,7 +771,7 @@ begin
 
   insert into public.ro_events (repair_order_id, label, actor_id)
   values (p_repair_order_id,
-          'Travaux marqués terminés' || case when p_quote_needed then ' — devis à faire' else '' end,
+          'Travaux marqués terminés' || case when p_quote_needed then ' · devis à faire' else '' end,
           auth.uid());
   return v_ro;
 end;
@@ -1060,7 +1060,7 @@ begin
     update public.quotes set resulting_repair_order_id = v_ro_id where id = p_quote_id;
     insert into public.ro_events (repair_order_id, label, actor_id)
     select v_quote.repair_order_id,
-           'Devis accepté — nouvel OR ' || r.number || ' créé', auth.uid()
+           'Devis accepté · nouvel OR ' || r.number || ' créé', auth.uid()
     from public.repair_orders r where r.id = v_ro_id;
   end if;
   return v_ro_id;
@@ -1237,7 +1237,7 @@ begin
     if v_grouped then
       insert into public.invoice_lines (invoice_id, repair_order_id, position, line_type, description)
       values (v_invoice_id, v_ro.id, v_base, 'text',
-              v_ro.number || ' — ' || v_ro.plate || coalesce(' — ' || v_ro.mileage || ' km', ''));
+              v_ro.number || ' · ' || v_ro.plate || coalesce(' · ' || v_ro.mileage || ' km', ''));
     end if;
 
     -- Travaux effectués
@@ -1285,7 +1285,7 @@ begin
       if v_settings.roadside_flat_fee > 0 then
         insert into public.invoice_lines (invoice_id, repair_order_id, position, line_type, description, unit_price, quantity, discount_percent, vat_rate)
         values (v_invoice_id, v_ro.id, v_base + 7000, 'travel',
-                'Forfait de déplacement' || coalesce(' — ' || nullif(v_ro.roadside_address, ''), ''),
+                'Forfait de déplacement' || coalesce(' · ' || nullif(v_ro.roadside_address, ''), ''),
                 v_settings.roadside_flat_fee, 1, v_discount, v_vat);
       end if;
       if coalesce(v_ro.roadside_km, 0) > 0 then
@@ -1781,7 +1781,7 @@ begin
   end if;
 
   v_title := 'Devis ' || v_quote.number || ' ' || case when p_accept then 'accepté' else 'refusé' end || ' en ligne';
-  select coalesce(c.name, '') || coalesce(' — ' || v.plate, '') into v_body
+  select coalesce(c.name, '') || coalesce(' · ' || v.plate, '') into v_body
   from public.quotes q left join public.clients c on c.id = q.client_id left join public.vehicles v on v.id = q.vehicle_id
   where q.id = v_quote.id;
 
@@ -1892,7 +1892,7 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Trop de tentatives, patiente une minute.');
   end if;
   if p_photo_file_id is null then
-    return jsonb_build_object('ok', false, 'message', 'Caméra indisponible — pointage impossible. Préviens le bureau.');
+    return jsonb_build_object('ok', false, 'message', 'Caméra indisponible : pointage impossible. Préviens le bureau.');
   end if;
 
   if coalesce(p_pin, '') ~ '^\d{4,6}$' then

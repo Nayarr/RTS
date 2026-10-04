@@ -185,12 +185,12 @@ function RentalView({ detail }: { detail: RentalDetail }) {
         />
         <Kpi
           icon={<Gauge className="i s" />}
-          value={engine && present(departure?.mileage) ? departure.mileage.toLocaleString('fr-FR') : '—'}
+          value={engine && present(departure?.mileage) ? departure.mileage.toLocaleString('fr-FR') : '-'}
           label={`Km au départ${rental.km_included ? ` · ${rental.km_included} km inclus` : ''}`}
         />
         <Kpi
           icon={<Fuel className="i s" />}
-          value={engine ? fuelLabel(departure?.fuel_eighths) : '—'}
+          value={engine ? fuelLabel(departure?.fuel_eighths) : '-'}
           label="Carburant au départ"
         />
         <Kpi
@@ -216,18 +216,18 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                 <dt>Nom</dt>
                 <dd>{client.name}</dd>
                 <dt>Téléphone</dt>
-                <dd>{client.phone ?? '—'}</dd>
+                <dd>{client.phone ?? '-'}</dd>
                 <dt>E-mail</dt>
-                <dd>{client.email ?? '—'}</dd>
+                <dd>{client.email ?? '-'}</dd>
                 <dt>Permis</dt>
                 <dd>
                   {license
-                    ? `${license.license_number ?? '—'} · ${license.categories.join(' · ')}${
+                    ? `${license.license_number ?? '-'} · ${license.categories.join(' · ')}${
                         license.valid_until
                           ? ` · jusqu’au ${license.valid_until.split('-').reverse().join('/')}`
                           : ''
                       }`
-                    : '—'}
+                    : '-'}
                 </dd>
               </dl>
             </section>
@@ -317,7 +317,7 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                     {engine && (
                       <>
                         <span className="row gap-1.5">
-                          <Gauge className="i xs" /> {inspection?.mileage?.toLocaleString('fr-FR') ?? '—'} km
+                          <Gauge className="i xs" /> {inspection?.mileage?.toLocaleString('fr-FR') ?? '-'} km
                         </span>
                         <span className="row gap-1.5">
                           <Fuel className="i xs" /> {fuelLabel(inspection?.fuel_eighths)}
@@ -353,14 +353,14 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                   {formatEuro(rentalBase(rental))} HT
                 </dd>
                 <dt>Km inclus</dt>
-                <dd>{present(rental.km_included) ? `${rental.km_included} km` : '—'}</dd>
+                <dd>{present(rental.km_included) ? `${rental.km_included} km` : '-'}</dd>
                 <dt>Km supplémentaire</dt>
-                <dd>{present(rental.extra_km_price) ? `${formatEuro(rental.extra_km_price)} HT` : '—'}</dd>
+                <dd>{present(rental.extra_km_price) ? `${formatEuro(rental.extra_km_price)} HT` : '-'}</dd>
                 <dt>Carburant manquant</dt>
                 <dd>
                   {present(rental.fuel_price_per_liter)
                     ? `${formatEuro(rental.fuel_price_per_liter)} / L`
-                    : '—'}
+                    : '-'}
                 </dd>
                 <dt>Caution</dt>
                 <dd>
@@ -370,7 +370,7 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                     : ''}
                 </dd>
                 <dt>Franchise</dt>
-                <dd>{present(rental.franchise) ? formatEuro(rental.franchise) : '—'}</dd>
+                <dd>{present(rental.franchise) ? formatEuro(rental.franchise) : '-'}</dd>
               </dl>
             </section>
           )}
@@ -393,7 +393,7 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                   )}
                   <span className="c2">
                     <b className={cn(!step.done && 'font-medium')}>{step.label}</b>
-                    <span>{step.at ? `${step.done ? '' : 'prévu '}${shortDateTime(step.at)}` : '—'}</span>
+                    <span>{step.at ? `${step.done ? '' : 'prévu '}${shortDateTime(step.at)}` : '-'}</span>
                   </span>
                 </li>
               ))}

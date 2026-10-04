@@ -13,12 +13,12 @@ export interface KioskMessage {
 export const IDLE_MESSAGE: KioskMessage = { tone: 'info', title: 'Tape ton code PIN puis OK', resetAfter: 0 };
 export const CAMERA_MESSAGE: KioskMessage = {
   tone: 'error',
-  title: 'Caméra indisponible — pointage impossible. Préviens le bureau.',
+  title: 'Caméra indisponible : pointage impossible. Préviens le bureau.',
   resetAfter: 3500,
 };
 export const NETWORK_MESSAGE: KioskMessage = {
   tone: 'error',
-  title: 'Erreur réseau — réessaie',
+  title: 'Erreur réseau : réessaie',
   resetAfter: 2500,
 };
 

@@ -216,7 +216,7 @@ export function NewRepairOrderPage() {
                 ) : (
                   <p className="hint row gap-1.5 text-success!">
                     <CheckCircle2 className="i xs" />
-                    {`Véhicule connu${knownVehicle.client_name ? ` — ${knownVehicle.client_name}` : ''}.`}
+                    {`Véhicule connu${knownVehicle.client_name ? ` · ${knownVehicle.client_name}` : ''}.`}
                   </p>
                 ))}
 
@@ -288,7 +288,7 @@ export function NewRepairOrderPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={UNASSIGNED}>— Non assigné (à faire plus tard) —</SelectItem>
+                        <SelectItem value={UNASSIGNED}>· Non assigné (à faire plus tard) ·</SelectItem>
                         {(technicians.data ?? []).map((technician) => (
                           <SelectItem key={technician.id} value={technician.id}>
                             {technician.display_name}

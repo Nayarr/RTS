@@ -108,11 +108,11 @@ describe('rapport mensuel : règles', () => {
     expect(tables.figures).toContainEqual(['  avoirs déduits', '-100 €']);
     expect(tables.figures).toContainEqual(['Panier moyen HT', '1 254 €']);
     expect(tables.figures).toContainEqual(['Devis acceptés', '3']);
-    expect(tables.clients).toEqual([['Transports Dupont', '3', '2 500 €', '150 €', '—']]);
-    expect(tables.technicians).toEqual([['Alice', '94', '2 000 €', '3', '90 %', '—']]);
+    expect(tables.clients).toEqual([['Transports Dupont', '3', '2 500 €', '150 €', '-']]);
+    expect(tables.technicians).toEqual([['Alice', '94', '2 000 €', '3', '90 %', '-']]);
     expect(tables.overdueInvoices).toEqual([['F11890', 'Transports Dupont', '10/07/2026', '1 200 €']]);
     expect(tables.deadlines).toEqual([
-      ['AB-123-CD', '—', 'Contrôle technique', '20/09/2026', 'Dépassé'],
+      ['AB-123-CD', '-', 'Contrôle technique', '20/09/2026', 'Dépassé'],
       ['EF-456-GH', 'Logistique Martin', 'Contrôle hayon', '10/10/2026', 'À venir'],
     ]);
   });
@@ -128,7 +128,7 @@ describe('rapport mensuel : règles', () => {
       clients: [],
       technicians: [],
     });
-    expect(tables.figures).toContainEqual(['Panier moyen HT', '—']);
+    expect(tables.figures).toContainEqual(['Panier moyen HT', '-']);
     expect(tables.figures.some(([label]) => label?.includes('avoirs'))).toBe(false);
     expect(tables.clients[0]?.[0]).toBe('Aucune facture');
     expect(tables.overdueInvoices[0]?.[0]).toBe('Aucune facture en retard');

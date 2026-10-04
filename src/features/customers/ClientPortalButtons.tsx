@@ -91,7 +91,7 @@ export function ClientPortalButtons({ clientId, clientName }: { clientId: string
 
       {prepared && (
         <SendLinkDialog
-          title={`Espace client — ${clientName}`}
+          title={`Espace client · ${clientName}`}
           intro="Lien personnel et permanent vers l’espace de ce client : véhicules à l’atelier, devis à signer, factures et échéances. Il est toujours à jour."
           link={prepared.link}
           message={prepared.message}

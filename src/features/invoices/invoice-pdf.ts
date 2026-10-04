@@ -48,7 +48,7 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.text(
-    proforma ? 'Facture pro forma — document sans valeur comptable' : `Facture n° ${invoice.number ?? ''}`,
+    proforma ? 'Facture pro forma : document sans valeur comptable' : `Facture n° ${invoice.number ?? ''}`,
     MARGIN,
     y,
   );
@@ -56,14 +56,14 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   doc.setFontSize(9.5);
   doc.text(`${proforma ? 'Établie le : ' : 'Date d’émission : '}${pdfDate(issuedAt)}`, MARGIN, y + 6);
   doc.text(
-    `Date de la prestation : ${invoice.service_date ? pdfDate(isoDate(invoice.service_date)) : proforma ? pdfDate(now) : '—'}`,
+    `Date de la prestation : ${invoice.service_date ? pdfDate(isoDate(invoice.service_date)) : proforma ? pdfDate(now) : '-'}`,
     MARGIN,
     y + 11,
   );
   doc.text(`Date d’échéance : ${pdfDate(dueDate)}`, MARGIN, y + 16);
   doc.text(
     pdfText(
-      `Véhicule : ${invoice.vehicle_label ?? '—'}${invoice.mileage ? `  —  ${invoice.mileage} km` : ''}`,
+      `Véhicule : ${invoice.vehicle_label ?? '-'}${invoice.mileage ? `  ·  ${invoice.mileage} km` : ''}`,
     ),
     MARGIN,
     y + 21,
@@ -78,7 +78,7 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   doc.rect(cx - 3, y - 5, PAGE_W - MARGIN - cx + 3, 32);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10.5);
-  doc.text(pdfText(client.name || '—'), cx, y + 1, { maxWidth: PAGE_W - MARGIN - cx });
+  doc.text(pdfText(client.name || '-'), cx, y + 1, { maxWidth: PAGE_W - MARGIN - cx });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   const address = doc.splitTextToSize(
@@ -102,11 +102,11 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
       ];
     }
     const row: CellInput[] = [
-      pdfText(line.description) || '—',
+      pdfText(line.description) || '-',
       pdfMoney(line.unit_price ?? 0),
       String(line.quantity),
     ];
-    if (hasDiscount) row.push(line.discount_percent > 0 ? `${line.discount_percent} %` : '—');
+    if (hasDiscount) row.push(line.discount_percent > 0 ? `${line.discount_percent} %` : '-');
     row.push(pdfMoney(lineNet(line)));
     return row;
   });
@@ -214,15 +214,15 @@ export async function buildCreditNotePdf({ creditNote, invoice, company, logo }:
   doc.text(`Date : ${pdfDate(new Date(creditNote.issued_at))}`, MARGIN, y);
   y += 6;
   doc.text(
-    `En déduction de la facture n° ${invoice.number ?? '—'}${invoice.issued_at ? ` du ${pdfDate(new Date(invoice.issued_at))}` : ''}`,
+    `En déduction de la facture n° ${invoice.number ?? '-'}${invoice.issued_at ? ` du ${pdfDate(new Date(invoice.issued_at))}` : ''}`,
     MARGIN,
     y,
   );
   y += 8;
   doc.setFont('helvetica', 'bold');
-  doc.text(pdfText(`Client : ${invoice.client_name ?? '—'}`), MARGIN, y);
+  doc.text(pdfText(`Client : ${invoice.client_name ?? '-'}`), MARGIN, y);
   y += 6;
-  doc.text(pdfText(`Véhicule : ${invoice.vehicle_label ?? '—'}`), MARGIN, y);
+  doc.text(pdfText(`Véhicule : ${invoice.vehicle_label ?? '-'}`), MARGIN, y);
   y += 10;
 
   y =

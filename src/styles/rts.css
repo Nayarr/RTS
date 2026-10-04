@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Refonte graphique (maquette Claude Design « RTS — Refonte graphique ») :
+   Refonte graphique (maquette Claude Design « RTS · Refonte graphique ») :
    composants partagés, repris de la feuille rts.css de la maquette.
    Couche « components » : les utilitaires Tailwind passent toujours devant.
    --------------------------------------------------------------------------- */
@@ -1340,7 +1340,7 @@
     flex-shrink: 0;
   }
 
-  /* Technicien : onglets en bas de l'écran (maquette « Technicien — Mes OR ») */
+  /* Technicien : onglets en bas de l'écran (maquette « Technicien : Mes OR ») */
   .tabbar {
     position: fixed;
     left: 0;

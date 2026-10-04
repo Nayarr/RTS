@@ -89,7 +89,7 @@ export function groupByClient(rows: ProfitabilityRow[]) {
   const clients = new Map<string, ClientProfitability>();
   const total = { ...emptyFigures(), unpaid_ttc: 0 };
   for (const row of rows) {
-    const key = row.client_id ?? '—';
+    const key = row.client_id ?? '-';
     let client = clients.get(key);
     if (!client) {
       client = {

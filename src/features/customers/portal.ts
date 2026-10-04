@@ -50,7 +50,7 @@ export function portalMessage(
 ): SendLinkMessage {
   const signature = [company.legal_name, company.email].filter(Boolean).join('\n');
   return {
-    subject: `Votre espace client — ${company.legal_name}`,
+    subject: `Votre espace client · ${company.legal_name}`,
     body:
       'Bonjour,\n\nVous pouvez suivre en ligne vos véhicules en cours à l’atelier, vos devis, vos factures ' +
       'et les échéances de contrôle technique et de contrôle hayon de votre flotte :\n\n' +

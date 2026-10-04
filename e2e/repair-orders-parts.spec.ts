@@ -99,7 +99,7 @@ test('la réception suit pièces, sous-traitance et consommables ; le technicien
   await useDialog.getByLabel('Produit').selectOption(adblue ?? '');
   await useDialog.getByLabel('Quantité').fill('12,5');
   await useDialog.getByRole('button', { name: 'Ajouter' }).click();
-  await expect(consumables.getByText(/AdBlue — 12,5 L/)).toBeVisible();
+  await expect(consumables.getByText(/AdBlue · 12,5 L/)).toBeVisible();
   await consumables.getByRole('button', { name: 'Retirer AdBlue' }).click();
   await expect(consumables.getByText('Aucun consommable noté.')).toBeVisible();
   await logout(page);

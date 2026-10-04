@@ -89,7 +89,7 @@ function ChipRow({
 
 const FLUID_OPTIONS: ChipOption[] = [
   { value: 'bon', label: 'Niveau bon', color: '' },
-  { value: 'manque', label: 'Manque — appoint fait', color: '' },
+  { value: 'manque', label: 'Manque · appoint fait', color: '' },
 ];
 
 /** Taille de pneu au format « 315/70/22.5 » pendant la saisie. */

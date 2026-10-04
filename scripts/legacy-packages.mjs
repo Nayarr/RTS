@@ -110,7 +110,7 @@ const sqlNumber = (value) => (value === null ? 'null' : String(value));
 export function packagesSql(rows, { source, exportedAt } = {}) {
   const lines = [
     '-- Forfaits repris de l’ancienne appli RTS Atelier.',
-    `-- Source : ${source ?? 'sauvegarde JSON'}${exportedAt ? ` (exportée le ${exportedAt})` : ''} — ${rows.length} forfait(s).`,
+    `-- Source : ${source ?? 'sauvegarde JSON'}${exportedAt ? ` (exportée le ${exportedAt})` : ''} · ${rows.length} forfait(s).`,
     '-- Rejouable sans doublon : mise à jour par identifiant de l’ancienne appli (legacy_id).',
     'begin;',
     '',

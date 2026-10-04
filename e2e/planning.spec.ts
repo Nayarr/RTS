@@ -94,7 +94,7 @@ test('un OR est placé au planning d’un technicien', async ({ page }, testInfo
   const dialog = page.getByRole('dialog', { name: 'Assigner un OR' });
   await dialog
     .getByLabel('Ordre de réparation')
-    .selectOption({ label: `${order.number} — ${plate} — Client assigné ${id}` });
+    .selectOption({ label: `${order.number} · ${plate} · Client assigné ${id}` });
   await dialog.getByLabel('Heure de début').fill('14:00');
   await dialog.getByLabel('Heure de fin').fill('16:00');
   await dialog.getByRole('button', { name: 'Assigner au planning' }).click();

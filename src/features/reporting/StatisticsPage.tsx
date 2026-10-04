@@ -28,7 +28,7 @@ export function StatisticsPage() {
         <>
           <ul className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
             <li className="card kpi">
-              <span className="kpi-l">CA HT — 12 derniers mois</span>
+              <span className="kpi-l">CA HT · 12 derniers mois</span>
               <span className="kpi-v">{formatEuroRounded(total)}</span>
             </li>
             <li className="card kpi">
@@ -51,7 +51,7 @@ export function StatisticsPage() {
           <section data-slot="card" className="card" aria-labelledby="stats-chart">
             <div className="card-h flex-wrap">
               <h2 className="h2" id="stats-chart">
-                Chiffre d’affaires HT — 12 derniers mois
+                Chiffre d’affaires HT · 12 derniers mois
               </h2>
               <span className="row gap-3.5 text-[12.5px] text-muted-foreground">
                 <span className="row gap-1.5">
@@ -122,7 +122,7 @@ export function StatisticsPage() {
                     <td className="r num">{formatEuroRounded(m.parts_ht)}</td>
                     <td className="r num">{formatEuroRounded(m.parts_margin_ht)}</td>
                     <td className={`r num ${m.credit_notes_ht > 0 ? 'down' : ''}`}>
-                      {m.credit_notes_ht > 0 ? `−${formatEuroRounded(m.credit_notes_ht)}` : '—'}
+                      {m.credit_notes_ht > 0 ? `−${formatEuroRounded(m.credit_notes_ht)}` : '-'}
                     </td>
                     <td className="r num b">{formatEuroRounded(m.total_ht)}</td>
                   </tr>

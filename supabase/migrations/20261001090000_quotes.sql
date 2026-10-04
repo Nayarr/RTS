@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Devis (bureau)
+-- RTS Atelier : Devis (bureau)
 --   - devis sans OR : client et véhicule retrouvés ou créés à la volée ;
 --   - réponse du client saisie par le bureau (accord oral, bon signé) ;
 --   - devis accepté figé.

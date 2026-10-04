@@ -207,7 +207,7 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
           <div className="space-y-2">
             <Label htmlFor="appointment-technician">Technicien (facultatif)</Label>
             <select id="appointment-technician" className={selectClass} {...register('technician_id')}>
-              <option value="">— À assigner —</option>
+              <option value="">À assigner</option>
               {(technicians.data ?? []).map((technician) => (
                 <option key={technician.id} value={technician.id}>
                   {technician.display_name}

@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 09. Tâches planifiées (pg_cron) : alertes et purges
+-- RTS Atelier : 09. Tâches planifiées (pg_cron) : alertes et purges
 -- =============================================================================
 -- Remplace la logique qui tournait dans le navigateur de la direction
 -- (alertes stockées dans le localStorage, purge des photos au chargement).
@@ -23,7 +23,7 @@ begin
   insert into public.notifications (recipient_role, type, title, body, repair_order_id, link, dedupe_key)
   select 'direction', 'late_repair_order',
          'Retard atelier : ' || v.plate,
-         'Fin prévue à ' || to_char(r.planned_end, 'HH24:MI') || ' (' || coalesce(t.display_name, '—') || '), OR toujours '
+         'Fin prévue à ' || to_char(r.planned_end, 'HH24:MI') || ' (' || coalesce(t.display_name, '-') || '), OR toujours '
            || lower(public.repair_order_status_label(r.status)),
          r.id, '/or/' || r.id, 'late-ro-' || r.id || '-' || v_today
   from public.repair_orders r
@@ -59,7 +59,7 @@ begin
   insert into public.notifications (recipient_role, type, title, body, link, dedupe_key)
   select 'direction', 'appointment_reminder',
          'Rappel à envoyer : RDV demain ' || to_char(a.start_time, 'HH24:MI'),
-         coalesce(c.name, '') || coalesce(' — ' || v.plate, ''),
+         coalesce(c.name, '') || coalesce(' · ' || v.plate, ''),
          '/rendez-vous', 'appt-reminder-' || a.id
   from public.appointments a
   left join public.clients c on c.id = a.client_id
@@ -72,7 +72,7 @@ begin
   insert into public.notifications (recipient_role, type, title, body, repair_order_id, link, dedupe_key)
   select 'direction', 'late_subcontract',
          'Sous-traitance en retard : ' || s.service,
-         sp.name || ' — ' || v.plate || ', retour prévu le ' || to_char(s.expected_return_on, 'DD/MM/YYYY'),
+         sp.name || ' · ' || v.plate || ', retour prévu le ' || to_char(s.expected_return_on, 'DD/MM/YYYY'),
          r.id, '/or/' || r.id, 'subcontract-' || s.id || '-' || v_today
   from public.subcontracts s
   join public.suppliers sp on sp.id = s.supplier_id
@@ -86,7 +86,7 @@ begin
   insert into public.notifications (recipient_role, type, title, body, link, dedupe_key)
   select 'direction', 'contract_service_due',
          'Entretien à planifier : ' || s.plate,
-         coalesce(c.name, '') || ' — contrat ' || coalesce(nullif(mc.service_description, ''), 'd''entretien'),
+         coalesce(c.name, '') || ' · contrat ' || coalesce(nullif(mc.service_description, ''), 'd''entretien'),
          '/contrats', 'contract-' || s.contract_id || '-' || s.vehicle_id || '-' || v_month
   from public.v_contract_vehicle_status s
   join public.maintenance_contracts mc on mc.id = s.contract_id
@@ -110,7 +110,7 @@ begin
   insert into public.notifications (recipient_role, type, title, body, link, dedupe_key)
   select 'direction', 'overdue_invoice',
          'Facture en retard : ' || b.number,
-         coalesce(b.client_name, '') || ' — reste dû ' || to_char(b.balance_due, 'FM999G999G990D00') || ' € TTC',
+         coalesce(b.client_name, '') || ' · reste dû ' || to_char(b.balance_due, 'FM999G999G990D00') || ' € TTC',
          '/factures/' || b.invoice_id, 'invoice-overdue-' || b.invoice_id
   from public.v_invoice_balances b
   where b.payment_status = 'overdue'

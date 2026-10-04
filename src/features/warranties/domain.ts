@@ -32,7 +32,7 @@ export function warrantyStats(claims: WarrantyClaim[]) {
   const open = claims.filter(isOpenClaim);
   const counts = new Map<string, number>();
   for (const claim of claims) {
-    const key = `${claim.supplier_name ?? '—'}${claim.brand ? ` / ${claim.brand}` : ''}`;
+    const key = `${claim.supplier_name ?? '-'}${claim.brand ? ` / ${claim.brand}` : ''}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return {

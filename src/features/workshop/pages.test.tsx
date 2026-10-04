@@ -264,7 +264,7 @@ describe('fiche OR technicien', () => {
     const [forfait, extincteur] = within(done).getAllByRole('combobox', { name: 'Temps réel' });
     expect(forfait).toBeEnabled();
     expect(forfait).toHaveValue('');
-    expect(forfait).toHaveAccessibleDescription('Devis : 1,5 h (facturé) — indique le temps réel passé');
+    expect(forfait).toHaveAccessibleDescription('Devis : 1,5 h (facturé) · indique le temps réel passé');
     expect(extincteur).toHaveValue('0.5h');
     await userEvent.selectOptions(forfait!, '2h');
     expect(updateLine).toHaveBeenCalledWith('q1', { estimated_hours: 2, estimate_is_minimum: false });

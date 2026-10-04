@@ -137,7 +137,7 @@ describe('pointages : écran', () => {
     expect(within(bruno).getByText('Retard : 40 min')).toBeInTheDocument();
     expect(within(bruno).getByText('Heures sup. : 0h45')).toBeInTheDocument();
     expect(within(bruno).getByText(/Congés payés/)).toHaveTextContent(
-      'Congés payés — a badgé pendant son absence',
+      'Congés payés : a badgé pendant son absence',
     );
     expect(within(bruno).getByRole('link', { name: 'Pas de code PIN' })).toHaveAttribute('href', '/equipe');
   });
@@ -145,7 +145,7 @@ describe('pointages : écran', () => {
   it('photo agrandie', async () => {
     renderPage();
     await userEvent.click(await screen.findByRole('button', { name: 'Photo : Arrivée 08:57' }));
-    const dialog = screen.getByRole('dialog', { name: 'Alice — arrivée 08:57' });
+    const dialog = screen.getByRole('dialog', { name: 'Alice · arrivée 08:57' });
     expect(await within(dialog).findByRole('img')).toHaveAttribute('src', 'https://r2/f1.jpg');
   });
 

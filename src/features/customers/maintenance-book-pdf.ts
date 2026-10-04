@@ -21,10 +21,10 @@ export function maintenanceBookRows({ orders, lines, invoiceNumbers }: VehicleDe
     return [
       pdfDate(new Date(order.created_at)),
       order.number,
-      order.mileage ? pdfText(order.mileage.toLocaleString('fr-FR')) : '—',
-      cell(work.length ? work : [order.requested_work || '—']),
-      cell(parts.length ? parts : ['—']),
-      invoiceNumbers[order.id]?.join('\n') ?? '—',
+      order.mileage ? pdfText(order.mileage.toLocaleString('fr-FR')) : '-',
+      cell(work.length ? work : [order.requested_work || '-']),
+      cell(parts.length ? parts : ['-']),
+      invoiceNumbers[order.id]?.join('\n') ?? '-',
     ];
   });
 }
@@ -47,8 +47,8 @@ export async function buildMaintenanceBookPdf(
   doc.text(pdfText(`Véhicule : ${vehicle.plate}`), MARGIN, y);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(pdfText(`Client : ${vehicle.client_name ?? '—'}`), MARGIN, y + 6);
-  doc.text(`Édité le ${pdfDate(now)} — ${orders.length} intervention(s)`, MARGIN, y + 12);
+  doc.text(pdfText(`Client : ${vehicle.client_name ?? '-'}`), MARGIN, y + 6);
+  doc.text(`Édité le ${pdfDate(now)} · ${orders.length} intervention(s)`, MARGIN, y + 12);
   doc.text(
     pdfText(
       `${DEADLINE_LABELS.ct} : ${frenchDate(vehicle.ct_due_date)}    ${DEADLINE_LABELS.tailgate} : ${frenchDate(vehicle.tailgate_due_date)}`,

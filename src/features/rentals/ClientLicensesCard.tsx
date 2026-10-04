@@ -90,13 +90,13 @@ export function ClientLicensesCard({ client }: { client: ClientIdentity }) {
               </div>
               <dl className="dl">
                 <dt>N°</dt>
-                <dd>{own.license_number ?? '—'}</dd>
+                <dd>{own.license_number ?? '-'}</dd>
                 <dt>Catégories</dt>
-                <dd>{own.categories.length ? own.categories.join(' · ') : '—'}</dd>
+                <dd>{own.categories.length ? own.categories.join(' · ') : '-'}</dd>
                 <dt>Délivré le</dt>
-                <dd>{own.issued_on ? formatDate(own.issued_on) : '—'}</dd>
+                <dd>{own.issued_on ? formatDate(own.issued_on) : '-'}</dd>
                 <dt>Valide jusqu’au</dt>
-                <dd>{own.valid_until ? formatDate(own.valid_until) : '—'}</dd>
+                <dd>{own.valid_until ? formatDate(own.valid_until) : '-'}</dd>
               </dl>
               <Button variant="outline" size="sm" className="self-start" onClick={() => setEditing(own)}>
                 <Pencil /> Modifier le permis

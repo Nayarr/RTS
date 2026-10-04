@@ -41,11 +41,11 @@ function FigureCells({ figures, unpaid }: { figures: ProfitabilityFigures; unpai
       <td className="r num">{hours(figures.billed_hours)}</td>
       <td className="r num">{hours(figures.worked_hours)}</td>
       <td className={cn('r num b', GAP_CLASS[gapTone(gap)])}>
-        {gap === null ? '—' : `${gap > 0 ? '+' : ''}${Math.round(gap)} %`}
+        {gap === null ? '-' : `${gap > 0 ? '+' : ''}${Math.round(gap)} %`}
       </td>
-      <td className="r num">{rate === null ? '—' : `${formatEuroRounded(rate)}/h`}</td>
+      <td className="r num">{rate === null ? '-' : `${formatEuroRounded(rate)}/h`}</td>
       <td className={cn('r num', unpaid ? 'down' : 'muted')}>
-        {unpaid === undefined ? '' : unpaid > 0 ? formatEuroRounded(unpaid) : '—'}
+        {unpaid === undefined ? '' : unpaid > 0 ? formatEuroRounded(unpaid) : '-'}
       </td>
     </>
   );
@@ -100,7 +100,7 @@ export function ProfitabilityPage() {
             </thead>
             <tbody>
               {clients.map((client) => {
-                const key = client.client_id ?? '—';
+                const key = client.client_id ?? '-';
                 const expanded = open.has(key);
                 return [
                   <tr key={key}>

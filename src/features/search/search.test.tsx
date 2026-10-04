@@ -92,13 +92,13 @@ describe('recherche globale : règles', () => {
       'Factures',
     ]);
     expect(sections.map((s) => s.items[0])).toMatchObject([
-      { to: '/or/ro1', title: 'OR00012 — AB-123-CD', detail: 'Transports Dupont — En cours — 20/09/2026' },
+      { to: '/or/ro1', title: 'OR00012 · AB-123-CD', detail: 'Transports Dupont · En cours · 20/09/2026' },
       { to: '/clients/c1', title: 'Transports Dupont', detail: '06 12 34 56 78' },
-      { to: '/vehicules/v1', title: 'AB-123-CD', detail: 'PL — Renault Trucks T 480 — Transports Dupont' },
-      { to: '/devis/q1', title: 'Devis sans numéro — AB-123-CD' },
-      { to: '/factures/i1', title: 'F11890 — AB-123-CD' },
+      { to: '/vehicules/v1', title: 'AB-123-CD', detail: 'PL · Renault Trucks T 480 · Transports Dupont' },
+      { to: '/devis/q1', title: 'Devis sans numéro · AB-123-CD' },
+      { to: '/factures/i1', title: 'F11890 · AB-123-CD' },
     ]);
-    expect(sections[4]?.items[0]?.detail).toMatch(/Transports Dupont — 22\/09\/2026 — 1\s200,00\s€ TTC/);
+    expect(sections[4]?.items[0]?.detail).toMatch(/Transports Dupont · 22\/09\/2026 · 1\s200,00\s€ TTC/);
     expect(searchSections({ ...empty, clients: results.clients }).map((s) => s.title)).toEqual(['Clients']);
   });
 });

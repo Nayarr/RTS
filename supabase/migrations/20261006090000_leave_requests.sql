@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Congés et absences
+-- RTS Atelier : Congés et absences
 --   - le technicien demande un congé (en attente) ; la direction saisit une absence
 --     directement validée, ou valide / refuse les demandes ;
 --   - pas deux absences qui se chevauchent pour un même technicien ;

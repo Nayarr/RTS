@@ -492,7 +492,7 @@ function RatesStep({ detail }: { detail: RentalDetail }) {
               value={values.deposit_mode}
               onChange={set('deposit_mode')}
             >
-              <option value="">—</option>
+              <option value="">-</option>
               {DEPOSIT_MODES.map((mode) => (
                 <option key={mode.value} value={mode.value}>
                   {mode.label}

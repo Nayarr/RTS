@@ -47,7 +47,7 @@ export function quoteShareMessage(
     .join('\n');
   const vehicle = quote.plate ? ` pour le véhicule ${quote.plate}` : '';
   return {
-    subject: `Devis ${quote.number ?? ''} — ${company.legal_name}`,
+    subject: `Devis ${quote.number ?? ''} · ${company.legal_name}`,
     body:
       `Bonjour,\n\nVeuillez trouver ci-dessous le lien vers votre devis ${quote.number ?? ''}${vehicle}. ` +
       `Vous pouvez le consulter et l'accepter en ligne en le signant :\n\n${link}\n\nCordialement,\n${signature}`,

@@ -62,8 +62,8 @@ Deno.test('taille réelle des pièces jointes en base64', () => {
 
 Deno.test('expéditeur au nom de l’atelier, sans caractère dangereux', () => {
   assertEquals(
-    senderAddress('RAPID TRUCK SERVICE', 'atelier@cylindre.fr'),
-    'RAPID TRUCK SERVICE <atelier@cylindre.fr>',
+    senderAddress('RAPID TRUCK SERVICE', 'atelier@rapidtruckservice.fr'),
+    'RAPID TRUCK SERVICE <atelier@rapidtruckservice.fr>',
   );
   assertEquals(senderAddress('Garage "Le <Pro>"\r\n', 'a@b.fr'), 'Garage Le Pro <a@b.fr>');
   assertEquals(senderAddress('', 'a@b.fr'), 'a@b.fr');
@@ -71,10 +71,13 @@ Deno.test('expéditeur au nom de l’atelier, sans caractère dangereux', () => 
 
 Deno.test('HTML : texte échappé, liens cliquables, retours à la ligne', () => {
   const html = textToHtml(
-    'Bonjour <client>,\n\nVotre facture : https://app.cylindre.fr/d/abc\nMerci & à bientôt',
+    'Bonjour <client>,\n\nVotre facture : https://atelier.rapidtruckservice.fr/d/abc\nMerci & à bientôt',
   );
   assertStringIncludes(html, 'Bonjour &lt;client&gt;,<br>');
-  assertStringIncludes(html, '<a href="https://app.cylindre.fr/d/abc">https://app.cylindre.fr/d/abc</a>');
+  assertStringIncludes(
+    html,
+    '<a href="https://atelier.rapidtruckservice.fr/d/abc">https://atelier.rapidtruckservice.fr/d/abc</a>',
+  );
   assertStringIncludes(html, 'Merci &amp; à bientôt');
 });
 
@@ -88,9 +91,9 @@ Deno.test('requête Resend : expéditeur, réponse vers l’atelier, pièces joi
       idempotency_key: KEY,
       attachments: [{ filename: 'F00012.pdf', content: 'JVBERi0=' }],
     },
-    { name: 'RTS', address: 'atelier@cylindre.fr', replyTo: 'contact@rts.fr' },
+    { name: 'RTS', address: 'atelier@rapidtruckservice.fr', replyTo: 'contact@rts.fr' },
   );
-  assertEquals(payload.from, 'RTS <atelier@cylindre.fr>');
+  assertEquals(payload.from, 'RTS <atelier@rapidtruckservice.fr>');
   assertEquals(payload.to, ['client@exemple.fr']);
   assertEquals(payload.reply_to, 'contact@rts.fr');
   assertEquals(payload.attachments, [{ filename: 'F00012.pdf', content: 'JVBERi0=' }]);
@@ -104,7 +107,7 @@ Deno.test('requête Resend : expéditeur, réponse vers l’atelier, pièces joi
       idempotency_key: KEY,
       attachments: [],
     },
-    { name: 'RTS', address: 'atelier@cylindre.fr', replyTo: null },
+    { name: 'RTS', address: 'atelier@rapidtruckservice.fr', replyTo: null },
   );
   assertEquals('reply_to' in bare, false);
   assertEquals('attachments' in bare, false);
@@ -125,7 +128,7 @@ Deno.test('adresse d’envoi selon le type de message, domaine des réglages', (
     mail_workshop_local: 'atelier',
     mail_signature_local: 'signature',
   };
-  const fallback = { from: 'atelier@cylindre.fr', replyTo: 'contact@rts.fr' };
+  const fallback = { from: 'atelier@rapidtruckservice.fr', replyTo: 'contact@rts.fr' };
   assertEquals(senderFor('billing', settings, fallback), {
     address: 'facturation@rapidtruckservice.fr',
     replyTo: 'facturation@rapidtruckservice.fr',
@@ -134,7 +137,7 @@ Deno.test('adresse d’envoi selon le type de message, domaine des réglages', (
   assertEquals(senderFor('signature', settings, fallback)?.address, 'signature@rapidtruckservice.fr');
   // Sans domaine : adresse unique du secret, réponses vers l'e-mail de l'entreprise
   assertEquals(senderFor('billing', { ...settings, mail_domain: null }, fallback), {
-    address: 'atelier@cylindre.fr',
+    address: 'atelier@rapidtruckservice.fr',
     replyTo: 'contact@rts.fr',
   });
   assertEquals(

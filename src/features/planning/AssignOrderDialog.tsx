@@ -63,7 +63,7 @@ export function AssignOrderDialog({ date, technicians, technicianId, onClose }: 
           <DialogTitle>Assigner un OR</DialogTitle>
           <DialogDescription>
             {dayLabel(date)}
-            {technician ? ` — ${technician.display_name}` : ''}
+            {technician ? ` · ${technician.display_name}` : ''}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -81,11 +81,11 @@ export function AssignOrderDialog({ date, technicians, technicianId, onClose }: 
               aria-invalid={errors.repair_order_id ? true : undefined}
               {...register('repair_order_id')}
             >
-              <option value="">{orders.isPending ? 'Chargement…' : '— Choisir un OR —'}</option>
+              <option value="">{orders.isPending ? 'Chargement…' : 'Choisir un OR…'}</option>
               {(orders.data ?? []).map((order) => (
                 <option key={order.id} value={order.id}>
-                  {order.number} — {order.plate}
-                  {order.client_name ? ` — ${order.client_name}` : ''}
+                  {order.number} · {order.plate}
+                  {order.client_name ? ` · ${order.client_name}` : ''}
                 </option>
               ))}
             </select>
@@ -102,7 +102,7 @@ export function AssignOrderDialog({ date, technicians, technicianId, onClose }: 
                 aria-invalid={errors.technician_id ? true : undefined}
                 {...register('technician_id')}
               >
-                <option value="">— Choisir —</option>
+                <option value="">Choisir…</option>
                 {technicians.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.display_name}

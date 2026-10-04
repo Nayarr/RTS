@@ -153,9 +153,9 @@ export function TimesheetPage() {
                         {formatHoursMinutes(total.overtimeSeconds)}
                       </td>
                       <td className="r num">
-                        {total.lates ? `${plural(total.lates, 'retard')} (${total.lateMinutes} min)` : '—'}
+                        {total.lates ? `${plural(total.lates, 'retard')} (${total.lateMinutes} min)` : '-'}
                       </td>
-                      <td className="r num">{total.absenceDays ? `${total.absenceDays} j` : '—'}</td>
+                      <td className="r num">{total.absenceDays ? `${total.absenceDays} j` : '-'}</td>
                       <td>
                         <div className="bar" aria-hidden>
                           <i style={{ width: `${(total.seconds / maxSeconds) * 100}%` }} />

@@ -67,7 +67,7 @@ export function StockDialog({ consumable, action, onClose }: StockDialogProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {copy.title} — {consumable.name}
+            {copy.title} · {consumable.name}
           </DialogTitle>
           <DialogDescription>
             Stock actuel : {formatQuantity(consumable.stock_qty)} {consumable.unit}. {copy.description}
