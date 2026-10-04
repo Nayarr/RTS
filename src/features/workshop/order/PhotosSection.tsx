@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Camera, CheckCircle2, FileImage, Loader2, Wrench, X } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { PhotoViewer } from '@/components/PhotoViewer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFileUrls } from '@/features/files/hooks';
@@ -20,15 +21,20 @@ export function PhotosSection({
   requiredLabels,
   capture,
   locked,
+  plate,
+  number,
 }: {
   repairOrderId: string;
   photos: RoPhoto[];
   requiredLabels: string[];
   capture: PhotoCapture;
   locked: boolean;
+  plate?: string | null | undefined;
+  number?: string | undefined;
 }) {
   const urls = useFileUrls(photos.map((photo) => photo.file_id));
   const [toDelete, setToDelete] = useState<RoPhoto | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
   const remove = useWorkshopMutation(
     repairOrderId,
     (photo: RoPhoto) => deletePhoto(photo.id),
@@ -93,11 +99,18 @@ export function PhotosSection({
             return (
               <li key={photo.id} className="relative">
                 {url ? (
-                  <img
-                    src={url}
-                    alt={photo.label}
-                    className="aspect-4/3 w-full rounded-[7px] border object-cover"
-                  />
+                  <button
+                    type="button"
+                    className="block w-full"
+                    aria-label={`Voir la photo « ${photo.label} » en grand`}
+                    onClick={() => setOpen(photos.indexOf(photo))}
+                  >
+                    <img
+                      src={url}
+                      alt={photo.label}
+                      className="aspect-4/3 w-full rounded-[7px] border object-cover"
+                    />
+                  </button>
                 ) : (
                   <Skeleton className="aspect-4/3 w-full rounded-[7px]" />
                 )}
@@ -116,6 +129,22 @@ export function PhotosSection({
             );
           })}
         </ul>
+      )}
+      {open !== null && (
+        <PhotoViewer
+          photos={photos.map((photo) => ({
+            id: photo.id,
+            url: urls.data?.[photo.file_id] ?? null,
+            label: photo.label,
+            takenAt: photo.taken_at,
+            author: photo.author_name,
+          }))}
+          startIndex={open}
+          plate={plate}
+          title="Photos de l’OR"
+          reference={number}
+          onClose={() => setOpen(null)}
+        />
       )}
       <ConfirmDialog
         open={toDelete !== null}

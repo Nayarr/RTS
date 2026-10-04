@@ -1,12 +1,25 @@
+import { useState } from 'react';
 import { Camera, ImageOff, TriangleAlert } from 'lucide-react';
+import { PhotoViewer } from '@/components/PhotoViewer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFileUrls } from '@/features/files/hooks';
 import type { RoPhoto } from '../api';
 import { formatDateTime } from '../constants';
 
-/** Photos de l'OR (URL signées demandées en un seul appel) et photos obligatoires manquantes. */
-export function PhotosCard({ photos, missingLabels }: { photos: RoPhoto[]; missingLabels: string[] }) {
+/** Photos de l'OR (URL signées demandées en un seul appel), visionneuse et photos obligatoires manquantes. */
+export function PhotosCard({
+  photos,
+  missingLabels,
+  plate,
+  number,
+}: {
+  photos: RoPhoto[];
+  missingLabels: string[];
+  plate?: string | null | undefined;
+  number?: string | undefined;
+}) {
   const urls = useFileUrls(photos.map((photo) => photo.file_id));
+  const [open, setOpen] = useState<number | null>(null);
 
   return (
     <section data-slot="card" className="card" aria-labelledby="ro-photos">
@@ -38,14 +51,19 @@ export function PhotosCard({ photos, missingLabels }: { photos: RoPhoto[]; missi
                   {urls.isPending ? (
                     <Skeleton className="h-[92px] w-full" />
                   ) : url ? (
-                    <a href={url} target="_blank" rel="noreferrer" title="Ouvrir en grand">
+                    <button
+                      type="button"
+                      className="block w-full cursor-zoom-in"
+                      aria-label={`Voir la photo « ${photo.label} » en grand`}
+                      onClick={() => setOpen(photos.indexOf(photo))}
+                    >
                       <img
                         src={url}
                         alt={photo.label}
                         loading="lazy"
                         className="h-[92px] w-full rounded-[7px] border object-cover"
                       />
-                    </a>
+                    </button>
                   ) : (
                     <div className="photo h-[92px]">
                       <ImageOff className="i" aria-label={`${photo.label} (indisponible)`} />
@@ -69,6 +87,22 @@ export function PhotosCard({ photos, missingLabels }: { photos: RoPhoto[]; missi
           </ul>
         )}
       </div>
+      {open !== null && (
+        <PhotoViewer
+          photos={photos.map((photo) => ({
+            id: photo.id,
+            url: urls.data?.[photo.file_id] ?? null,
+            label: photo.label,
+            takenAt: photo.taken_at,
+            author: photo.author_name,
+          }))}
+          startIndex={open}
+          plate={plate}
+          title="Photos de l’OR"
+          reference={number}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </section>
   );
 }

@@ -141,7 +141,12 @@ export function RepairOrderPage() {
           {supplies.isError && (
             <p className="text-destructive">Impossible de charger la sous-traitance et les consommables.</p>
           )}
-          <PhotosCard photos={photos} missingLabels={order.missing_photo_labels} />
+          <PhotosCard
+            photos={photos}
+            missingLabels={order.missing_photo_labels}
+            plate={order.plate}
+            number={order.number}
+          />
           <InspectionCard data={inspection} />
         </div>
         <div className="col gap-5">
