@@ -69,7 +69,15 @@ async function reservedContract(id: string) {
  */
 async function simulateMailService(page: Page, response: { status: number; body: unknown }) {
   await page.route('**/rest/v1/app_settings?select=mail_send_enabled*', (route) =>
-    route.fulfill({ json: { mail_send_enabled: true } }),
+    route.fulfill({
+      json: {
+        mail_send_enabled: true,
+        mail_domain: 'rapidtruckservice.fr',
+        mail_billing_local: 'facturation',
+        mail_workshop_local: 'atelier',
+        mail_signature_local: 'signature',
+      },
+    }),
   );
   const requests: Record<string, unknown>[] = [];
   await page.route('**/functions/v1/mail-send', async (route) => {
@@ -79,7 +87,9 @@ async function simulateMailService(page: Page, response: { status: number; body:
   return requests;
 }
 
-test('direction : l’envoi des e-mails par l’appli s’active dans les réglages', async ({ page }, testInfo) => {
+test('direction : envoi par l’appli activé, domaine et adresses d’envoi réglés', async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Réglage global : une seule fois');
   await loginAs(page, 'direction@rts.local');
   await page.goto('/reglages');
@@ -88,6 +98,11 @@ test('direction : l’envoi des e-mails par l’appli s’active dans les régla
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   try {
     await toggle.click();
+    await page.getByLabel('Domaine d’envoi').fill('https://rapidtruckservice.fr');
+    await page.getByLabel('Adresse facturation').fill('compta');
+    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.getByText('Domaine seul, ex. rapidtruckservice.fr')).toBeVisible();
+    await page.getByLabel('Domaine d’envoi').fill('RapidTruckService.fr');
     await page.getByRole('button', { name: 'Enregistrer' }).click();
     await expect(page.getByText('Réglages de l’atelier enregistrés')).toBeVisible();
     await page.reload();
@@ -96,9 +111,15 @@ test('direction : l’envoi des e-mails par l’appli s’active dans les régla
       'aria-checked',
       'true',
     );
+    await expect(page.getByLabel('Domaine d’envoi')).toHaveValue('rapidtruckservice.fr');
+    await expect(page.getByLabel('Adresse facturation')).toHaveValue('compta');
+    await expect(page.getByText('Liens de signature · @rapidtruckservice.fr')).toBeVisible();
   } finally {
     const direction = await signedIn('direction@rts.local');
-    await direction.from('app_settings').update({ mail_send_enabled: false }).eq('id', true);
+    await direction
+      .from('app_settings')
+      .update({ mail_send_enabled: false, mail_domain: null, mail_billing_local: 'facturation' })
+      .eq('id', true);
   }
 });
 
@@ -112,7 +133,8 @@ test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ pag
   await page.goto(`/location/contrats/${contract.id}`);
   await page.getByRole('button', { name: 'Envoyer le contrat' }).click();
   const dialog = page.getByRole('dialog', { name: `Envoyer le contrat ${contract.number}` });
-  await expect(dialog.getByText(/les réponses du client arrivent sur/)).toBeVisible();
+  await expect(dialog.getByText('facturation@rapidtruckservice.fr')).toBeVisible();
+  await expect(dialog.getByText(/les réponses du client arrivent sur cette adresse/)).toBeVisible();
   await expect(dialog.getByRole('checkbox', { name: /Joindre le contrat/ })).toBeChecked();
   await dialog.getByRole('button', { name: 'Envoyer l’e-mail maintenant' }).click();
 
@@ -120,8 +142,15 @@ test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ pag
   await expect(dialog).toBeHidden();
   expect(requests).toHaveLength(1);
   const [sent] = requests as [
-    { to: string; subject: string; text: string; attachments: { filename: string; content: string }[] },
+    {
+      category: string;
+      to: string;
+      subject: string;
+      text: string;
+      attachments: { filename: string; content: string }[];
+    },
   ];
+  expect(sent.category).toBe('billing');
   expect(sent.to).toBe(`compta.${id}@e2e.fr`);
   expect(sent.subject).toBe(`Votre contrat de location ${contract.number} — RAPID TRUCK SERVICE`);
   expect(sent.text).toMatch(/\/d\/[0-9a-f]{64}/);
