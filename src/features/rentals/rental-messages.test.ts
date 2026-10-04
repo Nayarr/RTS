@@ -15,7 +15,7 @@ const rental = {
   departure_at: '2026-10-05T07:30:00Z',
   planned_return_at: '2026-10-07T16:00:00Z',
 };
-const LINK = 'https://app.cylindre.fr/d/abc';
+const LINK = 'https://atelier.rapidtruckservice.fr/d/abc';
 
 describe('messages de la location', () => {
   it('signature à distance : contrat, véhicule, période, lien valable 7 jours, signé par l’atelier', () => {
