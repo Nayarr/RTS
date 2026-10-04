@@ -16,7 +16,11 @@ export type Database = {
           late_tolerance: string;
           lunch_end: string;
           lunch_start: string;
+          mail_billing_local: string;
+          mail_domain: string | null;
           mail_send_enabled: boolean;
+          mail_signature_local: string;
+          mail_workshop_local: string;
           overtime_start: string;
           rest_reference_monday: string | null;
           roadside_flat_fee: number;
@@ -38,7 +42,11 @@ export type Database = {
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
+          mail_billing_local?: string;
+          mail_domain?: string | null;
           mail_send_enabled?: boolean;
+          mail_signature_local?: string;
+          mail_workshop_local?: string;
           overtime_start?: string;
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
@@ -60,7 +68,11 @@ export type Database = {
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
+          mail_billing_local?: string;
+          mail_domain?: string | null;
           mail_send_enabled?: boolean;
+          mail_signature_local?: string;
+          mail_workshop_local?: string;
           overtime_start?: string;
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
@@ -935,6 +947,7 @@ export type Database = {
           id: string;
           provider_message_id: string | null;
           recipient: string;
+          sender: string | null;
           sent_at: string;
           sent_by: string | null;
           subject: string;
@@ -944,6 +957,7 @@ export type Database = {
           id?: string;
           provider_message_id?: string | null;
           recipient: string;
+          sender?: string | null;
           sent_at?: string;
           sent_by?: string | null;
           subject: string;
@@ -953,6 +967,7 @@ export type Database = {
           id?: string;
           provider_message_id?: string | null;
           recipient?: string;
+          sender?: string | null;
           sent_at?: string;
           sent_by?: string | null;
           subject?: string;

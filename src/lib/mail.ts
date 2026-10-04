@@ -3,14 +3,39 @@ import { invokeFunction } from './functions';
 import type { SendLinkMessage } from './send-links';
 import { supabase } from './supabase';
 
-export const mailSendEnabledKey = ['settings', 'mail-send-enabled'] as const;
+export const mailSettingsKey = ['settings', 'mail'] as const;
 
-/** Réglage de la direction : les e-mails partent directement par l'appli (Resend). */
-export async function fetchMailSendEnabled(): Promise<boolean> {
-  const { data, error } = await supabase.from('app_settings').select('mail_send_enabled').maybeSingle();
-  if (error) throw error;
-  return data?.mail_send_enabled ?? false;
+/** Type de message : choisit l'adresse d'envoi (facturation@, atelier@, signature@…). */
+export type MailCategory = 'billing' | 'workshop' | 'signature';
+
+export interface MailSettings {
+  /** Réglage de la direction : les e-mails partent directement par l'appli (Resend). */
+  enabled: boolean;
+  /** Domaine d'envoi vérifié chez Resend (null : adresse unique du secret MAIL_FROM). */
+  domain: string | null;
+  locals: Record<MailCategory, string>;
 }
+
+export async function fetchMailSettings(): Promise<MailSettings> {
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('mail_send_enabled, mail_domain, mail_billing_local, mail_workshop_local, mail_signature_local')
+    .maybeSingle();
+  if (error) throw error;
+  return {
+    enabled: data?.mail_send_enabled ?? false,
+    domain: data?.mail_domain ?? null,
+    locals: {
+      billing: data?.mail_billing_local ?? 'facturation',
+      workshop: data?.mail_workshop_local ?? 'atelier',
+      signature: data?.mail_signature_local ?? 'signature',
+    },
+  };
+}
+
+/** Adresse qui enverra le message (null : adresse unique réglée côté serveur). */
+export const mailSender = (category: MailCategory, settings: MailSettings) =>
+  settings.domain ? `${settings.locals[category]}@${settings.domain}` : null;
 
 /** Contenu d'un fichier en base64 (par blocs : pas de dépassement de pile sur un gros PDF). */
 export async function blobToBase64(blob: Blob): Promise<string> {
@@ -27,6 +52,7 @@ export async function blobToBase64(blob: Blob): Promise<string> {
  * `idempotencyKey` : la même clé pour un nouvel essai, le client ne reçoit pas deux fois l'e-mail.
  */
 export async function sendMail(input: {
+  category: MailCategory;
   to: string;
   message: SendLinkMessage;
   attachments: PdfFile[];
@@ -39,6 +65,7 @@ export async function sendMail(input: {
     })),
   );
   return invokeFunction<{ id: string }>('mail-send', {
+    category: input.category,
     to: input.to.trim(),
     subject: input.message.subject,
     text: input.message.body,

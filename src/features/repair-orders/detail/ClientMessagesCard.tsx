@@ -120,6 +120,7 @@ export function ClientMessagesCard({ order }: { order: RepairOrderOverview }) {
           intro="Message pré-rédigé, à envoyer au client."
           message={prepared.message}
           senderEmail={prepared.senderEmail}
+          mailCategory="workshop"
           contact={prepared.contact}
           onContactSave={saveContact}
           onSend={(channel, contact, providerMessageId) =>

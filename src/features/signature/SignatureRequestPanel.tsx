@@ -191,6 +191,7 @@ export function SignatureRequestPanel({
           link={prepared.link}
           message={prepared.message}
           senderEmail={prepared.senderEmail}
+          mailCategory="signature"
           contact={prepared.contact}
           onContactSave={saveContact}
           onClose={() => setPrepared(null)}

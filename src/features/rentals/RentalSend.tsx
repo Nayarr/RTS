@@ -138,6 +138,7 @@ export function RemoteSignature({ detail }: { detail: RentalDetail }) {
           link={prepared.link}
           message={prepared.message}
           senderEmail={prepared.senderEmail}
+          mailCategory="signature"
           contact={prepared.contact}
           onContactSave={saveContact}
           onClose={() => setPrepared(null)}
@@ -171,6 +172,7 @@ export function SendContractButton({ detail }: { detail: RentalDetail }) {
           link={prepared.link}
           message={prepared.message}
           senderEmail={prepared.senderEmail}
+          mailCategory="billing"
           contact={prepared.contact}
           onContactSave={saveContact}
           attachments={{

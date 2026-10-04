@@ -94,11 +94,13 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
   (jamais dans le code), puis réglage « Lecture automatique des étiquettes » activé par la direction.
   Sans clé, la photo est gardée et la date se saisit à la main.
 - **E-mails au client : Resend** (devis, factures, signatures, contrats, rappels envoyés en un clic,
-  PDF joint) : Edge Function `mail-send`. Secrets `RESEND_API_KEY` et `MAIL_FROM` (adresse d'un
-  domaine vérifié chez Resend, ex. `atelier@cylindre.fr`) définis par `npx supabase secrets set`, puis
-  réglage « Envoyer les e-mails depuis l’appli » (Réglages › Atelier) activé par la direction. Les
-  réponses du client arrivent sur l'e-mail de l'entreprise (Réglages › Entreprise). Sans clé ou sans
-  réglage, l'appli ouvre la messagerie de l'ordinateur avec le message prêt.
+  PDF joint) : Edge Function `mail-send`, secret `RESEND_API_KEY` défini par `npx supabase secrets set`.
+  Dans Réglages › Atelier, la direction active « Envoyer les e-mails depuis l’appli » et règle le
+  domaine d’envoi (vérifié chez Resend) et le début de chaque adresse : `facturation@` (devis,
+  factures, contrats), `atelier@` (infos du véhicule, rappels, espace client), `signature@` (liens
+  de signature). Les réponses du client reviennent sur l’adresse qui a envoyé le message. Sans domaine
+  réglé, l’adresse unique du secret `MAIL_FROM` est utilisée. Sans clé ou sans réglage, l’appli ouvre
+  la messagerie de l’ordinateur avec le message prêt.
 - **Production : o2switch** (plus tard).
 
 ## Reprise des forfaits de l’ancienne appli
