@@ -1,6 +1,5 @@
 import type { PdfFile } from '@/components/PdfPreviewDialog';
 import { invokeFunction } from './functions';
-import type { SendLinkMessage } from './send-links';
 import { supabase } from './supabase';
 
 export const mailSettingsKey = ['settings', 'mail'] as const;
@@ -14,14 +13,22 @@ export interface MailSettings {
   /** Domaine d'envoi vérifié chez Resend (null : adresse unique du secret MAIL_FROM). */
   domain: string | null;
   locals: Record<MailCategory, string>;
+  /** Nom de l'atelier (expéditeur affiché) et e-mail de l'entreprise (réponses sans domaine réglé). */
+  companyName: string;
+  companyEmail: string | null;
 }
 
 export async function fetchMailSettings(): Promise<MailSettings> {
-  const { data, error } = await supabase
-    .from('app_settings')
-    .select('mail_send_enabled, mail_domain, mail_billing_local, mail_workshop_local, mail_signature_local')
-    .maybeSingle();
-  if (error) throw error;
+  const [app, company] = await Promise.all([
+    supabase
+      .from('app_settings')
+      .select('mail_send_enabled, mail_domain, mail_billing_local, mail_workshop_local, mail_signature_local')
+      .maybeSingle(),
+    supabase.from('company_settings').select('legal_name, email').maybeSingle(),
+  ]);
+  if (app.error) throw app.error;
+  if (company.error) throw company.error;
+  const data = app.data;
   return {
     enabled: data?.mail_send_enabled ?? false,
     domain: data?.mail_domain ?? null,
@@ -30,6 +37,8 @@ export async function fetchMailSettings(): Promise<MailSettings> {
       workshop: data?.mail_workshop_local ?? 'atelier',
       signature: data?.mail_signature_local ?? 'signature',
     },
+    companyName: company.data?.legal_name ?? '',
+    companyEmail: company.data?.email ?? null,
   };
 }
 
@@ -54,7 +63,11 @@ export async function blobToBase64(blob: Blob): Promise<string> {
 export async function sendMail(input: {
   category: MailCategory;
   to: string;
-  message: SendLinkMessage;
+  /** Objet et texte relus (et éventuellement modifiés) dans l'aperçu. */
+  subject: string;
+  text: string;
+  /** Lien du document : bouton ajouté sous le message. */
+  link?: { label: string; url: string } | undefined;
   attachments: PdfFile[];
   idempotencyKey: string;
 }): Promise<{ id: string }> {
@@ -67,8 +80,9 @@ export async function sendMail(input: {
   return invokeFunction<{ id: string }>('mail-send', {
     category: input.category,
     to: input.to.trim(),
-    subject: input.message.subject,
-    text: input.message.body,
+    subject: input.subject.trim(),
+    text: input.text.trim(),
+    ...(input.link ? { link: input.link } : {}),
     attachments,
     idempotency_key: input.idempotencyKey,
   });

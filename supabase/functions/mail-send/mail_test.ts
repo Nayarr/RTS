@@ -2,6 +2,8 @@ import { assertEquals, assertStringIncludes } from '@std/assert';
 import {
   attachmentsBytes,
   base64Bytes,
+  mailHtml,
+  mailText,
   requestSchema,
   resendFailure,
   resendPayload,
@@ -151,4 +153,28 @@ Deno.test('type de message : atelier par défaut, valeur inconnue refusée', () 
   const parsed = requestSchema.safeParse(base);
   assertEquals(parsed.success && parsed.data.category, 'workshop');
   assertEquals(requestSchema.safeParse({ ...base, category: 'marketing' }).success, false);
+});
+
+Deno.test('lien du document : bouton entre le message et la signature, lien en clair dans le texte', () => {
+  const link = { label: 'Consulter et signer le devis', url: 'https://atelier.rapidtruckservice.fr/d/abc' };
+  const text = 'Bonjour,\n\nVotre devis est prêt.\n\nCordialement,\nRAPID TRUCK SERVICE';
+  assertEquals(
+    mailText(text, link),
+    'Bonjour,\n\nVotre devis est prêt.\n\nConsulter et signer le devis : https://atelier.rapidtruckservice.fr/d/abc\n\nCordialement,\nRAPID TRUCK SERVICE',
+  );
+  const html = mailHtml(text, link);
+  assertStringIncludes(html, '>Consulter et signer le devis</a>');
+  assertEquals(html.indexOf('Votre devis est prêt') < html.indexOf('Consulter et signer'), true);
+  assertEquals(html.indexOf('Consulter et signer') < html.indexOf('Cordialement'), true);
+  assertEquals(mailText(text), text);
+  assertEquals(
+    requestSchema.safeParse({
+      to: 'a@b.fr',
+      subject: 'a',
+      text: 'b',
+      idempotency_key: KEY,
+      link: { label: 'x', url: 'javascript:alert(1)' },
+    }).success,
+    false,
+  );
 });

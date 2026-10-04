@@ -83,6 +83,7 @@ export function ShareInvoiceButtons({ invoice }: { invoice: InvoiceOverview }) {
               : 'Le client pourra consulter et imprimer sa facture en ligne.'
           }
           link={prepared.link}
+          linkLabel="Consulter la facture"
           message={prepared.message}
           senderEmail={prepared.senderEmail}
           mailCategory="billing"
