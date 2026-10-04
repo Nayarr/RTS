@@ -52,7 +52,7 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
         {line.line_type === 'package' && <span className="tag ml-1.5 self-start">Forfait</span>}
         {quotedHours !== null && (
           <span className="hint ml-1.5" id={`line-${line.id}-quoted`}>
-            Devis : {formatHours(quotedHours)} (facturé) — indique le temps réel passé
+            Devis : {formatHours(quotedHours)} (facturé) · indique le temps réel passé
           </span>
         )}
       </div>
@@ -69,8 +69,8 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
           {line.kind === 'planned' && line.line_type === 'package' && line.standard_hours !== null
             ? `Barème ${timeOptionLabel(`${line.standard_hours}h`)}`
             : line.kind === 'done'
-              ? 'Réel —'
-              : 'Estim. —'}
+              ? 'Réel ·'
+              : 'Estim. ·'}
         </option>
         {timeOptionsFor(time).map((option) => (
           <option key={option} value={option}>

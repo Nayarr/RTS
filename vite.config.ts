@@ -33,7 +33,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
-        name: 'RTS Atelier — Rapid Truck Service',
+        name: 'RTS Atelier · Rapid Truck Service',
         short_name: 'RTS Atelier',
         description: 'Ordres de réparation, badgeage, devis et facturation de l’atelier Rapid Truck Service',
         lang: 'fr',

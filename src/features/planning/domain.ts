@@ -184,7 +184,7 @@ export function appointmentReminderMessage(
   const plate = appointment.plate ?? '';
   const signature = [company.legal_name, company.email].filter(Boolean).join('\n');
   return {
-    subject: `Rappel rendez-vous ${date} — ${company.legal_name}`,
+    subject: `Rappel rendez-vous ${date} · ${company.legal_name}`,
     body:
       `Bonjour,\n\nNous vous rappelons votre rendez-vous à l'atelier le ${date} à ${time} pour le véhicule ${plate}` +
       `${appointment.reason ? ` (${appointment.reason})` : ''}.\n\n` +

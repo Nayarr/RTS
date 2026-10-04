@@ -74,7 +74,7 @@ select results_eq(
             from public.invoices i join public.invoice_lines l on l.invoice_id = i.id
             join public.v_invoice_totals t on t.invoice_id = i.id where i.id = %L $$, :'invoice_id'),
   format($$ values ('draft', '20000000-0000-0000-0000-000000000001'::uuid, %L::uuid,
-                    E'Contrat d''entretien — Vidange — septembre 2026\nVéhicules : AB-123-CD', 250.00::numeric,
+                    E'Contrat d''entretien · Vidange · septembre 2026\nVéhicules : AB-123-CD', 250.00::numeric,
                     300.00::numeric) $$, :'contract_id'),
   'Brouillon de facture du mois avec la ligne du contrat');
 select lives_ok(format($$ select public.issue_invoice(%L) $$, :'invoice_id'), 'La facture du contrat s''émet');

@@ -126,7 +126,7 @@ function FleetVehicleDetail({ vehicle }: { vehicle: FleetVehicle }) {
       <ul className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         <Kpi
           icon={<Gauge className="i s" />}
-          value={engine && vehicle.mileage !== null ? `${vehicle.mileage.toLocaleString('fr-FR')} km` : '—'}
+          value={engine && vehicle.mileage !== null ? `${vehicle.mileage.toLocaleString('fr-FR')} km` : '-'}
           label={engine ? 'Kilométrage connu' : 'Sans moteur ni compteur'}
         />
         <Kpi
@@ -250,14 +250,14 @@ function Pair({ term, value }: { term: string; value: ReactNode }) {
   return (
     <>
       <dt>{term}</dt>
-      <dd>{value || <span className="muted">—</span>}</dd>
+      <dd>{value || <span className="muted">-</span>}</dd>
     </>
   );
 }
 
 function DocumentsCount({ vehicleId }: { vehicleId: string }) {
   const documents = useFleetDocuments(vehicleId);
-  return <>{documents.data?.length ?? '—'}</>;
+  return <>{documents.data?.length ?? '-'}</>;
 }
 
 async function openDocument(fileId: string, disposition: 'inline' | 'attachment') {

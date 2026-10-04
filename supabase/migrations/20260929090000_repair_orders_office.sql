@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Ordres de réparation côté bureau
+-- RTS Atelier : Ordres de réparation côté bureau
 --   - création d'un OR en une seule transaction (client et véhicule retrouvés
 --     ou créés à la volée, comme la saisie libre de l'ancienne appli) ;
 --   - garde-fous des fichiers rattachés à un OR (signature, photos).

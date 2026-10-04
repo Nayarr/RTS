@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Pièces, sous-traitance et consommables sur la fiche OR (bureau)
+-- RTS Atelier : Pièces, sous-traitance et consommables sur la fiche OR (bureau)
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ begin
     if v_grouped then
       insert into public.invoice_lines (invoice_id, repair_order_id, position, line_type, description)
       values (v_invoice_id, v_ro.id, v_base, 'text',
-              v_ro.number || ' — ' || v_ro.plate || coalesce(' — ' || v_ro.mileage || ' km', ''));
+              v_ro.number || ' · ' || v_ro.plate || coalesce(' · ' || v_ro.mileage || ' km', ''));
     end if;
 
     -- Travaux effectués
@@ -206,7 +206,7 @@ begin
       if v_settings.roadside_flat_fee > 0 then
         insert into public.invoice_lines (invoice_id, repair_order_id, position, line_type, description, unit_price, quantity, discount_percent, vat_rate)
         values (v_invoice_id, v_ro.id, v_base + 7000, 'travel',
-                'Forfait de déplacement' || coalesce(' — ' || nullif(v_ro.roadside_address, ''), ''),
+                'Forfait de déplacement' || coalesce(' · ' || nullif(v_ro.roadside_address, ''), ''),
                 v_settings.roadside_flat_fee, 1, v_discount, v_vat);
       end if;
       if coalesce(v_ro.roadside_km, 0) > 0 then

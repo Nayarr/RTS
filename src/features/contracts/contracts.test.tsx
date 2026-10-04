@@ -101,7 +101,7 @@ const renderPage = () =>
 
 describe('contrats : règles', () => {
   it('conditions du contrat, plaques saisies, état des véhicules', () => {
-    expect(contractTerms(contract())).toMatch(/^tous les 6 mois ou 30\s000 km — 250,00\s€ HT \/ mois$/);
+    expect(contractTerms(contract())).toMatch(/^tous les 6 mois ou 30\s000 km · 250,00\s€ HT \/ mois$/);
     expect(contractTerms({ frequency_months: null, frequency_km: 20000, monthly_price_ht: null })).toMatch(
       /^tous les 20\s000 km$/,
     );
@@ -132,7 +132,7 @@ describe('contrats : écran', () => {
   it('contrats en cours : véhicules à planifier, planifiés, à jour ; contrats terminés à part', async () => {
     renderPage();
     const card = await screen.findByRole('article', {
-      name: 'Transports Martin — Vidange + contrôle général',
+      name: 'Transports Martin · Vidange + contrôle général',
     });
     const rows = within(card).getAllByRole('listitem');
     expect(rows[0]).toHaveTextContent(/GH-512-RTs*dernier entretien : 10\/03\/2026 \(\+28\s500 km\)/);
@@ -203,7 +203,7 @@ describe('contrats : écran', () => {
 
   it('mettre fin à un contrat après confirmation', async () => {
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: /Transports Martin — Vidange/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Transports Martin · Vidange/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Mettre fin au contrat' }));
     const confirm = screen.getByRole('dialog', { name: 'Mettre fin à ce contrat ?' });
     await userEvent.click(within(confirm).getByRole('button', { name: 'Mettre fin au contrat' }));

@@ -78,8 +78,8 @@ describe('congés : direction', () => {
     ]);
     renderPage();
     const requests = await screen.findByRole('region', { name: 'Demandes à traiter (1)' });
-    const request = within(requests).getByRole('article', { name: 'Alice — Congés payés' });
-    expect(request).toHaveTextContent('du 12/10/2026 au 17/10/2026 (6 j) — Vacances');
+    const request = within(requests).getByRole('article', { name: 'Alice · Congés payés' });
+    expect(request).toHaveTextContent('du 12/10/2026 au 17/10/2026 (6 j) · Vacances');
     expect(request).toHaveTextContent('En attente');
 
     const history = screen.getByRole('region', { name: 'Historique' });
@@ -88,9 +88,9 @@ describe('congés : direction', () => {
         .getAllByRole('row')
         .slice(1)
         .map((item) => item.getAttribute('aria-label'));
-    expect(rows()).toEqual(['Bruno — Maladie']);
+    expect(rows()).toEqual(['Bruno · Maladie']);
     await userEvent.click(within(history).getByRole('button', { name: 'Passées' }));
-    expect(rows()).toEqual(['Alice — Congés payés']);
+    expect(rows()).toEqual(['Alice · Congés payés']);
     expect(within(history).getByText('Refusée')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^Congés et absences/ })).toHaveAttribute('aria-current', 'page');
   });
@@ -101,14 +101,14 @@ describe('congés : direction', () => {
       leave({ id: 'l2', status: 'approved', technician_name: 'Bruno' }),
     ]);
     renderPage();
-    const request = await screen.findByRole('article', { name: 'Alice — Congés payés' });
+    const request = await screen.findByRole('article', { name: 'Alice · Congés payés' });
     await userEvent.click(within(request).getByRole('button', { name: 'Valider' }));
     await waitFor(() => expect(decideLeaveRequest).toHaveBeenCalledWith('l1', true));
     await userEvent.click(within(request).getByRole('button', { name: 'Refuser' }));
     await waitFor(() => expect(decideLeaveRequest).toHaveBeenLastCalledWith('l1', false));
 
     await userEvent.click(
-      within(screen.getByRole('row', { name: 'Bruno — Congés payés' })).getByRole('button', {
+      within(screen.getByRole('row', { name: 'Bruno · Congés payés' })).getByRole('button', {
         name: 'Supprimer',
       }),
     );

@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Écran atelier (télé)
+-- RTS Atelier : Écran atelier (télé)
 --   Tableau du jour, une colonne par technicien : OR en cours, OR assignés
 --   prévus aujourd'hui (ou sans date), absences, véhicules attendus.
 --   Lisible par le bureau et par le compte de la borne (la télé tourne sur la

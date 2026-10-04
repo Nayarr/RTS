@@ -152,7 +152,7 @@ export function ClientsPage() {
                       <td className="r num b">{formatEuro(client.revenue_ht)}</td>
                       <td>
                         {since === null ? (
-                          <span className="muted">—</span>
+                          <span className="muted">-</span>
                         ) : (
                           <span className="row gap-1.5">
                             <span className="num">il y a {since} j</span>
@@ -168,7 +168,7 @@ export function ClientsPage() {
                             {formatEuro(client.balance_due)}
                           </span>
                         ) : (
-                          <span className="muted">—</span>
+                          <span className="muted">-</span>
                         )}
                       </td>
                       <td>

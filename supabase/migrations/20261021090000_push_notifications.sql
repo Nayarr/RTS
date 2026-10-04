@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Notifications push (Web Push standard, sans Firebase)
+-- RTS Atelier : Notifications push (Web Push standard, sans Firebase)
 --
 -- Comme l'ancienne appli, le téléphone sonne même verrouillé :
 --   - technicien : OR nouveau ou modifié (programme, horaire, travaux demandés) ;
@@ -120,7 +120,7 @@ begin
     array[v_profile],
     case when tg_op = 'INSERT' or new.technician_id is distinct from old.technician_id
          then 'Nouvel OR : ' else 'OR modifié : ' end || coalesce(v_plate, new.number),
-    concat_ws(' — ', nullif(left(btrim(new.requested_work), 120), ''), v_when),
+    concat_ws(' · ', nullif(left(btrim(new.requested_work), 120), ''), v_when),
     '/atelier/or/' || new.id,
     'ro-' || new.id);
   return null;

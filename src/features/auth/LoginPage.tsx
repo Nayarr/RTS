@@ -32,7 +32,7 @@ export function LoginPage() {
     <AuthLayout>
       <div className="col gap-1.5">
         <h1 className="title xl">Connexion</h1>
-        <p className="sub">Accès réservé — utilise les identifiants fournis par le bureau.</p>
+        <p className="sub">Accès réservé : utilise les identifiants fournis par le bureau.</p>
       </div>
       <LoginForm onForgotPassword={() => setResetOpen((open) => !open)} />
       {resetOpen && <PasswordResetForm />}

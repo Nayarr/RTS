@@ -123,7 +123,7 @@ export function ContractDialog({ contract, onClose }: { contract: Contract | nul
           open={confirmEnd}
           onOpenChange={setConfirmEnd}
           title="Mettre fin à ce contrat ?"
-          description={`${contract.client_name} — l’entretien de ses véhicules ne sera plus suivi.`}
+          description={`${contract.client_name} : l’entretien de ses véhicules ne sera plus suivi.`}
           confirmLabel="Mettre fin au contrat"
           destructive
           pending={end.isPending}

@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Forfaits
+-- RTS Atelier : Forfaits
 --   Les forfaits se gèrent désormais depuis l'appli (Stock > Forfaits) et peuvent
 --   être retirés (archivés). Correctif : une case de la fiche de contrôle passée
 --   en HS / 50 % n'est « couverte » que par un forfait actif et adapté au type de
@@ -95,7 +95,7 @@ begin
       ('controles.extincteur1',     'Extincteur 1 kg cabine',       0.3),
       ('controles.extincteur2',     'Extincteur 2 kg cabine',       0.3),
       ('controles.extincteur6',     'Extincteur 6 kg camion',       0.3),
-      ('controles.eclairage',       'Éclairage — ampoules',         null)
+      ('controles.eclairage',       'Éclairage, ampoules',         null)
     ) as f(key, label, hours)
   loop
     v_path := string_to_array(v_field.key, '.');

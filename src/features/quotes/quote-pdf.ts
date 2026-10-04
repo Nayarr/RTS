@@ -40,7 +40,7 @@ export async function buildQuotePdf({ quote, lines, company, logo, now = new Dat
   let y = 44;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text(`Devis n° ${quote.number ?? '—'}`, MARGIN, y);
+  doc.text(`Devis n° ${quote.number ?? '-'}`, MARGIN, y);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -48,9 +48,9 @@ export async function buildQuotePdf({ quote, lines, company, logo, now = new Dat
   y += 8;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text(pdfText(`Client : ${quote.client_name ?? '—'}`), MARGIN, y);
+  doc.text(pdfText(`Client : ${quote.client_name ?? '-'}`), MARGIN, y);
   y += 7;
-  doc.text(pdfText(`Véhicule : ${quote.plate ?? '—'}`), MARGIN, y);
+  doc.text(pdfText(`Véhicule : ${quote.plate ?? '-'}`), MARGIN, y);
   y += 10;
 
   const drawTable = (list: QuoteLine[], title: string) => {
@@ -83,12 +83,12 @@ export async function buildQuotePdf({ quote, lines, company, logo, now = new Dat
         ];
       }
       const price = line.unit_price ?? 0;
-      const row: CellInput[] = [pdfText(line.description) || '—'];
+      const row: CellInput[] = [pdfText(line.description) || '-'];
       if (hasQuantity) row.push(pdfMoney(price), String(line.quantity));
       else row.push(pdfMoney(price));
       if (hasDiscount) {
         row.push(
-          line.discount_percent > 0 ? `${line.discount_percent.toFixed(0)} %` : '—',
+          line.discount_percent > 0 ? `${line.discount_percent.toFixed(0)} %` : '-',
           pdfMoney(lineNet(line)),
         );
       }

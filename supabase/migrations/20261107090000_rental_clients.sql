@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — clients particuliers et permis de conduire
+-- Location : clients particuliers et permis de conduire
 --
 -- Un client est désormais professionnel (raison sociale, SIREN) ou particulier (civilité,
 -- nom, prénom, date et lieu de naissance). Le nom affiché d'un particulier est « Prénom Nom ».

@@ -68,7 +68,7 @@ export function clientMessage(
   }[type];
   const body = `Bonjour,\n\n${text}\n\nCordialement,\n${signature}`;
   return {
-    subject: `${CLIENT_MESSAGE_LABELS[type]} — ${plate} — ${company.legal_name}`,
+    subject: `${CLIENT_MESSAGE_LABELS[type]} · ${plate} · ${company.legal_name}`,
     body,
     sms: body.replace(/\n+/g, ' '),
   };

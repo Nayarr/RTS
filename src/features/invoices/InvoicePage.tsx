@@ -294,7 +294,7 @@ export function InvoicePage() {
         crumbs={[{ label: 'Factures', to: '/factures' }, { label: invoice.number ?? 'Brouillon' }]}
         title={
           <>
-            <span>{invoice.number ? `Facture ${invoice.number}` : 'Facture — brouillon'}</span>
+            <span>{invoice.number ? `Facture ${invoice.number}` : 'Facture · brouillon'}</span>
             <InvoiceStatusBadge invoice={invoice} />
           </>
         }
@@ -318,20 +318,20 @@ export function InvoicePage() {
                 <span className="hint">
                   {invoice.number
                     ? `N° ${invoice.number} · émise le ${formatDate(invoice.issued_at)} · échéance ${formatDate(invoice.due_date)}`
-                    : 'Brouillon — numéro attribué à l’émission'}
+                    : 'Brouillon : numéro attribué à l’émission'}
                 </span>
               </div>
               <div className="grid w-full max-w-[540px] gap-7 sm:grid-cols-2">
                 <div className="col gap-0.5">
                   <span className="overline">Client :</span>
-                  <b>{invoice.client_name ?? '—'}</b>
+                  <b>{invoice.client_name ?? '-'}</b>
                   {!draft && invoice.client_address && (
                     <span className="hint whitespace-pre-line">{invoice.client_address}</span>
                   )}
                 </div>
                 <div className="col gap-0.5">
                   <span className="overline">Véhicule :</span>
-                  <b className="plate">{invoice.vehicle_label ?? '—'}</b>
+                  <b className="plate">{invoice.vehicle_label ?? '-'}</b>
                   <span className="hint">
                     {invoice.mileage !== null && `${invoice.mileage.toLocaleString('fr-FR')} km · `}
                     {grouped && `Facture groupée (${invoice.repair_order_ids.length} OR) · `}
@@ -422,7 +422,7 @@ export function InvoicePage() {
               <div className="alert s-blue">
                 <Info className="i" />
                 <span>
-                  Brouillon — le numéro est attribué à l’émission. Une fois émise, la facture ne se modifie
+                  Brouillon : le numéro est attribué à l’émission. Une fois émise, la facture ne se modifie
                   plus.
                 </span>
               </div>

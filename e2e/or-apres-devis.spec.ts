@@ -106,7 +106,7 @@ test('OR créé depuis un devis : début prévu, temps réel saisi (facturé au 
   // Facturé au temps du devis ; le technicien saisit le temps réellement passé
   await expect(times.first()).toHaveValue('');
   await expect(times.first()).toHaveAccessibleDescription(
-    'Devis : 1,5 h (facturé) — indique le temps réel passé',
+    'Devis : 1,5 h (facturé) · indique le temps réel passé',
   );
   await times.first().selectOption('2h');
   await expect(times.first()).toHaveValue('2h');

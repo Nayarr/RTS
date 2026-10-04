@@ -101,9 +101,9 @@ describe('écran atelier : règles', () => {
   });
 
   it('libellés des cartes et véhicules attendus', () => {
-    expect(cardMeta(order({ running: true, parts_pending: true }))).toBe('● En cours — 📦 attente pièces');
+    expect(cardMeta(order({ running: true, parts_pending: true }))).toBe('● En cours · 📦 attente pièces');
     expect(cardMeta(order({ planned_start: '09:00:00', planned_end: '11:00:00' }))).toBe(
-      'À faire — 09:00→11:00',
+      'À faire · 09:00→11:00',
     );
     expect(expectedVehicles(board)).toBe('10:30 GH-512-RT (Transports Dupont) • 14:00 (Logistique Martin)');
   });
@@ -207,9 +207,9 @@ describe('atelier en direct', () => {
 
   it('véhicules à l’atelier, badgeage, lien vers l’OR', async () => {
     renderLive();
-    const card = await screen.findByRole('link', { name: 'AB-123-CD — OR00012' });
+    const card = await screen.findByRole('link', { name: 'AB-123-CD · OR00012' });
     expect(card).toHaveAttribute('href', '/or/ro1');
-    expect(card).toHaveTextContent('Transports Dupont — Technicien : Alice');
+    expect(card).toHaveTextContent('Transports Dupont · Technicien : Alice');
     expect(card).toHaveTextContent('Badgeage en cours');
     expect(screen.getByText('1 véhicule actuellement à l’atelier.')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /EF-456-GH/ })).toBeNull();
@@ -236,7 +236,7 @@ describe('atelier en direct', () => {
   it('réception : pas de bouton télé', async () => {
     vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
     renderLive();
-    await screen.findByRole('link', { name: 'AB-123-CD — OR00012' });
+    await screen.findByRole('link', { name: 'AB-123-CD · OR00012' });
     expect(screen.queryByRole('button', { name: 'Écran atelier (télé)' })).toBeNull();
   });
 });

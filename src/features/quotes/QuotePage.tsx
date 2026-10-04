@@ -111,7 +111,7 @@ export function QuotePage() {
         crumbs={[{ label: 'Devis', to: '/devis' }, { label: quote.number ?? 'Brouillon' }]}
         title={
           <>
-            <span>Devis{quote.plate ? ` — ${quote.plate}` : ''}</span>
+            <span>Devis{quote.plate ? ` · ${quote.plate}` : ''}</span>
             <QuoteStatusBadge status={quote.status} />
           </>
         }
@@ -142,11 +142,11 @@ export function QuotePage() {
             <div className="grid w-full max-w-[520px] gap-7 sm:grid-cols-2">
               <div className="col gap-0.5">
                 <span className="overline">Client :</span>
-                <b>{quote.client_name ?? '—'}</b>
+                <b>{quote.client_name ?? '-'}</b>
               </div>
               <div className="col gap-0.5">
                 <span className="overline">Véhicule :</span>
-                <b className="plate">{quote.plate ?? '—'}</b>
+                <b className="plate">{quote.plate ?? '-'}</b>
                 <span className="hint">{VEHICLE_TYPES[quote.vehicle_type]}</span>
               </div>
             </div>
@@ -253,7 +253,7 @@ export function QuotePage() {
           {companyEmail && quote.status !== 'accepted' && quote.status !== 'refused' && (
             <div className="alert s-blue">
               <Mail className="i" />
-              <span>À envoyer depuis {companyEmail} — le client signe en ligne.</span>
+              <span>À envoyer depuis {companyEmail} : le client signe en ligne.</span>
             </div>
           )}
         </div>

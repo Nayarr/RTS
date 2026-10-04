@@ -34,7 +34,7 @@ const paris = (iso: string, withTime = true) =>
     ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}),
   }).format(new Date(iso));
 
-const frDate = (value: string | null | undefined) => (value ? value.split('-').reverse().join('/') : '—');
+const frDate = (value: string | null | undefined) => (value ? value.split('-').reverse().join('/') : '-');
 
 /** Contrat de location (ou bon de prêt) : parties, véhicule, période, conditions, état des lieux, signatures. */
 export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
@@ -95,14 +95,14 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
   twoColumns(
     box(loan ? 'BÉNÉFICIAIRE' : 'LOCATAIRE', [
       ['Nom', client.name],
-      ['Adresse', client.billing_address ?? '—'],
-      ['Téléphone', client.phone ?? '—'],
-      ['E-mail', client.email ?? '—'],
+      ['Adresse', client.billing_address ?? '-'],
+      ['Téléphone', client.phone ?? '-'],
+      ['E-mail', client.email ?? '-'],
     ]),
     box('PERMIS DE CONDUIRE', [
-      ['Conducteur', license ? `${license.first_name} ${license.last_name}` : '—'],
-      ['N°', license?.license_number ?? '—'],
-      ['Catégories', license?.categories.join(', ') || '—'],
+      ['Conducteur', license ? `${license.first_name} ${license.last_name}` : '-'],
+      ['N°', license?.license_number ?? '-'],
+      ['Catégories', license?.categories.join(', ') || '-'],
       ['Valide jusqu’au', frDate(license?.valid_until)],
     ]),
   );
@@ -111,7 +111,7 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
       ['Immatriculation', vehicle.plate],
       ['Modèle', vehicleTitle(vehicle)],
       ['Catégorie', `${CATEGORY_META[vehicle.category].label} · permis ${vehicle.license_category}`],
-      ['Carburant', vehicle.fuel_type ?? '—'],
+      ['Carburant', vehicle.fuel_type ?? '-'],
     ]),
     box('PÉRIODE', [
       ['Départ', paris(rental.departure_at)],
@@ -225,7 +225,7 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
   const departureDamages = damages.filter((item) => item.phase === 'departure');
   const facts = [
     hasEngine(vehicle.category)
-      ? `Kilométrage : ${departure?.mileage?.toLocaleString('fr-FR') ?? '—'} km`
+      ? `Kilométrage : ${departure?.mileage?.toLocaleString('fr-FR') ?? '-'} km`
       : null,
     hasEngine(vehicle.category) ? `Carburant : ${fuelLabel(departure?.fuel_eighths)}` : null,
     departure?.equipment.length ? `Équipements : ${departure.equipment.join(', ')}` : null,

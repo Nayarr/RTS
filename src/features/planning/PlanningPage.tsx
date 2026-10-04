@@ -337,7 +337,7 @@ export function PlanningPage() {
                         toAssign[0]!.reason,
                       ]
                         .filter(Boolean)
-                        .join(' — ')}
+                        .join(' · ')}
                     </span>
                   </div>
                   <Button
@@ -446,7 +446,7 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
             {columns.map((column) => (
               <ul
                 key={column.key}
-                aria-label={`OR sans horaire — ${column.key}`}
+                aria-label={`OR sans horaire · ${column.key}`}
                 data-testid={`planning-untimed-${column.key}`}
                 className={cn(
                   'flex min-w-0 flex-1 flex-wrap content-start gap-1 border-l p-1.5',
@@ -458,7 +458,7 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                     <Link
                       to={`/or/${order.id}`}
                       className="flex max-w-full items-center gap-1 truncate rounded-md border border-dashed border-muted-foreground/70 bg-card px-1.5 py-0.5 text-[11.5px] font-semibold hover:bg-muted"
-                      title={`Prévu ce jour, sans horaire — ${order.technician_name ?? 'non assigné'}`}
+                      title={`Prévu ce jour, sans horaire · ${order.technician_name ?? 'non assigné'}`}
                     >
                       <span
                         className="tdot shrink-0"
@@ -547,7 +547,7 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                       <br />
                       <span className="opacity-90">
                         RDV {item.client_name ?? ''}
-                        {item.technician_name ? ` — ${item.technician_name}` : ''}
+                        {item.technician_name ? ` · ${item.technician_name}` : ''}
                       </span>
                     </button>
                   );
@@ -566,7 +566,7 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                           : null,
                       ),
                     }}
-                    title={`${order.plate} — ${order.technician_name ?? 'non assigné'} — ${shortTime(order.planned_start)}${order.planned_end ? ` → ${shortTime(order.planned_end)}` : ''}`}
+                    title={`${order.plate} · ${order.technician_name ?? 'non assigné'} · ${shortTime(order.planned_start)}${order.planned_end ? ` → ${shortTime(order.planned_end)}` : ''}`}
                   >
                     <strong>
                       {shortTime(order.planned_start)}

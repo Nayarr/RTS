@@ -40,15 +40,15 @@ function ClaimRow({
             {claim.part_name}
           </button>
           <span>
-            {claim.reference ? `Réf. ${claim.reference}` : '—'}
+            {claim.reference ? `Réf. ${claim.reference}` : '-'}
             {claim.notes && ` · ${claim.notes}`}
           </span>
         </span>
       </td>
       <td>
-        {[claim.supplier_name, claim.brand].filter(Boolean).join(' · ') || <span className="muted">—</span>}
+        {[claim.supplier_name, claim.brand].filter(Boolean).join(' · ') || <span className="muted">-</span>}
       </td>
-      <td className="muted max-w-[280px] whitespace-normal">{claim.reason ?? '—'}</td>
+      <td className="muted max-w-[280px] whitespace-normal">{claim.reason ?? '-'}</td>
       <td>
         <span className="col gap-0">
           {claim.repair_order_id && claim.repair_order_number && (
@@ -61,10 +61,10 @@ function ClaimRow({
               {claim.vehicle_plate}
             </Link>
           )}
-          {!claim.repair_order_number && !claim.vehicle_plate && <span className="muted">—</span>}
+          {!claim.repair_order_number && !claim.vehicle_plate && <span className="muted">-</span>}
         </span>
       </td>
-      <td className="r num b">{claim.amount_ht !== null ? formatEuro(claim.amount_ht) : '—'}</td>
+      <td className="r num b">{claim.amount_ht !== null ? formatEuro(claim.amount_ht) : '-'}</td>
       <td>
         <span className="col gap-0.5">
           <span className="badge" style={{ '--c': meta.color } as CSSProperties}>

@@ -78,7 +78,7 @@ export function LeavePage() {
                   {requests.map((leave) => (
                     <li key={leave.id}>
                       <article
-                        aria-label={`${leave.technician_name} — ${LEAVE_LABELS[leave.leave_type]}`}
+                        aria-label={`${leave.technician_name} · ${LEAVE_LABELS[leave.leave_type]}`}
                         className="li flex-wrap"
                       >
                         <span className="who">
@@ -92,7 +92,7 @@ export function LeavePage() {
                           <b>{LEAVE_LABELS[leave.leave_type]}</b>
                           <span className="hint">
                             {leavePeriod(leave.starts_on, leave.ends_on)}
-                            {leave.comment ? ` — ${leave.comment}` : ''}
+                            {leave.comment ? ` · ${leave.comment}` : ''}
                           </span>
                         </span>
                         <span className="row gap-2">
@@ -165,7 +165,7 @@ export function LeavePage() {
                         return (
                           <tr
                             key={leave.id}
-                            aria-label={`${leave.technician_name} — ${LEAVE_LABELS[leave.leave_type]}`}
+                            aria-label={`${leave.technician_name} · ${LEAVE_LABELS[leave.leave_type]}`}
                           >
                             <td>
                               <span className="who">
@@ -220,7 +220,7 @@ export function LeavePage() {
           open
           onOpenChange={(open) => !open && setToDelete(null)}
           title="Supprimer cette absence ?"
-          description={`${toDelete.technician_name} — ${LEAVE_LABELS[toDelete.leave_type]} ${leavePeriod(toDelete.starts_on, toDelete.ends_on)}.`}
+          description={`${toDelete.technician_name} · ${LEAVE_LABELS[toDelete.leave_type]} ${leavePeriod(toDelete.starts_on, toDelete.ends_on)}.`}
           confirmLabel="Supprimer"
           destructive
           pending={remove.isPending}

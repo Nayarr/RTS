@@ -41,7 +41,7 @@ export const pdfDate = (date: Date) =>
 
 /** Lignes de coordonnées sous le logo, reprises des réglages de l'entreprise. */
 export function companyLines(company: CompanySettings): string[] {
-  const join = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' — ');
+  const join = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' · ');
   const legal = [
     company.legal_form && company.share_capital
       ? `${company.legal_form} au capital de ${company.share_capital}`

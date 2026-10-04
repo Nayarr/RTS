@@ -95,8 +95,8 @@ test('expertise de plus d’1 h : facturée moins 1 h, la première heure offert
 
   // Facture : 1 h facturée, l'heure offerte visible avec 100 % de remise
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
-  await expect(page.getByText(/^Lecture valise — 1re heure d.expertise offerte$/)).toBeVisible();
-  await expect(page.getByText(/^Recherche de fuite turbo — 1re heure d.expertise offerte$/)).toBeVisible();
+  await expect(page.getByText(/^Lecture valise · 1re heure d.expertise offerte$/)).toBeVisible();
+  await expect(page.getByText(/^Recherche de fuite turbo · 1re heure d.expertise offerte$/)).toBeVisible();
   await expect(page.getByText(/Total HT\s*90,00\s€/).first()).toBeVisible();
 
   await page.goto(`/or/${order.id}`);

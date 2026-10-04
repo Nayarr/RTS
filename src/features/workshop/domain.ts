@@ -170,7 +170,7 @@ export function daysUntil(date: string, today = todayIso()) {
 /** Comme l'ancienne appli : échéance dans 30 jours ou moins → contrôle hayon « HS » (à faire). */
 export function tailgateVerdict(date: string, today = todayIso()) {
   const days = daysUntil(date, today);
-  if (days < 0) return { value: 'HS' as const, label: `À FAIRE — dépassé depuis ${-days} j` };
-  if (days <= 30) return { value: 'HS' as const, label: `À FAIRE — échéance dans ${days} j` };
-  return { value: 'OK' as const, label: `OK — valable encore ${days} jours` };
+  if (days < 0) return { value: 'HS' as const, label: `À FAIRE · dépassé depuis ${-days} j` };
+  if (days <= 30) return { value: 'HS' as const, label: `À FAIRE · échéance dans ${days} j` };
+  return { value: 'OK' as const, label: `OK · valable encore ${days} jours` };
 }

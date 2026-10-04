@@ -80,7 +80,7 @@ describe('espace client en ligne', () => {
     expect(screen.getByText('Espace client')).toBeInTheDocument();
     expect(screen.getByText('Transports Dupont')).toBeInTheDocument();
     const first = screen.getByRole('listitem', { name: 'AB-123-CD' });
-    expect(first).toHaveTextContent('À l’atelier — En cours depuis le 27/09/2026');
+    expect(first).toHaveTextContent('À l’atelier · En cours depuis le 27/09/2026');
     // Échéance dépassée ou proche : pastille ; sinon simple texte coloré
     expect(within(first).getByText(/^Contrôle technique/)).toHaveClass('s-bad');
     const second = screen.getByRole('listitem', { name: 'EF-456-GH' });

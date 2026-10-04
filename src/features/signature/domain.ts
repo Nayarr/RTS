@@ -35,7 +35,7 @@ export function signatureShareMessage(
     .join('\n');
   const vehicle = order.plate ? ` pour le véhicule ${order.plate}` : '';
   return {
-    subject: `Ordre de réparation ${order.number} à signer — ${company.legal_name}`,
+    subject: `Ordre de réparation ${order.number} à signer · ${company.legal_name}`,
     body:
       `Bonjour,\n\nAvant d'intervenir${vehicle}, nous avons besoin de votre accord. ` +
       `Vous pouvez consulter l'ordre de réparation ${order.number} et le signer en ligne :\n\n${link}\n\n` +

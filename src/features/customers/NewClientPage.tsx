@@ -175,7 +175,7 @@ export function NewClientPage() {
                   <div className="field">
                     <Label htmlFor="new-client-civility">Civilité</Label>
                     <select id="new-client-civility" className="inp" {...register('civility')}>
-                      <option value="">—</option>
+                      <option value="">-</option>
                       <option value="Mme">Mme</option>
                       <option value="M.">M.</option>
                     </select>

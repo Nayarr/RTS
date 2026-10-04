@@ -219,7 +219,7 @@ describe('facture en ligne (client, sans compte)', () => {
     expect(screen.getByText(/F11887/)).toBeInTheDocument();
     expect(screen.getByText(/1 rue du Test/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Facture à régler avant le 27\/10\/2026 — reste dû : 124,00\s€/),
+      screen.getByText(/Facture à régler avant le 27\/10\/2026, reste dû : 124,00\s€/),
     ).toBeInTheDocument();
     expect(screen.getByText('TVA sur les encaissements.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accepter et signer' })).toBeNull();

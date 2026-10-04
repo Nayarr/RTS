@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Fichiers stockés dans Cloudflare R2
+-- RTS Atelier : Fichiers stockés dans Cloudflare R2
 --
 -- Parcours d'un envoi (Edge Function « files ») :
 --   1. register_file        : l'appelant (avec ses droits) réserve une ligne « en attente »

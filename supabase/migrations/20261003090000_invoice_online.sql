@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Envoi des factures en ligne et relances
+-- RTS Atelier : Envoi des factures en ligne et relances
 -- =============================================================================
 
 -- Relance d'une facture impayée : tracée (date, auteur) et visible dans l'historique des OR.

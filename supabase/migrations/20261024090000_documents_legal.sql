@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Mentions et validité des documents (audit)
+-- RTS Atelier : Mentions et validité des documents (audit)
 --
 --   - une facture n'est émise qu'avec l'adresse de facturation du client (mention
 --     obligatoire entre professionnels) ; le SIREN reste un avertissement dans l'appli ;
@@ -86,7 +86,7 @@ begin
   end if;
 
   v_title := 'Devis ' || v_quote.number || ' ' || case when p_accept then 'accepté' else 'refusé' end || ' en ligne';
-  select coalesce(c.name, '') || coalesce(' — ' || v.plate, '') into v_body
+  select coalesce(c.name, '') || coalesce(' · ' || v.plate, '') into v_body
   from public.quotes q left join public.clients c on c.id = q.client_id left join public.vehicles v on v.id = q.vehicle_id
   where q.id = v_quote.id;
 

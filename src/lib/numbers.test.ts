@@ -32,7 +32,7 @@ describe('saisie des nombres', () => {
 describe('affichage', () => {
   it('montants en euros et marge sur le prix d’achat', () => {
     expect(formatEuro(1234.5).replace(/\s/g, ' ')).toBe('1 234,50 €');
-    expect(formatEuro(null)).toBe('—');
+    expect(formatEuro(null)).toBe('-');
     expect(marginPercent(92, 138)).toBe(50);
     expect(marginPercent(null, 138)).toBeNull();
     expect(marginPercent(0, 10)).toBeNull();

@@ -15,7 +15,7 @@ import {
 
 function Value({ value, options }: { value: string | undefined; options: ChipOption[] }) {
   const option = optionFor(value, options);
-  if (!option) return <span className="muted">—</span>;
+  if (!option) return <span className="muted">-</span>;
   return (
     <span className="badge" style={{ '--c': option.color } as CSSProperties}>
       {option.label}
@@ -68,7 +68,7 @@ export function InspectionCard({ data }: { data: InspectionData | null }) {
                   ) : fluid?.etat === 'bon' ? (
                     <span className="badge s-ok">Niveau bon</span>
                   ) : (
-                    <span className="muted">—</span>
+                    <span className="muted">-</span>
                   )}
                 </Row>
               );
@@ -98,7 +98,7 @@ export function InspectionCard({ data }: { data: InspectionData | null }) {
                   {[...lights, data.voyants_autres].filter(Boolean).join(', ')}
                 </span>
               ) : (
-                <span className="muted">—</span>
+                <span className="muted">-</span>
               )}
             </Row>
             <Row label="Problème électrique">

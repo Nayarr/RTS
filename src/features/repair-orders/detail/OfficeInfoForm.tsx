@@ -127,7 +127,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={UNASSIGNED}>— Non assigné —</SelectItem>
+                    <SelectItem value={UNASSIGNED}>Non assigné</SelectItem>
                     {(technicians.data ?? []).map((technician) => (
                       <SelectItem key={technician.id} value={technician.id}>
                         {technician.display_name}

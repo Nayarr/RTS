@@ -53,7 +53,7 @@ function PlanningCell({ member }: { member: TeamMember }) {
   if (!technician) {
     return (
       <span className="muted">
-        {member.role === 'direction' || member.role === 'reception' ? 'Hors planning' : '—'}
+        {member.role === 'direction' || member.role === 'reception' ? 'Hors planning' : '-'}
       </span>
     );
   }
@@ -73,7 +73,7 @@ function PlanningCell({ member }: { member: TeamMember }) {
 }
 
 function PinCell({ member }: { member: TeamMember }) {
-  if (!activeTechnician(member)) return <span className="muted">—</span>;
+  if (!activeTechnician(member)) return <span className="muted">-</span>;
   return member.pinSetAt ? (
     <span className="badge s-ok dot">PIN défini</span>
   ) : (

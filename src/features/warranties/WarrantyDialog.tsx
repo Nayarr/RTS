@@ -25,7 +25,7 @@ import { useWarrantyMutation } from './hooks';
 
 function description(claim: WarrantyClaim | null, fromPart: boolean) {
   if (claim?.repair_order_number) {
-    return `Pièce de l’OR ${claim.repair_order_number}${claim.vehicle_plate ? ` — ${claim.vehicle_plate}` : ''}.`;
+    return `Pièce de l’OR ${claim.repair_order_number}${claim.vehicle_plate ? ` · ${claim.vehicle_plate}` : ''}.`;
   }
   if (fromPart) return 'Le retour est rattaché à l’OR, au véhicule et au client.';
   return 'Pièce renvoyée au fournisseur : défaut, erreur de référence, casse…';

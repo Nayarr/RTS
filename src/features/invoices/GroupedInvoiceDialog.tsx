@@ -78,7 +78,7 @@ export function GroupedInvoiceDialog({
                   setPicked(null);
                 }}
               >
-                <option value="">— Choisir —</option>
+                <option value="">Choisir…</option>
                 {clients.map(([id, entry]) => (
                   <option key={id} value={id}>
                     {entry.name} ({entry.orders.length} OR)
@@ -100,7 +100,7 @@ export function GroupedInvoiceDialog({
                       }
                     />
                     <Label htmlFor={`grouped-${order.id}`} className="font-normal">
-                      {order.number} — {order.plate} — {STATUS_META[order.status].label}
+                      {order.number} · {order.plate} · {STATUS_META[order.status].label}
                     </Label>
                   </li>
                 ))}

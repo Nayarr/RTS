@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Recherche globale (bureau)
+-- RTS Atelier : Recherche globale (bureau)
 --   Un seul champ : immatriculation, client, n° d'OR, de devis ou de facture.
 --   Les plaques et numéros se comparent sans espaces ni tirets (« ab123 » trouve
 --   « AB-123-CD ») ; les noms, sans tenir compte des majuscules.

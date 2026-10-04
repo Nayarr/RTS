@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Pilotage : statistiques mensuelles et trésorerie (direction)
+-- RTS Atelier : Pilotage : statistiques mensuelles et trésorerie (direction)
 --   Statistiques : chiffre d'affaires HT des 12 derniers mois (main d'œuvre /
 --   forfaits, pièces, marge pièces), avoirs déduits le mois de leur émission.
 --   Trésorerie : encaissé du mois, à encaisser sous 30 jours, retards,

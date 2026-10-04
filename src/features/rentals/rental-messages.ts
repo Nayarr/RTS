@@ -37,7 +37,7 @@ export function rentalSignatureMessage(
 ): SendLinkMessage {
   const name = documentName(rental);
   return {
-    subject: `${name.charAt(0).toUpperCase()}${name.slice(1)} à signer — ${company.legal_name}`,
+    subject: `${name.charAt(0).toUpperCase()}${name.slice(1)} à signer · ${company.legal_name}`,
     body:
       `Bonjour,\n\nVoici votre ${name} pour le véhicule ${rental.plate}, ${periodText(rental)}.\n` +
       `Vous pouvez le relire et le signer en ligne, sans créer de compte :\n\n${link}\n\n` +
@@ -55,7 +55,7 @@ export function rentalContractMessage(
 ): SendLinkMessage {
   const name = documentName(rental);
   return {
-    subject: `Votre ${name} — ${company.legal_name}`,
+    subject: `Votre ${name} · ${company.legal_name}`,
     body:
       `Bonjour,\n\nVous trouverez ci-dessous le lien vers votre ${name} pour le véhicule ${rental.plate}, ` +
       `${periodText(rental)}. Vous pouvez le consulter, l’imprimer ou l’enregistrer en PDF :\n\n${link}\n\n` +

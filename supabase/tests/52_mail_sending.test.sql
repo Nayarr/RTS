@@ -21,7 +21,7 @@ select is((select mail_send_enabled from public.app_settings), true, 'La directi
 
 -- Journal : écrit par l'Edge Function (clé de service), lu par le bureau
 insert into public.email_deliveries (provider_message_id, recipient, subject, attachments, sent_by)
-values ('re_123', 'client@exemple.fr', 'Facture F00012 — RTS', '{F00012.pdf}', '00000000-0000-0000-0000-0000000000e1');
+values ('re_123', 'client@exemple.fr', 'Facture F00012 · RTS', '{F00012.pdf}', '00000000-0000-0000-0000-0000000000e1');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
 select results_eq($$ select recipient, attachments from public.email_deliveries $$,

@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Purge des fichiers dans Cloudflare R2
+-- RTS Atelier : Purge des fichiers dans Cloudflare R2
 --
 -- Chaque nuit :
 --   1. mark_orphan_files()     : les fichiers envoyés mais rattachés à rien depuis 7 jours

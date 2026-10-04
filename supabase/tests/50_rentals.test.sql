@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — contrats et prêts : numérotation, pas de chevauchement, remise des clés
+-- Location : contrats et prêts : numérotation, pas de chevauchement, remise des clés
 -- contrôlée (permis, signature, photos, relevés), prêt sans obligation, retour, facture
 -- =============================================================================
 begin;

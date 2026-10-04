@@ -81,7 +81,7 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
 
 ## Déploiement
 
-- **Recette : Vercel** (intégration GitHub) — un aperçu par PR, la production à chaque fusion sur `main`.
+- **Recette : Vercel** (intégration GitHub) : un aperçu par PR, la production à chaque fusion sur `main`.
   Configuration dans [`vercel.json`](vercel.json) (routes de l'appli, cache, en-têtes de sécurité).
   Variables à définir dans Vercel : `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
 - **Fichiers : Cloudflare R2**. Le navigateur envoie et lit les fichiers directement dans R2 avec

@@ -18,7 +18,7 @@ insert into public.repair_orders (id, vehicle_id, requested_work, technician_id,
    '10000000-0000-0000-0000-0000000000a1', 'assigned', '2026-10-05', '14:00');
 select results_eq(
   $$select title, body, link from public.push_outbox where profile_id = '00000000-0000-0000-0000-0000000000a1'$$,
-  $$values ('Nouvel OR : AB-123-CD', 'Freins avant — Prévu le 05/10 à 14h00', '/atelier/or/50000000-0000-0000-0000-000000000001')$$,
+  $$values ('Nouvel OR : AB-123-CD', 'Freins avant · Prévu le 05/10 à 14h00', '/atelier/or/50000000-0000-0000-0000-000000000001')$$,
   'OR assigné : notification au technicien');
 
 update public.repair_orders set requested_work = 'Freins avant et arrière'
@@ -55,7 +55,7 @@ select is((select count(*)::integer from public.push_outbox where profile_id = '
 
 -- ---------------------------------------------------------------- Bureau : réponse à un devis en ligne
 insert into public.notifications (recipient_role, type, title, body, link, dedupe_key) values
-  ('direction', 'quote_response', 'Devis DV00001 accepté en ligne', 'Transports Dupont — AB-123-CD', '/devis/x', 'qr-1'),
+  ('direction', 'quote_response', 'Devis DV00001 accepté en ligne', 'Transports Dupont · AB-123-CD', '/devis/x', 'qr-1'),
   ('direction', 'low_stock', 'Stock bas : AdBlue', null, '/stock/consommables', 'stock-1');
 select results_eq(
   $$select title from public.push_outbox where profile_id = '00000000-0000-0000-0000-0000000000d1' order by created_at, title$$,

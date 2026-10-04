@@ -87,7 +87,7 @@ test('la direction consulte la rentabilité par client / véhicule et la perform
   // CA 470 €, MO 270 €, pièces 200 €, marge 80 €, 3 h facturées, facture impayée (564 € TTC)
   const client = page.getByRole('button', { name: clientName });
   await expect(client.locator('xpath=ancestor::tr')).toContainText(
-    /1\s*470\s€\s*270\s€\s*200\s€\s*80\s€\s*3 h\s*0 h\s*—\s*—\s*564\s€/,
+    /1\s*470\s€\s*270\s€\s*200\s€\s*80\s€\s*3 h\s*0 h\s*-\s*-\s*564\s€/,
   );
   await client.click();
   await page.getByRole('link', { name: plate }).click();

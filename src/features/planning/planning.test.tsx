@@ -225,7 +225,7 @@ describe('planning : règles', () => {
       needsReminder({ scheduled_date: '2026-10-08', reminder_sent_at: '2026-10-07T08:00:00Z' }, '2026-10-07'),
     ).toBe(false);
     const message = appointmentReminderMessage(appointment(), COMPANY);
-    expect(message.subject).toBe('Rappel rendez-vous mercredi 7 octobre — RAPID TRUCK SERVICE');
+    expect(message.subject).toBe('Rappel rendez-vous mercredi 7 octobre · RAPID TRUCK SERVICE');
     expect(message.body).toContain('le mercredi 7 octobre à 09:00 pour le véhicule AB-123-CD (Vidange).');
     expect(message.body).toContain('Adresse : 19 rue Gaston Monmousseau, 95190 Goussainville.');
     expect(message.sms).toBe(
@@ -314,7 +314,7 @@ describe('planning : écran', () => {
     const tuesday = await screen.findByTestId('planning-untimed-2026-10-06');
     const chip = within(tuesday).getByRole('link', { name: /SH-100-AA/ });
     expect(chip).toHaveAttribute('href', '/or/ro2');
-    expect(chip).toHaveAttribute('title', 'Prévu ce jour, sans horaire — Alice');
+    expect(chip).toHaveAttribute('title', 'Prévu ce jour, sans horaire · Alice');
     expect(within(screen.getByTestId('planning-untimed-2026-10-08')).getByRole('link')).toHaveTextContent(
       'SH-200-BB',
     );
@@ -344,7 +344,7 @@ describe('planning : écran', () => {
     renderPlanning('?vue=jour&date=2026-10-07');
     await userEvent.click(await screen.findByRole('button', { name: 'Assigner un OR à Alice' }));
     const dialog = screen.getByRole('dialog', { name: 'Assigner un OR' });
-    expect(within(dialog).getByText('Mercredi 07/10 — Alice')).toBeInTheDocument();
+    expect(within(dialog).getByText('Mercredi 07/10 · Alice')).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Assigner au planning' }));
     expect(await within(dialog).findByText('Choisis un OR')).toBeInTheDocument();
 

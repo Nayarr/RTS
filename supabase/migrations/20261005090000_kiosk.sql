@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Borne de pointage et pointages
+-- RTS Atelier : Borne de pointage et pointages
 --   - la photo du pointage est vérifiée ; celle d'une tentative refusée est supprimée ;
 --   - correction manuelle par la direction (oubli de badge, panne de la borne) ;
 --   - un pointage de la borne ne se modifie ni ne se supprime ;
@@ -25,7 +25,7 @@ begin
     raise exception 'Accès refusé : compte borne requis' using errcode = '42501';
   end if;
   if p_photo_file_id is null then
-    return jsonb_build_object('ok', false, 'message', 'Caméra indisponible — pointage impossible. Préviens le bureau.');
+    return jsonb_build_object('ok', false, 'message', 'Caméra indisponible : pointage impossible. Préviens le bureau.');
   end if;
   perform public.assert_confirmed_file(p_photo_file_id, 'clock_photo');
 

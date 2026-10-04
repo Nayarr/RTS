@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — signature du contrat à distance et envoi du contrat au client
+-- Location : signature du contrat à distance et envoi du contrat au client
 --
 --   * Signature par lien e-mail : comme pour l'OR, le bureau prépare un lien (valable 7 jours)
 --     que le client ouvre sans compte ; il relit le contrat (véhicule, période, conditions)
@@ -227,7 +227,7 @@ begin
   select plate into v_plate from public.fleet_vehicles where id = v_rental.fleet_vehicle_id;
   insert into public.notifications (recipient_role, type, title, body, link, dedupe_key)
   select role, 'signature_received', 'Contrat signé : ' || coalesce(v_plate, v_rental.number),
-         v_rental.number || ' — signé en ligne' || coalesce(' par ' || nullif(btrim(p_signer_name), ''), ''),
+         v_rental.number || ' · signé en ligne' || coalesce(' par ' || nullif(btrim(p_signer_name), ''), ''),
          '/location/contrats/' || v_rental.id, 'signature-' || p_request.id || '-' || role
   from (values ('direction'::public.app_role), ('reception'::public.app_role)) roles(role)
   on conflict (dedupe_key) do nothing;

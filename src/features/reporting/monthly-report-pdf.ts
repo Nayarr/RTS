@@ -22,7 +22,7 @@ export interface MonthlyReportData {
 
 /** Montant arrondi à l'euro, comme l'ancien rapport (« 12 540 € »). */
 const eur = (value: number) => pdfText(`${Math.round(value).toLocaleString('fr-FR')} €`);
-const percent = (value: number | null) => (value === null ? '—' : `${Math.round(value)} %`);
+const percent = (value: number | null) => (value === null ? '-' : `${Math.round(value)} %`);
 const frenchDay = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 
 /** « 2026-03-01 » → « Mars 2026 » */
@@ -46,7 +46,7 @@ export function monthlyReportTables({ report, clients, technicians }: MonthlyRep
       ...(f.credit_notes_ht > 0 ? [['  avoirs déduits', `-${eur(f.credit_notes_ht)}`]] : []),
       ['Marge sur pièces', eur(f.parts_margin_ht)],
       ['Factures émises', String(f.invoice_count)],
-      ['Panier moyen HT', f.invoice_count ? eur(f.revenue_ht / f.invoice_count) : '—'],
+      ['Panier moyen HT', f.invoice_count ? eur(f.revenue_ht / f.invoice_count) : '-'],
       ['Encaissé sur le mois (TTC)', eur(f.collected_ttc)],
       ['Reste à encaisser aujourd’hui (TTC)', eur(f.outstanding_ttc)],
       ['  dont en retard', eur(f.overdue_ttc)],
@@ -59,19 +59,19 @@ export function monthlyReportTables({ report, clients, technicians }: MonthlyRep
           String(client.ro_count),
           eur(revenue(client)),
           eur(client.parts_margin_ht),
-          client.unpaid_ttc > 0 ? eur(client.unpaid_ttc) : '—',
+          client.unpaid_ttc > 0 ? eur(client.unpaid_ttc) : '-',
         ])
       : [['Aucune facture', '', '', '', '']],
     technicians: technicians.length
       ? technicians.map((tech) => [
           pdfText(tech.name),
-          tech.score === null ? '—' : String(Math.round(tech.score)),
+          tech.score === null ? '-' : String(Math.round(tech.score)),
           eur(tech.labor_ht),
           String(tech.ro_count),
           percent(tech.efficiency),
           percent(tech.occupancy),
         ])
-      : [['—', '', '', '', '', '']],
+      : [['-', '', '', '', '', '']],
     overdueInvoices: report.overdue_invoices.length
       ? report.overdue_invoices.map((invoice) => [
           invoice.number,
@@ -83,7 +83,7 @@ export function monthlyReportTables({ report, clients, technicians }: MonthlyRep
     deadlines: report.deadlines.length
       ? report.deadlines.map((deadline) => [
           deadline.plate,
-          pdfText(deadline.client_name ?? '—'),
+          pdfText(deadline.client_name ?? '-'),
           DEADLINE_LABELS[deadline.kind],
           frenchDay(deadline.due_date),
           deadline.days_left < 0 ? 'Dépassé' : 'À venir',
@@ -160,7 +160,7 @@ export async function buildMonthlyReportPdf(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Rapport généré le ${pdfDate(now)} — RTS Atelier`, MARGIN, 290);
+  doc.text(`Rapport généré le ${pdfDate(now)} · RTS Atelier`, MARGIN, 290);
 
   return { doc, fileName: pdfFileName('Rapport_mensuel', data.report.month.slice(0, 7)) };
 }

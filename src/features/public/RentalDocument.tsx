@@ -46,7 +46,7 @@ export function RentalDocument({
   const changedSinceSigning = toSign && contract.status === 'signed' && !contract.signed_at;
 
   const money = (value: number | null, suffix = '') =>
-    present(value) ? `${formatEuro(value)}${suffix}` : '—';
+    present(value) ? `${formatEuro(value)}${suffix}` : '-';
   const rows: [string, string][] = conditions.billable
     ? [
         [
@@ -181,9 +181,9 @@ export function RentalDocument({
           </div>
         )}
         <p className="hint text-center print:hidden">
-          {company.legal_name} — {companyAddress(company)}
-          {company.phone && ` — ${company.phone}`}
-          {company.email && ` — ${company.email}`}
+          {company.legal_name} · {companyAddress(company)}
+          {company.phone && ` · ${company.phone}`}
+          {company.email && ` · ${company.email}`}
         </p>
       </main>
     </>

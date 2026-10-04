@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Messages au client depuis l'OR
+-- RTS Atelier : Messages au client depuis l'OR
 --   « Véhicule pris en charge », « Devis disponible », « Véhicule prêt » : le
 --   message est pré-rédigé par l'appli et envoyé par la messagerie de l'atelier
 --   (e-mail ou SMS). Chaque envoi est tracé (client_messages) et apparaît dans

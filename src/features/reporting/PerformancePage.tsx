@@ -13,7 +13,7 @@ import { usePeriod } from './use-period';
 const PERIODS: Period[] = ['semaine', 'mois', 'tout'];
 const TONE_BADGE = { good: 's-ok', warning: 's-warn', bad: 's-bad', neutral: 's-grey' } as const;
 
-const percent = (value: number | null) => (value === null ? '—' : `${Math.round(value)} %`);
+const percent = (value: number | null) => (value === null ? '-' : `${Math.round(value)} %`);
 
 function Figure({ label, value }: { label: string; value: string }) {
   return (
@@ -36,7 +36,7 @@ function TechnicianCard({ tech }: { tech: TechnicianScore }) {
           <b className="text-base">{tech.name}</b>
         </span>
         <span className={cn('badge lg', TONE_BADGE[tone])}>
-          {tech.score === null ? '—' : Math.round(tech.score)}
+          {tech.score === null ? '-' : Math.round(tech.score)}
           <span className="font-normal opacity-80">/100</span>
         </span>
       </div>
@@ -49,7 +49,7 @@ function TechnicianCard({ tech }: { tech: TechnicianScore }) {
           label="Précision estim."
           value={
             tech.estimate_deviation_percent === null
-              ? '—'
+              ? '-'
               : `±${Math.round(tech.estimate_deviation_percent)} %`
           }
         />
@@ -57,7 +57,7 @@ function TechnicianCard({ tech }: { tech: TechnicianScore }) {
           label="Délai moyen"
           value={
             tech.average_lead_days === null
-              ? '—'
+              ? '-'
               : `${tech.average_lead_days.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} j`
           }
         />

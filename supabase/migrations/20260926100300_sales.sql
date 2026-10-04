@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 04. Commercial : numérotation, devis, factures, avoirs,
+-- RTS Atelier : 04. Commercial : numérotation, devis, factures, avoirs,
 --                   paiements, rendez-vous, contrats, garanties, messages client
 -- =============================================================================
 

@@ -79,7 +79,7 @@ function AddConsumableDialog({ repairOrderId, onClose }: { repairOrderId: string
                     value={field.value}
                     onChange={field.onChange}
                   >
-                    <option value="">— Choisir —</option>
+                    <option value="">Choisir…</option>
                     {list.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.name} ({formatQuantity(item.stock_qty)} {item.unit} en stock)
@@ -125,7 +125,7 @@ function ConsumableRow({ item, editable }: { item: RoConsumable; editable: boole
   return (
     <li className="li">
       <span className="grow">
-        {item.name} — <b className="num">{`${formatQuantity(item.quantity)} ${item.unit}`}</b>
+        {item.name} · <b className="num">{`${formatQuantity(item.quantity)} ${item.unit}`}</b>
       </span>
       <span className="num muted w-[90px] text-right">
         {formatEuro(item.unit_sale_price * item.quantity)} HT

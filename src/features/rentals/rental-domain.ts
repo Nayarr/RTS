@@ -305,4 +305,4 @@ export function vehicleFree(
 
 export const FUEL_LABELS = ['vide', '1/8', '1/4', '3/8', '1/2', '5/8', '3/4', '7/8', 'plein'];
 export const fuelLabel = (eighths: number | null | undefined) =>
-  !present(eighths) ? '—' : `${FUEL_LABELS[eighths]} (${eighths}/8)`;
+  !present(eighths) ? '-' : `${FUEL_LABELS[eighths]} (${eighths}/8)`;

@@ -67,8 +67,8 @@ export function PushBanner() {
         <b>Notifications de l’appareil</b>{' '}
         <span className="muted">
           {support === 'ios-install'
-            ? '— pour être prévenu même téléphone verrouillé, installe d’abord l’appli : touche Partager puis « Sur l’écran d’accueil », et ouvre-la depuis la nouvelle icône.'
-            : '— sois prévenu dès qu’un devis est accepté, qu’un OR t’est confié ou qu’un congé est demandé, même téléphone verrouillé.'}
+            ? ': pour être prévenu même téléphone verrouillé, installe d’abord l’appli : touche Partager puis « Sur l’écran d’accueil », et ouvre-la depuis la nouvelle icône.'
+            : ': sois prévenu dès qu’un devis est accepté, qu’un OR t’est confié ou qu’un congé est demandé, même téléphone verrouillé.'}
         </span>
       </p>
       <div className="flex gap-2">

@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 02. Référentiels : comptes, équipe, réglages, fichiers,
+-- RTS Atelier : 02. Référentiels : comptes, équipe, réglages, fichiers,
 --                   clients, véhicules, fournisseurs, catalogues
 -- =============================================================================
 

@@ -114,7 +114,7 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle>Paiement</DialogTitle>
           <DialogDescription>
-            Facture {number} — TTC {formatEuro(totalTtc)} — reste dû : <strong>{formatEuro(balance)}</strong>
+            Facture {number} · TTC {formatEuro(totalTtc)}, reste dû : <strong>{formatEuro(balance)}</strong>
           </DialogDescription>
         </DialogHeader>
         <form

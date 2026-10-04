@@ -186,7 +186,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                   <div className="field">
                     <Label htmlFor="client-civility">Civilité</Label>
                     <select id="client-civility" className="inp" {...register('civility')}>
-                      <option value="">—</option>
+                      <option value="">-</option>
                       <option value="Mme">Mme</option>
                       <option value="M.">M.</option>
                     </select>

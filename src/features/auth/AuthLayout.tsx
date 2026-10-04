@@ -45,8 +45,8 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             L’atelier poids lourds, de l’arrivée du camion à la facture.
           </p>
           <p className="text-base leading-normal opacity-80">
-            OR, planning, devis signés en ligne, facturation et pointage — sur l’ordinateur du bureau comme
-            sur le téléphone des techniciens.
+            OR, planning, devis signés en ligne, facturation et pointage, sur l’ordinateur du bureau comme sur
+            le téléphone des techniciens.
           </p>
         </div>
         <span className="relative text-[13px] opacity-60">

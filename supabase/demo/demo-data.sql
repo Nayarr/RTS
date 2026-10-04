@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Données fictives de démonstration (base LOCALE uniquement)
+-- RTS Atelier : Données fictives de démonstration (base LOCALE uniquement)
 --
 --   npx supabase db reset && npm run db:demo
 --

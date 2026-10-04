@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 08. Sécurité : Row Level Security, droits, temps réel
+-- RTS Atelier : 08. Sécurité : Row Level Security, droits, temps réel
 -- =============================================================================
 -- Règle générale : RLS activé sur TOUTES les tables. Sans politique = aucun accès
 -- (c'est le cas des tables de secrets : technician_pins, kiosk_secrets,

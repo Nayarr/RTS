@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — contrats de location et prêts pendant un OR
+-- Location : contrats de location et prêts pendant un OR
 --
 -- Un contrat (LC-AAAA-NNNN) ou un prêt (PR-AAAA-NNNN) réserve un véhicule de la flotte
 -- pour un client sur une période (date et heure de départ obligatoires), sans chevauchement.

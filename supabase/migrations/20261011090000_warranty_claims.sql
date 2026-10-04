@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Garanties et retours de pièces
+-- RTS Atelier : Garanties et retours de pièces
 --   Suivi des pièces renvoyées au fournisseur (défaut, erreur de référence,
 --   casse…) : À retourner → Envoyée → Acceptée / Refusée → Remboursée.
 --   Un retour déclaré depuis une pièce d'OR reprend l'OR, le véhicule et le

@@ -267,7 +267,7 @@ function FeesStep({
                 onChange={(event) => update(line.key, { unit_price: num(event.target.value) })}
               />
               <span className="num b w-24 pt-2 text-right">
-                {line.checked ? formatEuro(lineTotal(line)) : '—'}
+                {line.checked ? formatEuro(lineTotal(line)) : '-'}
               </span>
               {line.key.startsWith('extra') && (
                 <button

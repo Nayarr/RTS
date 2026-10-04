@@ -12,14 +12,14 @@ interface ResultItem {
 
 /** Résultats à plat, dans l'ordre d'affichage (Entrée ouvre le premier). */
 export function searchSections(results: SearchResults): { title: string; items: ResultItem[] }[] {
-  const join = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' — ');
+  const join = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' · ');
   return [
     {
       title: 'Ordres de réparation',
       items: results.repair_orders.map((ro) => ({
         key: `ro-${ro.id}`,
         to: `/or/${ro.id}`,
-        title: `${ro.number} — ${ro.plate}`,
+        title: `${ro.number} · ${ro.plate}`,
         detail: join(ro.client_name, STATUS_META[ro.status].label, formatDate(ro.created_at)),
       })),
     },

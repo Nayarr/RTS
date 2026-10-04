@@ -104,7 +104,7 @@ describe('signature : règles', () => {
       'https://x/d/t',
       company,
     );
-    expect(message.subject).toBe('Ordre de réparation OR00512 à signer — RAPID TRUCK SERVICE');
+    expect(message.subject).toBe('Ordre de réparation OR00512 à signer · RAPID TRUCK SERVICE');
     expect(message.body).toContain('https://x/d/t');
     expect(message.body).toContain('valable 7 jours');
     expect(message.sms).toContain('GH-512-RT');

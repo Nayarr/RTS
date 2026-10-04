@@ -41,7 +41,7 @@ export function checkTitle(title) {
   if (!TITLE_PATTERN.test((title ?? '').trim())) {
     return [
       `Titre invalide : « ${title ?? ''} ». Format attendu : type(portée optionnelle): description ` +
-        '— types : feat, fix, chore, ci, docs, refactor, test, perf, build, style, revert. ' +
+        '· types : feat, fix, chore, ci, docs, refactor, test, perf, build, style, revert. ' +
         'Exemple : « feat(devis): signature en ligne ».',
     ];
   }

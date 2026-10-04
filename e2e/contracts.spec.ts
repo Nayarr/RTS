@@ -37,7 +37,7 @@ test('contrat d’entretien : entretien planifié, facture du mois, fin du contr
   await expect(dialog).toBeHidden();
 
   // Aucun entretien depuis 8 mois : les deux véhicules sont à planifier
-  const card = page.getByRole('article', { name: `${clientName} — Vidange + contrôle général` });
+  const card = page.getByRole('article', { name: `${clientName} · Vidange + contrôle général` });
   await expect(card.getByRole('button', { name: 'À planifier' })).toHaveCount(2);
   await expect(card).toContainText('2 entretiens à planifier');
 
@@ -54,7 +54,7 @@ test('contrat d’entretien : entretien planifié, facture du mois, fin du contr
   // Facture du mois : brouillon avec la ligne du contrat
   await card.getByRole('button', { name: 'Facturer le mois' }).click();
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]{36}$/);
-  await expect(page.getByText(/Contrat d.entretien — Vidange \+ contrôle général/).first()).toBeVisible();
+  await expect(page.getByText(/Contrat d.entretien · Vidange \+ contrôle général/).first()).toBeVisible();
 
   // Fin du contrat : il passe dans les contrats terminés
   await page.goto('/contrats');

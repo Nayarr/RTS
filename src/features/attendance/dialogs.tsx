@@ -58,7 +58,7 @@ export function ManualClockDialog({
         <DialogHeader>
           <DialogTitle>Correction de pointage</DialogTitle>
           <DialogDescription>
-            {dayLabel(date)} — pour un oubli de badge ou une panne de la borne. La correction est marquée «
+            {dayLabel(date)} : pour un oubli de badge ou une panne de la borne. La correction est marquée «
             manuel ».
           </DialogDescription>
         </DialogHeader>

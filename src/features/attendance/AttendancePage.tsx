@@ -115,7 +115,7 @@ export function AttendancePage() {
                       setDialog({
                         kind: 'photo',
                         fileId: event.photo_file_id,
-                        title: `${tech.display_name} — ${eventLabel(event)} ${clockTime(event.occurred_at)}`,
+                        title: `${tech.display_name} · ${eventLabel(event)} ${clockTime(event.occurred_at)}`,
                       })
                     }
                     onDelete={(event) => setDialog({ kind: 'delete', event, name: tech.display_name })}
@@ -140,7 +140,7 @@ export function AttendancePage() {
           open
           onOpenChange={(open) => !open && setDialog(null)}
           title="Supprimer cette correction ?"
-          description={`${dialog.name} — ${eventLabel(dialog.event)} à ${clockTime(dialog.event.occurred_at)} (${dialog.event.reason ?? 'sans motif'}).`}
+          description={`${dialog.name} · ${eventLabel(dialog.event)} à ${clockTime(dialog.event.occurred_at)} (${dialog.event.reason ?? 'sans motif'}).`}
           confirmLabel="Supprimer"
           destructive
           pending={remove.isPending}
@@ -202,7 +202,7 @@ function TechnicianCard({ tech, isToday, photoUrls, onPhoto, onDelete }: Technic
           {tech.leaveType && (
             <span className="badge s-warn">
               {LEAVE_LABELS[tech.leaveType]}
-              {tech.events.length > 0 && <span className="sr-only"> — a badgé pendant son absence</span>}
+              {tech.events.length > 0 && <span className="sr-only"> : a badgé pendant son absence</span>}
             </span>
           )}
           {attendance && attendance.late_minutes > 0 && (
@@ -230,7 +230,7 @@ function TechnicianCard({ tech, isToday, photoUrls, onPhoto, onDelete }: Technic
               {isToday ? ' aujourd’hui' : ''}
             </>
           ) : (
-            '—'
+            '-'
           )}
         </span>
       </div>

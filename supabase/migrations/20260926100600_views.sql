@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — 07. Vues de lecture
+-- RTS Atelier : 07. Vues de lecture
 -- =============================================================================
 -- Toutes les vues sont en security_invoker : elles appliquent les droits (RLS)
 -- de l'utilisateur qui les interroge.

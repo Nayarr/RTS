@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Travaux réalisés avant le devis : facturer ou offrir
+-- RTS Atelier : Travaux réalisés avant le devis : facturer ou offrir
 --
 -- Reprise de l'ancienne appli : un technicien fait un diagnostic / contrôle sur un OR,
 -- le bureau fait un devis, le client l'accepte. Les travaux déjà effectués sur cet OR
@@ -144,7 +144,7 @@ begin
                                       quantity, discount_percent, vat_rate, labor_category, source_ro_line_id)
     select v_invoice_id, p_repair_order_id, d.ord * 10,
            'labor',
-           case when d.decision = 'offered' then d.description || ' — offert (geste commercial)' else d.description end,
+           case when d.decision = 'offered' then d.description || ' · offert (geste commercial)' else d.description end,
            coalesce(d.price, 0), 1,
            case when d.decision = 'offered' then 100 else 0 end,
            v_vat, v_ro.vehicle_type::text::public.labor_category, d.line_id
@@ -186,7 +186,7 @@ declare
 begin
   insert into public.notifications (recipient_role, type, title, body, repair_order_id, link, dedupe_key)
   select role, 'pre_quote_work', 'Travaux avant devis à facturer ou offrir : ' || v.plate,
-         'Devis ' || coalesce(q.number, '') || ' accepté — OR ' || r.number,
+         'Devis ' || coalesce(q.number, '') || ' accepté · OR ' || r.number,
          r.id, '/or/' || r.id, 'pre-quote-work-' || r.id || '-' || role
   from public.repair_orders r
   join public.vehicles v on v.id = r.vehicle_id

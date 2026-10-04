@@ -210,7 +210,7 @@ begin
     update public.quotes set resulting_repair_order_id = v_ro_id where id = p_quote_id;
     insert into public.ro_events (repair_order_id, label, actor_id)
     select v_quote.repair_order_id,
-           'Devis accepté — nouvel OR ' || r.number || ' créé', auth.uid()
+           'Devis accepté · nouvel OR ' || r.number || ' créé', auth.uid()
     from public.repair_orders r where r.id = v_ro_id;
   end if;
   return v_ro_id;
@@ -290,7 +290,7 @@ begin
 
   insert into public.ro_events (repair_order_id, label, actor_id)
   values (p_repair_order_id,
-          'Travaux marqués terminés' || case when p_quote_needed then ' — devis à faire' else '' end,
+          'Travaux marqués terminés' || case when p_quote_needed then ' · devis à faire' else '' end,
           auth.uid());
   return v_ro;
 end;

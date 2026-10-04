@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Intégrité de la facturation (audit)
+-- RTS Atelier : Intégrité de la facturation (audit)
 --
 --   - un OR n'est facturé qu'une fois : une nouvelle facture n'est possible qu'après
 --     un avoir couvrant toute la facture précédente (parcours « avoir puis nouvelle
@@ -173,7 +173,7 @@ begin
 
   insert into public.invoice_lines (invoice_id, position, line_type, description, unit_price, quantity, vat_rate)
   values (v_invoice_id, 0, 'package',
-          'Contrat d''entretien — ' || coalesce(nullif(v_contract.service_description, ''), 'entretien') || ' — '
+          'Contrat d''entretien · ' || coalesce(nullif(v_contract.service_description, ''), 'entretien') || ' · '
             || v_month_label || coalesce(E'\nVéhicules : ' || v_plates, ''),
           v_contract.monthly_price_ht, 1, (select default_vat_rate from public.company_settings));
   return v_invoice_id;

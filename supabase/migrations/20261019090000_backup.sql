@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Sauvegarde téléchargeable par la direction
+-- RTS Atelier : Sauvegarde téléchargeable par la direction
 --
 -- Reprise du bouton « Sauvegarde » de l'ancienne appli : toute la base dans un
 -- fichier JSON, en plus des sauvegardes automatiques de Supabase. La date de la

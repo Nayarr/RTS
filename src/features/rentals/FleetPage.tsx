@@ -139,7 +139,7 @@ export function FleetPage() {
                 <Link
                   to={`/location/flotte/${vehicle.id}`}
                   className="card block overflow-hidden transition-colors hover:border-[color-mix(in_srgb,var(--primary)_40%,var(--border))]"
-                  aria-label={`${vehicle.plate} — ${vehicleTitle(vehicle)}`}
+                  aria-label={`${vehicle.plate} · ${vehicleTitle(vehicle)}`}
                 >
                   <div className="relative h-[118px] border-b">
                     <VehicleVisual

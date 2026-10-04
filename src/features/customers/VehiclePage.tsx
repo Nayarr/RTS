@@ -249,7 +249,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                             {work || taskSummary(order.requested_work)}
                           </td>
                           <td className="r num">
-                            {order.mileage ? order.mileage.toLocaleString('fr-FR') : '—'}
+                            {order.mileage ? order.mileage.toLocaleString('fr-FR') : '-'}
                           </td>
                           <td>
                             <StatusBadge status={order.status} />
@@ -289,7 +289,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                           {status.label}
                         </span>
                       ) : (
-                        <span className="muted">—</span>
+                        <span className="muted">-</span>
                       )}
                     </div>
                   </div>

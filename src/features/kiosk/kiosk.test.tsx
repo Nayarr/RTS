@@ -138,7 +138,7 @@ describe('borne : écran', () => {
     await screen.findByText('RAPID TRUCK SERVICE');
     await typePin('1234');
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
-    expect(await screen.findByText(/Caméra indisponible — pointage impossible/)).toBeInTheDocument();
+    expect(await screen.findByText(/Caméra indisponible : pointage impossible/)).toBeInTheDocument();
     expect(uploadFile).not.toHaveBeenCalled();
     expect(kioskClock).not.toHaveBeenCalled();
   });
@@ -149,7 +149,7 @@ describe('borne : écran', () => {
     await screen.findByText('RAPID TRUCK SERVICE');
     await typePin('1234');
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
-    expect(await screen.findByText('Erreur réseau — réessaie')).toBeInTheDocument();
+    expect(await screen.findByText('Erreur réseau : réessaie')).toBeInTheDocument();
   });
 
   it('sortie de la borne avec le code de la direction', async () => {

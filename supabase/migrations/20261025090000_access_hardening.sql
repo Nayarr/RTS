@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Durcissement des accès (audit)
+-- RTS Atelier : Durcissement des accès (audit)
 --
 --   - taux horaires négociés des clients réservés au bureau ;
 --   - la borne ne lit plus directement clients, véhicules, OR, rendez-vous et congés
@@ -112,7 +112,7 @@ begin
     raise exception 'Accès refusé : compte borne requis' using errcode = '42501';
   end if;
   if p_photo_file_id is null then
-    return jsonb_build_object('ok', false, 'message', 'Caméra indisponible — pointage impossible. Préviens le bureau.');
+    return jsonb_build_object('ok', false, 'message', 'Caméra indisponible : pointage impossible. Préviens le bureau.');
   end if;
   perform public.assert_confirmed_file(p_photo_file_id, 'clock_photo');
 

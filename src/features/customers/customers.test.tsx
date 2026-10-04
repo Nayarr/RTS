@@ -247,7 +247,7 @@ describe('clients et véhicules : règles', () => {
   it('carnet d’entretien : un passage par ligne, du plus ancien au plus récent', () => {
     expect(maintenanceBookRows(VEHICLE_DETAIL)).toEqual([
       ['20/09/2025', 'OR00001', '150 000', 'Vidange moteur', 'Filtre à huile', 'F11887'],
-      ['20/09/2026', 'OR00002', '184 320', 'Freinage', '—', '—'],
+      ['20/09/2026', 'OR00002', '184 320', 'Freinage', '-', '-'],
     ]);
   });
 });

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Location — clients particuliers (nom affiché « Prénom Nom ») et permis de conduire
+-- Location : clients particuliers (nom affiché « Prénom Nom ») et permis de conduire
 -- (bureau uniquement ; permis utilisable si scanné recto/verso, catégorie couverte, valide)
 -- =============================================================================
 begin;

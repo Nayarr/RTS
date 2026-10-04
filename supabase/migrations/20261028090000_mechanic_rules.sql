@@ -67,7 +67,7 @@ begin
 
   insert into public.ro_events (repair_order_id, label, actor_id)
   values (p_repair_order_id,
-          'Travaux marqués terminés' || case when p_quote_needed then ' — devis à faire' else '' end,
+          'Travaux marqués terminés' || case when p_quote_needed then ' · devis à faire' else '' end,
           auth.uid());
   return v_ro;
 end;

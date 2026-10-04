@@ -96,7 +96,7 @@ describe('relevé : écran', () => {
     expect(alice).toHaveTextContent('ALAlice1 oubli de badge320h000h301 retard (20 min)2 j');
     const weeks = screen.getByRole('article', { name: 'Semaines de Alice' });
     expect(within(weeks).getAllByRole('row')[1]).toHaveTextContent('2026-S4016h000h30');
-    expect(screen.getByRole('row', { name: 'Bruno' })).toHaveTextContent('BRBruno11h000h00——');
+    expect(screen.getByRole('row', { name: 'Bruno' })).toHaveTextContent('BRBruno11h000h00--');
 
     await userEvent.click(screen.getByRole('button', { name: 'Export CSV (paie)' }));
     const [content, fileName] = vi.mocked(downloadFile).mock.calls[0] ?? [];

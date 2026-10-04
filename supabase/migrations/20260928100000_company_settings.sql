@@ -1,5 +1,5 @@
 -- =============================================================================
--- RTS Atelier — Réglages de l'entreprise : garde-fous du logo
+-- RTS Atelier : Réglages de l'entreprise : garde-fous du logo
 -- =============================================================================
 
 -- Le logo doit être un fichier « logo » dont l'envoi est confirmé ; l'ancien logo

@@ -250,17 +250,17 @@ function InvoiceList() {
                         </Link>
                       </td>
                       <td className="num">{formatDate(invoiceDate(invoice))}</td>
-                      <td>{invoice.client_name ?? '—'}</td>
+                      <td>{invoice.client_name ?? '-'}</td>
                       <td>
                         {invoice.vehicle_label ? (
                           <span className="plate">{invoice.vehicle_label}</span>
                         ) : (
-                          <span className="muted">—</span>
+                          <span className="muted">-</span>
                         )}
                       </td>
                       <td className="r num b">{formatEuro(invoice.total_ttc)}</td>
                       <td className="r num">
-                        {invoice.status === 'issued' ? formatEuro(invoice.balance_due) : '—'}
+                        {invoice.status === 'issued' ? formatEuro(invoice.balance_due) : '-'}
                       </td>
                       <td>
                         <InvoiceStatusBadge invoice={invoice} />
@@ -298,7 +298,7 @@ function InvoiceList() {
                         <div className="col gap-0">
                           <b className="text-base">{invoice.number ?? 'Brouillon'}</b>
                           <span className="hint">
-                            {invoice.client_name ?? '—'} · {invoice.vehicle_label ?? '—'}
+                            {invoice.client_name ?? '-'} · {invoice.vehicle_label ?? '-'}
                           </span>
                         </div>
                         <InvoiceStatusBadge invoice={invoice} />
@@ -377,8 +377,8 @@ function CreditNoteList() {
                         {note.invoice_number}
                       </Link>
                     </td>
-                    <td>{note.client_name ?? '—'}</td>
-                    <td className="muted max-w-[320px] truncate">{note.reason ?? '—'}</td>
+                    <td>{note.client_name ?? '-'}</td>
+                    <td className="muted max-w-[320px] truncate">{note.reason ?? '-'}</td>
                     <td className="r num b down">−{formatEuro(note.total_ttc)}</td>
                   </tr>
                 ))}

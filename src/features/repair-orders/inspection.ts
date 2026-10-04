@@ -42,7 +42,7 @@ export const CHECK_FIELDS = [
   ['extincteur1', 'Extincteur 1 kg cabine'],
   ['extincteur2', 'Extincteur 2 kg cabine'],
   ['extincteur6', 'Extincteur 6 kg camion'],
-  ['eclairage', 'Éclairage — ampoules'],
+  ['eclairage', 'Éclairage, ampoules'],
 ] as const;
 
 /** Contrôles pour lesquels le technicien peut photographier l'étiquette. */
