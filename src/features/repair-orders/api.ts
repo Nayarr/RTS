@@ -24,7 +24,8 @@ export type RepairOrderOverview = Omit<OverviewRow, Guaranteed> & {
 };
 
 export type RoLine = Tables<'ro_lines'>;
-export type RoPhoto = Tables<'ro_photos'>;
+/** Photo de l'OR ; `author_name` : qui l'a prise (visionneuse). */
+export type RoPhoto = Tables<'ro_photos'> & { author_name?: string | null };
 export type RoEvent = Tables<'ro_events'> & { actor_name: string | null };
 export type TimeEntry = Tables<'time_entries'>;
 
@@ -58,7 +59,11 @@ export async function fetchRepairOrder(id: string): Promise<RepairOrderDetail | 
   const [order, lines, photos, inspection, timeEntries] = await Promise.all([
     supabase.from('v_repair_orders_overview').select('*').eq('id', id).maybeSingle(),
     supabase.from('ro_lines').select('*').eq('repair_order_id', id).order('kind').order('position'),
-    supabase.from('ro_photos').select('*').eq('repair_order_id', id).order('taken_at'),
+    supabase
+      .from('ro_photos')
+      .select('*, author:profiles(full_name)')
+      .eq('repair_order_id', id)
+      .order('taken_at'),
     supabase.from('inspections').select('data').eq('repair_order_id', id).maybeSingle(),
     supabase.from('time_entries').select('*').eq('repair_order_id', id).order('started_at'),
   ]);
@@ -67,7 +72,10 @@ export async function fetchRepairOrder(id: string): Promise<RepairOrderDetail | 
   return {
     order: order.data as RepairOrderOverview,
     lines: lines.data ?? [],
-    photos: photos.data ?? [],
+    photos: (photos.data ?? []).map(({ author, ...photo }) => ({
+      ...photo,
+      author_name: author?.full_name ?? null,
+    })),
     inspection: (inspection.data?.data as InspectionData | undefined) ?? null,
     timeEntries: timeEntries.data ?? [],
   };

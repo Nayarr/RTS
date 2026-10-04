@@ -28,6 +28,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhotoViewer } from '@/components/PhotoViewer';
+import type { ViewerPhoto } from '@/components/photo-viewer';
+import { useFileUrls } from '@/features/files/hooks';
 import { StoredImage } from '@/features/files/StoredImage';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
@@ -70,6 +73,8 @@ function RentalView({ detail }: { detail: RentalDetail }) {
   const [pdf, setPdf] = useState<PdfFile | null>(null);
   const [pdfPending, setPdfPending] = useState(false);
   const [extending, setExtending] = useState(false);
+  const urls = useFileUrls(photos.map((photo) => photo.file_id));
+  const [viewer, setViewer] = useState<{ title: string; photos: ViewerPhoto[]; index: number } | null>(null);
   const period = RATE_PERIODS.find((entry) => entry.value === rental.rate_period) ?? RATE_PERIODS[0];
 
   const openPdf = async () => {
@@ -302,11 +307,39 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                       <figure key={label} className="col gap-1">
                         <div className="aspect-[4/3] overflow-hidden rounded-[8px] border bg-muted">
                           {photo && (
-                            <StoredImage
-                              fileId={photo.file_id}
-                              alt={`${label} (${phase === 'departure' ? 'départ' : 'retour'})`}
-                              className="h-full w-full object-cover"
-                            />
+                            <button
+                              type="button"
+                              className="block h-full w-full cursor-zoom-in"
+                              aria-label={`Voir la photo « ${label} » en grand`}
+                              onClick={() => {
+                                const shown = ordered.flatMap((item) =>
+                                  item.photo
+                                    ? [
+                                        {
+                                          id: item.photo.id,
+                                          url: urls.data?.[item.photo.file_id] ?? null,
+                                          label: item.label,
+                                          takenAt: item.photo.created_at,
+                                        },
+                                      ]
+                                    : [],
+                                );
+                                setViewer({
+                                  title:
+                                    phase === 'departure'
+                                      ? 'État des lieux de départ'
+                                      : 'État des lieux de retour',
+                                  photos: shown,
+                                  index: shown.findIndex((item) => item.id === photo.id),
+                                });
+                              }}
+                            >
+                              <StoredImage
+                                fileId={photo.file_id}
+                                alt={`${label} (${phase === 'departure' ? 'départ' : 'retour'})`}
+                                className="h-full w-full object-cover"
+                              />
+                            </button>
                           )}
                         </div>
                         <figcaption className="muted text-[12px]">{label}</figcaption>
@@ -420,6 +453,16 @@ function RentalView({ detail }: { detail: RentalDetail }) {
       </div>
 
       {extending && <ExtendDialog detail={detail} onClose={() => setExtending(false)} />}
+      {viewer && (
+        <PhotoViewer
+          photos={viewer.photos}
+          startIndex={viewer.index}
+          plate={vehicle.plate}
+          title={viewer.title}
+          reference={rental.number}
+          onClose={() => setViewer(null)}
+        />
+      )}
       {pdf && <PdfPreviewDialog file={pdf} onClose={() => setPdf(null)} />}
     </>
   );

@@ -112,6 +112,8 @@ export function TechRepairOrderPage() {
         requiredLabels={requiredLabels}
         capture={capture}
         locked={locked}
+        plate={order.plate}
+        number={order.number}
       />
       <InspectionEditor
         key={order.id}
