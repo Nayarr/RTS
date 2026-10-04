@@ -133,10 +133,12 @@ test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ pag
   await page.goto(`/location/contrats/${contract.id}`);
   await page.getByRole('button', { name: 'Envoyer le contrat' }).click();
   const dialog = page.getByRole('dialog', { name: `Envoyer le contrat ${contract.number}` });
-  await expect(dialog.getByText('facturation@rapidtruckservice.fr')).toBeVisible();
-  await expect(dialog.getByText(/les réponses du client arrivent sur cette adresse/)).toBeVisible();
+  await expect(
+    dialog.getByText('RAPID TRUCK SERVICE <facturation@rapidtruckservice.fr>').first(),
+  ).toBeVisible();
+  await expect(dialog.getByText(/réponses du client arrivent sur cette adresse/)).toBeVisible();
   await expect(dialog.getByRole('checkbox', { name: /Joindre le contrat/ })).toBeChecked();
-  await dialog.getByRole('button', { name: 'Envoyer l’e-mail maintenant' }).click();
+  await dialog.getByRole('button', { name: 'Envoyer l’e-mail' }).click();
 
   await expect(page.getByText(`E-mail envoyé à compta.${id}@e2e.fr`)).toBeVisible({ timeout: 20_000 });
   await expect(dialog).toBeHidden();
@@ -147,13 +149,14 @@ test('contrat envoyé par l’appli en un clic, avec le PDF joint', async ({ pag
       to: string;
       subject: string;
       text: string;
+      link: { label: string; url: string };
       attachments: { filename: string; content: string }[];
     },
   ];
   expect(sent.category).toBe('billing');
   expect(sent.to).toBe(`compta.${id}@e2e.fr`);
   expect(sent.subject).toBe(`Votre contrat de location ${contract.number} · RAPID TRUCK SERVICE`);
-  expect(sent.text).toMatch(/\/d\/[0-9a-f]{64}/);
+  expect(sent.link.url).toMatch(/\/d\/[0-9a-f]{64}$/);
   expect(sent.attachments).toHaveLength(1);
   expect(sent.attachments[0]?.filename).toMatch(/\.pdf$/);
   expect(sent.attachments[0]?.content.startsWith('JVBER')).toBe(true); // « %PDF »
@@ -174,12 +177,9 @@ test('envoi refusé par le service : message affiché, la messagerie reste propo
   await page.getByRole('button', { name: 'Envoyer le contrat' }).click();
   const dialog = page.getByRole('dialog', { name: `Envoyer le contrat ${contract.number}` });
   await dialog.getByRole('checkbox', { name: /Joindre le contrat/ }).uncheck();
-  await dialog.getByRole('button', { name: 'Envoyer l’e-mail maintenant' }).click();
-  await expect(
-    page.getByText('Envoi par l’appli pas encore configuré : passe par ta messagerie'),
-  ).toBeVisible();
-  await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByRole('link', { name: /Envoyer par e-mail \(messagerie de l’ordinateur\)/ }),
-  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Envoyer l’e-mail' }).click();
+  await expect(dialog.getByRole('alert')).toContainText(
+    'Envoi par l’appli pas encore configuré : passe par ta messagerie',
+  );
+  await expect(dialog.getByRole('link', { name: 'Ouvrir dans ma messagerie' })).toBeVisible();
 });
