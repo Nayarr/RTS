@@ -70,6 +70,7 @@ export function ShareQuoteButton({ quote, disabled }: { quote: QuoteOverview; di
           title={`Devis ${prepared.number ?? ''} prêt à envoyer`}
           intro="Le client pourra consulter le devis et l’accepter en signant, sans compte."
           link={prepared.link}
+          linkLabel="Consulter et signer le devis"
           message={prepared.message}
           senderEmail={prepared.senderEmail}
           mailCategory="billing"

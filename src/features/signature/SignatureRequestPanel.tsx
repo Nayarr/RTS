@@ -189,6 +189,7 @@ export function SignatureRequestPanel({
           title={`OR ${order.number} : signature à distance`}
           intro="Le client consulte l’ordre de réparation et le signe en ligne, sans compte. Le lien est valable 7 jours."
           link={prepared.link}
+          linkLabel="Consulter et signer l’OR"
           message={prepared.message}
           senderEmail={prepared.senderEmail}
           mailCategory="signature"

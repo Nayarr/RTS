@@ -30,6 +30,9 @@ export const requestSchema = z.object({
     .default([]),
   // Même clé pour un nouvel essai : Resend n'envoie pas deux fois le même e-mail.
   idempotency_key: z.guid(),
+  // Lien du document : bouton ajouté sous le message (le texte modifiable ne le contient pas)
+  link: z.object({ label: z.string().trim().min(1).max(80), url: z.url({ protocol: /^https?$/ }).max(500) })
+    .optional(),
 });
 export type MailRequest = z.infer<typeof requestSchema>;
 
@@ -88,6 +91,34 @@ export function textToHtml(text: string): string {
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2933">${body}</div>`;
 }
 
+/** Sépare le message de la signature (« Cordialement, … ») : le bouton se place entre les deux. */
+export function splitSignature(text: string): [string, string] {
+  const at = text.lastIndexOf('\nCordialement');
+  if (at < 0) return [text.trim(), ''];
+  return [text.slice(0, at).trim(), text.slice(at).trim()];
+}
+
+/** Texte brut : message, lien du document, signature. */
+export function mailText(text: string, link?: { label: string; url: string }): string {
+  if (!link) return text;
+  const [message, signature] = splitSignature(text);
+  return [message, `${link.label} : ${link.url}`, signature].filter(Boolean).join('\n\n');
+}
+
+/** HTML : message, bouton du document (et lien de secours), signature. */
+export function mailHtml(text: string, link?: { label: string; url: string }): string {
+  if (!link) return textToHtml(text);
+  const [message, signature] = splitSignature(text);
+  const url = escapeHtml(link.url);
+  const button =
+    `<p style="margin:20px 0 8px"><a href="${url}" style="display:inline-block;background:#137017;color:#ffffff;` +
+    `text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;padding:10px 16px;` +
+    `border-radius:6px">${escapeHtml(link.label)}</a></p>` +
+    `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#626862">` +
+    `Le bouton ne marche pas ? Copiez ce lien : <a href="${url}" style="color:#626862">${url}</a></p>`;
+  return textToHtml(message) + button + (signature ? textToHtml(signature) : '');
+}
+
 /** Corps de la requête à l'API Resend (POST /emails). */
 export function resendPayload(
   request: MailRequest,
@@ -97,8 +128,8 @@ export function resendPayload(
     from: senderAddress(sender.name, sender.address),
     to: [request.to],
     subject: request.subject,
-    text: request.text,
-    html: textToHtml(request.text),
+    text: mailText(request.text, request.link),
+    html: mailHtml(request.text, request.link),
     ...(sender.replyTo ? { reply_to: sender.replyTo } : {}),
     ...(request.attachments.length
       ? { attachments: request.attachments.map(({ filename, content }) => ({ filename, content })) }

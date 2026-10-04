@@ -94,6 +94,7 @@ export function ClientPortalButtons({ clientId, clientName }: { clientId: string
           title={`Espace client · ${clientName}`}
           intro="Lien personnel et permanent vers l’espace de ce client : véhicules à l’atelier, devis à signer, factures et échéances. Il est toujours à jour."
           link={prepared.link}
+          linkLabel="Ouvrir mon espace client"
           message={prepared.message}
           senderEmail={prepared.senderEmail}
           mailCategory="workshop"

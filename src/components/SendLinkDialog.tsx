@@ -1,14 +1,15 @@
-import { useRef, useState, type MouseEvent } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Copy, Loader2, Mail, MessageSquare, Paperclip, Send } from 'lucide-react';
+import { useState, type MouseEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Copy, Mail, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { FormField } from '@/components/FormField';
+import { MailComposer } from '@/components/MailComposer';
 import type { PdfFile } from '@/components/PdfPreviewDialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { fetchMailSettings, mailSender, mailSettingsKey, sendMail, type MailCategory } from '@/lib/mail';
+import { fetchMailSettings, mailSender, mailSettingsKey, type MailCategory } from '@/lib/mail';
 import { sendLinks, type ContactValues, type SendLinkMessage } from '@/lib/send-links';
 
 interface SendLinkDialogProps {
@@ -16,6 +17,8 @@ interface SendLinkDialogProps {
   intro: string;
   /** Lien de consultation ; absent pour un simple message (rappel de rendez-vous). */
   link?: string | undefined;
+  /** Libellé du bouton du document dans l'e-mail envoyé par l'appli. */
+  linkLabel?: string | undefined;
   message: SendLinkMessage;
   /** Adresse d'envoi conseillée (celle de l'atelier), si aucun domaine d'envoi n'est réglé. */
   senderEmail: string | null;
@@ -35,31 +38,50 @@ interface SendLinkDialogProps {
 }
 
 /**
- * Envoi d'un lien ou d'un message au client (devis à signer, facture, rappel) : l'appli prépare le message,
- * puis l'envoie elle-même (réglage de la direction, service Resend) ou ouvre la messagerie de l'atelier.
+ * Envoi d'un lien ou d'un message au client (devis à signer, facture, rappel) : l'appli prépare le message.
+ * Envoi par l'appli activé (réglage de la direction, service Resend) : l'e-mail est relu et modifiable
+ * avant de partir (aperçu). Sinon, la messagerie de l'atelier s'ouvre avec le message prêt.
  */
-export function SendLinkDialog({
+export function SendLinkDialog(props: SendLinkDialogProps) {
+  const mailSettings = useQuery({ queryKey: mailSettingsKey, queryFn: fetchMailSettings, staleTime: 60_000 });
+  const settings = mailSettings.data;
+  if (settings?.enabled) {
+    return (
+      <MailComposer
+        title={props.title}
+        intro={props.intro}
+        link={props.link}
+        linkLabel={props.linkLabel}
+        message={props.message}
+        settings={settings}
+        senderAddress={mailSender(props.mailCategory, settings)}
+        mailCategory={props.mailCategory}
+        contact={props.contact}
+        onContactSave={props.onContactSave}
+        onSend={props.onSend}
+        attachments={props.attachments}
+        onClose={props.onClose}
+      />
+    );
+  }
+  const senderEmail = (settings && mailSender(props.mailCategory, settings)) ?? props.senderEmail;
+  return <MailAppDialog {...props} senderEmail={senderEmail} />;
+}
+
+/** Envoi par la messagerie de l'ordinateur, Gmail, Outlook web ou SMS (comme l'ancienne appli). */
+function MailAppDialog({
   title,
   intro,
   link,
   message,
-  senderEmail: companyEmail,
-  mailCategory,
+  senderEmail,
   contact: initial,
   onContactSave,
   onSend,
-  attachments,
   onClose,
 }: SendLinkDialogProps) {
   const [contact, setContact] = useState(initial);
-  const [attach, setAttach] = useState(true);
-  const mailSettings = useQuery({ queryKey: mailSettingsKey, queryFn: fetchMailSettings, staleTime: 60_000 });
-  const direct = mailSettings.data?.enabled === true;
-  // Adresse du type de message (Réglages › Atelier), sinon l'e-mail de l'entreprise
-  const senderEmail = (mailSettings.data && mailSender(mailCategory, mailSettings.data)) ?? companyEmail;
   const links = sendLinks(message, contact, senderEmail);
-  // Même clé tant que l'envoi ne change pas : un nouvel essai n'envoie pas l'e-mail deux fois.
-  const idempotency = useRef<{ payload: string; key: string } | null>(null);
 
   const save = () => {
     if (contact.email.trim() !== initial.email.trim() || contact.phone.trim() !== initial.phone.trim()) {
@@ -82,33 +104,6 @@ export function SendLinkDialog({
     send('email')();
   };
 
-  const sendNow = useMutation({
-    mutationFn: async () => {
-      const to = contact.email.trim();
-      const withFiles = Boolean(attachments) && attach;
-      const payload = `${to}|${withFiles}`;
-      if (idempotency.current?.payload !== payload) {
-        idempotency.current = { payload, key: crypto.randomUUID() };
-      }
-      const files = withFiles && attachments ? await attachments.load() : [];
-      return sendMail({
-        category: mailCategory,
-        to,
-        message,
-        attachments: files,
-        idempotencyKey: idempotency.current.key,
-      });
-    },
-    onSuccess: ({ id }) => {
-      toast.success(`E-mail envoyé à ${contact.email.trim()}`);
-      save();
-      onSend?.('email', contact, id);
-      onClose();
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'E-mail non envoyé'),
-  });
-  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email.trim());
-
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -118,22 +113,8 @@ export function SendLinkDialog({
         </DialogHeader>
         {senderEmail && (
           <p className="text-sm text-muted-foreground">
-            {direct && mailSettings.data?.domain ? (
-              <>
-                Envoyé par l’appli depuis <strong>{senderEmail}</strong> : les réponses du client arrivent sur
-                cette adresse.
-              </>
-            ) : direct ? (
-              <>
-                Envoyé par l’appli au nom de l’atelier : les réponses du client arrivent sur{' '}
-                <strong>{senderEmail}</strong>.
-              </>
-            ) : (
-              <>
-                À envoyer depuis <strong>{senderEmail}</strong> : vérifie que c’est bien le compte expéditeur
-                choisi dans ta messagerie.
-              </>
-            )}
+            À envoyer depuis <strong>{senderEmail}</strong> : vérifie que c’est bien le compte expéditeur
+            choisi dans ta messagerie.
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-2">
@@ -163,27 +144,7 @@ export function SendLinkDialog({
           </div>
         )}
         <div className="flex flex-col gap-2">
-          {direct && (
-            <>
-              {attachments && (
-                <label className="row cursor-pointer gap-2.5 text-[13.5px]">
-                  <input
-                    type="checkbox"
-                    checked={attach}
-                    onChange={(event) => setAttach(event.target.checked)}
-                  />
-                  <Paperclip className="i xs" /> Joindre {attachments.label}
-                </label>
-              )}
-              <Button disabled={!validEmail || sendNow.isPending} onClick={() => sendNow.mutate()}>
-                {sendNow.isPending ? <Loader2 className="animate-spin" /> : <Send />} Envoyer l’e-mail
-                maintenant
-              </Button>
-              {!validEmail && <span className="hint">Renseigne l’e-mail du client pour l’envoyer.</span>}
-              <span className="mt-1 overline">Ou par ta messagerie</span>
-            </>
-          )}
-          <Button variant={direct ? 'outline' : 'default'} asChild>
+          <Button asChild>
             <a href={links.mailto} onClick={sendByEmailApp}>
               <Mail /> Envoyer par e-mail (messagerie de l’ordinateur)
             </a>

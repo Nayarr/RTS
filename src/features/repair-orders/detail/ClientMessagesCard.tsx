@@ -27,6 +27,8 @@ import { repairOrderKey, repairOrdersKey } from '../hooks';
 interface Prepared {
   type: ClientMessageType;
   message: SendLinkMessage;
+  /** Lien du devis (« Devis disponible ») : bouton dans l'e-mail envoyé par l'appli. */
+  link: string | null;
   senderEmail: string | null;
   contact: ContactValues;
 }
@@ -53,6 +55,7 @@ export function ClientMessagesCard({ order }: { order: RepairOrderOverview }) {
       setPrepared({
         type,
         message: clientMessage(type, { plate: order.plate, quoteLink }, settings.company),
+        link: type === 'quote_available' ? quoteLink : null,
         senderEmail: settings.company.email,
         contact: { email: contact.email ?? '', phone: contact.phone ?? '' },
       });
@@ -119,6 +122,8 @@ export function ClientMessagesCard({ order }: { order: RepairOrderOverview }) {
           title={CLIENT_MESSAGE_LABELS[prepared.type]}
           intro="Message pré-rédigé, à envoyer au client."
           message={prepared.message}
+          link={prepared.link ?? undefined}
+          linkLabel="Consulter le devis"
           senderEmail={prepared.senderEmail}
           mailCategory="workshop"
           contact={prepared.contact}

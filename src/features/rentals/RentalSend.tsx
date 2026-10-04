@@ -136,6 +136,9 @@ export function RemoteSignature({ detail }: { detail: RentalDetail }) {
           title={`${rental.number} : signature à distance`}
           intro="Le client relit le contrat et le signe en ligne, sans compte. Le lien est valable 7 jours."
           link={prepared.link}
+          linkLabel={
+            rental.kind === 'loan' ? 'Relire et signer le bon de prêt' : 'Relire et signer le contrat'
+          }
           message={prepared.message}
           senderEmail={prepared.senderEmail}
           mailCategory="signature"
@@ -170,6 +173,7 @@ export function SendContractButton({ detail }: { detail: RentalDetail }) {
           title={`Envoyer ${name} ${rental.number}`}
           intro="Le client pourra consulter, imprimer ou enregistrer son contrat en PDF."
           link={prepared.link}
+          linkLabel={rental.kind === 'loan' ? 'Consulter le bon de prêt' : 'Consulter le contrat'}
           message={prepared.message}
           senderEmail={prepared.senderEmail}
           mailCategory="billing"
