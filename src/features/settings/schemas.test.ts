@@ -124,6 +124,7 @@ describe('workshopSchema', () => {
     roadside_travel_hourly_rate: 90,
     clock_photo_retention_months: 3,
     label_scan_enabled: false,
+    agent_enabled: false,
     mail_send_enabled: false,
     mail_domain: '',
     mail_billing_local: 'facturation',

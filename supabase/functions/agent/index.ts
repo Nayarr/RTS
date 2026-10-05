@@ -1,0 +1,194 @@
+// =============================================================================
+// Edge Function « agent » : assistant de la direction (questions à la voix ou à l'écrit).
+//
+// La page « Assistant » envoie la question ; l'assistant Claude (Sonnet) choisit les outils de
+// lecture utiles (tools.ts), qui interrogent la base avec les droits de la personne connectée,
+// puis répond. Rien n'est modifié dans la base hormis l'historique de la conversation.
+// Réservé à la direction, réglage « Assistant de la direction » activé, limite de questions par
+// jour. Clé : secret ANTHROPIC_AGENT_API_KEY (sans clé : assistant indisponible).
+// =============================================================================
+import '@supabase/functions-js/edge-runtime.d.ts';
+import Anthropic from '@anthropic-ai/sdk';
+import { withSupabase } from '@supabase/server';
+import { z } from 'zod';
+import { answerText, conversationTitle, parisToday, questionText, SYSTEM_PROMPT } from './prompt.ts';
+import { runTool, TOOL_DEFINITIONS } from './tools.ts';
+
+z.config(z.locales.fr());
+
+const MODEL = 'claude-sonnet-5-5';
+/** Questions par personne sur 24 h : bien au-dessus d'un usage normal, borne le coût en cas d'abus. */
+const DAILY_LIMIT = 60;
+/** Au-delà, la conversation devient longue (et chère à relire) : on en commence une nouvelle. */
+const MAX_TURNS_PER_CONVERSATION = 30;
+/** Allers-retours avec les outils pour une seule question. */
+const MAX_STEPS = 8;
+
+const requestSchema = z.object({
+  conversation_id: z.guid().optional(),
+  question: z.string().trim().min(1).max(2000),
+  spoken: z.boolean().default(false),
+});
+
+const json = (status: number, body: unknown) => Response.json(body, { status });
+const fail = (status: number, error: string) => json(status, { error });
+
+const apiKey = Deno.env.get('ANTHROPIC_AGENT_API_KEY');
+// Adresse de l'API (remplaçable pour les tests locaux)
+const baseURL = Deno.env.get('ANTHROPIC_AGENT_API_URL');
+const claude = apiKey
+  ? new Anthropic({ apiKey, ...(baseURL ? { baseURL } : {}), maxRetries: 2, timeout: 60_000 })
+  : null;
+
+export default {
+  fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
+    if (req.method !== 'POST') return fail(405, 'Méthode non autorisée');
+    if (!claude) return fail(503, 'Assistant pas encore configuré');
+
+    const { data: isDirection } = await ctx.supabase.rpc('is_direction');
+    if (isDirection !== true) return fail(403, 'Assistant réservé à la direction');
+    const { data: settings } = await ctx.supabase.from('app_settings').select('agent_enabled').maybeSingle();
+    if (!settings?.agent_enabled) return fail(409, 'Assistant désactivé dans les réglages');
+
+    const parsed = requestSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return fail(400, 'Question vide ou trop longue');
+    const { conversation_id: conversationId, question, spoken } = parsed.data;
+    const userId = ctx.userClaims?.id;
+    if (!userId) return fail(401, 'Session expirée : reconnecte-toi');
+
+    const admin = ctx.supabaseAdmin;
+    const { count: today } = await admin
+      .from('agent_turns')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', userId)
+      .gte('created_at', new Date(Date.now() - 24 * 3_600_000).toISOString());
+    if ((today ?? 0) >= DAILY_LIMIT) {
+      return fail(429, `Limite de ${DAILY_LIMIT} questions par jour atteinte : reprends demain`);
+    }
+
+    let transcript: Anthropic.MessageParam[] = [];
+    if (conversationId) {
+      const { data: conversation } = await admin
+        .from('agent_conversations')
+        .select('profile_id, transcript')
+        .eq('id', conversationId)
+        .maybeSingle();
+      if (!conversation || conversation.profile_id !== userId) return fail(404, 'Conversation introuvable');
+      const { count: turns } = await admin
+        .from('agent_turns')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', conversationId);
+      if ((turns ?? 0) >= MAX_TURNS_PER_CONVERSATION) {
+        return fail(409, 'Conversation trop longue : commence une nouvelle conversation');
+      }
+      transcript = conversation.transcript as Anthropic.MessageParam[];
+    }
+
+    // Échanges de cette question, ajoutés à la suite sans jamais réécrire les précédents
+    const messages: Anthropic.MessageParam[] = [
+      ...transcript,
+      { role: 'user', content: questionText(question, spoken, parisToday()) },
+    ];
+    const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+    const used = new Set<string>();
+    let answer: string | null = null;
+    let keep = true;
+
+    try {
+      for (let step = 0; step < MAX_STEPS && answer === null; step++) {
+        const response = await claude.messages.create({
+          model: MODEL,
+          max_tokens: 4000,
+          // Consignes et outils relus en cache d'une question à l'autre ; la conversation aussi
+          system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+          cache_control: { type: 'ephemeral' },
+          tools: TOOL_DEFINITIONS,
+          output_config: { effort: 'low' },
+          messages,
+        });
+        usage.input += response.usage.input_tokens;
+        usage.output += response.usage.output_tokens;
+        usage.cacheRead += response.usage.cache_read_input_tokens ?? 0;
+        usage.cacheWrite += response.usage.cache_creation_input_tokens ?? 0;
+
+        if (response.stop_reason === 'refusal') {
+          answer = 'Je ne peux pas répondre à cette question. Reformule-la autrement.';
+          keep = false;
+        } else if (response.stop_reason === 'pause_turn') {
+          messages.push({ role: 'assistant', content: response.content });
+        } else if (response.stop_reason === 'tool_use') {
+          messages.push({ role: 'assistant', content: response.content });
+          const calls = response.content.filter((block) => block.type === 'tool_use');
+          const results = await Promise.all(
+            calls.map(async (call) => {
+              used.add(call.name);
+              const result = await runTool(ctx.supabase, call.name, call.input);
+              return { type: 'tool_result' as const, tool_use_id: call.id, ...result };
+            }),
+          );
+          messages.push({ role: 'user', content: results });
+        } else if (response.stop_reason === 'max_tokens') {
+          return fail(502, 'Réponse trop longue : pose une question plus précise');
+        } else {
+          messages.push({ role: 'assistant', content: response.content });
+          answer = answerText(response.content) || 'Je n’ai pas de réponse à cette question.';
+        }
+      }
+    } catch (err) {
+      if (err instanceof Anthropic.RateLimitError) {
+        return fail(503, 'Assistant occupé : réessaie dans un instant');
+      }
+      if (err instanceof Anthropic.APIError) {
+        console.error('agent', err.status, err.message);
+        return fail(502, 'Assistant indisponible pour le moment : réessaie dans un instant');
+      }
+      throw err;
+    }
+    if (answer === null) {
+      answer = 'Je n’ai pas réussi à rassembler la réponse. Pose la question plus simplement.';
+      keep = false;
+    }
+
+    // Un échange incomplet (refus, trop d'étapes) n'est pas gardé : la suite repart d'un état sain
+    const nextTranscript = keep ? messages : transcript;
+    let id = conversationId;
+    if (id) {
+      const { error } = await admin
+        .from('agent_conversations')
+        .update({ transcript: nextTranscript, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) console.error(error);
+    } else {
+      const { data, error } = await admin
+        .from('agent_conversations')
+        .insert({ profile_id: userId, title: conversationTitle(question), transcript: nextTranscript })
+        .select('id')
+        .single();
+      if (error || !data) {
+        console.error(error);
+        return fail(500, 'Conversation non enregistrée : réessaie');
+      }
+      id = data.id as string;
+    }
+
+    const { data: turn, error: turnError } = await admin
+      .from('agent_turns')
+      .insert({
+        conversation_id: id,
+        profile_id: userId,
+        question,
+        answer,
+        spoken,
+        tools: [...used],
+        input_tokens: usage.input,
+        output_tokens: usage.output,
+        cache_read_tokens: usage.cacheRead,
+        cache_write_tokens: usage.cacheWrite,
+      })
+      .select('id')
+      .single();
+    if (turnError) console.error(turnError); // réponse obtenue : le journal ne bloque pas
+
+    return json(200, { conversation_id: id, turn_id: turn?.id ?? null, answer });
+  }),
+};

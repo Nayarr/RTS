@@ -252,6 +252,10 @@ export const routes: RouteObject[] = [
                     path: '/pilotage/performance',
                     lazy: page(() => import('@/features/reporting/PerformancePage'), 'PerformancePage'),
                   },
+                  {
+                    path: '/pilotage/assistant',
+                    lazy: page(() => import('@/features/assistant/AssistantPage'), 'AssistantPage'),
+                  },
                 ],
               },
             ],

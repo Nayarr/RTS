@@ -466,6 +466,14 @@ verify_jwt = false
 import_map = "./functions/mail-send/deno.json"
 entrypoint = "./functions/mail-send/index.ts"
 
+[functions.agent]
+enabled = true
+# Assistant de la direction (Claude Sonnet, secret ANTHROPIC_AGENT_API_KEY) : lectures seules.
+# Le jeton de l'appelant est vérifié dans la fonction elle-même (withSupabase({ auth: "user" })).
+verify_jwt = false
+import_map = "./functions/agent/deno.json"
+entrypoint = "./functions/agent/index.ts"
+
 [functions.files-purge]
 enabled = true
 # Appelée par la tâche planifiée purge_files() : secret partagé vérifié dans la fonction.
