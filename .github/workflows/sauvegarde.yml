@@ -1,0 +1,70 @@
+# Sauvegarde de nuit : base Supabase et fichiers R2, chiffrés, déposés chez o2switch (FTP).
+# Script : scripts/sauvegarde.sh. Restauration : docs/sauvegarde.md.
+# En cas d'échec, GitHub prévient par e-mail ; relance possible à la main (« Run workflow »).
+name: Sauvegarde
+
+on:
+  schedule:
+    - cron: '30 1 * * *' # 2 h 30 l'hiver, 3 h 30 l'été (heure de Paris)
+  workflow_dispatch:
+
+concurrency:
+  group: sauvegarde
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sauvegarde:
+    name: Base et fichiers vers o2switch
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer le CLI Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+
+      - name: Installer rclone
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq rclone
+
+      - name: Préparer les accès rclone
+        env:
+          O2_FTP_PASSWORD: ${{ secrets.O2_FTP_PASSWORD }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          # rclone attend des mots de passe « obscurcis » : masqués dans les journaux.
+          ftp_pass="$(rclone obscure "$O2_FTP_PASSWORD")"
+          crypt_pass="$(rclone obscure "$BACKUP_PASSPHRASE")"
+          echo "::add-mask::$ftp_pass"
+          echo "::add-mask::$crypt_pass"
+          {
+            echo "RCLONE_CONFIG_O2_PASS=$ftp_pass"
+            echo "RCLONE_CONFIG_O2FICHIERS_PASSWORD=$crypt_pass"
+          } >> "$GITHUB_ENV"
+
+      - name: Sauvegarder
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_NO_CHECK_BUCKET: 'true'
+          RCLONE_CONFIG_O2_TYPE: ftp
+          # Nom du serveur o2switch : celui du certificat TLS (ftp.rapidtruckservice.fr ne correspond pas)
+          RCLONE_CONFIG_O2_HOST: pendragon.o2switch.net
+          RCLONE_CONFIG_O2_USER: ${{ secrets.O2_FTP_USER }}
+          RCLONE_CONFIG_O2_EXPLICIT_TLS: 'true'
+          RCLONE_CONFIG_O2FICHIERS_TYPE: crypt
+          RCLONE_CONFIG_O2FICHIERS_REMOTE: o2:fichiers
+          RCLONE_CONFIG_O2FICHIERS_FILENAME_ENCRYPTION: 'off'
+          RCLONE_CONFIG_O2FICHIERS_DIRECTORY_NAME_ENCRYPTION: 'false'
+        run: bash scripts/sauvegarde.sh
