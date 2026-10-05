@@ -119,9 +119,10 @@ test('réglages : sections à gauche et lien direct vers une section', async ({ 
   await expect(page.getByRole('heading', { name: 'Taux horaires' })).toBeVisible();
   await expect(page.getByLabel(/^Taux HT \(€\/h\)/).first()).toBeVisible();
 
-  await page.goto('/reglages?onglet=sauvegarde');
-  await expect(page.getByRole('tab', { name: 'Sauvegarde' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('button', { name: 'Télécharger la sauvegarde' })).toBeVisible();
+  await page.goto('/reglages?onglet=atelier');
+  await expect(sections.getByRole('tab', { name: 'Atelier' })).toHaveAttribute('aria-selected', 'true');
+  // Plus d'export de la base depuis l'appli : sauvegarde automatique chiffrée (docs/sauvegarde.md)
+  await expect(sections.getByRole('tab', { name: 'Sauvegarde' })).toHaveCount(0);
 });
 
 test('aide : un sujet choisi s’affiche à côté de la liste', async ({ page }) => {

@@ -124,7 +124,7 @@ export const DIRECTION_TOPICS: HelpTopic[] = [
       '« Stock », onglet « Forfaits » : donne à chaque forfait sa catégorie (PL, VUL…) et des mots-clés précis, par exemple « disque avant, plaquette avant ».',
       '« Stock », onglet « Consommables » : produits en vrac, prix et stock ; une alerte signale un stock sous le seuil.',
       'Borne de pointage et écran atelier (télé) : choisis d’abord le code de sortie dans « Pointages ». Sur la borne, la roue ⚙ et ce code permettent de quitter ou de passer en écran télé.',
-      '« Réglages », onglet « Sauvegarde » : télécharge toute la base dans un fichier, au moins une fois par semaine (la cloche te le rappelle). Garde-le sur une clé USB ou un disque externe.',
+      'Sauvegarde : automatique chaque nuit, chiffrée chez l’hébergeur (30 jours de copies de la base, photos et PDF gardés). Rien à faire dans l’appli.',
     ],
   },
   {
