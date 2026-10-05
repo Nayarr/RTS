@@ -127,7 +127,8 @@ export default {
     let message;
     try {
       message = await claude.beta.messages.create({
-        model: 'claude-opus-5-5',
+        // Sonnet : lecture de texte sur photo, deux fois moins cher qu'Opus (0,02 $ par photo environ)
+        model: 'claude-sonnet-5-5',
         max_tokens: 16000,
         // Refus de l'assistant : nouvelle tentative automatique sur le modèle recommandé
         betas: ['server-side-fallback-2026-07-01'],
