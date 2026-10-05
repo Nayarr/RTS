@@ -5,8 +5,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
 import { fetchSettings, updateCompanySettings, updateLaborRates, type Settings } from './api';
 import type * as SettingsApi from './api';
-import { downloadBackup } from './backup';
-import type * as BackupApi from './backup';
 import { SettingsPage } from './SettingsPage';
 
 vi.mock('./api', async (importOriginal) => ({
@@ -18,10 +16,6 @@ vi.mock('./api', async (importOriginal) => ({
 vi.mock('@/features/files/hooks', () => ({
   useFileUrl: () => ({ url: undefined, isPending: false, isError: false }),
   useUploadFile: () => ({ mutate: vi.fn(), isPending: false }),
-}));
-vi.mock('./backup', async (importOriginal) => ({
-  ...(await importOriginal<typeof BackupApi>()),
-  downloadBackup: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -80,7 +74,6 @@ const settings: Settings = {
     mail_billing_local: 'facturation',
     mail_workshop_local: 'atelier',
     mail_signature_local: 'signature',
-    last_backup_at: null,
     updated_at: '2026-09-28T00:00:00Z',
   },
 };
@@ -140,18 +133,12 @@ describe('SettingsPage', () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Modification réservée à la direction'));
   });
 
-  it('sauvegarde : ouverte depuis l’alerte, téléchargement puis confirmation', async () => {
-    vi.mocked(downloadBackup).mockResolvedValue({
-      app: 'RTS Atelier',
-      format: 1,
-      exported_at: '2026-09-29T08:00:00Z',
-      schema_version: '20261019090000',
-      tables: { clients: [{}, {}], invoices: [{}] },
-    });
-    renderSettings('/reglages?onglet=sauvegarde');
-    expect(await screen.findByText('Aucune sauvegarde pour l’instant')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Télécharger la sauvegarde' }));
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Sauvegarde téléchargée (3 lignes)'));
-    expect(fetchSettings).toHaveBeenCalledTimes(2); // date de la dernière sauvegarde rechargée
+  it('ouvre directement la section demandée dans l’adresse', async () => {
+    renderSettings('/reglages?onglet=taux');
+    expect(await screen.findByRole('tab', { name: 'Taux horaires' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.queryByRole('tab', { name: 'Sauvegarde' })).not.toBeInTheDocument();
   });
 });

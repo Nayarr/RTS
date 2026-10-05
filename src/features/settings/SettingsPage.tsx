@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { Building2, DatabaseBackup, FileText, Timer, Wrench, type LucideIcon } from 'lucide-react';
+import { Building2, FileText, Timer, Wrench, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { cn } from '@/lib/utils';
-import { BackupCard } from './BackupCard';
 import { BillingForm } from './BillingForm';
 import { CompanyForm } from './CompanyForm';
 import { useSettings } from './hooks';
@@ -11,22 +10,21 @@ import { LaborRatesForm } from './LaborRatesForm';
 import { LogoCard } from './LogoCard';
 import { WorkshopForm } from './WorkshopForm';
 
-type Section = 'entreprise' | 'facturation' | 'taux' | 'atelier' | 'sauvegarde';
+type Section = 'entreprise' | 'facturation' | 'taux' | 'atelier';
 
 const SECTIONS: { value: Section; label: string; icon: LucideIcon }[] = [
   { value: 'entreprise', label: 'Entreprise', icon: Building2 },
   { value: 'facturation', label: 'Devis et factures', icon: FileText },
   { value: 'taux', label: 'Taux horaires', icon: Timer },
   { value: 'atelier', label: 'Atelier', icon: Wrench },
-  { value: 'sauvegarde', label: 'Sauvegarde', icon: DatabaseBackup },
 ];
 
 const isSection = (value: string): value is Section => SECTIONS.some((section) => section.value === value);
 
-/** Écran « Réglages » (direction) : entreprise, facturation, taux horaires, atelier, sauvegarde. */
+/** Écran « Réglages » (direction) : entreprise, facturation, taux horaires, atelier. */
 export function SettingsPage() {
   const settings = useSettings();
-  // Lien de l'alerte « Sauvegarde à faire » : /reglages?onglet=sauvegarde
+  // Lien direct vers une section : /reglages?onglet=atelier
   const [params] = useSearchParams();
   const requested = params.get('onglet') ?? '';
   return (
@@ -101,7 +99,6 @@ function SettingsSections({
             {section === 'facturation' && <BillingForm company={settings.data.company} />}
             {section === 'taux' && <LaborRatesForm rates={settings.data.laborRates} />}
             {section === 'atelier' && <WorkshopForm app={settings.data.app} />}
-            {section === 'sauvegarde' && <BackupCard lastBackupAt={settings.data.app.last_backup_at} />}
           </div>
         </div>
       )}

@@ -403,7 +403,6 @@ begin
   perform set_config('request.jwt.claims', '', true);
   perform public.generate_alerts();
   perform public.pre_quote_work_alerts();
-  perform public.backup_reminder();
 end;
 $demo$;
 
