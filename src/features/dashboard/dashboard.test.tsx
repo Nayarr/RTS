@@ -12,6 +12,8 @@ vi.mock('@/features/auth/api', async (importOriginal) => ({
   fetchProfile: vi.fn(),
 }));
 vi.mock('./api', () => ({ fetchOfficeDashboard: vi.fn() }));
+// Charge de travail : testée à part (WorkloadCard.test.tsx)
+vi.mock('./WorkloadCard', () => ({ WorkloadCard: () => null }));
 
 const DASHBOARD: OfficeDashboard = {
   repair_orders: { assigned: 3, in_progress: 2, to_invoice: 1 },
@@ -77,16 +79,5 @@ describe('tableau de bord du bureau', () => {
     renderPage('direction');
     const todo = await screen.findByRole('region', { name: 'À suivre' });
     expect(tile(todo, 'Demandes de congé à traiter')).toHaveAttribute('href', '/pointages/conges');
-  });
-
-  it('charge de travail par technicien', async () => {
-    renderPage('reception');
-    const workload = await screen.findByRole('region', { name: 'Charge de travail atelier' });
-    expect(workload).toHaveTextContent('7,5 h déclarées · 6 OR en cours');
-    expect(
-      within(workload)
-        .getAllByRole('listitem')
-        .map((item) => item.textContent),
-    ).toEqual(['ALAlice3 OR7,5 h', 'BRBruno0 OR0 h']);
   });
 });

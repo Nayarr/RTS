@@ -5977,6 +5977,7 @@ export type Database = {
         Returns: Json;
       };
       rental_signature_request: { Args: { p_rental_id: string }; Returns: Json };
+      repair_order_planned_hours: { Args: { p_end: string; p_id: string; p_start: string }; Returns: number };
       repair_order_signature_request: { Args: { p_repair_order_id: string }; Returns: Json };
       repair_order_status_label: {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };
@@ -6278,6 +6279,7 @@ export type Database = {
       valid_client_phones: { Args: { p_phones: Json }; Returns: boolean };
       verify_kiosk_exit_code: { Args: { p_code: string }; Returns: boolean };
       workshop_board: { Args: Record<PropertyKey, never>; Returns: Json };
+      workshop_workload: { Args: { p_from: string; p_to: string }; Returns: Json };
     };
     Enums: {
       app_role: 'direction' | 'reception' | 'technician' | 'kiosk';

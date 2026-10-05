@@ -14,16 +14,15 @@ import {
   Wrench,
 } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
-import { initials } from '@/app/nav';
 import { Button } from '@/components/ui/button';
 import { AlertsBell } from '@/features/alerts/AlertsBell';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
-import { formatHours, STATUS_META, STATUS_ORDER } from '@/features/repair-orders/constants';
-import { technicianColor } from '@/features/planning/domain';
+import { STATUS_META, STATUS_ORDER } from '@/features/repair-orders/constants';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { fetchOfficeDashboard } from './api';
+import { WorkloadCard } from './WorkloadCard';
 
 /** « Mercredi 30 septembre » */
 function todayLabel() {
@@ -102,9 +101,6 @@ export function OfficeDashboardPage() {
   const data = dashboard.data;
   const isDirection = profile?.role === 'direction';
   const openStatuses = STATUS_ORDER.filter((status) => status !== 'invoiced');
-  const totalHours = (data?.workload ?? []).reduce((sum, row) => sum + Number(row.hours), 0);
-  const maxHours = Math.max(0, ...(data?.workload ?? []).map((row) => Number(row.hours)));
-  const activeOrders = openStatuses.reduce((sum, status) => sum + (data?.repair_orders[status] ?? 0), 0);
   const todoCount = data
     ? [
         data.quotes_awaiting_response,
@@ -255,56 +251,7 @@ export function OfficeDashboardPage() {
               </ul>
             </section>
 
-            <section data-slot="card" className="card flat" aria-labelledby="dashboard-workload">
-              <div className="card-h flex-wrap">
-                <h2 className="h2" id="dashboard-workload">
-                  Charge de travail atelier
-                </h2>
-                <span className="muted text-[13px]">
-                  {formatHours(totalHours)} déclarées · {activeOrders} OR en cours
-                </span>
-              </div>
-              <div className="card-b col gap-[18px] pt-5">
-                {data.workload.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Ajoute des techniciens pour voir la charge de travail.
-                  </p>
-                ) : (
-                  <ul className="col gap-[18px]">
-                    {data.workload.map((row) => {
-                      const color = technicianColor({ display_name: row.name, color: row.color });
-                      const hours = Number(row.hours);
-                      return (
-                        <li
-                          key={row.technician_id}
-                          className="col gap-2"
-                          style={{ '--c': color } as CSSProperties}
-                        >
-                          <div className="row between">
-                            <span className="who">
-                              <span className="av sm" style={{ '--c': color } as CSSProperties}>
-                                {initials(row.name)}
-                              </span>
-                              <b>{row.name}</b>
-                              <span className="muted">{row.orders} OR</span>
-                            </span>
-                            <b className="num">{formatHours(hours)}</b>
-                          </div>
-                          <div className="bar" aria-hidden>
-                            <i style={{ width: `${maxHours > 0 ? (hours / maxHours) * 100 : 0}%` }} />
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                <Button variant="outline" size="sm" asChild className="self-start">
-                  <Link to="/planning">
-                    <CalendarDays /> Ouvrir le planning
-                  </Link>
-                </Button>
-              </div>
-            </section>
+            <WorkloadCard />
           </div>
         </>
       )}
