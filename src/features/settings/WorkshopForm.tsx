@@ -159,6 +159,24 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             </div>
           )}
         />
+        <Controller
+          control={control}
+          name="agent_enabled"
+          render={({ field }) => (
+            <div className="row gap-3 rounded-xl border px-3.5 py-3">
+              <Switch id="agent_enabled" checked={field.value} onCheckedChange={field.onChange} />
+              <span className="col gap-0">
+                <Label htmlFor="agent_enabled" className="text-sm font-bold">
+                  Agent Direction
+                </Label>
+                <span className="hint">
+                  Menu « Agent Direction » : la direction pose ses questions à la voix ou à l’écrit (chiffre
+                  d’affaires, impayés, planning…) et l’assistant répond. Il lit les données, ne modifie rien.
+                </span>
+              </span>
+            </div>
+          )}
+        />
       </fieldset>
 
       <fieldset className="col gap-3">

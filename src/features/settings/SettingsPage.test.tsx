@@ -69,6 +69,7 @@ const settings: Settings = {
     rest_reference_monday: null,
     clock_photo_retention_months: 3,
     label_scan_enabled: false,
+    agent_enabled: false,
     mail_send_enabled: false,
     mail_domain: null,
     mail_billing_local: 'facturation',

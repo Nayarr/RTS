@@ -119,6 +119,7 @@ export const GROUPS: NavGroup[] = [
 
 export const NAV_PATHS = [
   ...GROUPS.flatMap((group) => group.items.map((item) => item.to)),
+  '/agent-direction',
   '/reglages',
   '/aide',
 ];

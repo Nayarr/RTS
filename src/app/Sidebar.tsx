@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, CircleHelp, House, LogOut, Moon, Settings, Sun, Tv } from 'lucide-react';
+import { AudioLines, ChevronDown, CircleHelp, House, LogOut, Moon, Settings, Sun, Tv } from 'lucide-react';
 import { signOut } from '@/features/auth/api';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
@@ -136,6 +136,18 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
           <House className="size-[18px]" />
           <span>{isOffice ? 'Tableau de bord' : 'Accueil'}</span>
         </Link>
+        {role === 'direction' && (
+          <Link
+            to="/agent-direction"
+            className={cn('ni', current === '/agent-direction' && 'on')}
+            aria-current={current === '/agent-direction' ? 'page' : undefined}
+            onClick={onNavigate}
+          >
+            <AudioLines className="size-[18px]" />
+            <span>Agent Direction</span>
+            <span className="voix">Voix</span>
+          </Link>
+        )}
         <div className="nav-scroll">
           {ops.length > 0 && <div className="overline">Opérations</div>}
           {ops.map(renderGroup)}

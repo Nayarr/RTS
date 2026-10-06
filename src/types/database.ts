@@ -3,8 +3,104 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      agent_conversations: {
+        Row: {
+          created_at: string;
+          id: string;
+          profile_id: string;
+          title: string;
+          transcript: NonNullable<Json>;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          profile_id: string;
+          title: string;
+          transcript?: NonNullable<Json>;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          profile_id?: string;
+          title?: string;
+          transcript?: NonNullable<Json>;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agent_conversations_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      agent_turns: {
+        Row: {
+          answer: string;
+          cache_read_tokens: number;
+          cache_write_tokens: number;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          input_tokens: number;
+          output_tokens: number;
+          profile_id: string;
+          question: string;
+          spoken: boolean;
+          tools: string[];
+        };
+        Insert: {
+          answer: string;
+          cache_read_tokens?: number;
+          cache_write_tokens?: number;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          profile_id: string;
+          question: string;
+          spoken?: boolean;
+          tools?: string[];
+        };
+        Update: {
+          answer?: string;
+          cache_read_tokens?: number;
+          cache_write_tokens?: number;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          profile_id?: string;
+          question?: string;
+          spoken?: boolean;
+          tools?: string[];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agent_turns_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'agent_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'agent_turns_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       app_settings: {
         Row: {
+          agent_enabled: boolean;
           clock_photo_retention_months: number;
           daily_hours: number;
           expected_arrival: string;
@@ -30,6 +126,7 @@ export type Database = {
           workday_start: string;
         };
         Insert: {
+          agent_enabled?: boolean;
           clock_photo_retention_months?: number;
           daily_hours?: number;
           expected_arrival?: string;
@@ -55,6 +152,7 @@ export type Database = {
           workday_start?: string;
         };
         Update: {
+          agent_enabled?: boolean;
           clock_photo_retention_months?: number;
           daily_hours?: number;
           expected_arrival?: string;
@@ -5916,6 +6014,7 @@ export type Database = {
         Args: { p_signature_file_id: string; p_signer_name: string; p_token: string };
         Returns: Json;
       };
+      purge_agent_conversations: { Args: Record<PropertyKey, never>; Returns: number };
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
       purge_files: { Args: Record<PropertyKey, never>; Returns: number };
       queue_push: {

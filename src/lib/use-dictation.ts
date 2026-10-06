@@ -38,32 +38,36 @@ export function dictatedText(transcript: string): string {
 }
 
 /** Message affiché quand la dictée échoue (code d'erreur du navigateur). */
-export function dictationError(code: string): string {
+export function dictationError(code: string, keyboard = 'saisis la tâche au clavier'): string {
   if (code === 'not-allowed' || code === 'service-not-allowed') {
     return 'Micro refusé : autorise le micro pour l’appli dans les réglages du téléphone.';
   }
-  if (code === 'network') return 'Dictée impossible sans réseau : saisis la tâche au clavier.';
+  if (code === 'network') return `Dictée impossible sans réseau : ${keyboard}.`;
   if (code === 'no-speech') return 'Rien entendu : appuie sur le micro et parle près du téléphone.';
-  return 'Dictée interrompue : réessaie ou saisis la tâche au clavier.';
+  return `Dictée interrompue : réessaie ou ${keyboard}.`;
 }
 
 /**
  * Dictée en français : `start` écoute une phrase, `interim` affiche ce qui est compris pendant qu'on
  * parle, `onFinal` reçoit la phrase terminée. Un nouvel appui (`stop`) arrête l'écoute.
+ * `keyboard` : ce qu'on propose de faire au clavier quand la dictée échoue.
  */
 export function useDictation({
   onFinal,
   onError,
+  keyboard,
 }: {
   onFinal: (text: string) => void;
   onError: (message: string) => void;
+  keyboard?: string;
 }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const recognition = useRef<SpeechRecognitionLike | null>(null);
-  const handlers = useRef({ onFinal, onError });
+  const cancelled = useRef(false);
+  const handlers = useRef({ onFinal, onError, keyboard });
   useEffect(() => {
-    handlers.current = { onFinal, onError };
+    handlers.current = { onFinal, onError, keyboard };
   });
 
   // Fiche quittée en pleine dictée : on coupe le micro.
@@ -72,6 +76,7 @@ export function useDictation({
   const start = () => {
     const Recognition = recognitionConstructor();
     if (!Recognition || recognition.current) return;
+    cancelled.current = false;
     const rec = new Recognition();
     rec.lang = 'fr-FR';
     rec.interimResults = true;
@@ -88,10 +93,11 @@ export function useDictation({
       }
       setInterim(pending);
       const text = dictatedText(finalText);
-      if (text) handlers.current.onFinal(text);
+      if (text && !cancelled.current) handlers.current.onFinal(text);
     };
     rec.onerror = (event) => {
-      if (event.error !== 'aborted') handlers.current.onError(dictationError(event.error));
+      if (event.error !== 'aborted')
+        handlers.current.onError(dictationError(event.error, handlers.current.keyboard));
     };
     rec.onend = () => {
       recognition.current = null;
@@ -105,11 +111,16 @@ export function useDictation({
     } catch {
       recognition.current = null;
       setListening(false);
-      handlers.current.onError(dictationError('start'));
+      handlers.current.onError(dictationError('start', handlers.current.keyboard));
     }
   };
 
   const stop = () => recognition.current?.stop();
+  /** Arrête l'écoute sans rien envoyer. */
+  const cancel = () => {
+    cancelled.current = true;
+    recognition.current?.abort();
+  };
 
-  return { supported: dictationSupported(), listening, interim, start, stop };
+  return { supported: dictationSupported(), listening, interim, start, stop, cancel };
 }
