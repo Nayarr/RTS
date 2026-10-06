@@ -64,6 +64,7 @@ export function useDictation({
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const recognition = useRef<SpeechRecognitionLike | null>(null);
+  const cancelled = useRef(false);
   const handlers = useRef({ onFinal, onError, keyboard });
   useEffect(() => {
     handlers.current = { onFinal, onError, keyboard };
@@ -75,6 +76,7 @@ export function useDictation({
   const start = () => {
     const Recognition = recognitionConstructor();
     if (!Recognition || recognition.current) return;
+    cancelled.current = false;
     const rec = new Recognition();
     rec.lang = 'fr-FR';
     rec.interimResults = true;
@@ -91,7 +93,7 @@ export function useDictation({
       }
       setInterim(pending);
       const text = dictatedText(finalText);
-      if (text) handlers.current.onFinal(text);
+      if (text && !cancelled.current) handlers.current.onFinal(text);
     };
     rec.onerror = (event) => {
       if (event.error !== 'aborted')
@@ -114,6 +116,11 @@ export function useDictation({
   };
 
   const stop = () => recognition.current?.stop();
+  /** Arrête l'écoute sans rien envoyer. */
+  const cancel = () => {
+    cancelled.current = true;
+    recognition.current?.abort();
+  };
 
-  return { supported: dictationSupported(), listening, interim, start, stop };
+  return { supported: dictationSupported(), listening, interim, start, stop, cancel };
 }

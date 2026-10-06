@@ -6,7 +6,7 @@ type Tables = Database['public']['Tables'];
 export type AgentConversation = Pick<Tables['agent_conversations']['Row'], 'id' | 'title' | 'updated_at'>;
 export type AgentTurn = Pick<
   Tables['agent_turns']['Row'],
-  'id' | 'conversation_id' | 'question' | 'answer' | 'spoken' | 'created_at'
+  'id' | 'conversation_id' | 'question' | 'answer' | 'spoken' | 'tools' | 'created_at'
 >;
 
 export interface AgentAnswer {
@@ -39,7 +39,7 @@ export async function fetchConversations(): Promise<AgentConversation[]> {
 export async function fetchTurns(conversationId: string): Promise<AgentTurn[]> {
   const { data, error } = await supabase
     .from('agent_turns')
-    .select('id, conversation_id, question, answer, spoken, created_at')
+    .select('id, conversation_id, question, answer, spoken, tools, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at');
   if (error) throw error;

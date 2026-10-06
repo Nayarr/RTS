@@ -167,10 +167,10 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
               <Switch id="agent_enabled" checked={field.value} onCheckedChange={field.onChange} />
               <span className="col gap-0">
                 <Label htmlFor="agent_enabled" className="text-sm font-bold">
-                  Assistant de la direction
+                  Agent Direction
                 </Label>
                 <span className="hint">
-                  Pilotage › Assistant : la direction pose ses questions à la voix ou à l’écrit (chiffre
+                  Menu « Agent Direction » : la direction pose ses questions à la voix ou à l’écrit (chiffre
                   d’affaires, impayés, planning…) et l’assistant répond. Il lit les données, ne modifie rien.
                 </span>
               </span>

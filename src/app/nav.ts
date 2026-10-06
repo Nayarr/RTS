@@ -113,13 +113,13 @@ export const GROUPS: NavGroup[] = [
       { to: '/pilotage/tresorerie', label: 'Trésorerie' },
       { to: '/pilotage/rentabilite', label: 'Rentabilité' },
       { to: '/pilotage/performance', label: 'Performance' },
-      { to: '/pilotage/assistant', label: 'Assistant' },
     ],
   },
 ];
 
 export const NAV_PATHS = [
   ...GROUPS.flatMap((group) => group.items.map((item) => item.to)),
+  '/agent-direction',
   '/reglages',
   '/aide',
 ];
