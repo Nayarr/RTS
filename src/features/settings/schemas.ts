@@ -160,6 +160,7 @@ export const workshopSchema = z
     clock_photo_retention_months: z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]),
     label_scan_enabled: z.boolean(),
     agent_enabled: z.boolean(),
+    agent_memo: z.string().max(4000, '4 000 caractères au plus'),
     mail_send_enabled: z.boolean(),
     mail_domain: z
       .string()
@@ -205,6 +206,7 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
     a.clock_photo_retention_months as WorkshopValues['clock_photo_retention_months'],
   label_scan_enabled: a.label_scan_enabled,
   agent_enabled: a.agent_enabled,
+  agent_memo: a.agent_memo,
   mail_send_enabled: a.mail_send_enabled,
   mail_domain: a.mail_domain ?? '',
   mail_billing_local: a.mail_billing_local,

@@ -38,3 +38,4 @@ supabase/functions/**/deno.lock
 
 # Reprise des forfaits de l’ancienne appli (données du client, généré par npm run import:forfaits)
 forfaits-legacy.sql
+agent-eval-resultats.json

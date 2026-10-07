@@ -90,17 +90,19 @@ export function AssistantPage() {
     },
   });
 
-  const send = (question: string, spoken: boolean) => {
+  const send = (question: string, spoken: boolean, alternatives: string[] = []) => {
     const text = question.trim();
     if (!text || ask.isPending) return;
     setDraft('');
-    ask.mutate({ conversationId, question: text, spoken });
+    ask.mutate({ conversationId, question: text, spoken, ...(alternatives.length ? { alternatives } : {}) });
   };
 
   const dictation = useDictation({
-    onFinal: (text) => send(text, true),
+    onFinal: (text, alternatives) => send(text, true, alternatives),
     onError: (message) => toast.error(message),
     keyboard: 'pose ta question au clavier',
+    // Plusieurs versions entendues : l'agent choisit celle qui a un sens dans un atelier
+    alternatives: 3,
   });
 
   const remove = useMutation({

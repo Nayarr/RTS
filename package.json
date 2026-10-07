@@ -21,7 +21,8 @@
     "storage:stop": "node scripts/storage.mjs stop",
     "db:demo": "node scripts/demo-data.mjs",
     "db:types": "supabase gen types typescript --local --schema public > src/types/database.ts && prettier --write src/types/database.ts",
-    "import:forfaits": "node scripts/import-forfaits.mjs"
+    "import:forfaits": "node scripts/import-forfaits.mjs",
+    "eval:agent": "node scripts/agent-eval.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",

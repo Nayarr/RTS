@@ -1,0 +1,276 @@
+[
+  {
+    "id": 1,
+    "question": "Combien on a facturé ce mois-ci ?",
+    "tools": [
+      "chiffres_du_mois",
+      "evolution_mensuelle"
+    ],
+    "answer": "euros"
+  },
+  {
+    "id": 2,
+    "question": "Qui nous doit le plus d'argent ?",
+    "tools": [
+      "factures_impayees",
+      "tresorerie"
+    ],
+    "answer": "euros"
+  },
+  {
+    "id": 3,
+    "question": "Quelles factures sont en retard de paiement ?",
+    "tools": [
+      "factures_impayees"
+    ],
+    "answer": "F\\d|factures?"
+  },
+  {
+    "id": 4,
+    "question": "Montre-moi les OR qui sont assignés",
+    "tools": [
+      "ordres_reparation"
+    ],
+    "answer": "OR\\d|OR \\d|\\d{4,}"
+  },
+  {
+    "id": 5,
+    "question": "Qu'est-ce qui est en cours à l'atelier là maintenant ?",
+    "tools": [
+      "atelier_aujourdhui",
+      "ordres_reparation"
+    ],
+    "answer": "Alice|Bruno|Karim|Julien|[A-Z]{2}-[0-9]{3}-[A-Z]{2}"
+  },
+  {
+    "id": 6,
+    "question": "Comment se présente la semaine prochaine pour l'atelier ?",
+    "tools": [
+      "charge_atelier"
+    ],
+    "answer": "heures?"
+  },
+  {
+    "id": 7,
+    "question": "Quels rendez-vous on a demain ?",
+    "tools": [
+      "rendez_vous"
+    ]
+  },
+  {
+    "id": 8,
+    "question": "Quels devis sont encore en attente de réponse du client ?",
+    "tools": [
+      "devis"
+    ],
+    "answer": "DV|devis"
+  },
+  {
+    "id": 9,
+    "question": "Quels contrôles techniques arrivent à échéance dans le mois ?",
+    "tools": [
+      "echeances_vehicules"
+    ],
+    "answer": "[A-Z]{2}-\\d{3}-[A-Z]{2}|aucun"
+  },
+  {
+    "id": 10,
+    "question": "Quel est notre meilleur client cette année ?",
+    "tools": [
+      "rentabilite",
+      "clients"
+    ],
+    "answer": "euros"
+  },
+  {
+    "id": 11,
+    "question": "Comment s'en sort Karim ce mois-ci ?",
+    "tools": [
+      "performance_techniciens",
+      "pointages"
+    ],
+    "answer": "Karim"
+  },
+  {
+    "id": 12,
+    "question": "Est-ce qu'on a des véhicules de location dehors en ce moment ?",
+    "tools": [
+      "locations",
+      "flotte"
+    ]
+  },
+  {
+    "id": 13,
+    "question": "Compare le chiffre d'affaires de septembre et d'août",
+    "tools": [
+      "evolution_mensuelle",
+      "chiffres_du_mois"
+    ],
+    "answer": "septembre"
+  },
+  {
+    "id": 14,
+    "question": "Combien on va encaisser dans les prochaines semaines ?",
+    "tools": [
+      "tresorerie"
+    ],
+    "answer": "euros"
+  },
+  {
+    "id": 15,
+    "question": "Où en est le camion EZ-093-WV ?",
+    "tools": [
+      "vehicule",
+      "ordre_reparation",
+      "recherche",
+      "ordres_reparation"
+    ],
+    "answer": "EZ-093-WV|Leroy"
+  },
+  {
+    "id": 16,
+    "question": "Quels consommables sont en stock bas ?",
+    "tools": [
+      "stock_consommables"
+    ]
+  },
+  {
+    "id": 17,
+    "question": "Qui est en congé ou absent cette semaine ?",
+    "tools": [
+      "conges",
+      "charge_atelier"
+    ]
+  },
+  {
+    "id": 18,
+    "question": "Quelles pièces sont à commander ?",
+    "tools": [
+      "pieces_a_commander",
+      "tableau_de_bord"
+    ]
+  },
+  {
+    "id": 19,
+    "question": "Quels contrats d'entretien ont un entretien à faire ?",
+    "tools": [
+      "contrats_entretien"
+    ]
+  },
+  {
+    "id": 20,
+    "question": "Est-ce qu'on a des garanties fournisseur en attente ?",
+    "tools": [
+      "garanties"
+    ]
+  },
+  {
+    "id": 21,
+    "question": "Qui est arrivé en retard ce matin ?",
+    "tools": [
+      "pointages"
+    ]
+  },
+  {
+    "id": 22,
+    "question": "Quel est notre taux horaire poids lourd ?",
+    "tools": [
+      "reglages_atelier"
+    ],
+    "answer": "euros"
+  },
+  {
+    "id": 23,
+    "question": "Montre-moi les horaires qui sont signés s'il te plaît",
+    "spoken": true,
+    "alternatives": [
+      "montre-moi les OR qui sont assignés s'il te plaît",
+      "montre-moi les horaires qui sont assignés s'il te plaît"
+    ],
+    "tools": [
+      "ordres_reparation"
+    ],
+    "answer": "OR|ordres? de réparation"
+  },
+  {
+    "id": 24,
+    "question": "Combien de pelles sont à l'atelier aujourd'hui",
+    "spoken": true,
+    "alternatives": [
+      "combien de PL sont à l'atelier aujourd'hui",
+      "combien de pelle sont à l'atelier aujourd'hui"
+    ],
+    "tools": [
+      "atelier_aujourdhui",
+      "ordres_reparation"
+    ],
+    "answer": "poids lourds?|PL"
+  },
+  {
+    "id": 25,
+    "question": "Est-ce que le contrôle à yonne du camion de Leroy est à jour",
+    "spoken": true,
+    "alternatives": [
+      "est-ce que le contrôle hayon du camion de Leroy est à jour",
+      "est-ce que le contrôle à Yonne du camion de Leroy est à jour"
+    ],
+    "tools": [
+      "echeances_vehicules",
+      "vehicule",
+      "recherche"
+    ],
+    "answer": "hayon"
+  },
+  {
+    "id": 26,
+    "question": "Quels sont les OR en facture à faire",
+    "spoken": true,
+    "alternatives": [
+      "quels sont les ors en facture à faire",
+      "quels sont les horaires en facture à faire"
+    ],
+    "tools": [
+      "ordres_reparation"
+    ],
+    "answer": "factur"
+  },
+  {
+    "id": 27,
+    "question": "Liste les ordres de réparation qui attendent un devis",
+    "tools": [
+      "ordres_reparation"
+    ],
+    "answer": "devis"
+  },
+  {
+    "id": 28,
+    "question": "Combien d'heures Bruno a pointé cette semaine",
+    "spoken": true,
+    "alternatives": [
+      "combien d'heures bruno a pointé cette semaine",
+      "combien d'heures Bruneau a pointé cette semaine"
+    ],
+    "tools": [
+      "pointages"
+    ],
+    "answer": "heures?"
+  },
+  {
+    "id": 29,
+    "question": "C'est quand le dernier passage d'un camion de Transports Girard ?",
+    "tools": [
+      "client",
+      "recherche",
+      "ordres_reparation",
+      "vehicule"
+    ],
+    "answer": "Girard"
+  },
+  {
+    "id": 30,
+    "question": "Envoie la facture F11890 au client",
+    "tools": [],
+    "answer": "ne (peux|fais|modifie|envoie)|lecture|lire",
+    "note": "Doit refuser d'agir (lecture seule) et dire où le faire"
+  }
+]

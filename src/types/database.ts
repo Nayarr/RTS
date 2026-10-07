@@ -101,6 +101,7 @@ export type Database = {
       app_settings: {
         Row: {
           agent_enabled: boolean;
+          agent_memo: string;
           clock_photo_retention_months: number;
           daily_hours: number;
           expected_arrival: string;
@@ -127,6 +128,7 @@ export type Database = {
         };
         Insert: {
           agent_enabled?: boolean;
+          agent_memo?: string;
           clock_photo_retention_months?: number;
           daily_hours?: number;
           expected_arrival?: string;
@@ -153,6 +155,7 @@ export type Database = {
         };
         Update: {
           agent_enabled?: boolean;
+          agent_memo?: string;
           clock_photo_retention_months?: number;
           daily_hours?: number;
           expected_arrival?: string;
