@@ -50,7 +50,12 @@ class FakeRecognition {
     setTimeout(() => {
       this.onresult?.({
         resultIndex: 0,
-        results: [Object.assign([{ transcript: 'qui nous doit de l’argent ?' }], { isFinal: true })],
+        results: [
+          Object.assign(
+            [{ transcript: 'qui nous doit de l’argent ?' }, { transcript: 'qui nous doit de la gent ?' }],
+            { isFinal: true },
+          ),
+        ],
       });
       this.onend?.();
     }, 20);
@@ -109,6 +114,7 @@ describe('Agent Direction', () => {
         conversationId: undefined,
         question: 'Qui nous doit de l’argent ?',
         spoken: true,
+        alternatives: ['Qui nous doit de la gent ?'],
       }),
     );
   });

@@ -51,15 +51,19 @@ export function dictationError(code: string, keyboard = 'saisis la tâche au cla
  * Dictée en français : `start` écoute une phrase, `interim` affiche ce qui est compris pendant qu'on
  * parle, `onFinal` reçoit la phrase terminée. Un nouvel appui (`stop`) arrête l'écoute.
  * `keyboard` : ce qu'on propose de faire au clavier quand la dictée échoue.
+ * `alternatives` : nombre de versions entendues demandées au navigateur ; `onFinal` reçoit les
+ * autres versions en second paramètre (utile pour corriger un mot mal compris).
  */
 export function useDictation({
   onFinal,
   onError,
   keyboard,
+  alternatives = 1,
 }: {
-  onFinal: (text: string) => void;
+  onFinal: (text: string, alternatives: string[]) => void;
   onError: (message: string) => void;
   keyboard?: string;
+  alternatives?: number;
 }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
@@ -81,19 +85,23 @@ export function useDictation({
     rec.lang = 'fr-FR';
     rec.interimResults = true;
     rec.continuous = false;
-    rec.maxAlternatives = 1;
+    rec.maxAlternatives = alternatives;
     rec.onresult = (event) => {
       let finalText = '';
       let pending = '';
+      const others: string[] = [];
       for (let index = event.resultIndex; index < event.results.length; index++) {
         const result = event.results[index];
         const transcript = result?.[0]?.transcript ?? '';
-        if (result?.isFinal) finalText += transcript;
-        else pending += transcript;
+        if (result?.isFinal) {
+          finalText += transcript;
+          for (let rank = 1; rank < result.length; rank++) others.push(result[rank]?.transcript ?? '');
+        } else pending += transcript;
       }
       setInterim(pending);
       const text = dictatedText(finalText);
-      if (text && !cancelled.current) handlers.current.onFinal(text);
+      const variants = others.map(dictatedText).filter((variant) => variant && variant !== text);
+      if (text && !cancelled.current) handlers.current.onFinal(text, variants);
     };
     rec.onerror = (event) => {
       if (event.error !== 'aborted')

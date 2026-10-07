@@ -8,8 +8,9 @@ import {
   parisToday,
   questionText,
   SYSTEM_PROMPT,
+  workshopContext,
 } from './prompt.ts';
-import { compact, runTool, TOOL_DEFINITIONS, TOOLS } from './tools.ts';
+import { compact, docNumber, like, plateKey, runTool, TOOL_DEFINITIONS, TOOLS } from './tools.ts';
 
 /** Faux client : enregistre les appels de fonctions de la base et renvoie une réponse fixe. */
 function fakeDb(data: unknown = { ok: true }, error: { message: string } | null = null) {
@@ -91,18 +92,202 @@ Deno.test('rentabilité : les 25 plus gros clients, du plus gros au plus petit',
   assertEquals(result[0], { labor_ht: 29, parts_ht: 0 });
 });
 
-Deno.test('outils sans paramètre : n’appellent que des fonctions de lecture de la base', async () => {
-  const READ_ONLY = ['office_dashboard', 'treasury_overview', 'workshop_board'];
-  for (const tool of TOOLS.filter((item) => Object.keys(item.input_schema.properties ?? {}).length === 0)) {
-    const { db, calls } = fakeDb([]);
-    const fromDb = Object.assign(db, {
-      from: () => {
-        throw new Error('lecture de vue');
+/**
+ * Fausse base qui enregistre chaque lecture (table ou fonction, colonnes, filtres) et refuse
+ * toute écriture. Chaque requête renvoie une liste vide.
+ */
+function recordingDb() {
+  const tables: string[] = [];
+  const functions: string[] = [];
+  const selects: string[] = [];
+  const writes: string[] = [];
+  const query = (): unknown =>
+    new Proxy(
+      {},
+      {
+        get(_, key: string) {
+          if (key === 'then') {
+            return (resolve: (value: unknown) => void) => resolve({ data: [], error: null, count: 0 });
+          }
+          if (['insert', 'update', 'upsert', 'delete'].includes(key)) {
+            return () => {
+              writes.push(key);
+              throw new Error(`écriture interdite : ${key}`);
+            };
+          }
+          return (...args: unknown[]) => {
+            if (key === 'select') selects.push(String(args[0]));
+            return query();
+          };
+        },
       },
-    });
-    await runTool(fromDb, tool.name, {});
-    for (const call of calls) assert(READ_ONLY.includes(call.name), `${tool.name} appelle ${call.name}`);
+    );
+  const db = {
+    from: (table: string) => {
+      tables.push(table);
+      return query();
+    },
+    rpc: (name: string) => {
+      functions.push(name);
+      return query();
+    },
+  } as unknown as SupabaseClient;
+  return { db, tables, functions, selects, writes };
+}
+
+/** Paramètres valides pour faire tourner chaque outil. */
+const SAMPLE_INPUTS: Record<string, unknown> = {
+  chiffres_du_mois: { mois: '2026-09' },
+  evolution_mensuelle: { nombre_de_mois: 6 },
+  factures_impayees: { en_retard_seulement: true },
+  factures: { du: '2026-09-01', au: '2026-09-30', client: 'Leroy', etat: 'impayees' },
+  facture: { numero: 'F12361' },
+  encaissements: { du: '2026-09-01', au: '2026-09-30' },
+  avoirs: { du: '2026-01-01', au: '2026-09-30' },
+  rentabilite: { du: '2026-01-01', au: '2026-09-30' },
+  devis: { statut: 'sent', client: 'Leroy' },
+  devis_detail: { numero: '6' },
+  ordres_reparation: {
+    statut: 'assigned',
+    technicien: 'Karim',
+    client: 'Leroy',
+    plaque: 'EZ-093-WV',
+    du: '2026-10-01',
+    au: '2026-10-31',
+    date_sur: 'planification',
+  },
+  ordre_reparation: { numero: '488' },
+  charge_atelier: { du: '2026-10-05', au: '2026-10-09' },
+  rendez_vous: { du: '2026-10-05', au: '2026-10-09' },
+  pieces_a_commander: { etat: 'a_commander' },
+  sous_traitance: { statut: 'sent' },
+  garanties: { statut: 'en_cours' },
+  vehicule: { plaque: 'EZ-093-WV' },
+  client: { nom: 'Leroy' },
+  echeances_vehicules: { dans_les_jours: 30 },
+  recherche: { texte: 'Leroy' },
+  pointages: { du: '2026-10-01', au: '2026-10-07', technicien: 'Bruno' },
+  conges: { du: '2026-10-05', au: '2026-10-11' },
+  performance_techniciens: { du: '2026-09-01', au: '2026-09-30' },
+  stock_consommables: { seulement_bas: true },
+  catalogue: { texte: 'plaquettes' },
+  fournisseurs: { nom: 'Bosch' },
+  locations: { etat: 'en_cours' },
+};
+
+/** Tables, vues et fonctions que l'agent a le droit de lire. */
+const ALLOWED_TABLES = new Set([
+  'v_invoices_overview',
+  'invoice_lines',
+  'payments',
+  'credit_notes',
+  'v_quotes_overview',
+  'quote_lines',
+  'v_repair_orders_overview',
+  'ro_lines',
+  'ro_consumables',
+  'subcontracts',
+  'ro_events',
+  'v_appointments_overview',
+  'v_warranty_claims',
+  'v_vehicles_overview',
+  'v_contract_vehicle_status',
+  'v_clients_overview',
+  'vehicles',
+  'v_vehicle_deadlines',
+  'v_contracts_overview',
+  'technicians',
+  'v_daily_attendance',
+  'leave_requests',
+  'consumables',
+  'parts',
+  'service_packages',
+  'suppliers',
+  'v_rentals_overview',
+  'fleet_vehicles',
+  'company_settings',
+  'labor_rates',
+  'app_settings',
+  'v_my_notifications',
+]);
+const ALLOWED_FUNCTIONS = new Set([
+  'office_dashboard',
+  'monthly_report',
+  'monthly_statistics',
+  'treasury_overview',
+  'profitability_report',
+  'workshop_board',
+  'workshop_workload',
+  'global_search',
+  'technician_performance',
+]);
+/** Jamais lu par l'agent : secrets, liens publics, signatures, données d'identité. */
+const FORBIDDEN = /token|pin|secret|password|signature|birth|license|kiosk|push_|portal|legacy|\*/i;
+
+Deno.test('sécurité : chaque outil ne fait que lire, sur des tables autorisées, sans colonne sensible', async () => {
+  for (const tool of TOOLS) {
+    const { db, tables, functions, selects, writes } = recordingDb();
+    const result = await runTool(db, tool.name, SAMPLE_INPUTS[tool.name] ?? {});
+    assert(!result.is_error || !result.content.startsWith('Paramètres'), `${tool.name} : ${result.content}`);
+    assertEquals(writes, [], `${tool.name} écrit`);
+    for (const table of tables) assert(ALLOWED_TABLES.has(table), `${tool.name} lit ${table}`);
+    for (const name of functions) assert(ALLOWED_FUNCTIONS.has(name), `${tool.name} appelle ${name}`);
+    for (const columns of selects) assert(!FORBIDDEN.test(columns), `${tool.name} lit « ${columns} »`);
+    assert(tables.length + functions.length > 0, `${tool.name} ne lit rien`);
   }
+});
+
+Deno.test('outils : tous testés et en nombre suffisant pour parcourir l’appli', () => {
+  assert(TOOLS.length >= 35, `${TOOLS.length} outils`);
+  const withoutInput = TOOLS.filter((tool) => Object.keys(tool.input_schema.properties ?? {}).length === 0);
+  for (const tool of TOOLS) {
+    assert(
+      tool.name in SAMPLE_INPUTS || withoutInput.includes(tool),
+      `pas de paramètres d’exemple pour ${tool.name}`,
+    );
+  }
+});
+
+Deno.test('numéros et plaques compris quelle que soit la forme dictée', () => {
+  assertEquals(docNumber('OR', '488'), 'OR00488');
+  assertEquals(docNumber('OR', 'or 488'), 'OR00488');
+  assertEquals(docNumber('DV', 'DV00006'), 'DV00006');
+  assertEquals(plateKey('ez-093 wv'), 'EZ093WV');
+  assertEquals(like('Leroy, (frigo) 100%'), '%Leroy   frigo  100%');
+});
+
+Deno.test('fiche atelier : statuts des OR, confusions de dictée et noms d’outils connus', () => {
+  assertStringIncludes(SYSTEM_PROMPT, 'Assigné (assigned');
+  assertStringIncludes(SYSTEM_PROMPT, '« horaires »');
+  assertStringIncludes(SYSTEM_PROMPT, 'hayon');
+  const names = new Set(TOOLS.map((tool) => tool.name));
+  for (const [, name] of SYSTEM_PROMPT.matchAll(/\b([a-z]+(?:_[a-z]+)+)\b/g)) {
+    if (
+      /_(?:id|at|ht|ttc)$|^(?:in_progress|work_done|quote_pending|to_invoice|to_order|paid_leave)$/.test(name)
+    ) continue;
+    assert(names.has(name), `outil cité dans la fiche mais absent : ${name}`);
+  }
+});
+
+Deno.test('contexte : techniciens et mémo de la direction', () => {
+  const context = workshopContext({ technicians: ['Alice', 'Karim'], memo: '  Karim est chef d’atelier.  ' });
+  assertStringIncludes(context, 'Techniciens actifs : Alice, Karim.');
+  assertStringIncludes(context, 'Karim est chef d’atelier.');
+  assertStringIncludes(workshopContext({ technicians: [], memo: '' }), 'Pas de mémo');
+});
+
+Deno.test('question dictée : autres versions entendues ajoutées, sans doublon', () => {
+  const text = questionText('Montre-moi les horaires qui sont signés', true, '2026-10-07', [
+    'montre-moi les horaires qui sont signés',
+    'montre-moi les OR qui sont assignés',
+    ' ',
+  ]);
+  assertStringIncludes(
+    text,
+    'Autres versions entendues par la dictée : « montre-moi les OR qui sont assignés »',
+  );
+  assertEquals(text.match(/«/g)?.length, 1);
+  assert(!questionText('CA ?', false, '2026-10-07').includes('Autres versions'));
 });
 
 Deno.test('date du jour à Paris et libellé en toutes lettres', () => {

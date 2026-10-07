@@ -11,7 +11,14 @@ import '@supabase/functions-js/edge-runtime.d.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
-import { answerText, conversationTitle, parisToday, questionText, SYSTEM_PROMPT } from './prompt.ts';
+import {
+  answerText,
+  conversationTitle,
+  parisToday,
+  questionText,
+  SYSTEM_PROMPT,
+  workshopContext,
+} from './prompt.ts';
 import { runTool, TOOL_DEFINITIONS } from './tools.ts';
 
 z.config(z.locales.fr());
@@ -28,6 +35,8 @@ const requestSchema = z.object({
   conversation_id: z.guid().optional(),
   question: z.string().trim().min(1).max(2000),
   spoken: z.boolean().default(false),
+  // Autres versions entendues par la dictée du navigateur (la première est la question)
+  alternatives: z.array(z.string().trim().max(2000)).max(3).default([]),
 });
 
 const json = (status: number, body: unknown) => Response.json(body, { status });
@@ -47,12 +56,15 @@ export default {
 
     const { data: isDirection } = await ctx.supabase.rpc('is_direction');
     if (isDirection !== true) return fail(403, 'Assistant réservé à la direction');
-    const { data: settings } = await ctx.supabase.from('app_settings').select('agent_enabled').maybeSingle();
+    const { data: settings } = await ctx.supabase
+      .from('app_settings')
+      .select('agent_enabled, agent_memo')
+      .maybeSingle();
     if (!settings?.agent_enabled) return fail(409, 'Assistant désactivé dans les réglages');
 
     const parsed = requestSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return fail(400, 'Question vide ou trop longue');
-    const { conversation_id: conversationId, question, spoken } = parsed.data;
+    const { conversation_id: conversationId, question, spoken, alternatives } = parsed.data;
     const userId = ctx.userClaims?.id;
     if (!userId) return fail(401, 'Session expirée : reconnecte-toi');
 
@@ -87,8 +99,18 @@ export default {
     // Échanges de cette question, ajoutés à la suite sans jamais réécrire les précédents
     const messages: Anthropic.MessageParam[] = [
       ...transcript,
-      { role: 'user', content: questionText(question, spoken, parisToday()) },
+      { role: 'user', content: questionText(question, spoken, parisToday(), alternatives) },
     ];
+    // Contexte de l'atelier : techniciens actifs (aide à reconnaître les prénoms) et mémo de la direction
+    const { data: team } = await ctx.supabase
+      .from('technicians')
+      .select('display_name')
+      .eq('is_active', true)
+      .order('sort_order');
+    const context = workshopContext({
+      technicians: (team ?? []).map((member) => String(member.display_name)),
+      memo: String(settings.agent_memo ?? ''),
+    });
     const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
     const used = new Set<string>();
     let answer: string | null = null;
@@ -100,7 +122,10 @@ export default {
           model: MODEL,
           max_tokens: 4000,
           // Consignes et outils relus en cache d'une question à l'autre ; la conversation aussi
-          system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+          system: [
+            { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: context, cache_control: { type: 'ephemeral' } },
+          ],
           cache_control: { type: 'ephemeral' },
           tools: TOOL_DEFINITIONS,
           output_config: { effort: 'low' },

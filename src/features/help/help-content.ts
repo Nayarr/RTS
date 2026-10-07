@@ -132,7 +132,7 @@ export const DIRECTION_TOPICS: HelpTopic[] = [
     items: [
       'Statistiques, Trésorerie (encaissé, à encaisser, retards, habitudes de paiement), Rentabilité par client et véhicule, Performance des techniciens.',
       '« Rapport mensuel » : le PDF du mois (chiffres clés, meilleurs clients, techniciens, factures à relancer, échéances).',
-      '« Agent Direction » (en haut du menu) : appuie sur le micro et pose ta question (« combien on a facturé ce mois-ci ? », « qui nous doit de l’argent ? ») ; la réponse s’affiche et se lit à voix haute. Il lit les chiffres, ne modifie rien. À activer dans « Réglages », onglet « Atelier ».',
+      '« Agent Direction » (en haut du menu) : appuie sur le micro et pose ta question (« combien on a facturé ce mois-ci ? », « qui nous doit de l’argent ? ») ; la réponse s’affiche et se lit à voix haute. Il lit les chiffres, ne modifie rien. À activer dans « Réglages », onglet « Atelier », où un mémo permet aussi de lui expliquer vos habitudes (rôles, surnoms de clients).',
       'La cloche regroupe les alertes : devis acceptés, factures en retard, OR en retard, congés à valider, stock bas, entretiens à planifier.',
     ],
   },

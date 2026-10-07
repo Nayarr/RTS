@@ -16,11 +16,18 @@ export interface AgentAnswer {
 }
 
 /** Pose une question à l'assistant (nouvelle conversation si `conversationId` est absent). */
-export function askAgent(input: { conversationId?: string; question: string; spoken: boolean }) {
+export function askAgent(input: {
+  conversationId?: string;
+  question: string;
+  spoken: boolean;
+  /** Autres versions entendues par la dictée, pour corriger un mot mal compris. */
+  alternatives?: string[];
+}) {
   return invokeFunction<AgentAnswer>('agent', {
     ...(input.conversationId ? { conversation_id: input.conversationId } : {}),
     question: input.question,
     spoken: input.spoken,
+    ...(input.alternatives?.length ? { alternatives: input.alternatives.slice(0, 3) } : {}),
   });
 }
 

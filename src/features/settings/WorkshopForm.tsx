@@ -5,6 +5,7 @@ import { FormField } from '@/components/FormField';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { updateAppSettings, type AppSettings } from './api';
 import { useSaveSettings } from './hooks';
 import { workshopSchema, workshopToForm, type WorkshopValues } from './schemas';
@@ -177,6 +178,23 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             </div>
           )}
         />
+        <div className="field">
+          <Label htmlFor="agent_memo">Mémo pour l’Agent Direction</Label>
+          <Textarea
+            id="agent_memo"
+            rows={4}
+            maxLength={4000}
+            placeholder={'Karim est chef d’atelier.\nQuand je dis « Martin », c’est BTP Martin Location.'}
+            aria-invalid={errors.agent_memo ? true : undefined}
+            aria-describedby="agent_memo-hint"
+            {...register('agent_memo')}
+          />
+          <span id="agent_memo-hint" className="hint">
+            Ce que l’agent doit savoir sur l’atelier en plus de sa fiche : rôles, surnoms de clients,
+            habitudes. Ajouté à ses consignes à chaque question (4 000 caractères au plus).
+          </span>
+          {errors.agent_memo && <p className="err">{errors.agent_memo.message}</p>}
+        </div>
       </fieldset>
 
       <fieldset className="col gap-3">

@@ -1,14 +1,15 @@
 // Consignes de l'assistant de la direction et mise en forme des échanges.
+import { WORKSHOP_SHEET } from './knowledge.ts';
 
 /** Consignes fixes (mises en cache par l'API : ne pas y mettre la date ni rien qui change). */
-export const SYSTEM_PROMPT = [
+const ROLE = [
   'Tu es l’assistant de la direction de RAPID TRUCK SERVICE, atelier de réparation de poids lourds,',
   'utilitaires et remorques, qui loue aussi des véhicules. Tu réponds en français à la personne qui',
   'dirige l’atelier, le plus souvent à la voix, depuis le bureau ou l’atelier.',
   '',
-  'Ce que tu peux faire : lire les données de l’atelier avec tes outils (chiffre d’affaires,',
-  'factures, devis, OR, planning, rendez-vous, techniciens, locations, échéances des véhicules) et',
-  'répondre. Tu ne modifies rien, tu n’envoies rien et tu ne crées rien : si on te le demande,',
+  'Ce que tu peux faire : lire toutes les données de l’atelier avec tes outils (OR, véhicules,',
+  'clients, factures, devis, paiements, planning, équipe, pointages, stock, location, contrats,',
+  'garanties, réglages) et répondre. Tu ne modifies rien, tu n’envoies rien et tu ne crées rien : si on te le demande,',
   'explique que tu ne fais que lire et indique où le faire dans l’appli.',
   '',
   'Méthode :',
@@ -29,6 +30,21 @@ export const SYSTEM_PROMPT = [
   '- Jamais de tiret cadratin. Pas de formule de politesse ni de conclusion du type « n’hésitez pas ».',
   '- Tutoie la personne.',
 ].join('\n');
+
+/** Rôle, méthode, forme des réponses et fiche atelier : identiques pour toutes les questions. */
+export const SYSTEM_PROMPT = `${ROLE}\n\n${WORKSHOP_SHEET}`;
+
+/**
+ * Contexte de l'atelier (techniciens, mémo de la direction) : change rarement, envoyé après les
+ * consignes fixes et mis en cache lui aussi.
+ */
+export function workshopContext({ technicians, memo }: { technicians: string[]; memo: string }): string {
+  const team = technicians.length ? technicians.join(', ') : 'aucun technicien actif';
+  const note = memo.trim()
+    ? `Mémo de la direction (à respecter, il complète la fiche) :\n${memo.trim()}`
+    : 'Pas de mémo de la direction.';
+  return `# Contexte actuel\nTechniciens actifs : ${team}.\n\n${note}`;
+}
 
 const WEEKDAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const MONTHS = [
@@ -58,10 +74,25 @@ export function dateLabel(isoDay: string): string {
   return `${weekday} ${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()} (${isoDay})`;
 }
 
-/** Texte envoyé pour une question : date du jour et façon dont elle a été posée. */
-export function questionText(question: string, spoken: boolean, today: string): string {
+/**
+ * Texte envoyé pour une question : date du jour, façon dont elle a été posée et, pour une
+ * question dictée, les autres versions entendues par la reconnaissance vocale.
+ */
+export function questionText(
+  question: string,
+  spoken: boolean,
+  today: string,
+  alternatives: readonly string[] = [],
+): string {
   const mode = spoken ? 'Question posée à la voix (réponse écoutée).' : 'Question posée à l’écrit.';
-  return `Aujourd’hui : ${dateLabel(today)}. ${mode}\n\n${question.trim()}`;
+  const main = question.trim();
+  const others = [...new Set(alternatives.map((text) => text.trim()).filter(Boolean))].filter(
+    (text) => text.toLowerCase() !== main.toLowerCase(),
+  );
+  const heard = others.length
+    ? `\n\nAutres versions entendues par la dictée : ${others.map((text) => `« ${text} »`).join(' ; ')}`
+    : '';
+  return `Aujourd’hui : ${dateLabel(today)}. ${mode}\n\n${main}${heard}`;
 }
 
 /** Titre de la conversation : le début de la première question. */
