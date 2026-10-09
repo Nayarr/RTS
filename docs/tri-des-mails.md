@@ -10,6 +10,26 @@ La direction retrouve les mails dans **Agent Direction › Mails reçus**. Les m
 nombre de mails à traiter apparaissent dans le **point du jour**, et l'agent répond aux questions
 sur les mails (« qu'est-ce que Moreau m'a demandé ? »).
 
+## Réponses préparées
+
+Quand un mail attend une réponse (demande de devis, intervention, suivi, facture, location,
+fournisseur), Claude Sonnet prépare la réponse juste après le tri, en tâche de fond. Il lit d'abord
+les données utiles de l'atelier (client, véhicule, OR, rendez-vous, congés, factures, devis,
+réglages) et n'invente ni prix ni disponibilité : s'il manque une information, la réponse la
+demande au client. Environ 3 centimes par réponse, 60 réponses par jour au plus.
+
+Dans le point du jour, après les phrases du point, l'agent lit pour chaque mail : ce que demande
+l'expéditeur, puis la réponse préparée, puis « Je l'envoie ? ». Trois choix, au clic ou à la voix :
+
+- **Envoyer** (« envoie ») : la réponse part depuis atelier@, dans le fil du mail du client, après
+  5 secondes pendant lesquelles l'envoi s'annule. Le mail est ensuite marqué traité.
+- **Modifier** (« modifie ») : la fenêtre d'envoi habituelle s'ouvre avec la réponse, à corriger.
+- **Plus tard** (« plus tard », « non ») : la réponse reste à relire dans le point, sans être relue
+  à voix haute.
+
+Rien n'est jamais envoyé sans cette décision. L'envoi passe par l'envoi des e-mails de l'appli
+(Réglages › Atelier › « Envoyer les e-mails depuis l'appli » doit être activé).
+
 ## Ce qui est gardé, et combien de temps
 
 - Expéditeur, destinataires, objet, texte du mail (20 000 caractères au plus), noms des pièces

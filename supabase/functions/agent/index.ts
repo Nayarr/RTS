@@ -23,7 +23,13 @@ import {
   workshopContext,
 } from './prompt.ts';
 import { runTool, TOOL_DEFINITIONS } from './tools.ts';
-import { briefingRequest, gatherBriefing } from './briefing.ts';
+import {
+  BRIEFING_JSON_SCHEMA,
+  briefingRequest,
+  briefingText,
+  gatherBriefing,
+  parseBriefing,
+} from './briefing.ts';
 
 z.config(z.locales.fr());
 
@@ -93,7 +99,7 @@ export default {
       const today = parisToday();
       const { data: existing } = await admin
         .from('agent_briefings')
-        .select('id, day, text, tools, generations, updated_at')
+        .select('id, day, text, phrases, tools, generations, updated_at')
         .eq('profile_id', userId)
         .eq('day', today)
         .maybeSingle();
@@ -115,7 +121,7 @@ export default {
             { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
             { type: 'text', text: context },
           ],
-          output_config: { effort: 'low' },
+          output_config: { effort: 'low', format: { type: 'json_schema', schema: BRIEFING_JSON_SCHEMA } },
           messages: [{ role: 'user', content: briefingRequest(today, sections) }],
         });
       } catch (err) {
@@ -128,13 +134,17 @@ export default {
         }
         throw err;
       }
-      const text = response.stop_reason === 'end_turn' ? answerText(response.content) : '';
-      if (!text) return fail(502, 'Point du jour pas rédigé : réessaie dans un instant');
+      const phrases = response.stop_reason === 'end_turn'
+        ? parseBriefing(answerText(response.content))
+        : null;
+      if (!phrases) return fail(502, 'Point du jour pas rédigé : réessaie dans un instant');
+      const text = briefingText(phrases);
 
       const row = {
         profile_id: userId,
         day: today,
         text: text.slice(0, 3000),
+        phrases,
         tools: sections.map((section) => section.tool),
         generations: (existing?.generations ?? 0) + 1,
         input_tokens: response.usage.input_tokens,
@@ -146,7 +156,7 @@ export default {
       const { data: saved, error } = await admin
         .from('agent_briefings')
         .upsert(row, { onConflict: 'profile_id,day' })
-        .select('id, day, text, tools, generations, updated_at')
+        .select('id, day, text, phrases, tools, generations, updated_at')
         .single();
       if (error || !saved) console.error(error); // point obtenu : l'enregistrement ne bloque pas
       return json(200, { briefing: briefingView(saved ?? { ...row, id: null }) });
@@ -297,6 +307,8 @@ export default {
 };
 
 /** Point du jour renvoyé à la page (sans les jetons). */
-function briefingView(row: { day: string; text: string; tools: string[]; updated_at: string }) {
-  return { day: row.day, text: row.text, tools: row.tools, updated_at: row.updated_at };
+function briefingView(
+  row: { day: string; text: string; phrases: unknown; tools: string[]; updated_at: string },
+) {
+  return { day: row.day, text: row.text, phrases: row.phrases, tools: row.tools, updated_at: row.updated_at };
 }

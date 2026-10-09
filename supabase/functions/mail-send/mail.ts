@@ -33,6 +33,8 @@ export const requestSchema = z.object({
   // Lien du document : bouton ajouté sous le message (le texte modifiable ne le contient pas)
   link: z.object({ label: z.string().trim().min(1).max(80), url: z.url({ protocol: /^https?$/ }).max(500) })
     .optional(),
+  // Réponse à un mail reçu (Agent Direction) : envoyée dans le fil du client, mail marqué répondu
+  inbox_email_id: z.guid().optional(),
 });
 export type MailRequest = z.infer<typeof requestSchema>;
 
@@ -123,6 +125,7 @@ export function mailHtml(text: string, link?: { label: string; url: string }): s
 export function resendPayload(
   request: MailRequest,
   sender: { name: string; address: string; replyTo: string | null },
+  inReplyTo?: string | null,
 ) {
   return {
     from: senderAddress(sender.name, sender.address),
@@ -134,7 +137,15 @@ export function resendPayload(
     ...(request.attachments.length
       ? { attachments: request.attachments.map(({ filename, content }) => ({ filename, content })) }
       : {}),
+    // Même fil que le mail reçu dans la messagerie du client
+    ...(inReplyTo ? { headers: { 'In-Reply-To': inReplyTo, References: inReplyTo } } : {}),
   };
+}
+
+/** Identifiant de message utilisable dans un en-tête (« <…@…> », sans retour à la ligne). */
+export function threadHeader(messageId: string | null | undefined): string | null {
+  const value = (messageId ?? '').trim();
+  return /^<[^<>\s]+@[^<>\s]+>$/.test(value) ? value : null;
 }
 
 /** Message affiché au bureau quand Resend refuse l'envoi. */

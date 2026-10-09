@@ -1,4 +1,5 @@
 import { invokeFunction } from '@/lib/functions';
+import { sendMail } from '@/lib/mail';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { InboxEmail } from './mails';
@@ -32,10 +33,19 @@ export function askAgent(input: {
   });
 }
 
+/** Phrase du point du jour : étiquette (« Urgent », « Paiements »…), texte lu, urgence. */
+export interface BriefingPhrase {
+  etiquette: string;
+  texte: string;
+  urgent: boolean;
+}
+
 /** Point du jour : résumé de la situation de l'atelier, fait une fois par jour. */
 export interface AgentBriefing {
   day: string;
   text: string;
+  /** Phrases lues une par une (vide pour un point fait avant le découpage en phrases). */
+  phrases: BriefingPhrase[];
   tools: string[];
   updated_at: string;
 }
@@ -104,4 +114,77 @@ export async function countMailsToHandle(): Promise<number> {
     .or('category.is.null,category.not.in.(publicite,spam)');
   if (error) throw error;
   return count ?? 0;
+}
+
+/** Mail reçu avec la réponse préparée par l'Agent Direction. */
+export type PreparedReply = Pick<
+  Tables['inbox_emails']['Row'],
+  | 'id'
+  | 'mailbox'
+  | 'from_name'
+  | 'from_address'
+  | 'subject'
+  | 'received_at'
+  | 'category'
+  | 'urgency'
+  | 'summary'
+  | 'reply_status'
+  | 'reply_request'
+  | 'reply_subject'
+  | 'reply_body'
+  | 'reply_basis'
+  | 'reply_sent_at'
+> & { clients: { name: string } | null };
+
+/** Début de la journée (heure de l'appareil), pour les réponses envoyées aujourd'hui. */
+const startOfToday = () => {
+  const day = new Date();
+  day.setHours(0, 0, 0, 0);
+  return day;
+};
+
+/**
+ * Réponses préparées du point du jour : à relire ou remises à plus tard (mails de la semaine pas
+ * encore traités), et celles envoyées aujourd'hui. Urgents d'abord, puis du plus ancien au plus récent.
+ */
+export async function fetchPreparedReplies(): Promise<PreparedReply[]> {
+  const { data, error } = await supabase
+    .from('inbox_emails')
+    .select(
+      'id, mailbox, from_name, from_address, subject, received_at, category, urgency, summary, reply_status, reply_request, reply_subject, reply_body, reply_basis, reply_sent_at, handled_at, clients(name)',
+    )
+    .in('reply_status', ['ready', 'postponed', 'sent'])
+    .gte('received_at', new Date(Date.now() - 7 * 86_400_000).toISOString())
+    .order('received_at')
+    .limit(40);
+  if (error) throw error;
+  const today = startOfToday().getTime();
+  return data
+    .filter((mail) =>
+      mail.reply_status === 'sent'
+        ? Boolean(mail.reply_sent_at && new Date(mail.reply_sent_at).getTime() >= today)
+        : mail.handled_at === null,
+    )
+    .sort((a, b) => Number(b.urgency === 'urgente') - Number(a.urgency === 'urgente'))
+    .map(({ handled_at: _handled, ...mail }) => mail);
+}
+
+/** « Plus tard » : la réponse reste à relire, elle n'est plus lue dans le point. */
+export async function postponeReply(id: string): Promise<void> {
+  const { error } = await supabase.rpc('postpone_inbox_reply', { p_id: id });
+  if (error) throw error;
+}
+
+/** Envoie la réponse préparée telle quelle, depuis atelier@, dans le fil du mail reçu. */
+export function sendPreparedReply(reply: PreparedReply) {
+  return sendMail({
+    category: 'workshop',
+    to: reply.from_address,
+    subject: reply.reply_subject ?? `Re: ${reply.subject}`,
+    text: reply.reply_body ?? '',
+    attachments: [],
+    // Même clé pour un nouvel essai : le client ne reçoit jamais deux fois la réponse
+    idempotencyKey: reply.id,
+    inboxEmailId: reply.id,
+  });
 }

@@ -27,9 +27,15 @@ async function setAgentEnabled(enabled: boolean) {
   if (error) throw error;
 }
 
-/** Voix du navigateur simulée : le texte lu est gardé dans window.__spoken. */
+/**
+ * Voix du navigateur simulée : le texte lu est gardé dans window.__spoken. Le point du jour est
+ * noté comme déjà écouté aujourd'hui : il ne se lit pas tout seul à l'ouverture.
+ */
 async function fakeSpeech(page: Page) {
   await page.addInitScript(() => {
+    const now = new Date();
+    const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    localStorage.setItem('rts-point-du-jour-ecoute', JSON.stringify({ day, at: now.toISOString() }));
     const spoken: string[] = [];
     Object.assign(window, { __spoken: spoken });
     Object.defineProperty(window, 'speechSynthesis', {
@@ -164,7 +170,7 @@ test('onglet du menu, question proposée : réponse affichée avec ses sources e
   await page.getByRole('link', { name: /Agent Direction/ }).click();
   await expect(page).toHaveURL(/\/agent-direction$/);
 
-  await expect(page.getByText('que veux-tu savoir ?')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Point du jour' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Assistant prêt' })).toBeVisible();
   await page.getByRole('button', { name: 'Combien on a facturé ce mois-ci ?' }).click();
 
@@ -194,10 +200,14 @@ test('point du jour à l’ouverture : affiché, écouté, refait, masqué penda
   const card = page.getByRole('region', { name: 'Point du jour' });
   await expect(card.getByText(/Transports Moreau doit 4 380 euros/)).toBeVisible();
   await expect(card.getByText('Sources : factures impayées, atelier du jour')).toBeVisible();
-  await card.getByRole('button', { name: 'Écouter' }).click();
+  // Point lu phrase par phrase
+  await card.getByRole('button', { name: 'Réécouter' }).click();
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken))
-    .toEqual(['Transports Moreau doit 4 380 euros depuis le 12 septembre. Six OR au programme aujourd’hui.']);
+    .toEqual([
+      'Transports Moreau doit 4 380 euros depuis le 12 septembre.',
+      'Six OR au programme aujourd’hui.',
+    ]);
 
   await card.getByRole('button', { name: 'Refaire le point avec les données du moment' }).click();
   await expect(card.getByText('Rien d’urgent ce matin.')).toBeVisible();

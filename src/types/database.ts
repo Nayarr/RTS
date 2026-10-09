@@ -13,6 +13,7 @@ export type Database = {
           id: string;
           input_tokens: number;
           output_tokens: number;
+          phrases: NonNullable<Json>;
           profile_id: string;
           text: string;
           tools: string[];
@@ -27,6 +28,7 @@ export type Database = {
           id?: string;
           input_tokens?: number;
           output_tokens?: number;
+          phrases?: NonNullable<Json>;
           profile_id: string;
           text: string;
           tools?: string[];
@@ -41,6 +43,7 @@ export type Database = {
           id?: string;
           input_tokens?: number;
           output_tokens?: number;
+          phrases?: NonNullable<Json>;
           profile_id?: string;
           text?: string;
           tools?: string[];
@@ -1379,6 +1382,19 @@ export type Database = {
           output_tokens: number;
           provider_id: string;
           received_at: string;
+          reply_attempts: number;
+          reply_basis: string | null;
+          reply_body: string | null;
+          reply_input_tokens: number;
+          reply_output_tokens: number;
+          reply_prepared_at: string | null;
+          reply_provider_id: string | null;
+          reply_request: string | null;
+          reply_sent_at: string | null;
+          reply_sent_by: string | null;
+          reply_status: string;
+          reply_subject: string | null;
+          reply_tools: string[];
           subject: string;
           summary: string | null;
           to_addresses: string[];
@@ -1404,6 +1420,19 @@ export type Database = {
           output_tokens?: number;
           provider_id: string;
           received_at: string;
+          reply_attempts?: number;
+          reply_basis?: string | null;
+          reply_body?: string | null;
+          reply_input_tokens?: number;
+          reply_output_tokens?: number;
+          reply_prepared_at?: string | null;
+          reply_provider_id?: string | null;
+          reply_request?: string | null;
+          reply_sent_at?: string | null;
+          reply_sent_by?: string | null;
+          reply_status?: string;
+          reply_subject?: string | null;
+          reply_tools?: string[];
           subject?: string;
           summary?: string | null;
           to_addresses?: string[];
@@ -1429,6 +1458,19 @@ export type Database = {
           output_tokens?: number;
           provider_id?: string;
           received_at?: string;
+          reply_attempts?: number;
+          reply_basis?: string | null;
+          reply_body?: string | null;
+          reply_input_tokens?: number;
+          reply_output_tokens?: number;
+          reply_prepared_at?: string | null;
+          reply_provider_id?: string | null;
+          reply_request?: string | null;
+          reply_sent_at?: string | null;
+          reply_sent_by?: string | null;
+          reply_status?: string;
+          reply_subject?: string | null;
+          reply_tools?: string[];
           subject?: string;
           summary?: string | null;
           to_addresses?: string[];
@@ -1454,6 +1496,13 @@ export type Database = {
           {
             foreignKeyName: 'inbox_emails_handled_by_fkey';
             columns: ['handled_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inbox_emails_reply_sent_by_fkey';
+            columns: ['reply_sent_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
@@ -6113,6 +6162,7 @@ export type Database = {
         Returns: boolean;
       };
       paris_date: { Args: { p_at: string }; Returns: string };
+      postpone_inbox_reply: { Args: { p_id: string }; Returns: boolean };
       pre_quote_work: { Args: { p_repair_order_id: string }; Returns: Json };
       pre_quote_work_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       pre_quote_work_lines: {

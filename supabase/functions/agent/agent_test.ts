@@ -10,7 +10,14 @@ import {
   SYSTEM_PROMPT,
   workshopContext,
 } from './prompt.ts';
-import { briefingReads, briefingRequest, gatherBriefing, nextDay } from './briefing.ts';
+import {
+  briefingReads,
+  briefingRequest,
+  briefingText,
+  gatherBriefing,
+  nextDay,
+  parseBriefing,
+} from './briefing.ts';
 import { compact, docNumber, like, plateKey, runTool, TOOL_DEFINITIONS, TOOLS } from './tools.ts';
 
 /** Faux client : enregistre les appels de fonctions de la base et renvoie une réponse fixe. */
@@ -372,4 +379,29 @@ Deno.test('point du jour : demande datée, lectures nommées, sans tiret cadrati
   assert(!request.includes(EM_DASH));
   assertStringIncludes(briefingRequest('2026-10-09', []), 'Aucune lecture');
   assertEquals(nextDay('2026-12-31'), '2027-01-01');
+});
+
+Deno.test('point du jour : phrases vérifiées (étiquette, texte, urgent), texte une phrase par ligne', () => {
+  const dash = String.fromCharCode(0x2014);
+  const phrases = parseBriefing(JSON.stringify({
+    phrases: [
+      {
+        etiquette: 'Urgent',
+        texte: `Tracteur GH-512-RT en panne ${dash} Fontaine Livraisons.`,
+        urgent: true,
+      },
+      { etiquette: 'Atelier', texte: 'Sept OR en cours.', urgent: false },
+    ],
+  }));
+  assertEquals(phrases?.[0], {
+    etiquette: 'Urgent',
+    texte: 'Tracteur GH-512-RT en panne, Fontaine Livraisons.',
+    urgent: true,
+  });
+  assertEquals(
+    briefingText(phrases ?? []),
+    'Tracteur GH-512-RT en panne, Fontaine Livraisons.\nSept OR en cours.',
+  );
+  assertEquals(parseBriefing(JSON.stringify({ phrases: [] })), null);
+  assertEquals(parseBriefing('Rien d’urgent.'), null);
 });
