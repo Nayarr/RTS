@@ -174,6 +174,8 @@ const SAMPLE_INPUTS: Record<string, unknown> = {
   catalogue: { texte: 'plaquettes' },
   fournisseurs: { nom: 'Bosch' },
   locations: { etat: 'en_cours' },
+  mails: { a_traiter: true, categorie: 'devis', urgence: 'urgente', texte: 'Moreau', depuis: '2026-10-01' },
+  mail: { texte: 'Moreau' },
 };
 
 /** Tables, vues et fonctions que l'agent a le droit de lire. */
@@ -210,6 +212,7 @@ const ALLOWED_TABLES = new Set([
   'labor_rates',
   'app_settings',
   'v_my_notifications',
+  'inbox_emails',
 ]);
 const ALLOWED_FUNCTIONS = new Set([
   'office_dashboard',

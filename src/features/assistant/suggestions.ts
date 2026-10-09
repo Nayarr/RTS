@@ -24,6 +24,8 @@ const TOOL_LABELS: Record<string, string> = {
   recherche: 'recherche',
   pieces_a_commander: 'pièces à commander',
   alertes: 'alertes',
+  mails: 'mails reçus',
+  mail: 'mail',
 };
 
 /** « Sources : chiffres du mois, factures impayées » (rien si aucune lecture). */

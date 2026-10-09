@@ -474,6 +474,14 @@ verify_jwt = false
 import_map = "./functions/agent/deno.json"
 entrypoint = "./functions/agent/index.ts"
 
+[functions.mail-inbox]
+enabled = true
+# Mails reçus par les boîtes de l'atelier (webhook Resend signé, secret RESEND_WEBHOOK_SECRET),
+# triés par Claude Haiku ; aussi appelée par la tâche planifiée retry_inbox_triage (secret partagé).
+verify_jwt = false
+import_map = "./functions/mail-inbox/deno.json"
+entrypoint = "./functions/mail-inbox/index.ts"
+
 [functions.files-purge]
 enabled = true
 # Appelée par la tâche planifiée purge_files() : secret partagé vérifié dans la fonction.

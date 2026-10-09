@@ -18,6 +18,7 @@ import { SUGGESTIONS } from './suggestions';
 
 vi.mock('./api', () => ({
   askAgent: vi.fn(),
+  countMailsToHandle: vi.fn(() => Promise.resolve(3)),
   fetchBriefing: vi.fn(),
   fetchConversations: vi.fn(),
   fetchTurns: vi.fn(),
@@ -243,5 +244,12 @@ describe('Agent Direction', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: SUGGESTIONS[0] })).toBeEnabled();
+  });
+
+  it('mails à traiter comptés, lien vers la liste des mails reçus', async () => {
+    setup();
+    const link = await screen.findByRole('link', { name: /Mails reçus/ });
+    expect(link).toHaveAttribute('href', '/agent-direction/mails');
+    expect(await within(link).findByLabelText('3 à traiter')).toBeInTheDocument();
   });
 });
