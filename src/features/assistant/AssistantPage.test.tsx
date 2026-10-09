@@ -2,7 +2,15 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
-import { askAgent, deleteConversation, fetchConversations, fetchTurns, type AgentTurn } from './api';
+import {
+  askAgent,
+  deleteConversation,
+  fetchBriefing,
+  fetchConversations,
+  fetchTurns,
+  type AgentBriefing,
+  type AgentTurn,
+} from './api';
 import { AssistantPage } from './AssistantPage';
 import { speak, stopSpeaking } from './speech';
 import type * as SpeechModule from './speech';
@@ -10,6 +18,7 @@ import { SUGGESTIONS } from './suggestions';
 
 vi.mock('./api', () => ({
   askAgent: vi.fn(),
+  fetchBriefing: vi.fn(),
   fetchConversations: vi.fn(),
   fetchTurns: vi.fn(),
   deleteConversation: vi.fn(),
@@ -36,6 +45,13 @@ const turn = (overrides: Partial<AgentTurn> = {}): AgentTurn => ({
   created_at: '2026-10-06T09:00:00Z',
   ...overrides,
 });
+
+const BRIEFING: AgentBriefing = {
+  day: '2026-10-09',
+  text: 'Transports Moreau doit 4 380 euros depuis le 12 septembre.\nSix OR au programme, Bruno est absent.',
+  tools: ['factures_impayees', 'atelier_aujourdhui'],
+  updated_at: '2026-10-09T06:12:00Z',
+};
 
 /** Fausse reconnaissance vocale : entend « qui nous doit de l'argent » puis s'arrête. */
 class FakeRecognition {
@@ -78,6 +94,7 @@ describe('Agent Direction', () => {
     localStorage.clear();
     vi.mocked(fetchConversations).mockResolvedValue([]);
     vi.mocked(fetchTurns).mockResolvedValue([]);
+    vi.mocked(fetchBriefing).mockResolvedValue(BRIEFING);
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -87,7 +104,7 @@ describe('Agent Direction', () => {
     setup();
 
     expect(await screen.findByText('que veux-tu savoir ?')).toBeInTheDocument();
-    expect(screen.getByTestId('orbe')).toHaveTextContent('idle');
+    await waitFor(() => expect(screen.getByTestId('orbe')).toHaveTextContent('idle'));
     await userEvent.click(screen.getByRole('button', { name: SUGGESTIONS[0] }));
 
     expect(vi.mocked(askAgent).mock.calls[0]?.[0]).toEqual({
@@ -182,5 +199,49 @@ describe('Agent Direction', () => {
     setup();
     expect(await screen.findByLabelText('Dictée indisponible sur ce navigateur')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Question à l’agent' })).toBeEnabled();
+  });
+
+  it('point du jour affiché à l’ouverture, écouté puis refait avec les données du moment', async () => {
+    setup();
+    const card = await screen.findByRole('region', { name: 'Point du jour' });
+    expect(within(card).getByRole('status')).toHaveTextContent('Je fais le point sur l’atelier');
+    expect(screen.getByTestId('orbe')).toHaveTextContent('thinking');
+    expect(await within(card).findByText(/Transports Moreau doit 4 380 euros/)).toBeInTheDocument();
+    expect(within(card).getByText('Sources : factures impayées, atelier du jour')).toBeInTheDocument();
+    expect(fetchBriefing).toHaveBeenCalledWith();
+
+    await userEvent.click(within(card).getByRole('button', { name: 'Écouter' }));
+    expect(speak).toHaveBeenCalledWith(BRIEFING.text, expect.any(Function));
+
+    vi.mocked(fetchBriefing).mockResolvedValue({ ...BRIEFING, text: 'Rien d’urgent ce matin.' });
+    await userEvent.click(
+      within(card).getByRole('button', { name: 'Refaire le point avec les données du moment' }),
+    );
+    expect(await within(card).findByText('Rien d’urgent ce matin.')).toBeInTheDocument();
+    expect(fetchBriefing).toHaveBeenLastCalledWith(true);
+  });
+
+  it('point du jour masqué pendant une conversation, revenu avec une nouvelle conversation', async () => {
+    vi.mocked(askAgent).mockResolvedValue({ conversation_id: 'c1', turn_id: 't1', answer: turn().answer });
+    vi.mocked(fetchTurns).mockResolvedValue([turn()]);
+    setup();
+    await screen.findByText(/Transports Moreau/);
+    await userEvent.click(screen.getByRole('button', { name: SUGGESTIONS[0] }));
+    expect(await screen.findByText(turn().answer)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Point du jour' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Nouvelle conversation' }));
+    expect(await screen.findByText(/Transports Moreau/)).toBeInTheDocument();
+    expect(fetchBriefing).toHaveBeenCalledTimes(1);
+  });
+
+  it('point du jour indisponible : raison affichée, questions toujours possibles', async () => {
+    vi.mocked(fetchBriefing).mockRejectedValue(new Error('Assistant pas encore configuré'));
+    setup();
+    const card = await screen.findByRole('region', { name: 'Point du jour' });
+    expect(
+      await within(card).findByText('Point du jour indisponible : Assistant pas encore configuré'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: SUGGESTIONS[0] })).toBeEnabled();
   });
 });

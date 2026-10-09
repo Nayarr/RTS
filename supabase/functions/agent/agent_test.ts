@@ -10,6 +10,7 @@ import {
   SYSTEM_PROMPT,
   workshopContext,
 } from './prompt.ts';
+import { briefingReads, briefingRequest, gatherBriefing, nextDay } from './briefing.ts';
 import { compact, docNumber, like, plateKey, runTool, TOOL_DEFINITIONS, TOOLS } from './tools.ts';
 
 /** Faux client : enregistre les appels de fonctions de la base et renvoie une réponse fixe. */
@@ -316,4 +317,56 @@ Deno.test('réponse : texte assemblé, sans tiret cadratin', () => {
     ]),
     'Ce mois-ci, 12 450 euros.',
   );
+});
+
+Deno.test('point du jour : lectures valides, en lecture seule, sur des tables autorisées', async () => {
+  const reads = briefingReads('2026-10-31');
+  assertEquals(reads.find((item) => item.tool === 'rendez_vous')?.input, {
+    du: '2026-10-31',
+    au: '2026-11-01',
+  });
+  assertEquals(reads.find((item) => item.tool === 'chiffres_du_mois')?.input, { mois: '2026-10' });
+  for (const item of reads) {
+    const { db, tables, functions, writes } = recordingDb();
+    const result = await runTool(db, item.tool, item.input);
+    assert(!result.content.startsWith('Paramètres'), `${item.tool} : ${result.content}`);
+    assertEquals(writes, [], `${item.tool} écrit`);
+    for (const table of tables) assert(ALLOWED_TABLES.has(table), `${item.tool} lit ${table}`);
+    for (const name of functions) assert(ALLOWED_FUNCTIONS.has(name), `${item.tool} appelle ${name}`);
+  }
+});
+
+Deno.test('point du jour : lecture en échec laissée de côté, longue lecture coupée', async () => {
+  const db = {
+    rpc: (name: string) =>
+      Promise.resolve(
+        name === 'workshop_board'
+          ? { data: null, error: { message: 'refusé' } }
+          : { data: [{ texte: 'x'.repeat(name === 'office_dashboard' ? 9_000 : 10) }], error: null },
+      ),
+    from: () => {
+      const query: Record<string, unknown> = {};
+      for (const method of ['select', 'eq', 'neq', 'in', 'lt', 'lte', 'gt', 'gte', 'order', 'limit', 'is']) {
+        query[method] = () => query;
+      }
+      query.then = (resolve: (value: unknown) => void) => resolve({ data: [], error: null });
+      return query;
+    },
+  } as unknown as SupabaseClient;
+  const sections = await gatherBriefing(db, '2026-10-09');
+  assert(!sections.some((section) => section.tool === 'atelier_aujourdhui'));
+  const dashboard = sections.find((section) => section.tool === 'tableau_de_bord');
+  assert(dashboard?.content.endsWith('(liste coupée)'));
+  assert((dashboard?.content.length ?? 0) < 8_100);
+});
+
+Deno.test('point du jour : demande datée, lectures nommées, sans tiret cadratin', () => {
+  const request = briefingRequest('2026-10-09', [
+    { tool: 'factures_impayees', label: 'Factures en retard de paiement', content: '[]' },
+  ]);
+  assertStringIncludes(request, 'vendredi 9 octobre 2026');
+  assertStringIncludes(request, '## Factures en retard de paiement (factures_impayees)');
+  assert(!request.includes(EM_DASH));
+  assertStringIncludes(briefingRequest('2026-10-09', []), 'Aucune lecture');
+  assertEquals(nextDay('2026-12-31'), '2027-01-01');
 });

@@ -6,6 +6,9 @@
 // puis répond. Rien n'est modifié dans la base hormis l'historique de la conversation.
 // Réservé à la direction, réglage « Assistant de la direction » activé, limite de questions par
 // jour. Clé : secret ANTHROPIC_AGENT_API_KEY (sans clé : assistant indisponible).
+//
+// Avec { briefing: true } : point du jour (briefing.ts), fait une fois par jour et gardé ;
+// { briefing: true, refresh: true } le refait avec les données du moment.
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import Anthropic from '@anthropic-ai/sdk';
@@ -20,6 +23,7 @@ import {
   workshopContext,
 } from './prompt.ts';
 import { runTool, TOOL_DEFINITIONS } from './tools.ts';
+import { briefingRequest, gatherBriefing } from './briefing.ts';
 
 z.config(z.locales.fr());
 
@@ -31,6 +35,10 @@ const MAX_TURNS_PER_CONVERSATION = 30;
 /** Allers-retours avec les outils pour une seule question. */
 const MAX_STEPS = 8;
 
+/** Points du jour faits par personne et par jour (le premier plus les actualisations). */
+const BRIEFINGS_PER_DAY = 6;
+
+const briefingSchema = z.object({ briefing: z.literal(true), refresh: z.boolean().default(false) });
 const requestSchema = z.object({
   conversation_id: z.guid().optional(),
   question: z.string().trim().min(1).max(2000),
@@ -62,13 +70,92 @@ export default {
       .maybeSingle();
     if (!settings?.agent_enabled) return fail(409, 'Assistant désactivé dans les réglages');
 
-    const parsed = requestSchema.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return fail(400, 'Question vide ou trop longue');
-    const { conversation_id: conversationId, question, spoken, alternatives } = parsed.data;
+    const body: unknown = await req.json().catch(() => null);
     const userId = ctx.userClaims?.id;
     if (!userId) return fail(401, 'Session expirée : reconnecte-toi');
-
     const admin = ctx.supabaseAdmin;
+
+    // Contexte de l'atelier : techniciens actifs (aide à reconnaître les prénoms) et mémo de la direction
+    const loadContext = async () => {
+      const { data: team } = await ctx.supabase
+        .from('technicians')
+        .select('display_name')
+        .eq('is_active', true)
+        .order('sort_order');
+      return workshopContext({
+        technicians: (team ?? []).map((member) => String(member.display_name)),
+        memo: String(settings?.agent_memo ?? ''),
+      });
+    };
+
+    const briefingAsked = briefingSchema.safeParse(body);
+    if (briefingAsked.success) {
+      const today = parisToday();
+      const { data: existing } = await admin
+        .from('agent_briefings')
+        .select('id, day, text, tools, generations, updated_at')
+        .eq('profile_id', userId)
+        .eq('day', today)
+        .maybeSingle();
+      if (existing && !briefingAsked.data.refresh) return json(200, { briefing: briefingView(existing) });
+      if (existing && existing.generations >= BRIEFINGS_PER_DAY) {
+        return fail(
+          429,
+          `Point du jour déjà refait ${BRIEFINGS_PER_DAY} fois aujourd’hui : pose plutôt une question`,
+        );
+      }
+
+      const [sections, context] = await Promise.all([gatherBriefing(ctx.supabase, today), loadContext()]);
+      let response: Anthropic.Message;
+      try {
+        response = await claude.messages.create({
+          model: MODEL,
+          max_tokens: 1500,
+          system: [
+            { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: context },
+          ],
+          output_config: { effort: 'low' },
+          messages: [{ role: 'user', content: briefingRequest(today, sections) }],
+        });
+      } catch (err) {
+        if (err instanceof Anthropic.RateLimitError) {
+          return fail(503, 'Assistant occupé : réessaie dans un instant');
+        }
+        if (err instanceof Anthropic.APIError) {
+          console.error('agent briefing', err.status, err.message);
+          return fail(502, 'Point du jour indisponible pour le moment : réessaie dans un instant');
+        }
+        throw err;
+      }
+      const text = response.stop_reason === 'end_turn' ? answerText(response.content) : '';
+      if (!text) return fail(502, 'Point du jour pas rédigé : réessaie dans un instant');
+
+      const row = {
+        profile_id: userId,
+        day: today,
+        text: text.slice(0, 3000),
+        tools: sections.map((section) => section.tool),
+        generations: (existing?.generations ?? 0) + 1,
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+        cache_read_tokens: response.usage.cache_read_input_tokens ?? 0,
+        cache_write_tokens: response.usage.cache_creation_input_tokens ?? 0,
+        updated_at: new Date().toISOString(),
+      };
+      const { data: saved, error } = await admin
+        .from('agent_briefings')
+        .upsert(row, { onConflict: 'profile_id,day' })
+        .select('id, day, text, tools, generations, updated_at')
+        .single();
+      if (error || !saved) console.error(error); // point obtenu : l'enregistrement ne bloque pas
+      return json(200, { briefing: briefingView(saved ?? { ...row, id: null }) });
+    }
+
+    const parsed = requestSchema.safeParse(body);
+    if (!parsed.success) return fail(400, 'Question vide ou trop longue');
+    const { conversation_id: conversationId, question, spoken, alternatives } = parsed.data;
+
     const { count: today } = await admin
       .from('agent_turns')
       .select('id', { count: 'exact', head: true })
@@ -101,16 +188,7 @@ export default {
       ...transcript,
       { role: 'user', content: questionText(question, spoken, parisToday(), alternatives) },
     ];
-    // Contexte de l'atelier : techniciens actifs (aide à reconnaître les prénoms) et mémo de la direction
-    const { data: team } = await ctx.supabase
-      .from('technicians')
-      .select('display_name')
-      .eq('is_active', true)
-      .order('sort_order');
-    const context = workshopContext({
-      technicians: (team ?? []).map((member) => String(member.display_name)),
-      memo: String(settings.agent_memo ?? ''),
-    });
+    const context = await loadContext();
     const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
     const used = new Set<string>();
     let answer: string | null = null;
@@ -217,3 +295,8 @@ export default {
     return json(200, { conversation_id: id, turn_id: turn?.id ?? null, answer });
   }),
 };
+
+/** Point du jour renvoyé à la page (sans les jetons). */
+function briefingView(row: { day: string; text: string; tools: string[]; updated_at: string }) {
+  return { day: row.day, text: row.text, tools: row.tools, updated_at: row.updated_at };
+}

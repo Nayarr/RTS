@@ -31,6 +31,23 @@ export function askAgent(input: {
   });
 }
 
+/** Point du jour : résumé de la situation de l'atelier, fait une fois par jour. */
+export interface AgentBriefing {
+  day: string;
+  text: string;
+  tools: string[];
+  updated_at: string;
+}
+
+/** Point du jour (gardé pour la journée) ; `refresh` le refait avec les données du moment. */
+export async function fetchBriefing(refresh = false): Promise<AgentBriefing> {
+  const result = await invokeFunction<{ briefing: AgentBriefing }>('agent', {
+    briefing: true,
+    ...(refresh ? { refresh: true } : {}),
+  });
+  return result.briefing;
+}
+
 /** Conversations récentes de la personne connectée. */
 export async function fetchConversations(): Promise<AgentConversation[]> {
   const { data, error } = await supabase

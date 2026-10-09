@@ -22,6 +22,8 @@ const TOOL_LABELS: Record<string, string> = {
   echeances_vehicules: 'échéances des véhicules',
   locations: 'locations',
   recherche: 'recherche',
+  pieces_a_commander: 'pièces à commander',
+  alertes: 'alertes',
 };
 
 /** « Sources : chiffres du mois, factures impayées » (rien si aucune lecture). */
