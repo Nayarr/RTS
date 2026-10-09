@@ -5,6 +5,7 @@ import {
   ArrowUp,
   History,
   Keyboard,
+  Mail,
   Mic,
   MicOff,
   Plus,
@@ -23,6 +24,7 @@ import { useDictation } from '@/lib/use-dictation';
 import { cn } from '@/lib/utils';
 import {
   askAgent,
+  countMailsToHandle,
   deleteConversation,
   fetchBriefing,
   fetchConversations,
@@ -66,6 +68,11 @@ export function AssistantPage() {
     staleTime: 30 * 60_000,
     retry: false,
     refetchOnWindowFocus: false,
+  });
+  const mailsToHandle = useQuery({
+    queryKey: ['agent', 'mails', 'a-traiter'],
+    queryFn: countMailsToHandle,
+    refetchInterval: 2 * 60_000,
   });
   const shownTurns = conversationId ? (turns.data ?? []) : [];
   const lastTurn = shownTurns.at(-1);
@@ -206,6 +213,16 @@ export function AssistantPage() {
                 Réponses lues
               </button>
             )}
+            <Button asChild variant="outline">
+              <Link to="/agent-direction/mails">
+                <Mail /> Mails reçus
+                {Boolean(mailsToHandle.data) && (
+                  <span className="agent-count" aria-label={`${mailsToHandle.data} à traiter`}>
+                    {mailsToHandle.data}
+                  </span>
+                )}
+              </Link>
+            </Button>
             <Button
               variant="outline"
               aria-expanded={historyOpen}

@@ -2270,6 +2270,115 @@
     line-height: 1.55;
     white-space: pre-line;
   }
+  .agent-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .mail-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .mail-row {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .mail-row + .mail-row {
+    border-top: 1px solid var(--border);
+  }
+  .mail-row.done .mail-head {
+    opacity: 0.65;
+  }
+  .mail-dot {
+    width: 9px;
+    height: 9px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: var(--c);
+  }
+  .mail-main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .mail-head {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .mail-from {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13.5px;
+  }
+  .mail-client {
+    flex-shrink: 0;
+    color: var(--accent-foreground);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .mail-time {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mail-subject {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .mail-summary {
+    color: var(--muted-foreground);
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .mail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .mail-chev {
+    margin-left: auto;
+    color: var(--muted-foreground);
+    transition: transform var(--dur-1, 120ms) var(--ease-out, ease-out);
+  }
+  .mail-chev.up {
+    transform: rotate(180deg);
+  }
+  .mail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--muted);
+  }
+  .mail-text {
+    font-size: 13.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .agent-type {
     display: flex;
     gap: 8px;

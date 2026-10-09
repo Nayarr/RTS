@@ -256,6 +256,10 @@ export const routes: RouteObject[] = [
                     path: '/agent-direction',
                     lazy: page(() => import('@/features/assistant/AssistantPage'), 'AssistantPage'),
                   },
+                  {
+                    path: '/agent-direction/mails',
+                    lazy: page(() => import('@/features/assistant/MailsPage'), 'MailsPage'),
+                  },
                   { path: '/pilotage/assistant', element: <Navigate to="/agent-direction" replace /> },
                 ],
               },

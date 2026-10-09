@@ -1360,6 +1360,106 @@ export type Database = {
           },
         ];
       };
+      inbox_emails: {
+        Row: {
+          attachments: NonNullable<Json>;
+          body: string;
+          category: string | null;
+          client_id: string | null;
+          created_at: string;
+          from_address: string;
+          from_name: string;
+          handled_at: string | null;
+          handled_by: string | null;
+          id: string;
+          input_tokens: number;
+          mailbox: string | null;
+          message_id: string | null;
+          needs_reply: boolean | null;
+          output_tokens: number;
+          provider_id: string;
+          received_at: string;
+          subject: string;
+          summary: string | null;
+          to_addresses: string[];
+          triage_attempts: number;
+          triage_status: string;
+          urgency: string | null;
+        };
+        Insert: {
+          attachments?: NonNullable<Json>;
+          body?: string;
+          category?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          from_address: string;
+          from_name?: string;
+          handled_at?: string | null;
+          handled_by?: string | null;
+          id?: string;
+          input_tokens?: number;
+          mailbox?: string | null;
+          message_id?: string | null;
+          needs_reply?: boolean | null;
+          output_tokens?: number;
+          provider_id: string;
+          received_at: string;
+          subject?: string;
+          summary?: string | null;
+          to_addresses?: string[];
+          triage_attempts?: number;
+          triage_status?: string;
+          urgency?: string | null;
+        };
+        Update: {
+          attachments?: NonNullable<Json>;
+          body?: string;
+          category?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          from_address?: string;
+          from_name?: string;
+          handled_at?: string | null;
+          handled_by?: string | null;
+          id?: string;
+          input_tokens?: number;
+          mailbox?: string | null;
+          message_id?: string | null;
+          needs_reply?: boolean | null;
+          output_tokens?: number;
+          provider_id?: string;
+          received_at?: string;
+          subject?: string;
+          summary?: string | null;
+          to_addresses?: string[];
+          triage_attempts?: number;
+          triage_status?: string;
+          urgency?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inbox_emails_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inbox_emails_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inbox_emails_handled_by_fkey';
+            columns: ['handled_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inspections: {
         Row: {
           data: NonNullable<Json>;
@@ -6142,6 +6242,7 @@ export type Database = {
         Returns: string[];
       };
       reset_client_portal: { Args: { p_client_id: string }; Returns: string };
+      retry_inbox_triage: { Args: Record<PropertyKey, never>; Returns: number };
       return_rental: { Args: { p_rental_id: string; p_returned_at: string }; Returns: undefined };
       save_appointment: {
         Args: {
@@ -6250,6 +6351,7 @@ export type Database = {
         Args: { p_consumable_id: string; p_note?: string; p_quantity: number };
         Returns: number;
       };
+      set_inbox_emails_handled: { Args: { p_handled: boolean; p_ids: string[] }; Returns: number };
       set_kiosk_exit_code: { Args: { p_code: string }; Returns: undefined };
       set_quote_response: {
         Args: { p_quote_id: string; p_status: Database['public']['Enums']['quote_status'] };

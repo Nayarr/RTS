@@ -1,6 +1,7 @@
 import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
+import type { InboxEmail } from './mails';
 
 type Tables = Database['public']['Tables'];
 export type AgentConversation = Pick<Tables['agent_conversations']['Row'], 'id' | 'title' | 'updated_at'>;
@@ -73,4 +74,34 @@ export async function fetchTurns(conversationId: string): Promise<AgentTurn[]> {
 export async function deleteConversation(id: string): Promise<void> {
   const { error } = await supabase.from('agent_conversations').delete().eq('id', id);
   if (error) throw error;
+}
+
+/** Mails reçus des 90 derniers jours (copies gardées par l'appli), les plus récents d'abord. */
+export async function fetchInboxEmails(): Promise<InboxEmail[]> {
+  const { data, error } = await supabase
+    .from('inbox_emails')
+    .select(
+      'id, mailbox, from_name, from_address, subject, body, attachments, received_at, triage_status, category, urgency, summary, needs_reply, handled_at, clients(name)',
+    )
+    .order('received_at', { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return data;
+}
+
+/** Marque des mails traités (ou les remet à traiter). */
+export async function setMailsHandled(ids: string[], handled: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_inbox_emails_handled', { p_ids: ids, p_handled: handled });
+  if (error) throw error;
+}
+
+/** Mails à traiter (hors publicité et indésirables), pour le bouton de l'Agent Direction. */
+export async function countMailsToHandle(): Promise<number> {
+  const { count, error } = await supabase
+    .from('inbox_emails')
+    .select('id', { count: 'exact', head: true })
+    .is('handled_at', null)
+    .or('category.is.null,category.not.in.(publicite,spam)');
+  if (error) throw error;
+  return count ?? 0;
 }
