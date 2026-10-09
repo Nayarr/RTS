@@ -10,6 +10,7 @@ import {
   senderAddress,
   senderFor,
   textToHtml,
+  threadHeader,
 } from './mail.ts';
 
 const KEY = '7b0b7d4e-5b0e-4f3e-9c6a-2d1f0e9a8b7c';
@@ -177,4 +178,24 @@ Deno.test('lien du document : bouton entre le message et la signature, lien en c
     }).success,
     false,
   );
+});
+
+Deno.test('réponse à un mail reçu : même fil chez le client, en-tête vérifié', () => {
+  const request = requestSchema.parse({
+    to: 'paul@fontaine-livraisons.fr',
+    subject: 'Re: URGENT tracteur en panne',
+    text: 'Bonjour,\nNous passons à 14 h.\nCordialement,\nRTS',
+    idempotency_key: crypto.randomUUID(),
+    inbox_email_id: crypto.randomUUID(),
+  });
+  const payload = resendPayload(request, {
+    name: 'RTS',
+    address: 'atelier@rapidtruckservice.fr',
+    replyTo: null,
+  }, '<abc@x.fr>');
+  assertEquals(payload.headers, { 'In-Reply-To': '<abc@x.fr>', References: '<abc@x.fr>' });
+  assertEquals('headers' in resendPayload(request, { name: 'RTS', address: 'a@b.fr', replyTo: null }), false);
+  assertEquals(threadHeader(' <abc@x.fr> '), '<abc@x.fr>');
+  assertEquals(threadHeader('<abc@x.fr>\r\nBcc: pirate@x.fr'), null);
+  assertEquals(threadHeader(null), null);
 });

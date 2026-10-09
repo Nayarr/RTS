@@ -9,6 +9,8 @@
 // Secrets : RESEND_API_KEY, et MAIL_FROM tant qu'aucun domaine n'est réglé (sans eux : envoi
 // indisponible, la messagerie de l'ordinateur reste proposée). Chaque envoi est gardé dans
 // email_deliveries.
+// Réponse préparée par l'Agent Direction (inbox_email_id) : réservée à la direction, envoyée dans
+// le fil du mail reçu, qui est ensuite marqué répondu et traité.
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
@@ -21,6 +23,7 @@ import {
   resendFailure,
   resendPayload,
   senderFor,
+  threadHeader,
 } from './mail.ts';
 
 z.config(z.locales.fr());
@@ -57,6 +60,19 @@ export default {
     }
 
     const admin = ctx.supabaseAdmin;
+    let inReplyTo: string | null = null;
+    if (request.inbox_email_id) {
+      const { data: isDirection } = await ctx.supabase.rpc('is_direction');
+      if (isDirection !== true) return fail(403, 'Réponse aux mails reçus réservée à la direction');
+      const { data: received } = await admin
+        .from('inbox_emails')
+        .select('message_id, reply_status')
+        .eq('id', request.inbox_email_id)
+        .maybeSingle();
+      if (!received) return fail(404, 'Mail reçu introuvable');
+      if (received.reply_status === 'sent') return fail(409, 'Réponse déjà envoyée');
+      inReplyTo = threadHeader(received.message_id);
+    }
     const { count } = await admin
       .from('email_deliveries')
       .select('id', { count: 'exact', head: true })
@@ -84,7 +100,7 @@ export default {
           name: company?.legal_name ?? '',
           address: sender.address,
           replyTo: sender.replyTo,
-        }),
+        }, inReplyTo),
       ),
     });
     const result = (await response.json().catch(() => null)) as { id?: string; message?: string } | null;
@@ -103,6 +119,25 @@ export default {
       sent_by: ctx.userClaims?.id ?? null,
     });
     if (error) console.error(error); // e-mail parti : le journal ne bloque pas la réponse
+    if (request.inbox_email_id) {
+      const now = new Date().toISOString();
+      const userId = ctx.userClaims?.id ?? null;
+      const { error: replyError } = await admin
+        .from('inbox_emails')
+        .update({
+          reply_status: 'sent',
+          reply_sent_at: now,
+          reply_sent_by: userId,
+          reply_provider_id: result.id,
+        })
+        .eq('id', request.inbox_email_id);
+      if (replyError) console.error(replyError);
+      await admin
+        .from('inbox_emails')
+        .update({ handled_at: now, handled_by: userId })
+        .eq('id', request.inbox_email_id)
+        .is('handled_at', null);
+    }
     return json(200, { id: result.id });
   }),
 };

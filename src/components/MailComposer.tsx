@@ -43,6 +43,8 @@ export interface MailComposerProps {
   onSend?:
     ((channel: 'email' | 'sms', contact: ContactValues, providerMessageId?: string) => void) | undefined;
   attachments?: { label: string; load: () => Promise<PdfFile[]> } | undefined;
+  /** Réponse à un mail reçu (Agent Direction) : envoyée dans le fil du client. */
+  inboxEmailId?: string | undefined;
   onClose: () => void;
 }
 
@@ -74,6 +76,7 @@ export function MailComposer({
   onContactSave,
   onSend,
   attachments,
+  inboxEmailId,
   onClose,
 }: MailComposerProps) {
   const original = useMemo(
@@ -124,6 +127,7 @@ export function MailComposer({
         link: link ? { label: linkLabel, url: link } : undefined,
         attachments: files,
         idempotencyKey: idempotency.current.key,
+        inboxEmailId,
       });
     },
     onSuccess: ({ id }) => {

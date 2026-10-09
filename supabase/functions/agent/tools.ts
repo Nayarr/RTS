@@ -937,7 +937,7 @@ export const TOOLS: AgentTool[] = [
   tool({
     name: 'mails',
     description:
-      'Mails reçus par les boîtes de l’atelier, triés : date, boîte, expéditeur, client reconnu, objet, catégorie (devis, rendez_vous, suivi, facturation, fournisseur, location, administratif, publicite, spam, autre), urgence (urgente, normale, faible), résumé, réponse attendue, traité ou non. Les plus récents d’abord.',
+      'Mails reçus par les boîtes de l’atelier, triés : date, boîte, expéditeur, client reconnu, objet, catégorie (devis, rendez_vous, suivi, facturation, fournisseur, location, administratif, publicite, spam, autre), urgence (urgente, normale, faible), résumé, réponse attendue, réponse préparée (reply_status : ready à relire, postponed remise à plus tard, sent envoyée), traité ou non. Les plus récents d’abord.',
     input_schema: schema({
       a_traiter: { type: 'boolean', description: 'Seulement ceux pas encore marqués traités' },
       categorie: { type: 'string', enum: [...MAIL_CATEGORIES] },
@@ -958,7 +958,7 @@ export const TOOLS: AgentTool[] = [
       let query = db
         .from('inbox_emails')
         .select(
-          'received_at, mailbox, from_name, from_address, subject, category, urgency, summary, needs_reply, handled_at, clients(name)',
+          'received_at, mailbox, from_name, from_address, subject, category, urgency, summary, needs_reply, reply_status, handled_at, clients(name)',
         )
         .order('received_at', { ascending: false })
         .limit(limite ?? 30);

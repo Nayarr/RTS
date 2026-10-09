@@ -34,6 +34,8 @@ interface SendLinkDialogProps {
     ((channel: 'email' | 'sms', contact: ContactValues, providerMessageId?: string) => void) | undefined;
   /** PDF joints quand l'appli envoie l'e-mail (devis, facture, contrat). */
   attachments?: { label: string; load: () => Promise<PdfFile[]> } | undefined;
+  /** Réponse à un mail reçu (Agent Direction) : envoyée dans le fil du client. */
+  inboxEmailId?: string | undefined;
   onClose: () => void;
 }
 
@@ -60,6 +62,7 @@ export function SendLinkDialog(props: SendLinkDialogProps) {
         onContactSave={props.onContactSave}
         onSend={props.onSend}
         attachments={props.attachments}
+        inboxEmailId={props.inboxEmailId}
         onClose={props.onClose}
       />
     );

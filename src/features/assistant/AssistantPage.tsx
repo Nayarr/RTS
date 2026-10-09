@@ -9,8 +9,8 @@ import {
   Mic,
   MicOff,
   Plus,
-  RefreshCw,
   Square,
+  Sun,
   Trash2,
   Volume2,
   VolumeX,
@@ -28,19 +28,17 @@ import {
   deleteConversation,
   fetchBriefing,
   fetchConversations,
+  fetchPreparedReplies,
   fetchTurns,
-  type AgentBriefing,
   type AgentTurn,
 } from './api';
+import { BriefingPlayer } from './BriefingPlayer';
 import type { OrbState } from './orb-mesh';
 import { saveVoicePreference, speak, speechSupported, stopSpeaking, voicePreference } from './speech';
 import { sourcesLabel, SUGGESTIONS } from './suggestions';
 import { VoiceOrb } from './VoiceOrb';
 
 const DAY = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
-const TIME = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
-/** Lecture à voix haute du point du jour (même mécanisme que les réponses). */
-const BRIEFING_ID = 'point-du-jour';
 
 /** Agent Direction : questions à la voix (ou au clavier), réponses lues à voix haute. */
 export function AssistantPage() {
@@ -68,6 +66,12 @@ export function AssistantPage() {
     staleTime: 30 * 60_000,
     retry: false,
     refetchOnWindowFocus: false,
+  });
+  // Réponses préparées aux mails reçus, lues après le point du jour
+  const replies = useQuery({
+    queryKey: ['agent', 'replies'],
+    queryFn: fetchPreparedReplies,
+    refetchInterval: 60_000,
   });
   const mailsToHandle = useQuery({
     queryKey: ['agent', 'mails', 'a-traiter'],
@@ -137,7 +141,7 @@ export function AssistantPage() {
     onMutate: silence,
     onSuccess: (result) => {
       queryClient.setQueryData(['agent', 'briefing'], result);
-      if (voiceOn) read(BRIEFING_ID, result.text);
+      void queryClient.invalidateQueries({ queryKey: ['agent', 'replies'] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'Point du jour non refait'),
   });
@@ -173,10 +177,9 @@ export function AssistantPage() {
   };
 
   const showBriefing = !lastTurn && !pending && !dictation.listening;
-  const briefingBusy = showBriefing && (briefing.isFetching || refreshBriefing.isPending);
   const phase: OrbState = dictation.listening
     ? 'listening'
-    : ask.isPending || briefingBusy
+    : ask.isPending
       ? 'thinking'
       : speakingId
         ? 'speaking'
@@ -189,7 +192,7 @@ export function AssistantPage() {
     speaking: 'Pose une autre question : la conversation continue.',
     idle: lastTurn
       ? 'Pose une autre question : la conversation continue.'
-      : 'Appuie sur le micro et parle comme à quelqu’un du bureau.',
+      : 'Pose une question pour détailler un point : « qui sont les factures en retard ? »',
   }[phase];
 
   return (
@@ -199,7 +202,7 @@ export function AssistantPage() {
         title="Agent Direction"
         actions={
           <>
-            <span className="sub hidden xl:inline">
+            <span className="sub hidden 2xl:inline">
               Pose ta question à la voix : il lit les chiffres de l’atelier, il ne modifie rien.
             </span>
             {speechSupported() && (
@@ -213,6 +216,14 @@ export function AssistantPage() {
                 Réponses lues
               </button>
             )}
+            <Button
+              variant="outline"
+              className={cn(showBriefing && 'border-transparent! bg-accent! text-accent-foreground!')}
+              aria-pressed={showBriefing}
+              onClick={startNew}
+            >
+              <Sun /> Point du jour
+            </Button>
             <Button asChild variant="outline">
               <Link to="/agent-direction/mails">
                 <Mail /> Mails reçus
@@ -240,7 +251,19 @@ export function AssistantPage() {
 
       <div className={cn('agent', historyOpen && 'with-history')}>
         <section className="agent-stage" aria-label="Conversation avec l’Agent Direction" aria-live="polite">
-          <VoiceOrb state={phase} />
+          {showBriefing ? (
+            <BriefingPlayer
+              briefing={briefing.data}
+              loading={briefing.isPending || refreshBriefing.isPending}
+              failure={briefing.error instanceof Error ? briefing.error.message : null}
+              replies={replies.data ?? []}
+              autoplay={voiceOn}
+              refreshing={refreshBriefing.isPending}
+              onRefresh={() => refreshBriefing.mutate()}
+            />
+          ) : (
+            <VoiceOrb state={phase} />
+          )}
 
           {dictation.listening ? (
             <div className="agent-text">
@@ -280,27 +303,7 @@ export function AssistantPage() {
                 {lastTurn.tools.length > 0 && <span>{sourcesLabel(lastTurn.tools)}</span>}
               </p>
             </div>
-          ) : (
-            <div className="agent-text">
-              <p className="agent-hello">
-                Bonjour,
-                <br />
-                <span>que veux-tu savoir ?</span>
-              </p>
-            </div>
-          )}
-
-          {showBriefing && (
-            <BriefingCard
-              briefing={briefing.data}
-              loading={briefing.isPending || refreshBriefing.isPending}
-              failure={briefing.error instanceof Error ? briefing.error.message : null}
-              speaking={speakingId === BRIEFING_ID}
-              onListen={(text) => read(BRIEFING_ID, text)}
-              onSilence={silence}
-              onRefresh={() => refreshBriefing.mutate()}
-            />
-          )}
+          ) : null}
 
           {failure && (
             <p className="alert s-bad" role="alert">
@@ -482,73 +485,6 @@ export function AssistantPage() {
         )}
       </div>
     </>
-  );
-}
-
-function BriefingCard({
-  briefing,
-  loading,
-  failure,
-  speaking,
-  onListen,
-  onSilence,
-  onRefresh,
-}: {
-  briefing: AgentBriefing | undefined;
-  loading: boolean;
-  failure: string | null;
-  speaking: boolean;
-  onListen: (text: string) => void;
-  onSilence: () => void;
-  onRefresh: () => void;
-}) {
-  return (
-    <section className="agent-brief" aria-labelledby="agent-brief-title" aria-busy={loading}>
-      <div className="agent-brief-head">
-        <div className="grow">
-          <h2 className="h3" id="agent-brief-title">
-            Point du jour
-          </h2>
-          {briefing && !loading && <small>fait à {TIME.format(new Date(briefing.updated_at))}</small>}
-        </div>
-        {briefing &&
-          !loading &&
-          speechSupported() &&
-          (speaking ? (
-            <button type="button" className="agent-link on" onClick={onSilence}>
-              <Volume2 className="size-4" /> Lecture en cours
-            </button>
-          ) : (
-            <button type="button" className="agent-link" onClick={() => onListen(briefing.text)}>
-              <Volume2 className="size-4" /> Écouter
-            </button>
-          ))}
-        {!failure && (
-          <button
-            type="button"
-            className="ibtn sm ghost"
-            aria-label="Refaire le point avec les données du moment"
-            title="Refaire le point avec les données du moment"
-            disabled={loading}
-            onClick={onRefresh}
-          >
-            <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
-          </button>
-        )}
-      </div>
-      {loading ? (
-        <p className="hint" role="status">
-          Je fais le point sur l’atelier…
-        </p>
-      ) : failure ? (
-        <p className="hint">Point du jour indisponible : {failure}</p>
-      ) : briefing ? (
-        <>
-          <p className="agent-brief-text">{briefing.text}</p>
-          {briefing.tools.length > 0 && <p className="hint">{sourcesLabel(briefing.tools)}</p>}
-        </>
-      ) : null}
-    </section>
   );
 }
 

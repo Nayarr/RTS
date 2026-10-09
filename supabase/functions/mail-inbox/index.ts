@@ -8,8 +8,12 @@
 // (secret ANTHROPIC_AGENT_API_KEY). Ignorés : Agent Direction désactivé, mail adressé à aucune
 // boîte du domaine de l'atelier (Réglages › Atelier).
 //
+// Un mail qui attend une réponse (devis, intervention, suivi…) reçoit ensuite, en tâche de fond,
+// une réponse préparée par Claude Sonnet (reply.ts) : la direction l'écoute dans le point du jour
+// et décide de l'envoyer. Rien n'est envoyé ici.
+//
 // Appelée aussi par la tâche planifiée retry_inbox_triage (en-tête x-cron-secret) pour trier
-// les mails restés en attente.
+// les mails et préparer les réponses restés en attente.
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import Anthropic from '@anthropic-ai/sdk';
@@ -26,7 +30,28 @@ import {
   verifyWebhook,
   webhookSchema,
 } from './inbox.ts';
-import { parseTriage, TRIAGE_JSON_SCHEMA, TRIAGE_MODEL, TRIAGE_SYSTEM, triageRequest } from './triage.ts';
+import {
+  parseTriage,
+  type Triage,
+  TRIAGE_JSON_SCHEMA,
+  TRIAGE_MODEL,
+  TRIAGE_SYSTEM,
+  triageRequest,
+} from './triage.ts';
+import {
+  parseReply,
+  REPLY_CATEGORIES,
+  REPLY_DAILY_LIMIT,
+  REPLY_JSON_SCHEMA,
+  REPLY_MAX_STEPS,
+  REPLY_MODEL,
+  REPLY_SYSTEM,
+  REPLY_TOOL_NAMES,
+  REPLY_TOOLS,
+  replyRequest,
+} from './reply.ts';
+import { parisToday } from '../agent/prompt.ts';
+import { runTool } from '../agent/tools.ts';
 
 z.config(z.locales.fr());
 
@@ -34,6 +59,8 @@ z.config(z.locales.fr());
 const DAILY_LIMIT = 400;
 /** Mails triés à chaque passage de la tâche de secours. */
 const RETRY_BATCH = 20;
+/** Réponses préparées à chaque passage de la tâche de secours (une dizaine de secondes chacune). */
+const REPLY_BATCH = 5;
 
 const json = (status: number, body: unknown) => Response.json(body, { status });
 
@@ -48,7 +75,7 @@ const claude = anthropicKey
     apiKey: anthropicKey,
     ...(anthropicUrl ? { baseURL: anthropicUrl } : {}),
     maxRetries: 2,
-    timeout: 30_000,
+    timeout: 60_000,
   })
   : null;
 
@@ -64,9 +91,12 @@ interface PendingMail {
   clients: { name: string } | null;
 }
 
+/** L'expéditeur attend une réponse que l'agent peut préparer (ni publicité, ni administratif…). */
+const wantsReply = (result: Triage) => result.needs_reply && REPLY_CATEGORIES.includes(result.category);
+
 /** Trie un mail et enregistre le résultat ; en cas d'échec, il reste en attente pour un nouvel essai. */
-async function triage(admin: SupabaseClient, mail: PendingMail): Promise<boolean> {
-  if (!claude) return false;
+async function triage(admin: SupabaseClient, mail: PendingMail): Promise<Triage | null> {
+  if (!claude) return null;
   await admin.from('inbox_emails').update({ triage_attempts: mail.triage_attempts + 1 }).eq('id', mail.id);
   try {
     const response = await claude.messages.create({
@@ -93,7 +123,7 @@ async function triage(admin: SupabaseClient, mail: PendingMail): Promise<boolean
     const result = parseTriage(text);
     if (!result) {
       console.error('mail-inbox tri illisible', response.stop_reason);
-      return false;
+      return null;
     }
     const { error } = await admin
       .from('inbox_emails')
@@ -102,17 +132,150 @@ async function triage(admin: SupabaseClient, mail: PendingMail): Promise<boolean
         triage_status: 'done',
         input_tokens: response.usage.input_tokens,
         output_tokens: response.usage.output_tokens,
+        ...(wantsReply(result) ? { reply_status: 'pending' } : {}),
       })
       .eq('id', mail.id);
     if (error) console.error(error);
-    return !error;
+    return error ? null : result;
   } catch (err) {
     if (err instanceof Anthropic.APIError) {
       console.error('mail-inbox tri', err.status, err.message);
+      return null;
+    }
+    throw err;
+  }
+}
+
+interface ReplyMail {
+  id: string;
+  mailbox: string | null;
+  from_name: string;
+  from_address: string;
+  subject: string;
+  body: string;
+  summary: string | null;
+  reply_attempts: number;
+  clients: { name: string } | null;
+}
+const REPLY_COLUMNS =
+  'id, mailbox, from_name, from_address, subject, body, summary, reply_attempts, clients(name)';
+
+/**
+ * Prépare la réponse d'un mail : l'agent lit les données utiles (outils en lecture seule, client de
+ * service : la réponse n'est lue que par la direction), puis écrit. En cas d'échec, la réponse reste
+ * en attente pour la tâche de secours (3 essais).
+ */
+async function prepareReply(admin: SupabaseClient, mailId: string): Promise<boolean> {
+  if (!claude) return false;
+  const { data } = await admin.from('inbox_emails').select(REPLY_COLUMNS).eq('id', mailId).maybeSingle();
+  const mail = data as unknown as ReplyMail | null;
+  if (!mail) return false;
+  await admin.from('inbox_emails').update({ reply_attempts: mail.reply_attempts + 1 }).eq('id', mail.id);
+
+  const { count } = await admin
+    .from('inbox_emails')
+    .select('id', { count: 'exact', head: true })
+    .gte('reply_prepared_at', new Date(Date.now() - 24 * 3_600_000).toISOString());
+  if ((count ?? 0) >= REPLY_DAILY_LIMIT) {
+    await admin.from('inbox_emails').update({ reply_status: 'failed' }).eq('id', mail.id);
+    return false;
+  }
+  const { data: company } = await admin.from('company_settings').select('legal_name').maybeSingle();
+
+  const messages: Anthropic.MessageParam[] = [{
+    role: 'user',
+    content: replyRequest({
+      today: parisToday(),
+      company: String(company?.legal_name ?? ''),
+      mailbox: mail.mailbox,
+      fromName: mail.from_name,
+      fromAddress: mail.from_address,
+      clientName: mail.clients?.name ?? null,
+      subject: mail.subject,
+      body: mail.body,
+      summary: mail.summary,
+    }),
+  }];
+  const used = new Set<string>();
+  const usage = { input: 0, output: 0 };
+  try {
+    for (let step = 0; step < REPLY_MAX_STEPS; step++) {
+      const response = await claude.messages.create({
+        model: REPLY_MODEL,
+        max_tokens: 3000,
+        system: [{ type: 'text', text: REPLY_SYSTEM, cache_control: { type: 'ephemeral' } }],
+        tools: REPLY_TOOLS,
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: REPLY_JSON_SCHEMA } },
+        messages,
+      });
+      usage.input += response.usage.input_tokens + (response.usage.cache_read_input_tokens ?? 0);
+      usage.output += response.usage.output_tokens;
+      if (response.stop_reason === 'tool_use' || response.stop_reason === 'pause_turn') {
+        messages.push({ role: 'assistant', content: response.content });
+        const calls = response.content.filter((block) => block.type === 'tool_use');
+        if (calls.length) {
+          const results = await Promise.all(calls.map(async (call) => {
+            // Seules les lectures prévues pour les réponses sont permises
+            if (!(REPLY_TOOL_NAMES as readonly string[]).includes(call.name)) {
+              return {
+                type: 'tool_result' as const,
+                tool_use_id: call.id,
+                content: 'Outil indisponible',
+                is_error: true,
+              };
+            }
+            used.add(call.name);
+            return {
+              type: 'tool_result' as const,
+              tool_use_id: call.id,
+              ...(await runTool(admin, call.name, call.input)),
+            };
+          }));
+          messages.push({ role: 'user', content: results });
+        }
+        continue;
+      }
+      const text = response.content.map((block) => (block.type === 'text' ? block.text : '')).join('');
+      const reply = response.stop_reason === 'end_turn' ? parseReply(text) : null;
+      if (!reply) {
+        console.error('mail-inbox réponse illisible', response.stop_reason);
+        return false;
+      }
+      const { error } = await admin
+        .from('inbox_emails')
+        .update({
+          reply_status: 'ready',
+          reply_request: reply.demande,
+          reply_subject: reply.objet,
+          reply_body: reply.texte,
+          reply_basis: reply.appui || null,
+          reply_tools: [...used],
+          reply_input_tokens: usage.input,
+          reply_output_tokens: usage.output,
+          reply_prepared_at: new Date().toISOString(),
+        })
+        .eq('id', mail.id)
+        .eq('reply_status', 'pending');
+      if (error) console.error(error);
+      return !error;
+    }
+    console.error('mail-inbox réponse : trop d’étapes');
+    return false;
+  } catch (err) {
+    if (err instanceof Anthropic.APIError) {
+      console.error('mail-inbox réponse', err.status, err.message);
       return false;
     }
     throw err;
   }
+}
+
+/** Lance un travail après la réponse au webhook (Resend n'attend pas la réponse préparée). */
+function inBackground(work: Promise<unknown>) {
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil: (promise: Promise<unknown>) => void } })
+    .EdgeRuntime;
+  const guarded = work.catch((err) => console.error('mail-inbox tâche de fond', err));
+  if (runtime) runtime.waitUntil(guarded);
 }
 
 const PENDING_COLUMNS =
@@ -137,7 +300,17 @@ export default {
       for (const mail of (data ?? []) as unknown as PendingMail[]) {
         if (await triage(admin, mail)) sorted++;
       }
-      return json(200, { sorted });
+      const { data: replies } = await admin
+        .from('inbox_emails')
+        .select('id')
+        .eq('reply_status', 'pending')
+        .order('created_at')
+        .limit(REPLY_BATCH);
+      let prepared = 0;
+      for (const mail of replies ?? []) {
+        if (await prepareReply(admin, String(mail.id))) prepared++;
+      }
+      return json(200, { sorted, prepared });
     }
 
     // ---------------------------------------------------------------- webhook Resend
@@ -234,7 +407,9 @@ export default {
     }
     if (overLimit) return json(200, { stored: true, sorted: false });
 
-    const sorted = await triage(admin, saved as unknown as PendingMail);
-    return json(200, { stored: true, sorted });
+    const result = await triage(admin, saved as unknown as PendingMail);
+    const replying = Boolean(result && wantsReply(result));
+    if (replying) inBackground(prepareReply(admin, String((saved as { id: string }).id)));
+    return json(200, { stored: true, sorted: Boolean(result), replying });
   }),
 };

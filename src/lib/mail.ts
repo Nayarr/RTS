@@ -70,6 +70,8 @@ export async function sendMail(input: {
   link?: { label: string; url: string } | undefined;
   attachments: PdfFile[];
   idempotencyKey: string;
+  /** Réponse à un mail reçu (Agent Direction) : même fil chez le client, mail marqué répondu. */
+  inboxEmailId?: string | undefined;
 }): Promise<{ id: string }> {
   const attachments = await Promise.all(
     input.attachments.map(async (file) => ({
@@ -85,5 +87,6 @@ export async function sendMail(input: {
     ...(input.link ? { link: input.link } : {}),
     attachments,
     idempotency_key: input.idempotencyKey,
+    ...(input.inboxEmailId ? { inbox_email_id: input.inboxEmailId } : {}),
   });
 }
