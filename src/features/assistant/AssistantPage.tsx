@@ -8,6 +8,7 @@ import {
   Mic,
   MicOff,
   Plus,
+  RefreshCw,
   Square,
   Trash2,
   Volume2,
@@ -20,13 +21,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDictation } from '@/lib/use-dictation';
 import { cn } from '@/lib/utils';
-import { askAgent, deleteConversation, fetchConversations, fetchTurns, type AgentTurn } from './api';
+import {
+  askAgent,
+  deleteConversation,
+  fetchBriefing,
+  fetchConversations,
+  fetchTurns,
+  type AgentBriefing,
+  type AgentTurn,
+} from './api';
 import type { OrbState } from './orb-mesh';
 import { saveVoicePreference, speak, speechSupported, stopSpeaking, voicePreference } from './speech';
 import { sourcesLabel, SUGGESTIONS } from './suggestions';
 import { VoiceOrb } from './VoiceOrb';
 
 const DAY = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+const TIME = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+/** Lecture à voix haute du point du jour (même mécanisme que les réponses). */
+const BRIEFING_ID = 'point-du-jour';
 
 /** Agent Direction : questions à la voix (ou au clavier), réponses lues à voix haute. */
 export function AssistantPage() {
@@ -46,6 +58,14 @@ export function AssistantPage() {
     queryKey: ['agent', 'turns', conversationId],
     queryFn: () => fetchTurns(conversationId ?? ''),
     enabled: Boolean(conversationId),
+  });
+  // Point du jour : fait à la première ouverture de la journée, puis relu tel quel
+  const briefing = useQuery({
+    queryKey: ['agent', 'briefing'],
+    queryFn: () => fetchBriefing(),
+    staleTime: 30 * 60_000,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
   const shownTurns = conversationId ? (turns.data ?? []) : [];
   const lastTurn = shownTurns.at(-1);
@@ -105,6 +125,16 @@ export function AssistantPage() {
     alternatives: 3,
   });
 
+  const refreshBriefing = useMutation({
+    mutationFn: () => fetchBriefing(true),
+    onMutate: silence,
+    onSuccess: (result) => {
+      queryClient.setQueryData(['agent', 'briefing'], result);
+      if (voiceOn) read(BRIEFING_ID, result.text);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Point du jour non refait'),
+  });
+
   const remove = useMutation({
     mutationFn: deleteConversation,
     onSuccess: (_, id) => {
@@ -135,9 +165,11 @@ export function AssistantPage() {
     send(draft, false);
   };
 
+  const showBriefing = !lastTurn && !pending && !dictation.listening;
+  const briefingBusy = showBriefing && (briefing.isFetching || refreshBriefing.isPending);
   const phase: OrbState = dictation.listening
     ? 'listening'
-    : ask.isPending
+    : ask.isPending || briefingBusy
       ? 'thinking'
       : speakingId
         ? 'speaking'
@@ -239,6 +271,18 @@ export function AssistantPage() {
                 <span>que veux-tu savoir ?</span>
               </p>
             </div>
+          )}
+
+          {showBriefing && (
+            <BriefingCard
+              briefing={briefing.data}
+              loading={briefing.isPending || refreshBriefing.isPending}
+              failure={briefing.error instanceof Error ? briefing.error.message : null}
+              speaking={speakingId === BRIEFING_ID}
+              onListen={(text) => read(BRIEFING_ID, text)}
+              onSilence={silence}
+              onRefresh={() => refreshBriefing.mutate()}
+            />
           )}
 
           {failure && (
@@ -421,6 +465,73 @@ export function AssistantPage() {
         )}
       </div>
     </>
+  );
+}
+
+function BriefingCard({
+  briefing,
+  loading,
+  failure,
+  speaking,
+  onListen,
+  onSilence,
+  onRefresh,
+}: {
+  briefing: AgentBriefing | undefined;
+  loading: boolean;
+  failure: string | null;
+  speaking: boolean;
+  onListen: (text: string) => void;
+  onSilence: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <section className="agent-brief" aria-labelledby="agent-brief-title" aria-busy={loading}>
+      <div className="agent-brief-head">
+        <div className="grow">
+          <h2 className="h3" id="agent-brief-title">
+            Point du jour
+          </h2>
+          {briefing && !loading && <small>fait à {TIME.format(new Date(briefing.updated_at))}</small>}
+        </div>
+        {briefing &&
+          !loading &&
+          speechSupported() &&
+          (speaking ? (
+            <button type="button" className="agent-link on" onClick={onSilence}>
+              <Volume2 className="size-4" /> Lecture en cours
+            </button>
+          ) : (
+            <button type="button" className="agent-link" onClick={() => onListen(briefing.text)}>
+              <Volume2 className="size-4" /> Écouter
+            </button>
+          ))}
+        {!failure && (
+          <button
+            type="button"
+            className="ibtn sm ghost"
+            aria-label="Refaire le point avec les données du moment"
+            title="Refaire le point avec les données du moment"
+            disabled={loading}
+            onClick={onRefresh}
+          >
+            <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
+          </button>
+        )}
+      </div>
+      {loading ? (
+        <p className="hint" role="status">
+          Je fais le point sur l’atelier…
+        </p>
+      ) : failure ? (
+        <p className="hint">Point du jour indisponible : {failure}</p>
+      ) : briefing ? (
+        <>
+          <p className="agent-brief-text">{briefing.text}</p>
+          {briefing.tools.length > 0 && <p className="hint">{sourcesLabel(briefing.tools)}</p>}
+        </>
+      ) : null}
+    </section>
   );
 }
 

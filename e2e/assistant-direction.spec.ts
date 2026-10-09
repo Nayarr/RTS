@@ -84,6 +84,11 @@ async function simulateAgent(page: Page) {
   const requests: Record<string, unknown>[] = [];
   await page.route('**/functions/v1/agent', async (route) => {
     const body = route.request().postDataJSON() as Record<string, unknown>;
+    // Point du jour demandé à l'ouverture : pas compté parmi les questions
+    if (body.briefing) {
+      await route.fulfill({ status: 503, json: { error: 'Assistant pas encore configuré' } });
+      return;
+    }
     requests.push(body);
     await route.fulfill({
       json: { conversation_id: 'c0000000-e2e0-0000-0000-000000000001', turn_id: 't1', answer: ANSWER },

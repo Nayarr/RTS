@@ -2245,6 +2245,31 @@
     outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent);
     outline-offset: 2px;
   }
+  .agent-brief {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(680px, 100%);
+    padding: 14px 18px 16px;
+    border-radius: 12px;
+    background: var(--card);
+    box-shadow: 0 0 0 1px var(--border);
+    text-align: left;
+  }
+  .agent-brief-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .agent-brief-head small {
+    color: var(--muted-foreground);
+    font-size: 12px;
+  }
+  .agent-brief-text {
+    font-size: 15px;
+    line-height: 1.55;
+    white-space: pre-line;
+  }
   .agent-type {
     display: flex;
     gap: 8px;

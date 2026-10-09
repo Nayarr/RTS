@@ -89,7 +89,9 @@ test('question dictée : les autres versions entendues partent avec la question'
   });
   const requests: Record<string, unknown>[] = [];
   await page.route('**/functions/v1/agent', async (route) => {
-    requests.push(route.request().postDataJSON() as Record<string, unknown>);
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    // Point du jour demandé à l'ouverture : seules les questions comptent ici
+    if (!body.briefing) requests.push(body);
     await route.fulfill({ status: 503, json: { error: 'Assistant pas encore configuré' } });
   });
 

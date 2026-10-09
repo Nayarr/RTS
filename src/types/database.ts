@@ -3,6 +3,59 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      agent_briefings: {
+        Row: {
+          cache_read_tokens: number;
+          cache_write_tokens: number;
+          created_at: string;
+          day: string;
+          generations: number;
+          id: string;
+          input_tokens: number;
+          output_tokens: number;
+          profile_id: string;
+          text: string;
+          tools: string[];
+          updated_at: string;
+        };
+        Insert: {
+          cache_read_tokens?: number;
+          cache_write_tokens?: number;
+          created_at?: string;
+          day: string;
+          generations?: number;
+          id?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          profile_id: string;
+          text: string;
+          tools?: string[];
+          updated_at?: string;
+        };
+        Update: {
+          cache_read_tokens?: number;
+          cache_write_tokens?: number;
+          created_at?: string;
+          day?: string;
+          generations?: number;
+          id?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          profile_id?: string;
+          text?: string;
+          tools?: string[];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agent_briefings_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       agent_conversations: {
         Row: {
           created_at: string;
