@@ -7,6 +7,8 @@ const env = loadEnv('production', process.cwd(), 'VITE_');
 // Comptes de développement créés par supabase/seed.sql (base locale uniquement).
 const PASSWORD = 'atelier-dev-2026';
 const ANSWER = 'Ce mois-ci, 12 450 euros hors taxes sur 18 factures.';
+const BRIEFING =
+  'Transports Moreau doit 4 380 euros depuis le 12 septembre.\nSix OR au programme aujourd’hui.';
 
 async function loginAs(page: Page, email: string) {
   await page.goto('/connexion');
@@ -82,11 +84,22 @@ async function fakeDictation(page: Page, phrase: string) {
  */
 async function simulateAgent(page: Page) {
   const requests: Record<string, unknown>[] = [];
+  const briefings: Record<string, unknown>[] = [];
   await page.route('**/functions/v1/agent', async (route) => {
     const body = route.request().postDataJSON() as Record<string, unknown>;
-    // Point du jour demandé à l'ouverture : pas compté parmi les questions
     if (body.briefing) {
-      await route.fulfill({ status: 503, json: { error: 'Assistant pas encore configuré' } });
+      briefings.push(body);
+      const text = body.refresh ? 'Rien d’urgent ce matin.' : BRIEFING;
+      await route.fulfill({
+        json: {
+          briefing: {
+            day: '2026-10-09',
+            text,
+            tools: ['factures_impayees', 'atelier_aujourdhui'],
+            updated_at: new Date().toISOString(),
+          },
+        },
+      });
       return;
     }
     requests.push(body);
@@ -120,7 +133,7 @@ async function simulateAgent(page: Page) {
       })),
     }),
   );
-  return requests;
+  return { requests, briefings };
 }
 
 test('direction : Agent Direction activé dans les réglages', async ({ page }, testInfo) => {
@@ -145,7 +158,7 @@ test('onglet du menu, question proposée : réponse affichée avec ses sources e
   page,
 }, testInfo) => {
   await fakeSpeech(page);
-  const requests = await simulateAgent(page);
+  const { requests } = await simulateAgent(page);
   await loginAs(page, 'direction@rts.local');
   if (testInfo.project.name.includes('mobile')) await page.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('link', { name: /Agent Direction/ }).click();
@@ -170,10 +183,37 @@ test('onglet du menu, question proposée : réponse affichée avec ses sources e
   ).toHaveAttribute('aria-current', 'true');
 });
 
+test('point du jour à l’ouverture : affiché, écouté, refait, masqué pendant une conversation', async ({
+  page,
+}) => {
+  await fakeSpeech(page);
+  const { briefings } = await simulateAgent(page);
+  await loginAs(page, 'direction@rts.local');
+  await page.goto('/agent-direction');
+
+  const card = page.getByRole('region', { name: 'Point du jour' });
+  await expect(card.getByText(/Transports Moreau doit 4 380 euros/)).toBeVisible();
+  await expect(card.getByText('Sources : factures impayées, atelier du jour')).toBeVisible();
+  await card.getByRole('button', { name: 'Écouter' }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken))
+    .toEqual(['Transports Moreau doit 4 380 euros depuis le 12 septembre. Six OR au programme aujourd’hui.']);
+
+  await card.getByRole('button', { name: 'Refaire le point avec les données du moment' }).click();
+  await expect(card.getByText('Rien d’urgent ce matin.')).toBeVisible();
+  expect(briefings).toEqual([{ briefing: true }, { briefing: true, refresh: true }]);
+
+  await page.getByRole('button', { name: 'Combien on a facturé ce mois-ci ?' }).click();
+  await expect(page.getByText(ANSWER)).toBeVisible();
+  await expect(card).toBeHidden();
+  await page.getByRole('button', { name: 'Nouvelle conversation' }).click();
+  await expect(card.getByText('Rien d’urgent ce matin.')).toBeVisible();
+});
+
 test('question à la voix : orbe à l’écoute, question envoyée comme posée à la voix', async ({ page }) => {
   await fakeSpeech(page);
   await fakeDictation(page, 'qui nous doit de l’argent ?');
-  const requests = await simulateAgent(page);
+  const { requests } = await simulateAgent(page);
   await loginAs(page, 'direction@rts.local');
   await page.goto('/agent-direction');
 
@@ -191,6 +231,9 @@ test('agent sans clé configurée : message clair, question gardée pour la renv
   await question.fill('Combien de rendez-vous demain ?');
   await question.press('Enter');
   await expect(page.getByRole('alert')).toContainText('Assistant pas encore configuré');
+  await expect(
+    page.getByRole('region', { name: 'Point du jour' }).getByText(/Point du jour indisponible/),
+  ).toBeVisible();
   await expect(question).toHaveValue('Combien de rendez-vous demain ?');
 });
 
