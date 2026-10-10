@@ -146,6 +146,8 @@ describe('congés : direction', () => {
         leave_type: 'sick',
         starts_on: '2026-10-14',
         ends_on: '2026-10-19',
+        start_time: null,
+        end_time: null,
         comment: '',
       }),
     );
@@ -181,8 +183,43 @@ describe('congés : technicien', () => {
         leave_type: 'paid_leave',
         starts_on: today,
         ends_on: today,
+        start_time: null,
+        end_time: null,
         comment: 'Mariage',
       }),
+    );
+  });
+
+  it('absence d’un après-midi ou de quelques heures', async () => {
+    const today = todayIso();
+    vi.mocked(fetchLeaveRequests).mockResolvedValue([
+      leave({
+        status: 'approved',
+        starts_on: addDays(today, 2),
+        ends_on: addDays(today, 2),
+        start_time: '13:30:00',
+        end_time: '18:00:00',
+      }),
+    ]);
+    vi.mocked(saveLeaveRequest).mockClear();
+    renderRoutes([{ path: '/', element: <MyLeaveSection /> }]);
+    expect(await screen.findByText(/de 13:30 à 18:00 \(4,5 h\)/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Demander un congé' }));
+    const dialog = screen.getByRole('dialog', { name: 'Demande de congé' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Après-midi' }));
+    expect(within(dialog).getByLabelText('De')).not.toHaveValue('');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Quelques heures' }));
+    await userEvent.clear(within(dialog).getByLabelText('De'));
+    await userEvent.type(within(dialog).getByLabelText('De'), '09:00');
+    await userEvent.clear(within(dialog).getByLabelText('À'));
+    await userEvent.type(within(dialog).getByLabelText('À'), '11:00');
+    expect(within(dialog).getByText('2 h d’absence')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Envoyer la demande' }));
+    await waitFor(() =>
+      expect(saveLeaveRequest).toHaveBeenCalledWith(
+        expect.objectContaining({ starts_on: today, ends_on: today, start_time: '09:00', end_time: '11:00' }),
+      ),
     );
   });
 });

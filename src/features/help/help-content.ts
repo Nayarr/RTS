@@ -44,7 +44,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
     title: 'Pointage et congés',
     items: [
       'Chaque jour, pointe ton arrivée et ton départ sur la borne avec ton code PIN (la borne te prend en photo).',
-      'Pour un congé, utilise « Demander un congé » sur ton accueil. La direction valide ou refuse.',
+      'Pour un congé, ouvre l’onglet « Congés » en bas, puis « Demander un congé » : jours entiers, matin, après-midi ou quelques heures. La direction valide ou refuse.',
     ],
   },
 ];
@@ -65,6 +65,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Vue Semaine ou Jour, une colonne par technicien. Clique dans une case vide pour y assigner un OR.',
       '« Nouveau rendez-vous » pour un véhicule attendu. À son arrivée, ouvre le rendez-vous puis « Créer l’OR ». La veille, envoie le rappel au client (la cloche te le rappelle).',
       '« En direct » montre les véhicules actuellement à l’atelier et le badgeage en cours.',
+      'Les absences sont en gris dans le planning ; une absence de quelques heures (matin, après-midi, rendez-vous) apparaît sur sa plage horaire.',
       'Accueil, « Charge de travail atelier » : heures déclarées sur les OR, heures disponibles, présence badgée à la borne et l’écart (heures de présence sans temps déclaré sur un OR). Clique sur un technicien pour voir d’où viennent ses heures.',
     ],
   },

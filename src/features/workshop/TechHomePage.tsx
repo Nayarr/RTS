@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router';
+import { useState } from 'react';
+import { Link } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
-import { MyLeaveSection } from '@/features/leave/MyLeaveSection';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { formatDuration } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
@@ -133,12 +132,6 @@ export function TechHomePage() {
   const active = [...carriedOver, ...timed, ...flexible];
   const running = active.find((order) => order.running_since);
   const firstName = profile?.full_name?.split(' ')[0];
-  const { hash } = useLocation();
-
-  // Onglet « Congés » de la barre du bas : /#conges
-  useEffect(() => {
-    if (hash === '#conges') document.getElementById('conges')?.scrollIntoView?.({ behavior: 'smooth' });
-  }, [hash]);
 
   return (
     <div className="col gap-[11px]">
@@ -199,8 +192,6 @@ export function TechHomePage() {
           )}
         </>
       )}
-
-      <MyLeaveSection />
     </div>
   );
 }

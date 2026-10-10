@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import type { Appointment, PlanningData, PlanningTechnician } from './api';
 import { AppointmentDialog } from './AppointmentDialog';
 import { AssignOrderDialog } from './AssignOrderDialog';
+import { LEAVE_LABELS } from '@/features/leave/domain';
 import {
   addDays,
   dayLabel,
@@ -18,12 +19,14 @@ import {
   isSunday,
   layoutDayEvents,
   lunchBreak,
+  partialLeaves,
   periodDays,
   periodLabel,
   shortTime,
   technicianColor,
   technicianOffLabel,
   timeToMinutes,
+  type LeaveSpan,
   type PlanningView,
   type TimedEvent,
 } from './domain';
@@ -34,7 +37,12 @@ const APPOINTMENT_STYLE = {
   backgroundImage: 'repeating-linear-gradient(135deg, #7B4FB5 0 8px, #8d63c4 8px 16px)',
 };
 
-type Block = TimedEvent & ({ order: RepairOrderOverview } | { appointment: Appointment });
+type Block = TimedEvent &
+  (
+    | { order: RepairOrderOverview }
+    | { appointment: Appointment }
+    | { leave: LeaveSpan & { technician_name: string } }
+  );
 
 interface Column {
   key: string;
@@ -77,6 +85,22 @@ function appointmentBlocks(appointments: Appointment[], day: string, keep: (item
         ? eventSpan(appointment.start_time, appointment.end_time)
         : null;
     return span ? [{ ...span, appointment }] : [];
+  });
+}
+
+/** Absences de quelques heures : blocs gris sur leur plage horaire. */
+function leaveBlocks(
+  leaves: LeaveSpan[],
+  technicians: PlanningTechnician[],
+  day: string,
+  keep: (leave: LeaveSpan) => boolean,
+) {
+  return partialLeaves(leaves, day).flatMap((leave) => {
+    const span = keep(leave) ? eventSpan(leave.start_time ?? null, leave.end_time ?? null) : null;
+    const technician = technicians.find((item) => item.id === leave.technician_id);
+    return span && technician
+      ? [{ ...span, leave: { ...leave, technician_name: technician.display_name } }]
+      : [];
   });
 }
 
@@ -125,7 +149,11 @@ function buildColumns(
         lunch: closed ? null : lunchBreak(day, hours),
         blocks: closed
           ? []
-          : [...orderBlocks(orders, day, () => true), ...appointmentBlocks(appointments, day, () => true)],
+          : [
+              ...orderBlocks(orders, day, () => true),
+              ...appointmentBlocks(appointments, day, () => true),
+              ...leaveBlocks(leaves, technicians, day, () => true),
+            ],
         untimed: untimedOrders.filter((order) => order.planned_date === day),
       };
     });
@@ -171,6 +199,7 @@ function buildColumns(
         : [
             ...orderBlocks(orders, day, (order) => order.technician_id === technician.id),
             ...appointmentBlocks(appointments, day, (item) => item.technician_id === technician.id),
+            ...leaveBlocks(leaves, technicians, day, (leave) => leave.technician_id === technician.id),
           ],
       untimed: untimedOrders.filter(
         (order) => order.planned_date === day && order.technician_id === technician.id,
@@ -503,7 +532,8 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
               }}
             >
               {column.offLabel && (
-                <div className="absolute inset-x-[3px] top-[3px] z-20 truncate rounded-md bg-[#fdf1d3] px-2 py-[3px] text-[11.5px] font-semibold text-[#7a5200] dark:bg-[#3b3011] dark:text-[#f2d68a]">
+                // Absences et repos : en gris
+                <div className="absolute inset-x-[3px] top-[3px] z-20 truncate rounded-md bg-muted-foreground/15 px-2 py-[3px] text-[11.5px] font-semibold text-muted-foreground">
                   {column.offLabel}
                 </div>
               )}
@@ -529,6 +559,34 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                 };
                 const className =
                   'absolute z-10 overflow-hidden rounded-[7px] px-[7px] py-1 text-left text-[11.5px] leading-[1.3] text-white shadow-[0_1px_2px_rgba(0,0,0,.15)] hover:brightness-110 [&_strong]:font-bold';
+                if ('leave' in block) {
+                  const leave = block.leave;
+                  return (
+                    <div
+                      key={`leave-${leave.technician_id}-${leave.start_time}`}
+                      role="note"
+                      aria-label={`Absence de ${leave.technician_name} de ${shortTime(leave.start_time ?? null)} à ${shortTime(leave.end_time ?? null)}`}
+                      className={cn(
+                        className,
+                        'border border-dashed border-muted-foreground/40 text-muted-foreground',
+                      )}
+                      style={{
+                        ...style,
+                        backgroundImage:
+                          'repeating-linear-gradient(135deg, var(--muted) 0 8px, color-mix(in srgb, var(--muted-foreground) 14%, var(--muted)) 8px 16px)',
+                      }}
+                    >
+                      <strong>
+                        {shortTime(leave.start_time ?? null)} - {shortTime(leave.end_time ?? null)}
+                      </strong>{' '}
+                      Absent
+                      <br />
+                      <span className="opacity-90">
+                        {detailed ? LEAVE_LABELS[leave.leave_type] : leave.technician_name}
+                      </span>
+                    </div>
+                  );
+                }
                 if ('appointment' in block) {
                   const item = block.appointment;
                   return (

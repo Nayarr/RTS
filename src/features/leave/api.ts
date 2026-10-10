@@ -22,6 +22,9 @@ export interface LeaveInput {
   leave_type: LeaveType;
   starts_on: string;
   ends_on: string;
+  /** Absence de quelques heures (un seul jour) ; vides pour des jours entiers. */
+  start_time?: string | null;
+  end_time?: string | null;
   comment: string;
 }
 
@@ -33,6 +36,8 @@ export async function saveLeaveRequest(input: LeaveInput) {
     p_starts_on: input.starts_on,
     p_ends_on: input.ends_on,
     p_comment: input.comment,
+    p_start_time: input.start_time ?? undefined,
+    p_end_time: input.end_time ?? undefined,
   });
   if (error) throw error;
 }

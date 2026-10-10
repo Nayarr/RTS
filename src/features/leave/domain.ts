@@ -30,12 +30,57 @@ export function leaveDays(startsOn: string, endsOn: string): number {
 
 const frenchDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 
-/** « du 12/10/2026 au 16/10/2026 (5 j) » ; « le 12/10/2026 (1 j) » sur une journée. */
-export function leavePeriod(startsOn: string, endsOn: string): string {
+const hhmm = (time: string) => time.slice(0, 5);
+
+/** Durée d'une absence de quelques heures, en heures (« 13:30 » → « 18:00 » : 4,5). */
+export function leaveHours(startTime: string, endTime: string): number {
+  const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+  return Math.max(0, minutes(endTime) - minutes(startTime)) / 60;
+}
+
+/**
+ * « du 12/10/2026 au 16/10/2026 (5 j) » ; « le 12/10/2026 (1 j) » sur une journée ;
+ * « le 12/10/2026 de 13:30 à 18:00 (4,5 h) » pour quelques heures.
+ */
+export function leavePeriod(
+  startsOn: string,
+  endsOn: string,
+  startTime?: string | null,
+  endTime?: string | null,
+): string {
+  if (startTime && endTime) {
+    const hours = leaveHours(startTime, endTime).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+    return `le ${frenchDate(startsOn)} de ${hhmm(startTime)} à ${hhmm(endTime)} (${hours} h)`;
+  }
   const days = leaveDays(startsOn, endsOn);
   const range =
     startsOn === endsOn
       ? `le ${frenchDate(startsOn)}`
       : `du ${frenchDate(startsOn)} au ${frenchDate(endsOn)}`;
   return `${range} (${days} j)`;
+}
+
+/** Durée choisie dans le formulaire d'absence. */
+export type LeaveDuration = 'days' | 'morning' | 'afternoon' | 'hours';
+export const LEAVE_DURATIONS: [LeaveDuration, string][] = [
+  ['days', 'Jour(s) entier(s)'],
+  ['morning', 'Matin'],
+  ['afternoon', 'Après-midi'],
+  ['hours', 'Quelques heures'],
+];
+
+/** Horaires du matin et de l'après-midi, d'après les horaires de l'atelier (Réglages). */
+export function halfDayTimes(
+  duration: 'morning' | 'afternoon',
+  hours: { workday_start: string; lunch_start: string; lunch_end: string; workday_end: string } | null,
+): [string, string] {
+  const settings = hours ?? {
+    workday_start: '08:00',
+    lunch_start: '12:00',
+    lunch_end: '13:30',
+    workday_end: '18:00',
+  };
+  return duration === 'morning'
+    ? [hhmm(settings.workday_start), hhmm(settings.lunch_start)]
+    : [hhmm(settings.lunch_end), hhmm(settings.workday_end)];
 }

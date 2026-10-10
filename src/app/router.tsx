@@ -197,6 +197,11 @@ export const routes: RouteObject[] = [
                       'TechRepairOrderPage',
                     ),
                   },
+                  // Onglet « Congés » de la barre du bas
+                  {
+                    path: '/conges',
+                    lazy: page(() => import('@/features/leave/TechLeavePage'), 'TechLeavePage'),
+                  },
                 ],
               },
               {
