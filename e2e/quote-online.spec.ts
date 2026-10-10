@@ -83,7 +83,8 @@ test('le client signe et accepte le devis en ligne ; le bureau voit sa signature
 
   const client = await openAsClient(browser, path, testInfo);
   await expect(client.page.getByText(clientName)).toBeVisible();
-  await expect(client.page.getByLabel('Totaux')).toContainText('162,00 €');
+  // 1,5 h facturée à l'heure entamée : 2 h × 90 € HT = 216 € TTC
+  await expect(client.page.getByLabel('Totaux')).toContainText('216,00 €');
 
   // Sans signature : refusé
   await client.page.getByLabel('Votre nom').fill('Jean Martin');

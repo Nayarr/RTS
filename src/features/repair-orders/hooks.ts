@@ -5,9 +5,12 @@ import {
   fetchRepairOrder,
   fetchRepairOrderEvents,
   fetchRepairOrders,
+  findClientByName,
   findVehicleByPlate,
   searchClients,
+  searchVehiclesByPlate,
 } from './api';
+import { normalizeKey } from './constants';
 import { fetchSupplies } from './supplies-api';
 
 export const repairOrdersKey = ['repair-orders'] as const;
@@ -58,6 +61,25 @@ export function useClientSuggestions(query: string) {
   });
 }
 
+export function useVehicleSuggestions(plate: string) {
+  return useQuery({
+    queryKey: ['vehicles', 'search', normalizeKey(plate)],
+    queryFn: () => searchVehiclesByPlate(plate),
+    enabled: normalizeKey(plate).length >= 2,
+    staleTime: 60_000,
+  });
+}
+
+/** Client existant pour ce nom : null tant qu'il n'est pas en base (nouveau client à créer). */
+export function useClientByName(name: string) {
+  return useQuery({
+    queryKey: ['clients', 'by-name', normalizeKey(name)],
+    queryFn: () => findClientByName(name),
+    enabled: normalizeKey(name).length >= 2,
+    staleTime: 30_000,
+  });
+}
+
 export function useKnownVehicle(plate: string) {
   return useQuery({
     queryKey: ['vehicles', 'by-plate', plate],
@@ -79,6 +101,8 @@ const errorMessage = (error: unknown) =>
 export function useRepairOrderMutation<TArgs, TData = unknown>(
   mutationFn: (args: TArgs) => Promise<TData>,
   successMessage: string | ((args: TArgs) => string) | null,
+  /** Rechargement en arrière-plan : la mutation se termine sans l'attendre (enregistrement automatique). */
+  { refreshInBackground = false }: { refreshInBackground?: boolean } = {},
 ) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -87,7 +111,8 @@ export function useRepairOrderMutation<TArgs, TData = unknown>(
       if (successMessage !== null) {
         toast.success(typeof successMessage === 'function' ? successMessage(args) : successMessage);
       }
-      await queryClient.invalidateQueries({ queryKey: repairOrdersKey });
+      const refresh = queryClient.invalidateQueries({ queryKey: repairOrdersKey });
+      if (!refreshInBackground) await refresh;
     },
     onError: (error) => {
       toast.error(errorMessage(error));

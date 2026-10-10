@@ -142,7 +142,11 @@ export function LiveWorkshopPage() {
                   >
                     <div className="row between gap-2">
                       <span className="plate truncate">{order.plate}</span>
-                      <StatusBadge status={order.status} className="h-[22px] px-2 text-[11.5px]" />
+                      <StatusBadge
+                        status={order.status}
+                        technicianId={order.technician_id}
+                        className="h-[22px] px-2 text-[11.5px]"
+                      />
                     </div>
                     <span className="truncate text-[13px] font-medium">
                       {order.client_name ?? '-'}

@@ -6,6 +6,7 @@ import {
   parseTimeOption,
   planMyDay,
   seenState,
+  isExtinguisherLine,
   TIME_OPTIONS,
   timeOptionLabel,
   timeOptionsFor,
@@ -35,8 +36,10 @@ describe('temps estimés', () => {
     expect(timeOptionValue(null, false)).toBe('');
   });
 
-  it('0,5 h proposé, libellés en français', () => {
-    expect(TIME_OPTIONS.slice(0, 3)).toEqual(['0h', '0.5h', '1h']);
+  it('par demi-heure de 0,5 h à 12 h, sans 0 h, libellés en français', () => {
+    expect(TIME_OPTIONS.slice(0, 4)).toEqual(['0.5h', '1h', '1.5h', '2h']);
+    expect(TIME_OPTIONS).toHaveLength(25);
+    expect(TIME_OPTIONS).not.toContain('0h');
     expect(parseTimeOption('0.5h')).toEqual({ estimated_hours: 0.5, estimate_is_minimum: false });
     expect([timeOptionLabel('0.5h'), timeOptionLabel('3h'), timeOptionLabel('12h+')]).toEqual([
       '0,5 h',
@@ -45,10 +48,12 @@ describe('temps estimés', () => {
     ]);
   });
 
-  it('garde à sa place une valeur hors liste (ex. 1,5 h saisie au bureau)', () => {
-    expect(timeOptionsFor('1.5h').slice(0, 5)).toEqual(['0h', '0.5h', '1h', '1.5h', '2h']);
-    expect(timeOptionsFor('0.3h').slice(0, 3)).toEqual(['0h', '0.3h', '0.5h']);
-    expect(timeOptionsFor('2h')).toHaveLength(15);
+  it('garde à sa place une valeur hors liste ; 0,3 h pour un extincteur', () => {
+    expect(timeOptionsFor('1.25h').slice(0, 4)).toEqual(['0.5h', '1h', '1.25h', '1.5h']);
+    expect(timeOptionsFor('2h')).toHaveLength(25);
+    expect(timeOptionsFor('', true).slice(0, 2)).toEqual(['0.3h', '0.5h']);
+    expect(timeOptionsFor('0.3h', true).slice(0, 2)).toEqual(['0.3h', '0.5h']);
+    expect(isExtinguisherLine('Contrôle Extincteur')).toBe(true);
   });
 });
 

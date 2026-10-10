@@ -122,7 +122,8 @@ test('devis sans OR : demande de prix, refus puis réouverture, transformation e
   await labor.getByLabel('Prestation').fill('Diagnostic électronique');
   await labor.getByLabel('Temps (heures)').fill('1,5');
   await labor.getByRole('button', { name: 'Ajouter' }).click();
-  await expect(page.getByLabel('Totaux')).toContainText('135,00 €');
+  // Heure entamée, heure facturée : 1,5 h → 2 h (2 × 90 €)
+  await expect(page.getByLabel('Totaux')).toContainText('180,00 €');
 
   await page.getByRole('button', { name: 'Refusé', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Enregistrer le refus' }).click();

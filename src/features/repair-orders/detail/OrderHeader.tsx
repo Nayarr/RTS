@@ -61,7 +61,7 @@ export function OrderHeader({
                   <Package className="i xs" /> Attente pièces ({order.parts_pending_count})
                 </span>
               )}
-              <StatusBadge status={order.status} className="lg solid" />
+              <StatusBadge status={order.status} technicianId={order.technician_id} className="lg solid" />
             </div>
           </div>
 

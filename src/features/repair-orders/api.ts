@@ -116,6 +116,41 @@ export async function searchClients(query: string): Promise<{ id: string; name: 
   return data;
 }
 
+/** Client déjà en base sous ce nom (même normalisation que la base), ou null. */
+export async function findClientByName(name: string): Promise<{ id: string; name: string } | null> {
+  const key = normalizeKey(name);
+  if (!key) return null;
+  const { data, error } = await supabase.from('clients').select('id, name').eq('name_key', key).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export interface VehicleSuggestion {
+  id: string;
+  plate: string;
+  vehicle_type: VehicleType;
+  client_name: string | null;
+}
+
+/** Véhicules dont la plaque commence par la saisie (propositions du nouvel OR). */
+export async function searchVehiclesByPlate(plate: string): Promise<VehicleSuggestion[]> {
+  const key = normalizeKey(plate);
+  if (key.length < 2) return [];
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('id, plate, vehicle_type, client:clients(name)')
+    .like('plate_key', `${key}%`)
+    .order('plate')
+    .limit(8);
+  if (error) throw error;
+  return data.map((vehicle) => ({
+    id: vehicle.id,
+    plate: vehicle.plate,
+    vehicle_type: vehicle.vehicle_type,
+    client_name: vehicle.client?.name ?? null,
+  }));
+}
+
 export interface KnownVehicle {
   id: string;
   plate: string;

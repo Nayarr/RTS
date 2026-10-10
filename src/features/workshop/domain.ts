@@ -5,11 +5,14 @@ import { todayIso } from '@/features/repair-orders/schemas';
 
 /** Estimations proposées au technicien (comme l'ancienne appli, plus 0,5 h) ; « 12h+ » = au moins 12 h. */
 export const TIME_OPTIONS = [
-  '0h',
-  '0.5h',
-  ...Array.from({ length: 12 }, (_, hours) => `${hours + 1}h`),
+  // Par demi-heure de 0,5 h à 12 h (plus de « 0 h » : un temps vide reste vide).
+  ...Array.from({ length: 24 }, (_, index) => `${(index + 1) / 2}h`),
   '12h+',
-] as const;
+];
+
+/** Contrôle d'extincteur : 0,3 h proposé en plus. */
+export const EXTINGUISHER_TIME = '0.3h';
+export const isExtinguisherLine = (description: string) => /extincteur/i.test(description);
 
 /** Valeur du sélecteur ↔ colonnes estimated_hours / estimate_is_minimum. */
 export function timeOptionValue(hours: number | null, isMinimum: boolean): string {
@@ -29,12 +32,16 @@ export function parseTimeOption(value: string): {
 
 const optionHours = (option: string) => parseTimeOption(option).estimated_hours ?? 0;
 
-/** Options du sélecteur, en gardant à sa place une valeur existante hors liste (ex. 1,5 h saisie au bureau). */
-export function timeOptionsFor(current: string): string[] {
-  if (!current || (TIME_OPTIONS as readonly string[]).includes(current)) return [...TIME_OPTIONS];
-  const index = TIME_OPTIONS.findIndex((option) => optionHours(option) > optionHours(current));
-  const at = index === -1 ? TIME_OPTIONS.length - 1 : index;
-  return [...TIME_OPTIONS.slice(0, at), current, ...TIME_OPTIONS.slice(at)];
+/**
+ * Options du sélecteur, en gardant à sa place une valeur existante hors liste (ex. 1,25 h saisie
+ * au bureau). `extinguisher` : 0,3 h proposé en tête.
+ */
+export function timeOptionsFor(current: string, extinguisher = false): string[] {
+  const base = extinguisher ? [EXTINGUISHER_TIME, ...TIME_OPTIONS] : TIME_OPTIONS;
+  if (!current || base.includes(current)) return [...base];
+  const index = base.findIndex((option) => optionHours(option) > optionHours(current));
+  const at = index === -1 ? base.length - 1 : index;
+  return [...base.slice(0, at), current, ...base.slice(at)];
 }
 
 /** Libellé affiché d'une option : « 0,5 h », « 12 h et plus ». */

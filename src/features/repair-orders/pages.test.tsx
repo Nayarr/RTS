@@ -1,8 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
+import { createClient } from '@/features/customers/api';
 import type { Profile } from '@/features/auth/roles';
 import { fakeSession, renderRoutes } from '@/test/render';
 import {
@@ -12,7 +13,9 @@ import {
   fetchRepairOrder,
   fetchRepairOrderEvents,
   fetchRepairOrders,
+  findClientByName,
   findVehicleByPlate,
+  searchVehiclesByPlate,
   updateRepairOrder,
   type RepairOrderOverview,
 } from './api';
@@ -32,10 +35,16 @@ vi.mock('./api', async (importOriginal) => ({
   fetchRepairOrderEvents: vi.fn(),
   fetchActiveTechnicians: vi.fn(),
   findVehicleByPlate: vi.fn(),
+  searchVehiclesByPlate: vi.fn().mockResolvedValue([]),
+  findClientByName: vi.fn().mockImplementation((name: string) => Promise.resolve({ id: 'c1', name })),
   searchClients: vi.fn().mockResolvedValue([]),
   createRepairOrder: vi.fn(),
   updateRepairOrder: vi.fn(),
   deleteRepairOrder: vi.fn(),
+}));
+vi.mock('@/features/customers/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createClient: vi.fn(),
 }));
 vi.mock('./supplies-api', () => ({
   fetchSupplies: vi.fn().mockResolvedValue({ subcontracts: [], consumables: [], partSuppliers: {} }),
@@ -52,7 +61,7 @@ vi.mock('@/features/quotes/api', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   fetchRepairOrderQuotes: vi.fn().mockResolvedValue([]),
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 const order = (overrides: Partial<RepairOrderOverview> = {}): RepairOrderOverview =>
   ({
@@ -133,6 +142,11 @@ describe('liste des OR', () => {
 });
 
 describe('nouvel OR', () => {
+  // Par défaut, le client saisi existe déjà en base.
+  beforeEach(() => {
+    vi.mocked(findClientByName).mockImplementation((name: string) => Promise.resolve({ id: 'c1', name }));
+  });
+
   it('crée l’OR puis ouvre sa fiche', async () => {
     vi.mocked(fetchActiveTechnicians).mockResolvedValue([{ id: 't1', display_name: 'Alice', color: null }]);
     vi.mocked(findVehicleByPlate).mockResolvedValue(null);
@@ -154,6 +168,77 @@ describe('nouvel OR', () => {
       signature_file_id: null,
     });
     expect(await screen.findByText('OR introuvable')).toBeInTheDocument(); // fiche ouverte (/or/ro9)
+  });
+
+  it('propose les véhicules connus : la plaque choisie reprend le type et le client', async () => {
+    vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
+    vi.mocked(findVehicleByPlate).mockResolvedValue(null);
+    vi.mocked(searchVehiclesByPlate).mockResolvedValue([
+      { id: 'v1', plate: 'GH-512-RT', vehicle_type: 'remorque', client_name: 'Transports Martin' },
+    ]);
+    render('/or/nouveau');
+
+    await userEvent.type(await screen.findByLabelText('Immatriculation'), 'gh5');
+    const list = await screen.findByRole('listbox', { name: 'Propositions : Immatriculation' });
+    await userEvent.click(within(list).getByRole('option', { name: /GH-512-RT/ }));
+    expect(screen.getByLabelText('Immatriculation')).toHaveValue('GH-512-RT');
+    expect(screen.getByLabelText('Client')).toHaveValue('Transports Martin');
+    expect(screen.getByRole('button', { name: 'Remorque' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('client pas en base : fiche complète obligatoire, créée avec l’OR', async () => {
+    vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
+    vi.mocked(findVehicleByPlate).mockResolvedValue(null);
+    vi.mocked(findClientByName).mockResolvedValue(null);
+    vi.mocked(createClient).mockResolvedValue('c9');
+    vi.mocked(createRepairOrder).mockResolvedValue({ id: 'ro9', number: 'OR00009' } as never);
+    vi.mocked(fetchRepairOrder).mockResolvedValue(null);
+    render('/or/nouveau');
+
+    await userEvent.type(await screen.findByLabelText('Immatriculation'), 'GH512RT');
+    await userEvent.type(screen.getByLabelText('Client'), 'Julien Martin');
+    await userEvent.type(screen.getByLabelText('Tâche à faire'), 'Freins');
+    expect(await screen.findByText('Nouveau client : fiche à compléter')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Créer l’OR' }));
+    expect(await screen.findByText('Indique le téléphone')).toBeInTheDocument();
+    expect(screen.getByText('Indique l’e-mail')).toBeInTheDocument();
+    expect(createRepairOrder).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Particulier' }));
+    expect(screen.getByLabelText('Prénom *')).toHaveValue('Julien');
+    expect(screen.getByLabelText('Nom *')).toHaveValue('Martin');
+    await userEvent.selectOptions(screen.getByLabelText('Civilité *'), 'M.');
+    await userEvent.type(screen.getByLabelText('Téléphone *'), '0612345678');
+    await userEvent.type(screen.getByLabelText('E-mail *'), 'julien@exemple.fr');
+    await userEvent.type(screen.getByLabelText('Adresse *'), '1 rue du Test, 95190 Goussainville');
+    await userEvent.click(screen.getByRole('button', { name: 'Créer l’OR' }));
+
+    await waitFor(() => expect(createRepairOrder).toHaveBeenCalledOnce());
+    expect(createClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'individual',
+        name: 'Julien Martin',
+        email: 'julien@exemple.fr',
+        phone: '0612345678',
+      }),
+    );
+    expect(vi.mocked(createRepairOrder).mock.calls[0]?.[0]).toMatchObject({ client_name: 'Julien Martin' });
+  });
+
+  it('client inconnu, OR créé aussitôt : la fiche du client est d’abord demandée', async () => {
+    vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
+    vi.mocked(findVehicleByPlate).mockResolvedValue(null);
+    vi.mocked(findClientByName).mockResolvedValue(null);
+    vi.mocked(createRepairOrder).mockClear();
+    render('/or/nouveau');
+
+    await userEvent.type(await screen.findByLabelText('Tâche à faire'), 'Freins');
+    await userEvent.type(screen.getByLabelText('Immatriculation'), 'GH512RT');
+    await userEvent.type(screen.getByLabelText('Client'), 'Garage Inconnu');
+    await userEvent.click(screen.getByRole('button', { name: 'Créer l’OR' }));
+    expect(await screen.findByText('Nouveau client : fiche à compléter')).toBeInTheDocument();
+    expect(createRepairOrder).not.toHaveBeenCalled();
   });
 
   it('demande confirmation si un OR non facturé existe déjà pour le véhicule', async () => {
@@ -248,7 +333,7 @@ describe('fiche OR', () => {
     expect(deleteRepairOrder).toHaveBeenCalledWith('ro1');
   });
 
-  it('n’envoie que les informations modifiées', async () => {
+  it('enregistre tout seul, et n’envoie que les informations modifiées', async () => {
     asRole('reception');
     detail();
     vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
@@ -259,7 +344,12 @@ describe('fiche OR', () => {
     const mileage = await screen.findByLabelText('Kilométrage');
     await userEvent.clear(mileage);
     await userEvent.type(mileage, '185000');
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
-    await waitFor(() => expect(updateRepairOrder).toHaveBeenCalledWith('ro1', { mileage: 185000 }));
-  });
+    expect(screen.queryByRole('button', { name: 'Enregistrer' })).toBeNull();
+    // Enregistré après une pause de frappe (0,8 s) : délais larges pour une CI chargée
+    await waitFor(() => expect(updateRepairOrder).toHaveBeenCalledWith('ro1', { mileage: 185000 }), {
+      timeout: 5000,
+    });
+    expect(updateRepairOrder).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('Enregistré', {}, { timeout: 5000 })).toBeInTheDocument();
+  }, 15_000);
 });

@@ -13,6 +13,9 @@ export const STATUS_META: Record<RepairOrderStatus, { label: string; color: stri
   invoiced: { label: 'Facturé', color: '#1F4D3D' },
 };
 
+/** OR créé sans technicien : « Non assigné » au lieu de « Assigné ». */
+export const UNASSIGNED_META = { label: 'Non assigné', color: '#B45309' };
+
 export const STATUS_ORDER: RepairOrderStatus[] = [
   'assigned',
   'in_progress',
