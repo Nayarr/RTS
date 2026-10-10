@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { formatDate } from '@/features/repair-orders/constants';
+import { formatDate, normalizeKey } from '@/features/repair-orders/constants';
 import { readTechnicalInspection, updateDeadlines } from '../api';
 import { isVin, normalizeVin } from '../domain';
 
@@ -21,18 +21,22 @@ const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Lecture impossible : saisis la date à la main';
 
 /**
- * Lecture automatique du contrôle technique qui vient d'être photographié : date du prochain contrôle
- * et VIN proposés (modifiables), puis enregistrés sur la fiche véhicule.
+ * Lecture automatique du contrôle technique qui vient d'être photographié : VIN proposé (et date du
+ * prochain contrôle sur un procès-verbal), modifiables, puis enregistrés sur la fiche véhicule.
+ * La plaque lue est comparée à celle de l'OR.
  */
 export function TechnicalInspectionDialog({
   fileId,
   repairOrderId,
   vehicleId,
+  plate,
   onClose,
 }: {
   fileId: string;
   repairOrderId: string;
   vehicleId: string;
+  /** Plaque du véhicule de l'OR. */
+  plate: string | null;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -48,6 +52,8 @@ export function TechnicalInspectionDialog({
   const date = editedDate ?? reading.data?.next_due_date ?? '';
   const vin = normalizeVin(editedVin ?? reading.data?.vin ?? '');
   const vinError = vin && !isVin(vin) ? 'VIN : 17 caractères (lettres sauf I, O, Q, et chiffres)' : null;
+  const readPlate = reading.data?.plate ?? null;
+  const otherPlate = readPlate && plate && normalizeKey(readPlate) !== normalizeKey(plate);
 
   const save = useMutation({
     mutationFn: () =>
@@ -66,7 +72,7 @@ export function TechnicalInspectionDialog({
         <DialogHeader>
           <DialogTitle>Lecture du contrôle technique</DialogTitle>
           <DialogDescription>
-            La photo est ajoutée à l’OR. Vérifie la date et le VIN avant de valider.
+            La photo est ajoutée à l’OR. Vérifie le VIN (numéro de série) avant de valider.
           </DialogDescription>
         </DialogHeader>
 
@@ -85,13 +91,19 @@ export function TechnicalInspectionDialog({
             {reading.data.label_text && (
               <p className="hint">Lu sur le document : « {reading.data.label_text} »</p>
             )}
+            {readPlate && (
+              <p className={otherPlate ? 'alert s-warn' : 'text-sm'} role={otherPlate ? 'alert' : undefined}>
+                Immatriculation lue : <b className="plate">{readPlate}</b>
+                {otherPlate && ` · différente de l’OR (${plate}) : vérifie qu’il s’agit du bon véhicule.`}
+              </p>
+            )}
             {reading.data.last_control_date && (
               <p className="text-sm">
                 Contrôle du : <b>{formatDate(reading.data.last_control_date)}</b>
               </p>
             )}
             {!reading.data.next_due_date && (
-              <p className="err">Aucune date d’échéance trouvée sur la photo : saisis-la à la main.</p>
+              <p className="hint">Date d’échéance non lue (vignette) : saisis-la à la main si besoin.</p>
             )}
             {(reading.data.next_due_date || reading.data.vin) && reading.data.confidence !== 'haute' && (
               <p className="alert s-warn">Lecture incertaine : vérifie sur le document.</p>
@@ -106,7 +118,7 @@ export function TechnicalInspectionDialog({
               />
             </div>
             <div className="field">
-              <Label htmlFor="ct-scan-vin">VIN · numéro d’identification (modifiable)</Label>
+              <Label htmlFor="ct-scan-vin">VIN · numéro de série (modifiable)</Label>
               <Input
                 id="ct-scan-vin"
                 className="font-mono uppercase"

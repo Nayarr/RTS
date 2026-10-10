@@ -64,9 +64,9 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   // Accueil du technicien : l'OR est signalé comme nouveau
   await loginAs(page, 'alice@rts.local');
   await expect(page.getByRole('heading', { name: 'Mes ordres de réparation' })).toBeVisible();
-  const card = page.getByRole('link', { name: new RegExp(plate) });
-  await expect(card.getByText('Nouveau')).toBeVisible();
-  await card.click();
+  const orderCard = page.getByRole('link', { name: new RegExp(plate) });
+  await expect(orderCard.getByText('Nouveau')).toBeVisible();
+  await orderCard.click();
   await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
 
   // Badgeage bloqué tant que kilométrage et photos manquent
@@ -92,11 +92,25 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   await expect(doneTask).toHaveValue('');
   await doneTask.fill('Remplacement plaquettes avant');
   await doneTask.blur();
-  await page.getByRole('combobox', { name: 'Temps réel' }).first().selectOption('2h');
-  await expect(page.getByRole('combobox', { name: 'Temps réel' }).first()).toHaveValue('2h');
+  const card = (title: string) =>
+    page.locator('[data-slot="card"]').filter({ has: page.getByRole('heading', { name: title }) });
+  const doneTime = card('Travaux effectués').getByRole('combobox', { name: 'Temps estimé' }).first();
+  await doneTime.selectOption('2h');
+  await expect(doneTime).toHaveValue('2h');
   // Tâche à prévoir : son temps estimé aussi, sinon l'OR ne peut pas être terminé
-  await page.getByRole('combobox', { name: 'Temps estimé' }).first().selectOption('1h');
-  await expect(page.getByRole('combobox', { name: 'Temps estimé' }).first()).toHaveValue('1h');
+  const plannedTime = card('Pièces / réparations à prévoir (devis)')
+    .getByRole('combobox', { name: 'Temps estimé' })
+    .first();
+  await plannedTime.selectOption('1h');
+  await expect(plannedTime).toHaveValue('1h');
+
+  // Photo du contrôle technique : toujours exigée pour terminer
+  const ctChooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Photo du contrôle technique', exact: true }).click();
+  await (await ctChooser).setFiles({ name: 'ct.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.getByRole('button', { name: 'Photo du contrôle technique (déjà prise)' })).toBeVisible({
+    timeout: 15_000,
+  });
 
   // Clôture : pas de devis
   await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'NON' }).click();

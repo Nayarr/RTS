@@ -33,7 +33,7 @@ select throws_like($$ select public.start_timer('50000000-0000-0000-0000-0000000
 
 insert into public.ro_photos (repair_order_id, file_id, label)
 select :ro, pg_temp.fake_file('ro_photo'), l
-from unnest(array['Face avant', 'Côté gauche', 'Côté droit', 'Arrière', 'Tableau de bord']) l;
+from unnest(array['Face avant', 'Côté gauche', 'Côté droit', 'Arrière', 'Tableau de bord', 'Contrôle technique']) l;
 
 select lives_ok($$ select public.start_timer('50000000-0000-0000-0000-000000000001') $$, 'Badgeage démarré');
 select throws_like($$ select public.start_timer('50000000-0000-0000-0000-000000000001') $$,
@@ -67,7 +67,7 @@ select is((select count(*) from public.ro_lines where repair_order_id = :ro and 
 -- ---------------------------------------------------------------- Clôture
 insert into public.ro_lines (repair_order_id, kind, description) values (:ro, 'done', 'Vidange moteur et filtres');
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000001') $$,
-                   '%Temps réel manquant : 1 tâche des travaux effectués%', 'Clôture impossible sans temps sur chaque travail effectué');
+                   '%Temps estimé manquant : 1 tâche des travaux effectués%', 'Clôture impossible sans temps sur chaque travail effectué');
 update public.ro_lines set estimated_hours = 2 where repair_order_id = :ro and kind = 'done';
 select lives_ok($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000001', true) $$,
                 'Le technicien termine l''intervention (devis nécessaire)');

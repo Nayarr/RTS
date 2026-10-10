@@ -6087,7 +6087,9 @@ export type Database = {
       generate_alerts: { Args: Record<PropertyKey, never>; Returns: number };
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       global_search: { Args: { p_query: string }; Returns: Json };
+      inspection_activated_fields: { Args: { p_data: Json }; Returns: string[] };
       inspection_missing_points: { Args: { p_data: Json }; Returns: number };
+      inspection_trigger_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
       inspection_wear_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
       invoiced_ro_lines: {
         Args: { p_from: string; p_to: string };
@@ -6107,6 +6109,7 @@ export type Database = {
       is_office: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_system_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       issue_invoice: { Args: { p_invoice_id: string }; Returns: string };
+      keeps_standard_time: { Args: { p_description: string }; Returns: boolean };
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
       kiosk_exit_code_is_set: { Args: Record<PropertyKey, never>; Returns: boolean };
       kiosk_pending_signature: { Args: Record<PropertyKey, never>; Returns: Json };

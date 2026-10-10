@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { WEAR_FIELDS } from '@/features/repair-orders/inspection';
+import { triggerFieldLabel } from '@/features/repair-orders/inspection';
 import { decimalField, decimalText, decimalValue } from '@/lib/numbers';
 import type { Enums } from '@/types/database';
 import type { PackageInput, ServicePackage } from './api';
@@ -20,7 +20,7 @@ export const categoryLabel = (category: LaborCategory | null) =>
     ? (PACKAGE_CATEGORIES.find((item) => item.value === category)?.label ?? category)
     : 'Toutes catégories';
 
-export const wearFieldLabel = (key: string) => WEAR_FIELDS.find(([value]) => value === key)?.[1] ?? key;
+export const wearFieldLabel = triggerFieldLabel;
 
 /** Mots-clés saisis séparés par des virgules : chaque groupe doit apparaître en entier dans la ligne de travaux. */
 export const parseKeywords = (value: string) => [

@@ -27,6 +27,8 @@ select throws_ok(format($$ update public.repair_orders set inspection_required =
 
 -- ---------------------------------------------------------------- Clôture par le technicien
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
+insert into public.ro_photos (repair_order_id, file_id, label)
+values (:'ro', pg_temp.fake_file('ro_photo'), 'Contrôle technique');
 insert into public.inspections (repair_order_id, data)
 values (:'ro', '{"usure": {"plaquettes_avant": "OK"}, "pneus": {"avant_etat": "OK", "arriere_etat": "OK"}, "controles": {"hayon": "OK"}}');
 select throws_like(format($$ select public.complete_repair_order(%L) $$, :'ro'),
@@ -52,6 +54,8 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
 select id as free from public.create_repair_order('EF-456-GH', 'remorque', null, 'Éclairage', null,
   '10000000-0000-0000-0000-0000000000a1') \gset
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
+insert into public.ro_photos (repair_order_id, file_id, label)
+values (:'free', pg_temp.fake_file('ro_photo'), 'Contrôle technique');
 select lives_ok(format($$ select public.complete_repair_order(%L) $$, :'free'), 'Sans exigence : fiche vide acceptée');
 
 -- ---------------------------------------------------------------- OR depuis un devis accepté

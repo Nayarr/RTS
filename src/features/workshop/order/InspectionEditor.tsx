@@ -1,13 +1,15 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   CHECK_FIELDS,
   CHECK_PHOTO_FIELDS,
+  extraAxleLabel,
   FLUID_FIELDS,
   inspectionMissingPoints,
   OK_HS_OPTIONS,
+  TIRE_AXLES,
   WARNING_LIGHT_FIELDS,
   WEAR_FIELDS,
   WEAR_OPTIONS,
@@ -18,6 +20,7 @@ import {
 } from '@/features/repair-orders/inspection';
 import { cn } from '@/lib/utils';
 import { saveInspection } from '../api';
+import { formatTireSize } from '../domain';
 import { useWorkshopMutation } from '../hooks';
 import { TailgateLabelDialog } from './TailgateLabelDialog';
 import type { PhotoCapture } from './use-photo-capture';
@@ -59,7 +62,9 @@ function ChipRow({
             role="radio"
             aria-checked={selected}
             disabled={disabled}
-            className={cn(selected && 'on')}
+            // Couleur de la valeur choisie : OK vert, 50 % orange, HS rouge.
+            className={cn(selected && 'on', selected && option.color && 'tone')}
+            style={option.color ? ({ '--c': option.color } as React.CSSProperties) : undefined}
             // Un second appui sur la valeur choisie l'efface.
             onClick={() => onChange(selected ? '' : option.value)}
           >
@@ -91,13 +96,6 @@ const FLUID_OPTIONS: ChipOption[] = [
   { value: 'bon', label: 'Niveau bon', color: '' },
   { value: 'manque', label: 'Manque · appoint fait', color: '' },
 ];
-
-/** Taille de pneu au format « 315/70/22.5 » pendant la saisie. */
-function formatTireSize(value: string) {
-  const digits = value.replace(/[^\d.,]/g, '').replace(',', '.');
-  const parts = [digits.slice(0, 3), digits.slice(3, 5), digits.slice(5, 9)].filter(Boolean);
-  return parts.join('/');
-}
 
 /** Fiche de contrôle véhicule, enregistrée automatiquement. */
 export function InspectionEditor({
@@ -152,6 +150,68 @@ export function InspectionEditor({
 
   const setIn = <K extends keyof InspectionData>(section: K, key: string, value: unknown) =>
     update((current) => ({ ...current, [section]: { ...(current[section] as object), [key]: value } }));
+
+  // Essieux ajoutés (camion à 4 essieux et plus, remorque…)
+  const extraAxles = data.pneus?.essieux ?? [];
+  const setAxles = (axles: NonNullable<NonNullable<InspectionData['pneus']>['essieux']>) =>
+    update((current) => ({ ...current, pneus: { ...current.pneus, essieux: axles } }));
+  const setAxle = (index: number, patch: { taille?: string; etat?: string }) =>
+    setAxles(extraAxles.map((axle, at) => (at === index ? { ...axle, ...patch } : axle)));
+
+  const tireRow = (
+    id: string,
+    label: string,
+    tire: { taille?: string | undefined; etat?: string | undefined },
+    onState: (value: string) => void,
+    onSize: (value: string) => void,
+    onRemove?: () => void,
+  ) => {
+    const state = tire.etat;
+    // Pneus à changer (50 % ou HS) : la taille est obligatoire pour les commander.
+    const sizeMissing = (state === '50' || state === 'HS') && !tire.taille?.trim();
+    const errorId = `tire-${id}-error`;
+    return (
+      <ChipRow
+        key={id}
+        label={label}
+        options={WEAR_OPTIONS}
+        value={state}
+        disabled={locked}
+        onChange={onState}
+        action={
+          onRemove && !locked ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-auto! min-h-[38px] w-12! shrink-0"
+              aria-label={`Retirer : ${label}`}
+              onClick={onRemove}
+            >
+              <X className="size-5" />
+            </Button>
+          ) : undefined
+        }
+      >
+        <Input
+          id={`tire-${id}_taille`}
+          inputMode="decimal"
+          placeholder="315/70/22.5"
+          aria-label={`Taille ${label.toLowerCase()}`}
+          aria-invalid={sizeMissing && !locked ? true : undefined}
+          aria-describedby={sizeMissing && !locked ? errorId : undefined}
+          disabled={locked}
+          value={tire.taille ?? ''}
+          onChange={(event) => onSize(formatTireSize(event.target.value))}
+        />
+        {sizeMissing && !locked && (
+          <p id={errorId} className="err">
+            Taille obligatoire : pneus à {state === 'HS' ? 'HS' : '50 %'}.
+          </p>
+        )}
+      </ChipRow>
+    );
+  };
 
   const setFluid = (key: FluidKey, patch: { etat?: string; litres?: string }) =>
     update((current) => ({
@@ -222,44 +282,36 @@ export function InspectionEditor({
         />
       ))}
 
-      {(
-        [
-          ['avant', 'Pneus avant'],
-          ['arriere', 'Pneus arrière'],
-        ] as const
-      ).map(([side, label]) => {
-        const state = data.pneus?.[`${side}_etat`];
-        // Pneus à changer (50 % ou HS) : la taille est obligatoire pour les commander.
-        const sizeMissing = (state === '50' || state === 'HS') && !data.pneus?.[`${side}_taille`]?.trim();
-        const errorId = `tire-${side}-error`;
-        return (
-          <ChipRow
-            key={side}
-            label={label}
-            options={WEAR_OPTIONS}
-            value={state}
-            disabled={locked}
-            onChange={(value) => setIn('pneus', `${side}_etat`, value)}
-          >
-            <Input
-              id={`tire-${side}_taille`}
-              inputMode="decimal"
-              placeholder="315/70/22.5"
-              aria-label={`Taille ${label.toLowerCase()}`}
-              aria-invalid={sizeMissing && !locked ? true : undefined}
-              aria-describedby={sizeMissing && !locked ? errorId : undefined}
-              disabled={locked}
-              value={data.pneus?.[`${side}_taille`] ?? ''}
-              onChange={(event) => setIn('pneus', `${side}_taille`, formatTireSize(event.target.value))}
-            />
-            {sizeMissing && !locked && (
-              <p id={errorId} className="err">
-                Taille obligatoire : pneus à {state === 'HS' ? 'HS' : '50 %'}.
-              </p>
-            )}
-          </ChipRow>
-        );
-      })}
+      {TIRE_AXLES.map(([side, label]) =>
+        tireRow(
+          side,
+          label,
+          { taille: data.pneus?.[`${side}_taille`], etat: data.pneus?.[`${side}_etat`] },
+          (value) => setIn('pneus', `${side}_etat`, value),
+          (value) => setIn('pneus', `${side}_taille`, value),
+        ),
+      )}
+      {extraAxles.map((axle, index) =>
+        tireRow(
+          `essieu-${index + 4}`,
+          extraAxleLabel(index),
+          axle,
+          (value) => setAxle(index, { etat: value }),
+          (value) => setAxle(index, { taille: value }),
+          () => setAxles(extraAxles.filter((_, at) => at !== index)),
+        ),
+      )}
+      {!locked && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => setAxles([...extraAxles, {}])}
+        >
+          <Plus /> Ajouter un essieu
+        </Button>
+      )}
 
       {CHECK_FIELDS.map(([key, label]) => {
         const taken = photoLabels.includes(label);

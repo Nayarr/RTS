@@ -1,5 +1,5 @@
 import { assertEquals, assertMatch } from '@std/assert';
-import { inspectionReadingPrompt, validVin } from './inspection-reading.ts';
+import { inspectionReadingPrompt, validPlate, validVin } from './inspection-reading.ts';
 import { addMonths, nextDueDate, readingPrompt, validDate } from './reading.ts';
 import { checkedLicense, licenseReadingPrompt } from './license-reading.ts';
 
@@ -47,6 +47,15 @@ Deno.test('contrôle technique : VIN de 17 caractères sans I, O ni Q', () => {
   const prompt = inspectionReadingPrompt(TODAY);
   assertEquals(prompt.includes('à présenter avant le'), true);
   assertEquals(prompt.includes('VIN'), true);
+});
+
+Deno.test('vignette : immatriculation et VIN seulement, « numéro de série » = VIN', () => {
+  const prompt = inspectionReadingPrompt(TODAY);
+  assertEquals(prompt.includes('lis uniquement l’immatriculation et le VIN'), true);
+  assertEquals(prompt.includes('« numéro de série »'), true);
+  assertEquals(validPlate('ab 123 cd'), 'AB-123-CD');
+  assertEquals(validPlate('1234 AB 95'), '1234AB95');
+  assertEquals(validPlate('?'), null);
 });
 
 Deno.test('permis : valeurs lues contrôlées (dates, numéro, catégories), permis expiré gardé', () => {

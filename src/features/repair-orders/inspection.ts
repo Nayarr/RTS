@@ -67,6 +67,34 @@ export const FLUID_FIELDS = [
   ['huile', 'Huile'],
 ] as const;
 
+/** Essieux de base (2 roues chacun) ; d'autres essieux peuvent être ajoutés (pneus.essieux). */
+export const TIRE_AXLES = [
+  ['avant', 'Pneus avant'],
+  ['milieu', 'Pneus milieu'],
+  ['arriere', 'Pneus arrière'],
+] as const;
+
+/** Libellé d'un essieu ajouté : le 4e, le 5e… */
+export const extraAxleLabel = (index: number) => `Pneus essieu ${index + 4}`;
+
+/** Cases pouvant déclencher un forfait : toute la fiche sauf les niveaux (mêmes clés que la base). */
+export const PACKAGE_TRIGGER_GROUPS: { title: string; fields: [string, string][] }[] = [
+  { title: 'Usure', fields: WEAR_FIELDS.map(([key, label]) => [key, label]) },
+  { title: 'Pneus', fields: TIRE_AXLES.map(([key, label]) => [`pneus.${key}_etat`, label]) },
+  { title: 'Contrôles', fields: CHECK_FIELDS.map(([key, label]) => [`controles.${key}`, label]) },
+  {
+    title: 'Voyants allumés',
+    fields: [
+      ...WARNING_LIGHT_FIELDS.map(([key, label]): [string, string] => [`voyants.${key}`, `Voyant ${label}`]),
+      ['probleme_electrique', 'Problème électrique'],
+    ],
+  },
+];
+
+/** Libellé d'une case déclencheuse de forfait (« Plaquettes avant », « Voyant ABS »…). */
+export const triggerFieldLabel = (key: string) =>
+  PACKAGE_TRIGGER_GROUPS.flatMap((group) => group.fields).find(([value]) => value === key)?.[1] ?? key;
+
 export type WearKey = (typeof WEAR_FIELDS)[number][0];
 export type CheckKey = (typeof CHECK_FIELDS)[number][0];
 export type WarningLightKey = (typeof WARNING_LIGHT_FIELDS)[number][0];
@@ -74,7 +102,16 @@ export type FluidKey = (typeof FLUID_FIELDS)[number][0];
 
 export interface InspectionData {
   usure?: Partial<Record<WearKey, string>>;
-  pneus?: { avant_taille?: string; avant_etat?: string; arriere_taille?: string; arriere_etat?: string };
+  pneus?: {
+    avant_taille?: string;
+    avant_etat?: string;
+    milieu_taille?: string;
+    milieu_etat?: string;
+    arriere_taille?: string;
+    arriere_etat?: string;
+    /** Essieux ajoutés au-delà de l'avant, du milieu et de l'arrière. */
+    essieux?: { taille?: string; etat?: string }[];
+  };
   controles?: Partial<Record<CheckKey, string>>;
   probleme_electrique?: string;
   voyants?: Partial<Record<WarningLightKey, boolean>>;
@@ -93,7 +130,9 @@ export function countAlerts(data: InspectionData | null | undefined): number {
   const values = [
     ...Object.values(data.usure ?? {}),
     data.pneus?.avant_etat,
+    data.pneus?.milieu_etat,
     data.pneus?.arriere_etat,
+    ...(data.pneus?.essieux ?? []).map((axle) => axle.etat),
     ...Object.values(data.controles ?? {}),
   ];
   return (

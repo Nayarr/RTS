@@ -21,11 +21,13 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');  -- technicienne
 insert into public.ro_lines (repair_order_id, kind, line_type, description) values
   (:ro, 'done', 'labor', 'Vidange moteur'),
   (:ro, 'planned', 'labor', 'Remplacement plaquettes avant');
+insert into public.ro_photos (repair_order_id, file_id, label)
+values (:ro, pg_temp.fake_file('ro_photo'), 'Contrôle technique');
 insert into public.inspections (repair_order_id, data)
 values (:ro, '{"pneus": {"avant_etat": "HS", "arriere_etat": "50", "arriere_taille": " "}, "controles": {"hayon": "HS"}}');
 
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000041') $$,
-  'À compléter avant de terminer : Temps réel manquant : 1 tâche des travaux effectués ; Temps estimé manquant : % tâches à prévoir ; %',
+  'À compléter avant de terminer : Temps estimé manquant : 1 tâche des travaux effectués ; Temps estimé manquant : % tâches à prévoir ; %',
   'Tous les manques listés d''un coup : temps des travaux effectués et à prévoir');
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000041') $$,
   '%Taille des pneus avant obligatoire (HS) ; Taille des pneus arrière obligatoire (50 \%)%',
@@ -33,9 +35,11 @@ select throws_like($$ select public.complete_repair_order('50000000-0000-0000-00
 
 update public.ro_lines set estimated_hours = 1
 where repair_order_id = :ro and estimated_hours is null and line_type = 'labor';
-select is((select count(*)::int from public.ro_lines
-           where repair_order_id = :ro and kind = 'planned' and line_type = 'package' and estimated_hours is null), 1,
-          'Le forfait à prévoir garde son temps barème (pas d''estimation exigée)');
+select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000041') $$,
+  '%Temps estimé manquant : 1 tâche à prévoir%',
+  'Forfait à prévoir : le technicien donne son temps estimé (barème caché)');
+update public.ro_lines set estimated_hours = 1.5
+where repair_order_id = :ro and kind = 'planned' and line_type = 'package';
 
 update public.inspections set data = jsonb_set(jsonb_set(data, '{pneus,avant_taille}', '"315/70/22.5"'),
                                                '{pneus,arriere_taille}', '"315/80/22.5"')
@@ -61,7 +65,8 @@ insert into public.inspections (repair_order_id, data)
 values ('50000000-0000-0000-0000-000000000042', '{"controles": {"hayon": "HS"}}');
 update public.ro_lines set estimated_hours = 0.5 where repair_order_id = '50000000-0000-0000-0000-000000000042';
 insert into public.ro_photos (repair_order_id, file_id, label)
-values ('50000000-0000-0000-0000-000000000042', pg_temp.fake_file('ro_photo'), 'Extincteur 1 kg cabine');
+values ('50000000-0000-0000-0000-000000000042', pg_temp.fake_file('ro_photo'), 'Extincteur 1 kg cabine'),
+       ('50000000-0000-0000-0000-000000000042', pg_temp.fake_file('ro_photo'), 'Contrôle technique');
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000042') $$,
   '%Photo de l’étiquette contrôle hayon obligatoire%', 'Seule la photo de l''étiquette du hayon compte');
 

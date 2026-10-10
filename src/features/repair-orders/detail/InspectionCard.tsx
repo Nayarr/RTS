@@ -2,9 +2,11 @@ import type { CSSProperties, ReactNode } from 'react';
 import {
   CHECK_FIELDS,
   countAlerts,
+  extraAxleLabel,
   FLUID_FIELDS,
   OK_HS_OPTIONS,
   optionFor,
+  TIRE_AXLES,
   WARNING_LIGHT_FIELDS,
   WEAR_FIELDS,
   WEAR_OPTIONS,
@@ -81,14 +83,22 @@ export function InspectionCard({ data }: { data: InspectionData | null }) {
                 <Value value={data.usure?.[key]} options={WEAR_OPTIONS} />
               </Row>
             ))}
-            <Row label={`Pneus avant${data.pneus?.avant_taille ? ` (${data.pneus.avant_taille})` : ''}`}>
-              <Value value={data.pneus?.avant_etat} options={WEAR_OPTIONS} />
-            </Row>
-            <Row
-              label={`Pneus arrière${data.pneus?.arriere_taille ? ` (${data.pneus.arriere_taille})` : ''}`}
-            >
-              <Value value={data.pneus?.arriere_etat} options={WEAR_OPTIONS} />
-            </Row>
+            {TIRE_AXLES.map(([side, label]) => {
+              const size = data.pneus?.[`${side}_taille`];
+              const state = data.pneus?.[`${side}_etat`];
+              // Essieu du milieu : affiché seulement s'il a été renseigné
+              if (side === 'milieu' && !size && !state) return null;
+              return (
+                <Row key={side} label={`${label}${size ? ` (${size})` : ''}`}>
+                  <Value value={state} options={WEAR_OPTIONS} />
+                </Row>
+              );
+            })}
+            {(data.pneus?.essieux ?? []).map((axle, index) => (
+              <Row key={index} label={`${extraAxleLabel(index)}${axle.taille ? ` (${axle.taille})` : ''}`}>
+                <Value value={axle.etat} options={WEAR_OPTIONS} />
+              </Row>
+            ))}
           </div>
           <div className="col gap-2">
             <h3 className="overline">Contrôles</h3>

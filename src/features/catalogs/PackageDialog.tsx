@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { WEAR_FIELDS } from '@/features/repair-orders/inspection';
+import { PACKAGE_TRIGGER_GROUPS } from '@/features/repair-orders/inspection';
 import { savePackage, type ServicePackage } from './api';
 import { packagesKey, useCatalogMutation } from './hooks';
 import {
@@ -103,23 +103,34 @@ export function PackageDialog({ pkg, onClose }: { pkg: ServicePackage | null; on
               control={control}
               name="trigger_fields"
               render={({ field }) => (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {WEAR_FIELDS.map(([value, label]) => (
-                    <div key={value} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`package-trigger-${value}`}
-                        checked={field.value.includes(value)}
-                        onCheckedChange={(checked) =>
-                          field.onChange(
-                            checked === true
-                              ? [...field.value, value]
-                              : field.value.filter((item) => item !== value),
-                          )
-                        }
-                      />
-                      <Label htmlFor={`package-trigger-${value}`} className="font-normal">
-                        {label}
-                      </Label>
+                // Toutes les cases de la fiche, sauf les niveaux
+                <div className="col gap-3">
+                  {PACKAGE_TRIGGER_GROUPS.map((group) => (
+                    <div key={group.title} className="col gap-1.5">
+                      <span className="overline">{group.title}</span>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {group.fields.map(([value, label]) => {
+                          const id = `package-trigger-${value.replace('.', '-')}`;
+                          return (
+                            <div key={value} className="flex items-center gap-2">
+                              <Checkbox
+                                id={id}
+                                checked={field.value.includes(value)}
+                                onCheckedChange={(checked) =>
+                                  field.onChange(
+                                    checked === true
+                                      ? [...field.value, value]
+                                      : field.value.filter((item) => item !== value),
+                                  )
+                                }
+                              />
+                              <Label htmlFor={id} className="font-normal">
+                                {label}
+                              </Label>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
