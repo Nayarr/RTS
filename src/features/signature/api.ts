@@ -73,3 +73,12 @@ export async function kioskSign(requestId: string, signerName: string, signature
 export async function signOnline(body: { token: string; signer_name: string; signature: string }) {
   return invokeFunction<{ status: 'signed' }>('ro-signature', body);
 }
+
+/** Bureau : dernier signal de la borne (secondes écoulées, null si jamais vue). */
+export async function fetchKioskStatus() {
+  const { data, error } = await supabase.rpc('kiosk_status');
+  if (error) throw error;
+  return data as unknown as { last_seen_at: string | null; seconds_ago: number | null };
+}
+
+export const kioskStatusKey = ['kiosk', 'status'] as const;

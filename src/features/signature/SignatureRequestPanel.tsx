@@ -16,12 +16,14 @@ import { fetchSettings } from '@/features/settings/api';
 import type { ContactValues, SendLinkMessage } from '@/lib/send-links';
 import {
   cancelSignatureRequest,
+  fetchKioskStatus,
   fetchSignatureRequest,
+  kioskStatusKey,
   requestSignature,
   signatureRequestKey,
   type SignatureChannel,
 } from './api';
-import { remainingPercent, signatureShareMessage } from './domain';
+import { kioskPresence, remainingPercent, signatureShareMessage } from './domain';
 import { useCountdown } from './use-countdown';
 
 const errorMessage = (error: unknown) =>
@@ -58,6 +60,13 @@ export function SignatureRequestPanel({
       query.state.data?.status === 'pending' && query.state.data.channel === 'kiosk' ? 2000 : false,
   });
   const current = request.data;
+  // Borne allumée ou non : vu avant d'y envoyer la demande.
+  const kioskStatus = useQuery({
+    queryKey: kioskStatusKey,
+    queryFn: fetchKioskStatus,
+    refetchInterval: 30_000,
+  });
+  const presence = kioskStatus.data ? kioskPresence(kioskStatus.data.seconds_ago) : null;
   const kioskPending = current?.status === 'pending' && current.channel === 'kiosk';
   const seconds = useCountdown(current?.seconds_left ?? 0, request.dataUpdatedAt, kioskPending);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
@@ -173,6 +182,17 @@ export function SignatureRequestPanel({
           >
             <Tablet /> {kioskExpired ? 'Relancer sur la borne' : 'Faire signer sur la borne'}
           </Button>
+          {presence && (
+            <span className={presence.online ? 'hint row gap-1.5' : 'hint row gap-1.5 text-warning'}>
+              <i
+                aria-hidden
+                className={
+                  presence.online ? 'size-2 rounded-full bg-primary' : 'size-2 rounded-full bg-warning'
+                }
+              />
+              {presence.label}
+            </span>
+          )}
           <Button
             variant="outline"
             size="sm"

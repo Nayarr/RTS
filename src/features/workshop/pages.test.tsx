@@ -318,8 +318,8 @@ describe('fiche OR technicien', () => {
     const done = (await screen.findByRole('heading', { name: 'Travaux effectués' })).closest<HTMLElement>(
       '[data-slot="card"]',
     )!;
-    await userEvent.click(within(done).getByRole('button', { name: 'Dicter une tâche' }));
-    expect(within(done).getByRole('button', { name: 'Arrêter la dictée' })).toBeInTheDocument();
+    await userEvent.click(within(done).getByRole('button', { name: 'Parler, dicter une tâche' }));
+    expect(within(done).getByRole('button', { name: 'Stop, arrêter la dictée' })).toBeInTheDocument();
     expect(await within(done).findByText('« remplacement des »')).toBeInTheDocument();
     await waitFor(() =>
       expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1, 'Remplacement des plaquettes avant'),
@@ -331,7 +331,7 @@ describe('fiche OR technicien', () => {
   it('dictée indisponible sur ce navigateur : pas de bouton micro', async () => {
     setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }) });
     await screen.findByRole('heading', { name: 'Travaux effectués' });
-    expect(screen.queryByRole('button', { name: 'Dicter une tâche' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Parler, dicter une tâche' })).toBeNull();
   });
 
   it('travaux terminés : demande si un devis est nécessaire', async () => {

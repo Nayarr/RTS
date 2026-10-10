@@ -585,7 +585,15 @@ export function PublicDocumentPage() {
   let content;
   if (document.isPending) content = message('Chargement du document…');
   else if (document.isError)
-    content = message('Impossible de charger le document. Réessayez dans un instant.');
+    // Réseau coupé, mise en ligne en cours… : le lien reste bon, on propose de réessayer.
+    content = (
+      <div className="col mx-auto mt-16 max-w-md items-center gap-3 px-4 text-center">
+        <p className="empty">Impossible de charger le document pour le moment.</p>
+        <Button onClick={() => void document.refetch()} disabled={document.isFetching}>
+          Réessayer
+        </Button>
+      </div>
+    );
   else if (data?.type === 'quote') content = <QuoteDocument quote={data} token={token} />;
   else if (data?.type === 'invoice') content = <InvoiceDocument invoice={data} />;
   else if (data?.type === 'portal') content = <PortalDocument portal={data} />;

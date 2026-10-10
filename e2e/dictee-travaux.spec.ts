@@ -83,15 +83,15 @@ test('dictée : le technicien dit une tâche, elle s’ajoute aux travaux effect
   const done = page
     .locator('[data-slot="card"]')
     .filter({ has: page.getByRole('heading', { name: 'Travaux effectués' }) });
-  await done.getByRole('button', { name: 'Dicter une tâche' }).click();
+  await done.getByRole('button', { name: 'Parler, dicter une tâche' }).click();
   // Pendant l'écoute : bouton d'arrêt et texte compris en direct
-  await expect(done.getByRole('button', { name: 'Arrêter la dictée' })).toBeVisible();
+  await expect(done.getByRole('button', { name: 'Stop, arrêter la dictée' })).toBeVisible();
   await expect(done.getByRole('status')).toContainText('« remplacement du »');
 
   await expect(done.getByRole('textbox', { name: 'Description de la tâche' })).toHaveValue(
     'Remplacement du filtre à air',
   );
-  await expect(done.getByRole('button', { name: 'Dicter une tâche' })).toBeVisible();
+  await expect(done.getByRole('button', { name: 'Parler, dicter une tâche' })).toBeVisible();
 
   // Enregistrée : toujours là après rechargement
   await page.reload();
