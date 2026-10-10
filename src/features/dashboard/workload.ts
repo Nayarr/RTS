@@ -11,6 +11,8 @@ export interface TechnicianWorkload {
   worked_orders: number;
   planned_hours: number;
   planned_orders: number;
+  /** Présence badgée à la borne sur la période (présence en cours comprise). */
+  clocked_hours: number;
   /** Aucune heure disponible sur la période : congés, repos, ou atelier fermé (week-end). */
   absence: 'leave' | 'rest' | 'closed' | null;
 }
@@ -27,6 +29,42 @@ export async function fetchWorkshopWorkload(from: string, to: string): Promise<W
   if (error) throw error;
   return data as unknown as WorkshopWorkload;
 }
+
+export interface WorkloadDetail {
+  /** Temps déclaré : travaux effectués saisis sur la période. */
+  declared: {
+    repair_order_id: string;
+    number: string;
+    plate: string | null;
+    day: string;
+    description: string;
+    hours: number;
+  }[];
+  /** OR planifiés sur la période. */
+  planned: { repair_order_id: string; number: string; plate: string | null; day: string; hours: number }[];
+}
+
+/** D'où viennent les heures d'un technicien sur la période. */
+export async function fetchWorkloadDetail(
+  technicianId: string,
+  from: string,
+  to: string,
+): Promise<WorkloadDetail> {
+  const { data, error } = await supabase.rpc('workshop_workload_detail', {
+    p_technician_id: technicianId,
+    p_from: from,
+    p_to: to,
+  });
+  if (error) throw error;
+  return data as unknown as WorkloadDetail;
+}
+
+/**
+ * Heures de présence badgées non affectées à un OR (badgé − déclaré) ; 0 si tout est déclaré.
+ * Ex. : 10 h badgées pour 8 h déclarées → 2 h « de trou ».
+ */
+export const unassignedHours = (clocked: number, declared: number) =>
+  Math.max(0, Math.round((clocked - declared) * 100) / 100);
 
 // ---------------------------------------------------------------- Périodes
 

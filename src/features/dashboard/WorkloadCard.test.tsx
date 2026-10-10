@@ -2,13 +2,14 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
-import { fetchWorkshopWorkload, type WorkshopWorkload } from './workload';
+import { fetchWorkloadDetail, fetchWorkshopWorkload, type WorkshopWorkload } from './workload';
 import type * as Workload from './workload';
 import { WorkloadCard } from './WorkloadCard';
 
 vi.mock('./workload', async (importOriginal) => ({
   ...(await importOriginal<typeof Workload>()),
   fetchWorkshopWorkload: vi.fn(),
+  fetchWorkloadDetail: vi.fn(),
 }));
 
 const WEEK: WorkshopWorkload = {
@@ -24,6 +25,7 @@ const WEEK: WorkshopWorkload = {
       worked_orders: 7,
       planned_hours: 36,
       planned_orders: 8,
+      clocked_hours: 44,
       absence: null,
     },
     {
@@ -35,6 +37,7 @@ const WEEK: WorkshopWorkload = {
       worked_orders: 6,
       planned_hours: 35,
       planned_orders: 6,
+      clocked_hours: 33,
       absence: null,
     },
     {
@@ -46,6 +49,7 @@ const WEEK: WorkshopWorkload = {
       worked_orders: 0,
       planned_hours: 0,
       planned_orders: 0,
+      clocked_hours: 0,
       absence: 'rest',
     },
   ],
@@ -80,9 +84,16 @@ describe('charge de travail atelier', () => {
       '106',
     );
 
+    // Présence badgée et heures non affectées (badgé − déclaré)
+    expect(alice).toHaveTextContent('Badgé 44 h · 2,5 h non affectées');
+    expect(within(card).getByRole('group', { name: 'Présence badgée de l’atelier' })).toHaveTextContent(
+      'Présence badgée 77 hDéclaré sur les OR 74,5 hÉcart 2,5 h non affectées',
+    );
+
     const bruno = within(card).getByRole('listitem', { name: 'Bruno' });
     expect(bruno).toHaveTextContent('33 h / 39 h · 85 %');
-    expect(within(bruno).getByText('33 h')).not.toHaveClass('gold-text');
+    expect(bruno).not.toHaveTextContent('non affectées');
+    expect(within(bruno).getAllByText('33 h')[0]).not.toHaveClass('gold-text');
 
     const samir = within(card).getByRole('listitem', { name: 'Samir' });
     expect(samir).toHaveTextContent('Absent · repos');
@@ -95,12 +106,58 @@ describe('charge de travail atelier', () => {
     );
   });
 
+  it('clic sur un technicien : d’où viennent ses heures', async () => {
+    vi.mocked(fetchWorkloadDetail).mockResolvedValue({
+      declared: [
+        {
+          repair_order_id: 'ro1',
+          number: 'OR00012',
+          plate: 'AB-123-CD',
+          day: '2026-09-29',
+          description: 'Vidange',
+          hours: 1.5,
+        },
+        {
+          repair_order_id: 'ro1',
+          number: 'OR00012',
+          plate: 'AB-123-CD',
+          day: '2026-09-29',
+          description: 'Freins',
+          hours: 2,
+        },
+      ],
+      planned: [
+        { repair_order_id: 'ro2', number: 'OR00013', plate: 'EF-456-GH', day: '2026-10-02', hours: 3 },
+      ],
+    });
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: 'Détail des heures de Alice' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Heures de Alice' });
+    expect(fetchWorkloadDetail).toHaveBeenCalledWith('a', '2026-09-28', '2026-10-04');
+    expect(await within(dialog).findByRole('link', { name: 'OR00012 · AB-123-CD' })).toHaveAttribute(
+      'href',
+      '/or/ro1',
+    );
+    expect(dialog).toHaveTextContent('Vidange1,5 h');
+    expect(dialog).toHaveTextContent('Non affectées2,5 h');
+    expect(within(dialog).getByRole('link', { name: /OR00013 · EF-456-GH/ })).toHaveAttribute(
+      'href',
+      '/or/ro2',
+    );
+  });
+
   it('jour sans ouverture : « Atelier fermé », sauf pour qui a saisi du temps', async () => {
     vi.mocked(fetchWorkshopWorkload).mockResolvedValue({
       ...WEEK,
       technicians: [
         { ...WEEK.technicians[0]!, available_hours: 0, declared_hours: 2.5, absence: 'closed' },
-        { ...WEEK.technicians[1]!, available_hours: 0, declared_hours: 0, absence: 'closed' },
+        {
+          ...WEEK.technicians[1]!,
+          available_hours: 0,
+          declared_hours: 0,
+          clocked_hours: 0,
+          absence: 'closed',
+        },
       ],
     });
     setup();

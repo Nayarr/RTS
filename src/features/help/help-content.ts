@@ -65,6 +65,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Vue Semaine ou Jour, une colonne par technicien. Clique dans une case vide pour y assigner un OR.',
       '« Nouveau rendez-vous » pour un véhicule attendu. À son arrivée, ouvre le rendez-vous puis « Créer l’OR ». La veille, envoie le rappel au client (la cloche te le rappelle).',
       '« En direct » montre les véhicules actuellement à l’atelier et le badgeage en cours.',
+      'Accueil, « Charge de travail atelier » : heures déclarées sur les OR, heures disponibles, présence badgée à la borne et l’écart (heures de présence sans temps déclaré sur un OR). Clique sur un technicien pour voir d’où viennent ses heures.',
     ],
   },
   {
