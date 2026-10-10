@@ -30,7 +30,9 @@ export default defineConfig({
     // PWA : site classique sur PC, « vraie » appli plein écran une fois installée
     // sur téléphone / tablette (display: standalone, sans barre d'adresse).
     VitePWA({
-      registerType: 'autoUpdate',
+      // Nouvelle version : appliquée par src/lib/app-update.ts (borne et lien client tout de
+      // suite, ailleurs proposée pour ne pas perdre une saisie en cours).
+      registerType: 'prompt',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
         name: 'RTS Atelier · Rapid Truck Service',
@@ -57,6 +59,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         // Après une mise en ligne, les fichiers de l'ancienne version sont retirés du cache.
         cleanupOutdatedCaches: true,
+        // Première installation : l'appli est prise en charge tout de suite (hors connexion dès la
+        // première visite). Les mises à jour suivantes attendent (src/lib/app-update.ts).
+        clientsClaim: true,
         // Réception et affichage des notifications push (public/push-sw.js).
         importScripts: ['push-sw.js'],
       },

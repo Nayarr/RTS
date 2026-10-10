@@ -2049,6 +2049,29 @@ export type Database = {
         };
         Relationships: [];
       };
+      kiosk_presence: {
+        Row: {
+          last_seen_at: string;
+          profile_id: string;
+        };
+        Insert: {
+          last_seen_at?: string;
+          profile_id: string;
+        };
+        Update: {
+          last_seen_at?: string;
+          profile_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'kiosk_presence_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       kiosk_secrets: {
         Row: {
           exit_code_hash: string | null;
@@ -2542,6 +2565,30 @@ export type Database = {
           is_active?: boolean;
           role?: Database['public']['Enums']['app_role'];
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      public_link_misses: {
+        Row: {
+          created_at: string;
+          id: number;
+          token_length: number;
+          token_prefix: string;
+          user_agent: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: never;
+          token_length: number;
+          token_prefix: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: never;
+          token_length?: number;
+          token_prefix?: string;
+          user_agent?: string | null;
         };
         Relationships: [];
       };
@@ -6063,10 +6110,12 @@ export type Database = {
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
       kiosk_exit_code_is_set: { Args: Record<PropertyKey, never>; Returns: boolean };
       kiosk_pending_signature: { Args: Record<PropertyKey, never>; Returns: Json };
+      kiosk_ping: { Args: Record<PropertyKey, never>; Returns: undefined };
       kiosk_sign_repair_order: {
         Args: { p_request_id: string; p_signature_file_id: string; p_signer_name: string };
         Returns: undefined;
       };
+      kiosk_status: { Args: Record<PropertyKey, never>; Returns: Json };
       kiosk_too_many_attempts: { Args: Record<PropertyKey, never>; Returns: boolean };
       labor_rate_for: {
         Args: { p_client_id: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
@@ -6207,6 +6256,7 @@ export type Database = {
           worked_hours: number;
         }[];
       };
+      public_find_document: { Args: { p_token: string }; Returns: Json };
       public_get_document: { Args: { p_token: string }; Returns: Json };
       public_respond_quote: {
         Args: { p_accept: boolean; p_signature_file_id?: string; p_signer_name: string; p_token: string };
@@ -6223,6 +6273,7 @@ export type Database = {
       purge_agent_conversations: { Args: Record<PropertyKey, never>; Returns: number };
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
       purge_files: { Args: Record<PropertyKey, never>; Returns: number };
+      purge_public_link_misses: { Args: Record<PropertyKey, never>; Returns: number };
       queue_push: {
         Args: { p_body?: string; p_link?: string; p_profile_ids: string[]; p_tag?: string; p_title: string };
         Returns: number;

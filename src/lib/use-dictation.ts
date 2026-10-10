@@ -9,6 +9,8 @@ interface SpeechRecognitionLike {
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
   onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
+  /** Le micro capte vraiment : on peut parler. */
+  onaudiostart: (() => void) | null;
   start: () => void;
   stop: () => void;
   abort: () => void;
@@ -27,6 +29,32 @@ function recognitionConstructor(): RecognitionConstructor | undefined {
 
 /** Le navigateur sait-il dicter ? (sinon le bouton micro n'est pas affiché) */
 export const dictationSupported = () => recognitionConstructor() !== undefined;
+
+/** Petit « bip » : le micro est ouvert, on peut parler (rien si le son n'est pas disponible). */
+export function playListenBeep() {
+  const Context =
+    typeof window === 'undefined'
+      ? undefined
+      : (window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+  if (!Context) return;
+  try {
+    const context = new Context();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 880;
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.25, context.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.18);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.2);
+    oscillator.onended = () => void context.close().catch(() => {});
+  } catch {
+    // Son bloqué par le navigateur : l'affichage « Parle maintenant » suffit.
+  }
+}
 
 /** Texte dicté mis en forme pour une ligne de travaux : majuscule, sans point final. */
 export function dictatedText(transcript: string): string {
@@ -53,19 +81,23 @@ export function dictationError(code: string, keyboard = 'saisis la tâche au cla
  * `keyboard` : ce qu'on propose de faire au clavier quand la dictée échoue.
  * `alternatives` : nombre de versions entendues demandées au navigateur ; `onFinal` reçoit les
  * autres versions en second paramètre (utile pour corriger un mot mal compris).
+ * `beep` : bip joué quand le micro est réellement ouvert (`ready` passe alors à vrai).
  */
 export function useDictation({
   onFinal,
   onError,
   keyboard,
   alternatives = 1,
+  beep = false,
 }: {
   onFinal: (text: string, alternatives: string[]) => void;
   onError: (message: string) => void;
   keyboard?: string;
   alternatives?: number;
+  beep?: boolean;
 }) {
   const [listening, setListening] = useState(false);
+  const [ready, setReady] = useState(false);
   const [interim, setInterim] = useState('');
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const cancelled = useRef(false);
@@ -107,9 +139,14 @@ export function useDictation({
       if (event.error !== 'aborted')
         handlers.current.onError(dictationError(event.error, handlers.current.keyboard));
     };
+    rec.onaudiostart = () => {
+      setReady(true);
+      if (beep) playListenBeep();
+    };
     rec.onend = () => {
       recognition.current = null;
       setListening(false);
+      setReady(false);
       setInterim('');
     };
     recognition.current = rec;
@@ -130,5 +167,5 @@ export function useDictation({
     recognition.current?.abort();
   };
 
-  return { supported: dictationSupported(), listening, interim, start, stop, cancel };
+  return { supported: dictationSupported(), listening, ready, interim, start, stop, cancel };
 }

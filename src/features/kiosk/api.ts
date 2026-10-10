@@ -33,3 +33,9 @@ export async function fetchCompanyName(): Promise<string> {
   if (error) throw error;
   return data.legal_name;
 }
+
+/** Borne : signal de présence (le bureau voit qu'elle est allumée avant d'y envoyer une signature). */
+export async function kioskPing() {
+  const { error } = await supabase.rpc('kiosk_ping');
+  if (error) throw error;
+}

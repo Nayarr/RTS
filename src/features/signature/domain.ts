@@ -20,6 +20,20 @@ export function secondsLeft(serverSeconds: number, readAt: number, now = Date.no
 export const remainingPercent = (seconds: number) =>
   Math.min(100, Math.max(0, (seconds / KIOSK_SIGNATURE_SECONDS) * 100));
 
+/** Borne considérée en ligne : signal reçu il y a moins de 90 s (elle en envoie un toutes les 30 s). */
+export const KIOSK_ONLINE_SECONDS = 90;
+
+/** État de la borne vu du bureau, d'après son dernier signal. */
+export function kioskPresence(secondsAgo: number | null): { online: boolean; label: string } {
+  if (secondsAgo === null) return { online: false, label: 'Borne jamais connectée' };
+  if (secondsAgo <= KIOSK_ONLINE_SECONDS) return { online: true, label: 'Borne en ligne' };
+  const minutes = Math.floor(secondsAgo / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const since = days >= 1 ? `${days} j` : hours >= 1 ? `${hours} h` : `${minutes} min`;
+  return { online: false, label: `Borne hors ligne depuis ${since}` };
+}
+
 /** Message prêt à envoyer au client absent : lien pour signer l'OR en ligne. */
 export function signatureShareMessage(
   order: { number: string; plate: string | null },

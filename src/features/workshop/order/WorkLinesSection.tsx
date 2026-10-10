@@ -129,6 +129,7 @@ function LineGroup({
   const dictation = useDictation({
     onFinal: (text) => add.mutate(text, { onSuccess: () => toast.success(`Tâche ajoutée : ${text}`) }),
     onError: (message) => toast.error(message),
+    beep: true,
   });
   const headingId = `tech-lines-${kind}`;
   return (
@@ -143,11 +144,12 @@ function LineGroup({
                 variant="outline"
                 size="sm"
                 className={cn(dictation.listening && 'border-destructive text-destructive')}
-                aria-label={dictation.listening ? 'Arrêter la dictée' : 'Dicter une tâche'}
+                aria-label={dictation.listening ? 'Stop, arrêter la dictée' : 'Parler, dicter une tâche'}
                 aria-pressed={dictation.listening}
                 onClick={dictation.listening ? dictation.stop : dictation.start}
               >
                 {dictation.listening ? <Square className="fill-current" /> : <Mic />}
+                {dictation.listening ? 'Stop' : 'Parler'}
               </Button>
             )}
             <Button
@@ -167,7 +169,11 @@ function LineGroup({
       {dictation.listening && (
         <p className="dictating" role="status">
           <span className="dot" aria-hidden />
-          {dictation.interim ? `« ${dictation.interim} »` : 'J’écoute… dis la tâche, puis attends.'}
+          {dictation.interim
+            ? `« ${dictation.interim} »`
+            : dictation.ready
+              ? 'Parle maintenant : dis la tâche, puis attends.'
+              : 'Ouverture du micro…'}
         </p>
       )}
       {lines.length === 0 ? (

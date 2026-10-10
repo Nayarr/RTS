@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
 import { FormField } from '@/components/FormField';
@@ -17,6 +18,7 @@ import { newPasswordSchema, PASSWORD_MIN_LENGTH, type NewPasswordValues } from '
 export function NewPasswordPage() {
   const { session, isLoading } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
@@ -31,6 +33,8 @@ export function NewPasswordPage() {
     setSubmitError(null);
     try {
       await updatePassword(password);
+      // Session renouvelée par le changement : profil relu avant d'ouvrir l'appli.
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
       await navigate('/', { replace: true });
     } catch (error) {
       setSubmitError(authErrorMessage(error));
