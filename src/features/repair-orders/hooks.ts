@@ -101,6 +101,8 @@ const errorMessage = (error: unknown) =>
 export function useRepairOrderMutation<TArgs, TData = unknown>(
   mutationFn: (args: TArgs) => Promise<TData>,
   successMessage: string | ((args: TArgs) => string) | null,
+  /** Rechargement en arrière-plan : la mutation se termine sans l'attendre (enregistrement automatique). */
+  { refreshInBackground = false }: { refreshInBackground?: boolean } = {},
 ) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -109,7 +111,8 @@ export function useRepairOrderMutation<TArgs, TData = unknown>(
       if (successMessage !== null) {
         toast.success(typeof successMessage === 'function' ? successMessage(args) : successMessage);
       }
-      await queryClient.invalidateQueries({ queryKey: repairOrdersKey });
+      const refresh = queryClient.invalidateQueries({ queryKey: repairOrdersKey });
+      if (!refreshInBackground) await refresh;
     },
     onError: (error) => {
       toast.error(errorMessage(error));

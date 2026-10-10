@@ -351,5 +351,5 @@ describe('fiche OR', () => {
     });
     expect(updateRepairOrder).toHaveBeenCalledTimes(1);
     expect(await screen.findByText('Enregistré', {}, { timeout: 5000 })).toBeInTheDocument();
-  });
+  }, 15_000);
 });

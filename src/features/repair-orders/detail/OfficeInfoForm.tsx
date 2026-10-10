@@ -65,6 +65,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
   const save = useRepairOrderMutation(
     (changed: Partial<EditRepairOrderValues>) => updateRepairOrder(order.id, toPatch(changed)),
     null, // l'état « Enregistré » s'affiche dans l'en-tête
+    { refreshInBackground: true },
   );
   const saveState = useAutoSave(form, (changed) => save.mutateAsync(changed));
 
