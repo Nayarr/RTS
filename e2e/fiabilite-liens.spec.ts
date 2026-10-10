@@ -64,6 +64,8 @@ test('borne allumée : le bureau la voit en ligne avant de lui envoyer une signa
   await expect(kiosk.page.getByRole('button', { name: 'Quitter la borne' })).toBeVisible();
 
   await loginAs(page, 'reception@rts.local');
+  // Connexion terminée avant d'ouvrir l'OR (sinon la navigation l'interrompt)
+  await expect(page.getByRole('button', { name: 'Se déconnecter' }).first()).toBeVisible();
   await page.goto(`/or/${order.id}`);
   const panel = page.getByLabel('Signature du client');
   await expect(panel.getByText('Borne en ligne')).toBeVisible();
