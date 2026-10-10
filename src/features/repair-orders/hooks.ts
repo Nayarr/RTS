@@ -5,9 +5,12 @@ import {
   fetchRepairOrder,
   fetchRepairOrderEvents,
   fetchRepairOrders,
+  findClientByName,
   findVehicleByPlate,
   searchClients,
+  searchVehiclesByPlate,
 } from './api';
+import { normalizeKey } from './constants';
 import { fetchSupplies } from './supplies-api';
 
 export const repairOrdersKey = ['repair-orders'] as const;
@@ -55,6 +58,25 @@ export function useClientSuggestions(query: string) {
     queryFn: () => searchClients(query),
     enabled: query.trim().length >= 2,
     staleTime: 60_000,
+  });
+}
+
+export function useVehicleSuggestions(plate: string) {
+  return useQuery({
+    queryKey: ['vehicles', 'search', normalizeKey(plate)],
+    queryFn: () => searchVehiclesByPlate(plate),
+    enabled: normalizeKey(plate).length >= 2,
+    staleTime: 60_000,
+  });
+}
+
+/** Client existant pour ce nom : null tant qu'il n'est pas en base (nouveau client à créer). */
+export function useClientByName(name: string) {
+  return useQuery({
+    queryKey: ['clients', 'by-name', normalizeKey(name)],
+    queryFn: () => findClientByName(name),
+    enabled: normalizeKey(name).length >= 2,
+    staleTime: 30_000,
   });
 }
 

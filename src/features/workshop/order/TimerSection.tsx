@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,11 +6,15 @@ import { Label } from '@/components/ui/label';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { formatDuration } from '@/features/repair-orders/constants';
 import { useLiveSeconds } from '@/features/repair-orders/use-live-seconds';
+import { AUTO_SAVE_DELAY_MS } from '@/lib/use-auto-save';
 import { cn } from '@/lib/utils';
 import { startTimer, stopTimer, updateMileage } from '../api';
 import { useWorkshopMutation } from '../hooks';
 
-/** Kilométrage et badgeage : démarrage possible une fois le kilométrage et les photos obligatoires faits. */
+/**
+ * Kilométrage (facultatif, enregistré tout seul pendant la saisie) et badgeage : démarrage possible
+ * une fois les photos obligatoires faites.
+ */
 export function TimerSection({
   order,
   loadedAt,
@@ -44,17 +48,21 @@ export function TimerSection({
     { offlineMessage: 'Hors connexion : le badgeage a besoin du réseau, réessaie dès qu’il revient' },
   );
 
-  const missing = [
-    ...(order.mileage === null ? ['le kilométrage'] : []),
-    ...(order.missing_photo_labels.length ? [`les photos (${order.missing_photo_labels.join(', ')})`] : []),
-  ];
+  const missing = order.missing_photo_labels.length
+    ? [`les photos (${order.missing_photo_labels.join(', ')})`]
+    : [];
   const canStart = missing.length === 0;
 
-  const commitMileage = () => {
-    const clean = mileage.replace(/\D/g, '');
-    if (clean === saved) return;
-    saveMileage.mutate(clean ? Number(clean) : null);
-  };
+  // Enregistré tout seul après une courte pause de frappe (plus de bouton « OK »).
+  const { mutate: saveMileageNow } = saveMileage;
+  useEffect(() => {
+    if (mileage === saved) return;
+    const timer = window.setTimeout(
+      () => saveMileageNow(mileage ? Number(mileage) : null),
+      AUTO_SAVE_DELAY_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [mileage, saved, saveMileageNow]);
 
   return (
     <section
@@ -104,15 +112,9 @@ export function TimerSection({
             value={mileage}
             disabled={locked}
             onChange={(event) => setMileage(event.target.value.replace(/\D/g, '').slice(0, 7))}
-            onBlur={commitMileage}
             onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
           />
         </div>
-        {!locked && (
-          <Button type="button" variant="outline" onClick={commitMileage}>
-            OK
-          </Button>
-        )}
       </div>
     </section>
   );

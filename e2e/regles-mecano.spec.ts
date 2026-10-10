@@ -72,7 +72,8 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   await doneTask.fill('Contrôle étiquettes');
   await doneTask.blur();
   const realTime = page.getByRole('combobox', { name: 'Temps réel' });
-  await expect(realTime.first().getByRole('option', { name: '0,5 h' })).toHaveCount(1);
+  await expect(realTime.first().getByRole('option', { name: '0,5 h', exact: true })).toHaveCount(1);
+  await expect(realTime.first().getByRole('option', { name: '0 h', exact: true })).toHaveCount(0);
   await realTime.first().selectOption('0.5h');
   await expect(realTime.first()).toHaveValue('0.5h');
   const times = page.getByRole('combobox', { name: 'Temps estimé' });
@@ -80,7 +81,9 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   // Terminer : ce qui manque est listé, le bouton attend
   await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'OUI' }).click();
   const blockers = page.getByRole('status', { name: 'À compléter avant de terminer' });
-  await expect(blockers).toContainText('Temps estimé manquant : 2 tâches à prévoir');
+  // « Contrôle hayon » à prévoir : 0,5 h posé d'office, seule l'autre tâche attend son temps
+  await expect(blockers).toContainText('Temps estimé manquant : 1 tâche à prévoir');
+  await expect(times.filter({ has: page.locator('option:checked', { hasText: '0,5 h' }) })).toHaveCount(1);
   await expect(blockers).toContainText('Taille des pneus avant obligatoire (HS)');
   await expect(blockers).toContainText('Photo de l’étiquette contrôle hayon obligatoire (HS)');
   const finish = page.getByRole('button', { name: 'Travaux terminés' });

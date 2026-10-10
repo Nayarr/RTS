@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
 import {
@@ -25,6 +25,7 @@ import {
   saveInspection,
   startTimer,
   updateLine,
+  updateMileage,
 } from './api';
 import type * as WorkshopApi from './api';
 import { TechHomePage } from './TechHomePage';
@@ -46,6 +47,7 @@ vi.mock('./api', async (importOriginal) => ({
   markSeen: vi.fn(),
   saveInspection: vi.fn(),
   startTimer: vi.fn(),
+  updateMileage: vi.fn(),
   addLine: vi.fn(),
   updateLine: vi.fn(),
   deleteLine: vi.fn(),
@@ -132,6 +134,9 @@ const setup = (
   );
 };
 
+// Reconnaissance vocale simulée : jamais gardée d'un test à l'autre, même après un échec.
+afterEach(() => vi.unstubAllGlobals());
+
 describe('accueil technicien', () => {
   it('liste ses OR avec le badge « Nouveau »', async () => {
     vi.mocked(fetchMyRepairOrders).mockResolvedValue([order()]);
@@ -175,12 +180,22 @@ describe('accueil technicien', () => {
 });
 
 describe('fiche OR technicien', () => {
-  it('badgeage bloqué tant que kilométrage et photos manquent ; marque l’OR comme vu', async () => {
+  it('badgeage bloqué tant que les photos manquent (kilométrage facultatif) ; marque l’OR comme vu', async () => {
     setup('/atelier/or/ro1', { order: order() });
     const start = await screen.findByRole('button', { name: /Démarrer le badgeage/ });
     expect(start).toBeDisabled();
-    expect(screen.getByText(/renseigne le kilométrage et les photos/)).toBeInTheDocument();
+    expect(screen.getByText(/renseigne les photos/)).toBeInTheDocument();
+    expect(screen.queryByText(/le kilométrage/)).toBeNull();
     await waitFor(() => expect(markSeen).toHaveBeenCalledWith('ro1', '00000000-0000-0000-0000-0000000000a1'));
+  });
+
+  it('kilométrage enregistré tout seul après la saisie, sans bouton', async () => {
+    vi.mocked(updateMileage).mockResolvedValue();
+    setup('/atelier/or/ro1', { order: order() });
+    await userEvent.type(await screen.findByLabelText('Kilométrage'), '184320');
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+    await waitFor(() => expect(updateMileage).toHaveBeenCalledWith('ro1', 184320));
+    expect(updateMileage).toHaveBeenCalledTimes(1);
   });
 
   it('démarre le badgeage une fois les prérequis remplis', async () => {
@@ -304,7 +319,7 @@ describe('fiche OR technicien', () => {
             ],
           });
           this.onend?.();
-        }, 60);
+        }, 300);
       }
       stop() {
         this.onend?.();

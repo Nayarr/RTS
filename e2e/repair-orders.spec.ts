@@ -102,8 +102,8 @@ test('la direction valide un OR terminé puis le supprime', async ({ page }, tes
   // Statut « Terminé atelier » (normalement posé par le technicien), puis validation
   await page.getByRole('combobox', { name: 'Statut' }).click();
   await page.getByRole('option', { name: 'Terminé atelier' }).click();
-  await page.getByRole('button', { name: 'Enregistrer' }).click();
-  await expect(page.getByText('OR mis à jour')).toBeVisible();
+  // Enregistré tout seul, sans bouton
+  await expect(page.getByRole('status').filter({ hasText: 'Enregistré' })).toBeVisible();
 
   await page.getByRole('button', { name: /Valider → Facture à faire/ }).click();
   await expect(page.getByText('OR validé : facture à faire')).toBeVisible();

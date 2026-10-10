@@ -12,7 +12,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
     title: 'Démarrer un OR',
     items: [
       'Ouvre l’OR dans « Mes ordres de réparation » (triés par heure prévue). Les étiquettes « Nouveau » et « Modifié » signalent un OR qui vient de t’être assigné ou dont le programme a changé.',
-      'Renseigne le kilométrage et prends les photos obligatoires : face avant, côté gauche, côté droit, arrière, tableau de bord (pas de tableau de bord pour une remorque).',
+      'Prends les photos obligatoires : face avant, côté gauche, côté droit, arrière, tableau de bord (pas de tableau de bord pour une remorque). Le kilométrage est facultatif et s’enregistre tout seul pendant la saisie.',
       'Appuie sur « Démarrer le badgeage » pour lancer le chrono. « Mettre en pause » l’arrête ; tu le relances avec le même bouton.',
     ],
   },
@@ -52,8 +52,9 @@ export const OFFICE_TOPICS: HelpTopic[] = [
   {
     title: 'Créer un OR',
     items: [
-      'Onglet « Ordres de réparation », puis « Nouvel OR » : immatriculation, client, travaux demandés, type de véhicule, technicien.',
-      'Tu peux laisser l’OR sans technicien et l’assigner plus tard, depuis l’OR ou le planning.',
+      'Onglet « Ordres de réparation », puis « Nouvel OR » : immatriculation, client, travaux demandés, type de véhicule, technicien. Les plaques et les clients déjà connus sont proposés pendant la saisie.',
+      'Client pas encore en base : sa fiche s’affiche dans l’OR et se remplit entièrement (téléphone, e-mail, adresse…). Le client est créé avec l’OR, et son e-mail sert aux envois (signature, devis, facture).',
+      'Tu peux laisser l’OR sans technicien (badge « Non assigné ») et l’assigner plus tard, depuis l’OR ou le planning. Les informations de l’OR s’enregistrent toutes seules.',
       'Pour un dépannage, choisis le type d’intervention « Dépannage » : déplacement, kilomètres et temps de trajet sont ajoutés à la facture.',
     ],
   },

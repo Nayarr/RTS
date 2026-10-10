@@ -23,7 +23,7 @@ import { WorkLinesSection } from './order/WorkLinesSection';
 
 const REQUIRED_PHOTOS = ['Face avant', 'Côté gauche', 'Côté droit', 'Arrière', 'Tableau de bord'];
 
-/** Fiche OR du technicien : kilométrage, chrono, photos, fiche de contrôle, travaux, clôture. */
+/** Fiche OR du technicien, dans l'ordre de l'ancienne appli : kilométrage et chrono, photos, fiche de contrôle, échéances, travaux, clôture. */
 export function TechRepairOrderPage() {
   const { id = '' } = useParams();
   const detail = useRepairOrder(id);
@@ -104,8 +104,6 @@ export function TechRepairOrderPage() {
       </section>
 
       <TimerSection order={order} loadedAt={detail.dataUpdatedAt} locked={locked} />
-      <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
-      <PartsSection lines={lines} />
       <PhotosSection
         repairOrderId={order.id}
         photos={photos}
@@ -134,6 +132,9 @@ export function TechRepairOrderPage() {
         capture={capture}
         photoLabels={photos.map((photo) => photo.label)}
       />
+      {/* Comme l'ancienne appli : kilométrage, photos, fiche de contrôle, puis travaux. */}
+      <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
+      <PartsSection lines={lines} />
       {ctScan && (
         <TechnicalInspectionDialog
           key={ctScan}

@@ -434,7 +434,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                       </b>
                       <span>{formatDate(order.created_at)}</span>
                     </span>
-                    <StatusBadge status={order.status} />
+                    <StatusBadge status={order.status} technicianId={order.technician_id} />
                   </Link>
                 </li>
               ))}

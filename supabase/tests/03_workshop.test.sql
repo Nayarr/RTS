@@ -21,7 +21,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
 \set ro '''50000000-0000-0000-0000-000000000001'''
 
 select throws_like($$ select public.start_timer('50000000-0000-0000-0000-000000000001') $$,
-                   '%kilométrage%', 'Badgeage impossible sans kilométrage');
+                   '%Photos manquantes%', 'Kilométrage facultatif : seules les photos manquantes bloquent');
 
 select lives_ok($$ select public.tech_update_repair_order('50000000-0000-0000-0000-000000000001', '{"mileage": 184320}') $$,
                 'Le technicien renseigne le kilométrage');

@@ -9,7 +9,13 @@ import { useDictation } from '@/lib/use-dictation';
 import { cn } from '@/lib/utils';
 import { addLine, deleteLine, updateLine, type LinePatch } from '../api';
 import { formatHours } from '@/features/repair-orders/constants';
-import { parseTimeOption, timeOptionLabel, timeOptionsFor, timeOptionValue } from '../domain';
+import {
+  isExtinguisherLine,
+  parseTimeOption,
+  timeOptionLabel,
+  timeOptionsFor,
+  timeOptionValue,
+} from '../domain';
 import { useWorkshopMutation } from '../hooks';
 
 const EDITABLE_TYPES: RoLine['line_type'][] = ['labor', 'text'];
@@ -72,7 +78,7 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
               ? 'Réel ·'
               : 'Estim. ·'}
         </option>
-        {timeOptionsFor(time).map((option) => (
+        {timeOptionsFor(time, isExtinguisherLine(line.description)).map((option) => (
           <option key={option} value={option}>
             {timeOptionLabel(option)}
           </option>

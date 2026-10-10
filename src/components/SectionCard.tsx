@@ -1,11 +1,29 @@
 import type { FormEventHandler, ReactNode } from 'react';
+import { Check, CircleAlert, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AUTO_SAVE_LABELS, type AutoSaveState } from '@/lib/use-auto-save';
 import { cn } from '@/lib/utils';
+
+/** État de l'enregistrement automatique, à la place des boutons. */
+export function AutoSaveStatus({ state }: { state: AutoSaveState }) {
+  const Icon = state === 'saving' ? LoaderCircle : state === 'error' ? CircleAlert : Check;
+  return (
+    <span
+      role="status"
+      className={cn('hint row gap-1.5', state === 'error' && 'text-destructive!')}
+      aria-live="polite"
+    >
+      <Icon className={cn('i xs', state === 'saving' && 'animate-spin')} aria-hidden />
+      {AUTO_SAVE_LABELS[state]}
+    </span>
+  );
+}
 
 /**
  * Section de formulaire enregistrée d’un bloc (réglages, fiche OR…).
  * Par défaut (réglages) : titre et explication en haut, bouton « Enregistrer » en pied de carte.
  * `compact` (fiche OR) : explication à côté du titre, bouton dans l’en-tête.
+ * `autoSave` : enregistrement automatique, l’état remplace les boutons.
  */
 export function SectionCard({
   id,
@@ -16,19 +34,23 @@ export function SectionCard({
   pending,
   onCancel,
   compact = false,
+  autoSave,
   children,
 }: {
   id: string;
   title: string;
   description: ReactNode;
-  onSubmit: FormEventHandler<HTMLFormElement>;
-  dirty: boolean;
-  pending: boolean;
-  onCancel: () => void;
+  onSubmit?: FormEventHandler<HTMLFormElement>;
+  dirty?: boolean;
+  pending?: boolean;
+  onCancel?: () => void;
   compact?: boolean;
+  autoSave?: AutoSaveState;
   children: ReactNode;
 }) {
-  const buttons = (
+  const buttons = autoSave ? (
+    <AutoSaveStatus state={autoSave} />
+  ) : (
     <>
       {dirty && (
         <Button
@@ -67,7 +89,12 @@ export function SectionCard({
           <span className="hint">{description}</span>
         </div>
       )}
-      <form id={id} onSubmit={onSubmit} noValidate className={cn(compact ? 'card-b space-y-4' : 'form')}>
+      <form
+        id={id}
+        onSubmit={onSubmit ?? ((event) => event.preventDefault())}
+        noValidate
+        className={cn(compact ? 'card-b space-y-4' : 'form')}
+      >
         {children}
       </form>
       {!compact && <div className="save">{buttons}</div>}

@@ -5,7 +5,7 @@ import { SectionCard } from '@/components/SectionCard';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { pickDirty } from '@/lib/forms';
+import { useAutoSave } from '@/lib/use-auto-save';
 import type { TablesUpdate } from '@/types/database';
 import { updateRepairOrder, type RepairOrderOverview } from '../api';
 import { STATUS_META, STATUS_ORDER, VEHICLE_TYPES } from '../constants';
@@ -44,21 +44,29 @@ function toPatch({
   return patch;
 }
 
-/** Informations de l'OR modifiables par le bureau (tâche, planning, technicien, statut). */
+/**
+ * Informations de l'OR modifiables par le bureau (tâche, planning, technicien, statut) :
+ * chaque modification est enregistrée toute seule, sans bouton.
+ */
 export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
   const technicians = useActiveTechnicians();
+  const form = useForm<EditRepairOrderValues>({
+    resolver: zodResolver(editRepairOrderSchema),
+    values: toForm(order),
+    // OR relu après un enregistrement : une saisie en cours n'est pas écrasée.
+    resetOptions: { keepDirtyValues: true },
+  });
   const {
     control,
     register,
-    handleSubmit,
-    reset,
-    formState: { errors, isDirty, dirtyFields },
-  } = useForm<EditRepairOrderValues>({ resolver: zodResolver(editRepairOrderSchema), values: toForm(order) });
+    formState: { errors },
+  } = form;
 
   const save = useRepairOrderMutation(
-    (values: EditRepairOrderValues) => updateRepairOrder(order.id, toPatch(pickDirty(values, dirtyFields))),
-    'OR mis à jour',
+    (changed: Partial<EditRepairOrderValues>) => updateRepairOrder(order.id, toPatch(changed)),
+    null, // l'état « Enregistré » s'affiche dans l'en-tête
   );
+  const saveState = useAutoSave(form, (changed) => save.mutateAsync(changed));
 
   // « Facturé » n'est posé que par l'émission de la facture.
   const statuses = STATUS_ORDER.filter((status) => status !== 'invoiced' || order.status === 'invoiced');
@@ -68,10 +76,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
       id="repair-order-info"
       title="Informations OR"
       description="L’atelier voit les changements immédiatement."
-      onSubmit={handleSubmit((values) => save.mutate(values))}
-      dirty={isDirty}
-      pending={save.isPending}
-      onCancel={() => reset()}
+      autoSave={saveState}
       compact
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">

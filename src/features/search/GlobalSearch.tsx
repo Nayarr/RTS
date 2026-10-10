@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from 'radix-ui';
 import { FileText, Receipt, Search, Truck, Users, Wrench, type LucideIcon } from 'lucide-react';
 import { globalSearch } from './api';
 import { searchSections } from './sections';
+import { useDebounced } from '@/lib/use-debounced';
 
 const SECTION_ICONS: Record<string, LucideIcon> = {
   'Ordres de réparation': Wrench,
@@ -13,15 +14,6 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   Devis: FileText,
   Factures: Receipt,
 };
-
-function useDebounced(value: string, delay = 250) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value), delay);
-    return () => window.clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
 
 function SearchDialog({ onClose }: { onClose: () => void }) {
   const [text, setText] = useState('');

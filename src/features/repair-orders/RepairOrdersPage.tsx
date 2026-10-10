@@ -168,7 +168,7 @@ export function RepairOrdersPage() {
                       </td>
                       <td>
                         <span className="row gap-1.5">
-                          <StatusBadge status={order.status} />
+                          <StatusBadge status={order.status} technicianId={order.technician_id} />
                           <PartsBadge order={order} />
                         </span>
                       </td>
@@ -214,7 +214,7 @@ export function RepairOrdersPage() {
                           <span className="plate text-xl">{order.plate}</span>
                           <span className="hint">{order.client_name ?? 'Client non renseigné'}</span>
                         </div>
-                        <StatusBadge status={order.status} />
+                        <StatusBadge status={order.status} technicianId={order.technician_id} />
                       </div>
                       <p className="line-clamp-2">{taskSummary(order.requested_work)}</p>
                       <div className="row between wrap gap-2 text-[13px]">

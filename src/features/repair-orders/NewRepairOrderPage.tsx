@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   AlertTriangle,
@@ -16,19 +17,33 @@ import {
 import { PageHeader } from '@/app/PageHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormField } from '@/components/FormField';
+import { SuggestField } from '@/components/SuggestField';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { createClient } from '@/features/customers/api';
+import { newClientFromForm, type NewClientValues } from '@/features/customers/domain';
 import { uploadFile } from '@/features/files/api';
-import { createRepairOrder } from './api';
-import { formatPlate, STATUS_META, VEHICLE_TYPES } from './constants';
-import { useActiveTechnicians, useClientSuggestions, useKnownVehicle, useRepairOrderMutation } from './hooks';
+import { useDebounced } from '@/lib/use-debounced';
+import { createRepairOrder, findClientByName } from './api';
+import { formatPlate, normalizeKey, STATUS_META, VEHICLE_TYPES } from './constants';
+import {
+  useActiveTechnicians,
+  useClientByName,
+  useClientSuggestions,
+  useKnownVehicle,
+  useRepairOrderMutation,
+  useVehicleSuggestions,
+} from './hooks';
 import { InspectionRequiredToggle } from './InspectionRequiredToggle';
+import { NewClientFields } from './NewClientFields';
 import {
   newRepairOrderDefaults,
   newRepairOrderSchema,
+  orNewClientDefaults,
+  orNewClientSchema,
   toNewRepairOrderInput,
   type NewRepairOrderValues,
 } from './schemas';
@@ -37,6 +52,12 @@ import { useSignaturePad } from '@/components/use-signature-pad';
 import { cn } from '@/lib/utils';
 
 const UNASSIGNED = 'none';
+
+/** OR à créer, avec la fiche du client quand il n'est pas encore en base. */
+interface Submission {
+  values: NewRepairOrderValues;
+  client: NewClientValues | null;
+}
 
 /** Où le client signe : sur cet écran, sur la borne (client sur place) ou par lien e-mail (client absent). */
 type SignatureMode = 'screen' | 'borne' | 'email';
@@ -65,7 +86,8 @@ export function NewRepairOrderPage() {
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('screen');
   const [inspectionRequired, setInspectionRequired] = useState(false);
   const technicians = useActiveTechnicians();
-  const [pendingValues, setPendingValues] = useState<NewRepairOrderValues | null>(null);
+  const queryClient = useQueryClient();
+  const [pending, setPending] = useState<Submission | null>(null);
 
   const {
     register,
@@ -83,7 +105,24 @@ export function NewRepairOrderPage() {
   const clientName = useWatch({ control, name: 'client_name' });
   const plannedStart = useWatch({ control, name: 'planned_start' });
   const knownVehicle = useKnownVehicle(plate).data ?? null;
+  const vehicleSuggestions = useVehicleSuggestions(plate).data ?? [];
   const clientSuggestions = useClientSuggestions(clientName).data ?? [];
+  // Client pas encore en base (vérifié après une pause de frappe) : sa fiche se remplit ici.
+  const clientLookup = useClientByName(useDebounced(clientName, 500));
+  // Nom vérifié au moment de créer l'OR (saisie trop rapide pour la vérification ci-dessus).
+  const [checkedNewClient, setCheckedNewClient] = useState<string | null>(null);
+  const isNewClient =
+    (clientName.trim().length >= 2 && clientLookup.isSuccess && clientLookup.data === null) ||
+    (checkedNewClient !== null && checkedNewClient === normalizeKey(clientName));
+  const clientForm = useForm<NewClientValues>({
+    resolver: zodResolver(orNewClientSchema),
+    defaultValues: orNewClientDefaults('pro', ''),
+  });
+  // Pro / particulier : identité reprise du nom saisi, coordonnées gardées.
+  const changeClientKind = (kind: NewClientValues['kind']) => {
+    const { phone, email, billing_address } = clientForm.getValues();
+    clientForm.reset({ ...orNewClientDefaults(kind, clientName), phone, email, billing_address });
+  };
 
   // Véhicule connu : type et client repris, sauf s'ils ont déjà été saisis.
   useEffect(() => {
@@ -95,23 +134,31 @@ export function NewRepairOrderPage() {
   }, [knownVehicle, getFieldState, setValue]);
 
   const create = useRepairOrderMutation(
-    async (values: NewRepairOrderValues) => {
+    async ({ values, client }: Submission) => {
+      // Nouveau client : sa fiche est créée d'abord, l'OR lui est rattaché par son nom.
+      let clientName = values.client_name;
+      if (client) {
+        const fields = newClientFromForm(client);
+        await createClient(fields);
+        clientName = fields.name ?? clientName;
+        await queryClient.invalidateQueries({ queryKey: ['clients'] });
+      }
       const blob = signatureMode === 'screen' ? await signature.toBlob() : null;
       const signatureFileId = blob
         ? await uploadFile(blob, { category: 'signature', name: 'signature-client.png' })
         : null;
       return createRepairOrder({
-        ...toNewRepairOrderInput(values, signatureFileId),
+        ...toNewRepairOrderInput({ ...values, client_name: clientName }, signatureFileId),
         inspection_required: inspectionRequired,
       });
     },
     null, // notification avec le numéro d'OR ci-dessous
   );
 
-  const submit = (values: NewRepairOrderValues) =>
-    create.mutate(values, {
+  const submit = (submission: Submission) =>
+    create.mutate(submission, {
       onSuccess: (order) => {
-        toast.success(`${order.number} créé pour ${values.plate.toUpperCase()}`);
+        toast.success(`${order.number} créé pour ${submission.values.plate.toUpperCase()}`);
         // Borne / e-mail : la fiche OR lance la demande de signature dès son ouverture.
         void navigate(
           signatureMode === 'screen' ? `/or/${order.id}` : `/or/${order.id}?signature=${signatureMode}`,
@@ -120,10 +167,37 @@ export function NewRepairOrderPage() {
     });
 
   // Comme l'ancienne appli : confirmation si un OR non facturé existe déjà pour ce véhicule.
-  const onSubmit = handleSubmit((values) => {
-    if (knownVehicle?.open_orders.length) setPendingValues(values);
-    else submit(values);
-  });
+  const confirmOrSubmit = (submission: Submission) => {
+    if (knownVehicle?.open_orders.length) setPending(submission);
+    else submit(submission);
+  };
+  const onSubmit = handleSubmit(
+    async (values) => {
+      if (!isNewClient && values.client_name.trim()) {
+        const key = normalizeKey(values.client_name);
+        const existing = await queryClient.fetchQuery({
+          queryKey: ['clients', 'by-name', key],
+          queryFn: () => findClientByName(values.client_name),
+          staleTime: 30_000,
+        });
+        if (existing === null) {
+          // Client inconnu : sa fiche s'affiche, à compléter avant de créer l'OR.
+          setCheckedNewClient(key);
+          toast.info('Nouveau client : complète sa fiche pour créer l’OR');
+          return;
+        }
+      }
+      if (!isNewClient) {
+        confirmOrSubmit({ values, client: null });
+        return;
+      }
+      clientForm.setValue('name', values.client_name.trim());
+      void clientForm.handleSubmit((client) => confirmOrSubmit({ values, client }))();
+    },
+    () => {
+      if (isNewClient) void clientForm.trigger();
+    },
+  );
 
   const openOrders = knownVehicle?.open_orders ?? [];
 
@@ -164,16 +238,29 @@ export function NewRepairOrderPage() {
                   control={control}
                   name="plate"
                   render={({ field }) => (
-                    <FormField
+                    <SuggestField
                       id="plate"
                       label="Immatriculation"
                       placeholder="AB-123-CD"
-                      autoComplete="off"
                       className="plate lg h-12 text-xl uppercase"
                       error={errors.plate?.message}
                       value={field.value}
                       onBlur={field.onBlur}
-                      onChange={(event) => field.onChange(formatPlate(event.target.value))}
+                      onValueChange={(value) => field.onChange(formatPlate(value))}
+                      suggestions={vehicleSuggestions.map((vehicle) => ({
+                        key: vehicle.id,
+                        label: vehicle.plate,
+                        hint: vehicle.client_name,
+                      }))}
+                      onPick={(item) => {
+                        const vehicle = vehicleSuggestions.find((candidate) => candidate.id === item.key);
+                        if (!vehicle) return;
+                        field.onChange(vehicle.plate);
+                        setValue('vehicle_type', vehicle.vehicle_type, { shouldDirty: true });
+                        if (vehicle.client_name) {
+                          setValue('client_name', vehicle.client_name, { shouldDirty: true });
+                        }
+                      }}
                     />
                   )}
                 />
@@ -221,22 +308,26 @@ export function NewRepairOrderPage() {
                 ))}
 
               <div className="g2 grid-cols-1! sm:grid-cols-2!">
-                <div>
-                  <FormField
-                    id="client_name"
-                    label="Client"
-                    placeholder="Nom du client / société"
-                    autoComplete="off"
-                    list="client-suggestions"
-                    error={errors.client_name?.message}
-                    {...register('client_name')}
-                  />
-                  <datalist id="client-suggestions">
-                    {clientSuggestions.map((client) => (
-                      <option key={client.id} value={client.name} />
-                    ))}
-                  </datalist>
-                </div>
+                <Controller
+                  control={control}
+                  name="client_name"
+                  render={({ field }) => (
+                    <SuggestField
+                      id="client_name"
+                      label="Client"
+                      placeholder="Nom du client / société"
+                      error={errors.client_name?.message}
+                      value={field.value}
+                      onBlur={field.onBlur}
+                      onValueChange={field.onChange}
+                      suggestions={clientSuggestions.map((client) => ({
+                        key: client.id,
+                        label: client.name,
+                      }))}
+                      onPick={(item) => field.onChange(item.label)}
+                    />
+                  )}
+                />
                 <FormField
                   id="mileage"
                   label="Kilométrage (optionnel)"
@@ -246,6 +337,8 @@ export function NewRepairOrderPage() {
                   {...register('mileage')}
                 />
               </div>
+
+              {isNewClient && <NewClientFields form={clientForm} onKindChange={changeClientKind} />}
             </div>
           </section>
 
@@ -385,15 +478,15 @@ export function NewRepairOrderPage() {
       </form>
 
       <ConfirmDialog
-        open={pendingValues !== null}
-        onOpenChange={(open) => !open && setPendingValues(null)}
+        open={pending !== null}
+        onOpenChange={(open) => !open && setPending(null)}
         title="Créer un autre OR pour ce véhicule ?"
         description={`Un OR non facturé existe déjà (${openOrders.map((o) => o.number).join(', ')}).`}
         confirmLabel="Créer quand même"
         pending={create.isPending}
         onConfirm={() => {
-          if (pendingValues) submit(pendingValues);
-          setPendingValues(null);
+          if (pending) submit(pending);
+          setPending(null);
         }}
       />
     </>

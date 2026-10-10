@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emptyNewClient, newClientSchema, type NewClientValues } from '@/features/customers/domain';
 import type { NewRepairOrderInput } from './api';
 import { normalizeKey } from './constants';
 
@@ -86,3 +87,32 @@ export const editRepairOrderSchema = z
     }
   });
 export type EditRepairOrderValues = z.infer<typeof editRepairOrderSchema>;
+
+/**
+ * Client pas encore en base, créé avec l'OR : fiche complète obligatoire (coordonnées pour
+ * l'envoi par e-mail, la signature à distance et la facture).
+ */
+export const orNewClientSchema = newClientSchema.superRefine((values, ctx) => {
+  const require = (path: keyof NewClientValues, message: string) =>
+    ctx.addIssue({ code: 'custom', path: [path], message });
+  if (values.kind === 'individual' && !values.civility) require('civility', 'Choisis la civilité');
+  if (values.kind === 'pro' && !values.siren.trim()) require('siren', 'Indique le SIREN');
+  if (!values.phone.trim()) require('phone', 'Indique le téléphone');
+  if (!values.email.trim()) require('email', 'Indique l’e-mail');
+  if (!values.billing_address.trim()) require('billing_address', 'Indique l’adresse');
+});
+
+/**
+ * Fiche du nouveau client préremplie avec le nom saisi dans l'OR : raison sociale d'un pro,
+ * ou « Prénom Nom » d'un particulier (premier mot = prénom).
+ */
+export function orNewClientDefaults(kind: 'pro' | 'individual', clientName: string): NewClientValues {
+  const name = clientName.trim().replace(/\s+/g, ' ');
+  const [first = '', ...rest] = name.split(' ');
+  return {
+    ...emptyNewClient(kind),
+    name: kind === 'pro' ? name : '',
+    first_name: kind === 'individual' && rest.length ? first : '',
+    last_name: kind === 'individual' ? (rest.length ? rest.join(' ') : first) : '',
+  };
+}

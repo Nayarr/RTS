@@ -48,7 +48,8 @@ test('en-tête de l’OR : « Aucune signature client » au niveau du badge de s
   await page.goto(`/or/${order.id}`);
 
   const header = page.locator('section').filter({ hasText: order.number }).first();
-  const status = header.getByText('Assigné', { exact: true });
+  // OR créé sans technicien : badge « Non assigné »
+  const status = header.getByText('Non assigné', { exact: true });
   const warning = header.getByText('Aucune signature client enregistrée.');
   await expect(warning).toBeVisible();
   expect(Math.abs((await middle(warning)) - (await middle(status)))).toBeLessThanOrEqual(2);
