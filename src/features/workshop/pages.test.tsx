@@ -194,7 +194,7 @@ describe('fiche OR technicien', () => {
     setup('/atelier/or/ro1', { order: order() });
     await userEvent.type(await screen.findByLabelText('Kilométrage'), '184320');
     expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
-    await waitFor(() => expect(updateMileage).toHaveBeenCalledWith('ro1', 184320));
+    await waitFor(() => expect(updateMileage).toHaveBeenCalledWith('ro1', 184320), { timeout: 5000 });
     expect(updateMileage).toHaveBeenCalledTimes(1);
   });
 

@@ -345,8 +345,11 @@ describe('fiche OR', () => {
     await userEvent.clear(mileage);
     await userEvent.type(mileage, '185000');
     expect(screen.queryByRole('button', { name: 'Enregistrer' })).toBeNull();
-    await waitFor(() => expect(updateRepairOrder).toHaveBeenCalledWith('ro1', { mileage: 185000 }));
+    // Enregistré après une pause de frappe (0,8 s) : délais larges pour une CI chargée
+    await waitFor(() => expect(updateRepairOrder).toHaveBeenCalledWith('ro1', { mileage: 185000 }), {
+      timeout: 5000,
+    });
     expect(updateRepairOrder).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText('Enregistré')).toBeInTheDocument();
+    expect(await screen.findByText('Enregistré', {}, { timeout: 5000 })).toBeInTheDocument();
   });
 });
