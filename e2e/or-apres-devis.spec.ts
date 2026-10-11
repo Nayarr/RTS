@@ -102,12 +102,10 @@ test('OR créé depuis un devis : début prévu, temps réel saisi (facturé au 
   const tasks = done.getByRole('textbox', { name: 'Description de la tâche' });
   await expect(tasks).toHaveCount(2);
   await expect(tasks.first()).toHaveValue('Vidange moteur et filtres');
-  const times = done.getByRole('combobox', { name: 'Temps réel' });
-  // Facturé au temps du devis ; le technicien saisit le temps réellement passé
+  const times = done.getByRole('combobox', { name: 'Temps estimé' });
+  // Le technicien donne son temps, sans voir le forfait ni les heures facturées au devis
   await expect(times.first()).toHaveValue('');
-  await expect(times.first()).toHaveAccessibleDescription(
-    'Devis : 1,5 h (facturé) · indique le temps réel passé',
-  );
+  await expect(done.getByText(/facturé/)).toHaveCount(0);
   await times.first().selectOption('2h');
   await expect(times.first()).toHaveValue('2h');
 

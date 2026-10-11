@@ -59,20 +59,42 @@ export const normalizeVin = (value: string) => value.replace(/[\s-]/g, '').toUpp
 /** VIN valide : 17 caractères sans I, O ni Q (ISO 3779). */
 export const isVin = (value: string) => /^[A-HJ-NPR-Z0-9]{17}$/.test(value);
 
+/**
+ * Taille de pneu mise en forme pendant la saisie : « 31570225 » → « 315/70/22.5 » (barres et point
+ * posés tout seuls ; jante à 2 chiffres gardée telle quelle, ex. « 205/55/16 »).
+ */
+export function formatTireSize(value: string) {
+  const digits = value.replace(/\D/g, '');
+  const rim = digits.slice(5, 8);
+  return [digits.slice(0, 3), digits.slice(3, 5), rim.length === 3 ? `${rim.slice(0, 2)}.${rim[2]}` : rim]
+    .filter(Boolean)
+    .join('/');
+}
+
 /** Photo exigée quand l'étiquette du contrôle hayon est HS (même libellé que le bouton photo). */
 export const TAILGATE_PHOTO_LABEL = 'Étiquette contrôle hayon';
 
+/**
+ * Travaux dont le temps barème reste affiché et suffit (comme la base, quote_time_is_adjustable) :
+ * extincteurs, étiquettes angles morts et étiquette du hayon. Les autres forfaits à prévoir ont leur
+ * temps estimé par le technicien, sans voir le barème.
+ */
+export const keepsStandardTime = (description: string) =>
+  /(extincteur|angles?\s+morts?|[ée]tiquettes?.*hayon|hayon.*[ée]tiquette)/i.test(description);
+
 const hasTime = (line: RoLine) =>
   line.estimated_hours !== null ||
-  // Forfait à prévoir : son temps barème suffit pour le devis.
-  (line.kind === 'planned' && line.line_type === 'package' && line.standard_hours !== null);
+  (line.kind === 'planned' &&
+    line.line_type === 'package' &&
+    line.standard_hours !== null &&
+    keepsStandardTime(line.description));
 
 const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? 's' : ''}`;
 
 /**
  * Ce qu'il reste à compléter avant « Travaux terminés » (mêmes règles que la base) : temps estimé de
- * chaque tâche, taille des pneus à 50 % ou HS, photo de l'étiquette du contrôle hayon HS, et tous les
- * points de la fiche quand la direction l'exige.
+ * chaque tâche, taille des pneus à 50 % ou HS, photo du contrôle technique, photo de l'étiquette du
+ * contrôle hayon HS, et tous les points de la fiche quand la direction l'exige.
  */
 export function finishBlockers(
   lines: RoLine[],
@@ -89,17 +111,23 @@ export function finishBlockers(
     ).length;
   const done = timed('done');
   const planned = timed('planned');
-  if (done) blockers.push(`Temps réel manquant : ${plural(done, 'tâche')} des travaux effectués`);
+  if (done) blockers.push(`Temps estimé manquant : ${plural(done, 'tâche')} des travaux effectués`);
   if (planned) blockers.push(`Temps estimé manquant : ${plural(planned, 'tâche')} à prévoir`);
-  for (const [side, label] of [
-    ['avant', 'avant'],
-    ['arriere', 'arrière'],
-  ] as const) {
-    const state = inspection?.pneus?.[`${side}_etat`];
-    if ((state === '50' || state === 'HS') && !inspection?.pneus?.[`${side}_taille`]?.trim()) {
-      blockers.push(`Taille des pneus ${label} obligatoire (${state === 'HS' ? 'HS' : '50 %'})`);
+  const tires: [string, { etat?: string | undefined; taille?: string | undefined }][] = [
+    ['avant', { etat: inspection?.pneus?.avant_etat, taille: inspection?.pneus?.avant_taille }],
+    ['milieu', { etat: inspection?.pneus?.milieu_etat, taille: inspection?.pneus?.milieu_taille }],
+    ['arrière', { etat: inspection?.pneus?.arriere_etat, taille: inspection?.pneus?.arriere_taille }],
+    ...(inspection?.pneus?.essieux ?? []).map((axle, index): [string, typeof axle] => [
+      `essieu ${index + 4}`,
+      axle,
+    ]),
+  ];
+  for (const [label, { etat, taille }] of tires) {
+    if ((etat === '50' || etat === 'HS') && !taille?.trim()) {
+      blockers.push(`Taille des pneus ${label} obligatoire (${etat === 'HS' ? 'HS' : '50 %'})`);
     }
   }
+  if (!photoLabels.includes(CT_PHOTO_LABEL)) blockers.push('Photo du contrôle technique obligatoire');
   if (inspection?.controles?.hayon === 'HS' && !photoLabels.includes(TAILGATE_PHOTO_LABEL)) {
     blockers.push('Photo de l’étiquette contrôle hayon obligatoire (HS)');
   }

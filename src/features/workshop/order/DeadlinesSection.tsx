@@ -42,6 +42,9 @@ export function DeadlinesSection({
         Échéances du véhicule
       </h2>
       <span className="hint">Relevées sur le véhicule (contrôle technique, étiquette du hayon).</span>
+      {!ctTaken && !locked && (
+        <p className="err">Photo du contrôle technique obligatoire avant de terminer l’OR.</p>
+      )}
       {/* Sur téléphone, l'une sous l'autre : les libellés longs ne décalent plus les dates */}
       <div className="grid gap-3 sm:grid-cols-2 sm:items-end sm:gap-2">
         {FIELDS.map(([key, label]) => (
@@ -65,7 +68,7 @@ export function DeadlinesSection({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className={cn('shrink-0', ctTaken && 'text-success')}
+                  className={cn('shrink-0', ctTaken ? 'text-success' : 'border-destructive text-destructive')}
                   aria-label={`Photo du contrôle technique${ctTaken ? ' (déjà prise)' : ''}`}
                   disabled={capture.uploadingLabel === CT_PHOTO_LABEL}
                   onClick={() => capture.openCamera(CT_PHOTO_LABEL)}

@@ -14,7 +14,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import { ObjectStorage, storageConfigFromEnv } from '../_shared/storage.ts';
-import { INSPECTION_READING_SCHEMA, inspectionReadingPrompt, validVin } from './inspection-reading.ts';
+import {
+  INSPECTION_READING_SCHEMA,
+  inspectionReadingPrompt,
+  validPlate,
+  validVin,
+} from './inspection-reading.ts';
 import {
   checkedLicense,
   LICENSE_CATEGORIES,
@@ -38,6 +43,7 @@ const readingSchema = z.object({
   label_text: z.string().max(500),
   confidence: z.enum(['haute', 'moyenne', 'faible']),
   vin: z.string().max(100).optional(),
+  plate: z.string().max(40).optional(),
 });
 
 const licenseSchema = z.object({
@@ -172,6 +178,7 @@ export default {
         next_due_date: validDate(reading.next_due_date, today),
         last_control_date: validDate(reading.last_control_date, today),
         vin: validVin(reading.vin ?? ''),
+        plate: validPlate(reading.plate ?? ''),
         label_text: reading.label_text.trim(),
         confidence: reading.confidence,
       });

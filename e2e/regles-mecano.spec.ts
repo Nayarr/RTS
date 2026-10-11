@@ -71,12 +71,16 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   await expect(doneTask).toHaveValue('');
   await doneTask.fill('Contrôle étiquettes');
   await doneTask.blur();
-  const realTime = page.getByRole('combobox', { name: 'Temps réel' });
+  const card = (title: string) =>
+    page.locator('[data-slot="card"]').filter({ has: page.getByRole('heading', { name: title }) });
+  const realTime = card('Travaux effectués').getByRole('combobox', { name: 'Temps estimé' });
   await expect(realTime.first().getByRole('option', { name: '0,5 h', exact: true })).toHaveCount(1);
   await expect(realTime.first().getByRole('option', { name: '0 h', exact: true })).toHaveCount(0);
   await realTime.first().selectOption('0.5h');
   await expect(realTime.first()).toHaveValue('0.5h');
-  const times = page.getByRole('combobox', { name: 'Temps estimé' });
+  const times = card('Pièces / réparations à prévoir (devis)').getByRole('combobox', {
+    name: 'Temps estimé',
+  });
 
   // Terminer : ce qui manque est listé, le bouton attend
   await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'OUI' }).click();
@@ -86,12 +90,14 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   await expect(times.filter({ has: page.locator('option:checked', { hasText: '0,5 h' }) })).toHaveCount(1);
   await expect(blockers).toContainText('Taille des pneus avant obligatoire (HS)');
   await expect(blockers).toContainText('Photo de l’étiquette contrôle hayon obligatoire (HS)');
+  await expect(blockers).toContainText('Photo du contrôle technique obligatoire');
   const finish = page.getByRole('button', { name: 'Travaux terminés' });
   await expect(finish).toBeDisabled();
 
   // On complète : taille, photo (icône sur la ligne OK / HS), temps des tâches à prévoir
-  await page.getByRole('textbox', { name: 'Taille pneus avant' }).fill('315702.5');
-  await expect(page.getByRole('textbox', { name: 'Taille pneus avant' })).toHaveValue('315/70/2.5');
+  // Barres et point posés tout seuls
+  await page.getByRole('textbox', { name: 'Taille pneus avant' }).fill('31570225');
+  await expect(page.getByRole('textbox', { name: 'Taille pneus avant' })).toHaveValue('315/70/22.5');
   await expect(blockers).not.toContainText('Taille des pneus', { timeout: 10_000 });
 
   const photo = page.getByRole('button', { name: /^Photo de l’étiquette « Étiquette contrôle hayon »/ });
@@ -104,6 +110,13 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   ).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText('Étiquette HS : photo obligatoire avant de terminer l’OR.')).toHaveCount(0);
 
+  // Photo du contrôle technique : toujours exigée pour terminer
+  const ctChooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Photo du contrôle technique', exact: true }).click();
+  await (await ctChooser).setFiles({ name: 'ct.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.getByRole('button', { name: 'Photo du contrôle technique (déjà prise)' })).toBeVisible({
+    timeout: 15_000,
+  });
   for (const index of [0, 1]) {
     await times.nth(index).selectOption('1h');
     await expect(times.nth(index)).toHaveValue('1h');

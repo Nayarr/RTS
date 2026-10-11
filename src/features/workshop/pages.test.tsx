@@ -120,7 +120,10 @@ const setup = (
     vi.mocked(fetchRepairOrder).mockResolvedValue({
       order: detail.order,
       lines: detail.lines ?? [],
-      photos: (detail.photos ?? []).map((label, index) => ({ id: `p${index}`, label }) as RoPhoto),
+      // Photo du contrôle technique (toujours exigée) prise par défaut
+      photos: (detail.photos ?? ['Contrôle technique']).map(
+        (label, index) => ({ id: `p${index}`, label }) as RoPhoto,
+      ),
       inspection: detail.inspection ?? null,
       timeEntries: [],
     });
@@ -189,6 +192,22 @@ describe('fiche OR technicien', () => {
     await waitFor(() => expect(markSeen).toHaveBeenCalledWith('ro1', '00000000-0000-0000-0000-0000000000a1'));
   });
 
+  it('pneus : essieu du milieu, essieu ajouté, valeur choisie en couleur', async () => {
+    vi.mocked(saveInspection).mockResolvedValue();
+    setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }) });
+    expect(await screen.findByRole('radiogroup', { name: 'Pneus milieu' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter un essieu' }));
+    const axle = screen.getByRole('radiogroup', { name: 'Pneus essieu 4' });
+    const hs = within(axle).getByRole('radio', { name: 'HS' });
+    await userEvent.click(hs);
+    expect(hs).toHaveClass('tone');
+    expect(hs).toHaveStyle({ '--c': '#B23A32' });
+    await userEvent.type(screen.getByRole('textbox', { name: 'Taille pneus essieu 4' }), '31580225');
+    expect(screen.getByRole('textbox', { name: 'Taille pneus essieu 4' })).toHaveValue('315/80/22.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer : Pneus essieu 4' }));
+    expect(screen.queryByRole('radiogroup', { name: 'Pneus essieu 4' })).toBeNull();
+  });
+
   it('kilométrage enregistré tout seul après la saisie, sans bouton', async () => {
     vi.mocked(updateMileage).mockResolvedValue();
     setup('/atelier/or/ro1', { order: order() });
@@ -239,7 +258,7 @@ describe('fiche OR technicien', () => {
     vi.mocked(updateLine).mockResolvedValue();
     setup('/atelier/or/ro1', { order: order(), lines: [line({})] });
 
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Temps réel' }), '12h+');
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Temps estimé' }), '12h+');
     expect(updateLine).toHaveBeenCalledWith('l1', { estimated_hours: 12, estimate_is_minimum: true });
 
     const [addDone] = screen.getAllByRole('button', { name: /Ajouter une tâche/ });
@@ -247,7 +266,7 @@ describe('fiche OR technicien', () => {
     expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1, '');
   });
 
-  it('OR issu d’un devis : temps réel à saisir (forfait compris), travail non fait retiré après confirmation', async () => {
+  it('OR issu d’un devis : temps estimé à saisir, sans forfait ni heures du devis, travail non fait retiré après confirmation', async () => {
     vi.mocked(deleteLine).mockResolvedValue();
     vi.mocked(updateLine).mockResolvedValue();
     setup('/atelier/or/ro1', {
@@ -276,10 +295,12 @@ describe('fiche OR technicien', () => {
     const done = (await screen.findByRole('heading', { name: 'Travaux effectués' })).closest<HTMLElement>(
       '[data-slot="card"]',
     )!;
-    const [forfait, extincteur] = within(done).getAllByRole('combobox', { name: 'Temps réel' });
+    const [forfait, extincteur] = within(done).getAllByRole('combobox', { name: 'Temps estimé' });
     expect(forfait).toBeEnabled();
     expect(forfait).toHaveValue('');
-    expect(forfait).toHaveAccessibleDescription('Devis : 1,5 h (facturé) · indique le temps réel passé');
+    // Le technicien ne voit ni le forfait ni les heures facturées au devis
+    expect(within(done).queryByText('Forfait')).toBeNull();
+    expect(within(done).queryByText(/facturé/)).toBeNull();
     expect(extincteur).toHaveValue('0.5h');
     await userEvent.selectOptions(forfait!, '2h');
     expect(updateLine).toHaveBeenCalledWith('q1', { estimated_hours: 2, estimate_is_minimum: false });
@@ -379,9 +400,10 @@ describe('fiche OR technicien', () => {
         .getAllByRole('listitem')
         .map((item) => item.textContent),
     ).toEqual([
-      'Temps réel manquant : 1 tâche des travaux effectués',
+      'Temps estimé manquant : 1 tâche des travaux effectués',
       'Temps estimé manquant : 1 tâche à prévoir',
       'Taille des pneus avant obligatoire (HS)',
+      'Photo du contrôle technique obligatoire',
       'Photo de l’étiquette contrôle hayon obligatoire (HS)',
     ]);
     await userEvent.click(

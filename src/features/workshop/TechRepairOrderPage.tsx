@@ -141,6 +141,7 @@ export function TechRepairOrderPage() {
           fileId={ctScan}
           repairOrderId={order.id}
           vehicleId={order.vehicle_id}
+          plate={order.plate}
           onClose={() => setCtScan(null)}
         />
       )}

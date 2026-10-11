@@ -118,8 +118,10 @@ export interface TechnicalInspectionReading {
   /** Date limite du prochain contrôle lue sur le document, ou null. */
   next_due_date: string | null;
   last_control_date: string | null;
-  /** VIN lu (17 caractères), ou null. */
+  /** VIN lu (17 caractères, « numéro de série »), ou null. */
   vin: string | null;
+  /** Immatriculation lue, ou null. */
+  plate?: string | null;
   label_text: string;
   confidence: 'haute' | 'moyenne' | 'faible';
 }

@@ -18,7 +18,15 @@ const renderDialog = (onClose = vi.fn()) => {
   renderRoutes([
     {
       path: '/',
-      element: <TechnicalInspectionDialog fileId="f1" repairOrderId="ro1" vehicleId="v1" onClose={onClose} />,
+      element: (
+        <TechnicalInspectionDialog
+          fileId="f1"
+          repairOrderId="ro1"
+          vehicleId="v1"
+          plate="AB-123-CD"
+          onClose={onClose}
+        />
+      ),
     },
   ]);
   return { onClose };
@@ -45,9 +53,7 @@ describe('contrôle technique lu sur la photo', () => {
     expect(await screen.findByLabelText('Prochain contrôle technique (modifiable)')).toHaveValue(
       '2027-09-30',
     );
-    expect(screen.getByLabelText('VIN · numéro d’identification (modifiable)')).toHaveValue(
-      'VF612345678901234',
-    );
+    expect(screen.getByLabelText('VIN · numéro de série (modifiable)')).toHaveValue('VF612345678901234');
     expect(screen.getByText('28/09/2026')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
     await waitFor(() =>
@@ -69,9 +75,9 @@ describe('contrôle technique lu sur la photo', () => {
     });
     renderDialog();
     expect(
-      await screen.findByText('Aucune date d’échéance trouvée sur la photo : saisis-la à la main.'),
+      await screen.findByText('Date d’échéance non lue (vignette) : saisis-la à la main si besoin.'),
     ).toBeInTheDocument();
-    const vin = screen.getByLabelText('VIN · numéro d’identification (modifiable)');
+    const vin = screen.getByLabelText('VIN · numéro de série (modifiable)');
     await userEvent.type(vin, 'vf6123');
     expect(screen.getByText('VIN : 17 caractères (lettres sauf I, O, Q, et chiffres)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Valider' })).toBeDisabled();

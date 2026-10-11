@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import type { RoLine } from '@/features/repair-orders/api';
 import {
+  CT_PHOTO_LABEL,
   finishBlockers,
+  formatTireSize,
+  keepsStandardTime,
   parseTimeOption,
   planMyDay,
   seenState,
@@ -62,34 +65,61 @@ describe('clôture de l’OR par le technicien', () => {
     ({
       kind: 'done',
       line_type: 'labor',
+      description: 'Travail',
       estimated_hours: null,
       standard_hours: null,
       ...overrides,
     }) as RoLine;
+  // Photo du contrôle technique : toujours exigée
+  const CT = [CT_PHOTO_LABEL];
 
   it('rien à compléter : la liste est vide', () => {
-    expect(finishBlockers([line({ estimated_hours: 1 })], null, [])).toEqual([]);
+    expect(finishBlockers([line({ estimated_hours: 1 })], null, CT)).toEqual([]);
   });
 
-  it('temps estimé de chaque tâche, effectuée ou à prévoir ; le forfait à prévoir garde son barème', () => {
+  it('photo du contrôle technique exigée dans tous les cas', () => {
+    expect(finishBlockers([], null, [])).toEqual(['Photo du contrôle technique obligatoire']);
+  });
+
+  it('temps estimé de chaque tâche ; barème gardé seulement pour extincteurs et étiquettes', () => {
     const lines = [
       line({}),
       line({ kind: 'planned' }),
       line({ kind: 'planned' }),
-      line({ kind: 'planned', line_type: 'package', standard_hours: 2 }),
+      line({ kind: 'planned', line_type: 'package', description: 'Freinage avant', standard_hours: 2 }),
+      line({ kind: 'planned', line_type: 'package', description: 'Extincteur 6 kg', standard_hours: 0.3 }),
       line({ kind: 'planned', line_type: 'text' }),
       line({ kind: 'done', line_type: 'package', standard_hours: 2 }),
     ];
-    expect(finishBlockers(lines, null, [])).toEqual([
-      'Temps réel manquant : 2 tâches des travaux effectués',
-      'Temps estimé manquant : 2 tâches à prévoir',
+    expect(finishBlockers(lines, null, CT)).toEqual([
+      'Temps estimé manquant : 2 tâches des travaux effectués',
+      'Temps estimé manquant : 3 tâches à prévoir',
     ]);
+    expect(keepsStandardTime('Étiquette contrôle hayon')).toBe(true);
+    expect(keepsStandardTime('Étiquettes angles morts')).toBe(true);
+    expect(keepsStandardTime('Remplacement plaquettes')).toBe(false);
+  });
+
+  it('taille des pneus : essieu du milieu et essieux ajoutés aussi', () => {
+    const inspection = { pneus: { milieu_etat: 'HS', essieux: [{ etat: '50' }, { etat: 'OK' }] } };
+    expect(finishBlockers([], inspection, CT)).toEqual([
+      'Taille des pneus milieu obligatoire (HS)',
+      'Taille des pneus essieu 4 obligatoire (50 %)',
+    ]);
+  });
+
+  it('taille des pneus mise en forme : barres et point posés tout seuls', () => {
+    expect(formatTireSize('31570225')).toBe('315/70/22.5');
+    expect(formatTireSize('315/70/22.5')).toBe('315/70/22.5');
+    expect(formatTireSize('3157022')).toBe('315/70/22');
+    expect(formatTireSize('2055516')).toBe('205/55/16');
+    expect(formatTireSize('315')).toBe('315');
   });
 
   it('fiche complète exigée par la direction : tous les points OK / 50 % / HS', () => {
     const partial = { usure: { plaquettes_avant: 'OK' }, pneus: { avant_etat: 'OK', arriere_etat: 'OK' } };
-    expect(finishBlockers([], partial, [])).toEqual([]);
-    expect(finishBlockers([], partial, [], true)).toEqual([
+    expect(finishBlockers([], partial, CT)).toEqual([]);
+    expect(finishBlockers([], partial, CT, true)).toEqual([
       'Fiche de contrôle complète exigée : 12 points OK / 50 % / HS non renseignés',
     ]);
     const complete = {
@@ -98,7 +128,7 @@ describe('clôture de l’OR par le technicien', () => {
       controles: Object.fromEntries(CHECK_FIELDS.map(([key]) => [key, 'OK'])),
     };
     expect(inspectionMissingPoints(complete)).toBe(0);
-    expect(finishBlockers([], complete, [], true)).toEqual([]);
+    expect(finishBlockers([], complete, CT, true)).toEqual([]);
   });
 
   it('pneus à 50 % ou HS : taille obligatoire ; étiquette hayon HS : photo obligatoire', () => {
@@ -106,12 +136,13 @@ describe('clôture de l’OR par le technicien', () => {
       pneus: { avant_etat: 'HS', arriere_etat: '50', arriere_taille: '315/80/22.5' },
       controles: { hayon: 'HS' },
     };
-    expect(finishBlockers([], inspection, ['Extincteur 1 kg cabine'])).toEqual([
+    expect(finishBlockers([], inspection, [...CT, 'Extincteur 1 kg cabine'])).toEqual([
       'Taille des pneus avant obligatoire (HS)',
       'Photo de l’étiquette contrôle hayon obligatoire (HS)',
     ]);
     expect(
       finishBlockers([], { ...inspection, pneus: { ...inspection.pneus, avant_taille: '315/70/22.5' } }, [
+        ...CT,
         'Étiquette contrôle hayon',
       ]),
     ).toEqual([]);
