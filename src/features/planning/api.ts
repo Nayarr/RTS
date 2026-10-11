@@ -50,7 +50,7 @@ export async function fetchPlanning(from: string, to: string): Promise<PlanningD
       .order('display_name'),
     supabase
       .from('leave_requests')
-      .select('technician_id, leave_type, starts_on, ends_on')
+      .select('technician_id, leave_type, starts_on, ends_on, start_time, end_time')
       .eq('status', 'approved')
       .eq('is_deleted', false)
       .lte('starts_on', to)

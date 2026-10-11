@@ -66,10 +66,11 @@ test('le technicien demande un congé, la direction le valide', async ({ page, b
   const day = randomFutureDay();
 
   await loginAs(page, 'alice@rts.local');
+  await page.getByRole('link', { name: 'Congés' }).click();
   await page.getByRole('button', { name: 'Demander un congé' }).click();
   const dialog = page.getByRole('dialog', { name: 'Demande de congé' });
   await dialog.getByLabel('Type').selectOption({ label: 'Formation' });
-  await dialog.getByLabel('Du').fill(day);
+  await dialog.getByLabel('Du', { exact: true }).fill(day);
   await dialog.getByLabel('Au (inclus)').fill(day);
   await dialog.getByLabel('Commentaire').fill(comment);
   await dialog.getByRole('button', { name: 'Envoyer la demande' }).click();
@@ -105,7 +106,7 @@ test('la direction saisit une absence puis la supprime', async ({ page }, testIn
   const dialog = page.getByRole('dialog', { name: 'Ajouter une absence' });
   await dialog.getByLabel('Technicien').selectOption({ label: 'Bruno' });
   await dialog.getByLabel('Type').selectOption({ label: 'Maladie' });
-  await dialog.getByLabel('Du').fill(day);
+  await dialog.getByLabel('Du', { exact: true }).fill(day);
   await dialog.getByLabel('Au (inclus)').fill(day);
   await dialog.getByLabel('Commentaire').fill(comment);
   await dialog.getByRole('button', { name: 'Enregistrer l’absence' }).click();

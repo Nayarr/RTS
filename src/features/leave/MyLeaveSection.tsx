@@ -43,7 +43,9 @@ export function MyLeaveSection() {
             <li key={leave.id} className="li px-3.5! py-2.5!">
               <span className="col gap-0">
                 <b className="text-[13.5px]">{LEAVE_LABELS[leave.leave_type]}</b>
-                <span className="hint">{leavePeriod(leave.starts_on, leave.ends_on)}</span>
+                <span className="hint">
+                  {leavePeriod(leave.starts_on, leave.ends_on, leave.start_time, leave.end_time)}
+                </span>
               </span>
               <span className="row gap-2">
                 <span className={cn('badge', LEAVE_STATUS_META[leave.status].badge)}>
@@ -65,7 +67,7 @@ export function MyLeaveSection() {
           open
           onOpenChange={(open) => !open && setToCancel(null)}
           title="Annuler cette demande ?"
-          description={`${LEAVE_LABELS[toCancel.leave_type]} ${leavePeriod(toCancel.starts_on, toCancel.ends_on)}.`}
+          description={`${LEAVE_LABELS[toCancel.leave_type]} ${leavePeriod(toCancel.starts_on, toCancel.ends_on, toCancel.start_time, toCancel.end_time)}.`}
           confirmLabel="Annuler la demande"
           destructive
           pending={cancel.isPending}

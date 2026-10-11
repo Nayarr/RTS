@@ -145,9 +145,16 @@ export interface LeaveSpan {
   leave_type: LeaveType;
   starts_on: string;
   ends_on: string;
+  /** Absence de quelques heures : plage horaire du jour ; vides pour des jours entiers. */
+  start_time?: string | null;
+  end_time?: string | null;
 }
 
-/** « Congés payés », « Repos »… si le technicien n'est pas là ce jour-là. */
+/** Absences de quelques heures ce jour-là (bloc gris dans la grille du planning). */
+export const partialLeaves = (leaves: LeaveSpan[], iso: string) =>
+  leaves.filter((leave) => leave.start_time && leave.end_time && leave.starts_on === iso);
+
+/** « Congés payés », « Repos »… si le technicien n'est pas là de la journée. */
 export function technicianOffLabel(
   technician: { id: string; rest_group: RestGroup | null },
   iso: string,
@@ -155,7 +162,11 @@ export function technicianOffLabel(
   referenceMonday: string | null,
 ): string | null {
   const leave = leaves.find(
-    (item) => item.technician_id === technician.id && item.starts_on <= iso && item.ends_on >= iso,
+    (item) =>
+      item.technician_id === technician.id &&
+      !item.start_time &&
+      item.starts_on <= iso &&
+      item.ends_on >= iso,
   );
   if (leave) return LEAVE_LABELS[leave.leave_type];
   if (technician.rest_group && technician.rest_group === restingGroup(iso, referenceMonday)) return 'Repos';

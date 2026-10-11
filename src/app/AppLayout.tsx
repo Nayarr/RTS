@@ -118,10 +118,10 @@ function TechnicianLayout() {
           <Wrench className="size-[22px]" />
           Mes OR
         </NavLink>
-        <Link to="/#conges">
+        <NavLink to="/conges" className={tab}>
           <CalendarDays className="size-[22px]" />
           Congés
-        </Link>
+        </NavLink>
         <NavLink to="/aide" className={tab}>
           <CircleHelp className="size-[22px]" />
           Aide

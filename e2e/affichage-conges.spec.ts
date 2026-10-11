@@ -27,14 +27,15 @@ test('congés : dates côte à côte dans la fenêtre, pastille « En attente »
   const day = randomFutureDay();
 
   await loginAs(page, 'alice@rts.local');
+  await page.getByRole('link', { name: 'Congés' }).click();
   await page.getByRole('button', { name: 'Demander un congé' }).click();
   const dialog = page.getByRole('dialog', { name: 'Demande de congé' });
-  await dialog.getByLabel('Du').fill(day);
+  await dialog.getByLabel('Du', { exact: true }).fill(day);
   await dialog.getByLabel('Au (inclus)').fill(day);
 
   // Les deux champs restent dans la fenêtre sans se chevaucher
   const box = await dialog.boundingBox();
-  const from = await dialog.getByLabel('Du').boundingBox();
+  const from = await dialog.getByLabel('Du', { exact: true }).boundingBox();
   const to = await dialog.getByLabel('Au (inclus)').boundingBox();
   if (!box || !from || !to) throw new Error('Champs de date introuvables');
   expect(from.x + from.width).toBeLessThanOrEqual(to.x);

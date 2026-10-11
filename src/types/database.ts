@@ -2121,11 +2121,13 @@ export type Database = {
           created_by: string | null;
           decided_at: string | null;
           decided_by: string | null;
+          end_time: string | null;
           ends_on: string;
           id: string;
           is_deleted: boolean;
           leave_type: Database['public']['Enums']['leave_type'];
           legacy_id: string | null;
+          start_time: string | null;
           starts_on: string;
           status: Database['public']['Enums']['leave_status'];
           technician_id: string;
@@ -2137,11 +2139,13 @@ export type Database = {
           created_by?: string | null;
           decided_at?: string | null;
           decided_by?: string | null;
+          end_time?: string | null;
           ends_on: string;
           id?: string;
           is_deleted?: boolean;
           leave_type: Database['public']['Enums']['leave_type'];
           legacy_id?: string | null;
+          start_time?: string | null;
           starts_on: string;
           status?: Database['public']['Enums']['leave_status'];
           technician_id: string;
@@ -2153,11 +2157,13 @@ export type Database = {
           created_by?: string | null;
           decided_at?: string | null;
           decided_by?: string | null;
+          end_time?: string | null;
           ends_on?: string;
           id?: string;
           is_deleted?: boolean;
           leave_type?: Database['public']['Enums']['leave_type'];
           legacy_id?: string | null;
+          start_time?: string | null;
           starts_on?: string;
           status?: Database['public']['Enums']['leave_status'];
           technician_id?: string;
@@ -6038,11 +6044,13 @@ export type Database = {
           created_by: string | null;
           decided_at: string | null;
           decided_by: string | null;
+          end_time: string | null;
           ends_on: string;
           id: string;
           is_deleted: boolean;
           leave_type: Database['public']['Enums']['leave_type'];
           legacy_id: string | null;
+          start_time: string | null;
           starts_on: string;
           status: Database['public']['Enums']['leave_status'];
           technician_id: string;
@@ -6390,8 +6398,10 @@ export type Database = {
       save_leave_request: {
         Args: {
           p_comment?: string;
+          p_end_time?: string;
           p_ends_on: string;
           p_leave_type: Database['public']['Enums']['leave_type'];
+          p_start_time?: string;
           p_starts_on: string;
           p_technician_id?: string;
         };
@@ -6401,11 +6411,13 @@ export type Database = {
           created_by: string | null;
           decided_at: string | null;
           decided_by: string | null;
+          end_time: string | null;
           ends_on: string;
           id: string;
           is_deleted: boolean;
           leave_type: Database['public']['Enums']['leave_type'];
           legacy_id: string | null;
+          start_time: string | null;
           starts_on: string;
           status: Database['public']['Enums']['leave_status'];
           technician_id: string;

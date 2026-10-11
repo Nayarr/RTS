@@ -9,7 +9,7 @@ import { useActiveTechnicians } from '@/features/repair-orders/hooks';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
 import { decideLeaveRequest, deleteLeaveRequest, type LeaveRequest } from './api';
-import { LEAVE_LABELS, LEAVE_STATUS_META, leaveDays, leavePeriod } from './domain';
+import { LEAVE_LABELS, LEAVE_STATUS_META, leaveDays, leaveHours, leavePeriod } from './domain';
 import { useLeaveMutation, useLeaveRequests } from './hooks';
 import { LeaveDialog } from './LeaveDialog';
 
@@ -91,7 +91,7 @@ export function LeavePage() {
                         <span className="col gap-0.5">
                           <b>{LEAVE_LABELS[leave.leave_type]}</b>
                           <span className="hint">
-                            {leavePeriod(leave.starts_on, leave.ends_on)}
+                            {leavePeriod(leave.starts_on, leave.ends_on, leave.start_time, leave.end_time)}
                             {leave.comment ? ` · ${leave.comment}` : ''}
                           </span>
                         </span>
@@ -182,9 +182,18 @@ export function LeavePage() {
                               </span>
                             </td>
                             <td className="num">
-                              {leavePeriod(leave.starts_on, leave.ends_on).replace(/ \(\d+ j\)$/, '')}
+                              {leavePeriod(
+                                leave.starts_on,
+                                leave.ends_on,
+                                leave.start_time,
+                                leave.end_time,
+                              ).replace(/ \([\d,]+ [jh]\)$/, '')}
                             </td>
-                            <td className="r num">{leaveDays(leave.starts_on, leave.ends_on)}</td>
+                            <td className="r num">
+                              {leave.start_time && leave.end_time
+                                ? `${leaveHours(leave.start_time, leave.end_time).toLocaleString('fr-FR')} h`
+                                : leaveDays(leave.starts_on, leave.ends_on)}
+                            </td>
                             <td>
                               <span className={cn('badge', meta.badge)}>{meta.label}</span>
                             </td>
@@ -220,7 +229,7 @@ export function LeavePage() {
           open
           onOpenChange={(open) => !open && setToDelete(null)}
           title="Supprimer cette absence ?"
-          description={`${toDelete.technician_name} · ${LEAVE_LABELS[toDelete.leave_type]} ${leavePeriod(toDelete.starts_on, toDelete.ends_on)}.`}
+          description={`${toDelete.technician_name} · ${LEAVE_LABELS[toDelete.leave_type]} ${leavePeriod(toDelete.starts_on, toDelete.ends_on, toDelete.start_time, toDelete.end_time)}.`}
           confirmLabel="Supprimer"
           destructive
           pending={remove.isPending}
