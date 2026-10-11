@@ -6635,6 +6635,10 @@ export type Database = {
       verify_kiosk_exit_code: { Args: { p_code: string }; Returns: boolean };
       workshop_board: { Args: Record<PropertyKey, never>; Returns: Json };
       workshop_workload: { Args: { p_from: string; p_to: string }; Returns: Json };
+      workshop_workload_detail: {
+        Args: { p_from: string; p_technician_id: string; p_to: string };
+        Returns: Json;
+      };
     };
     Enums: {
       app_role: 'direction' | 'reception' | 'technician' | 'kiosk';

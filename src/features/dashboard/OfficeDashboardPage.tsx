@@ -185,7 +185,10 @@ export function OfficeDashboardPage() {
             </ul>
           </section>
 
-          <div className="grid gap-x-8 gap-y-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+          {/* Charge de travail atelier : bloc pleine largeur */}
+          <WorkloadCard />
+
+          <div className="grid gap-x-8 gap-y-6">
             <section data-slot="card" className="card flat" aria-labelledby="dashboard-todo">
               <div className="card-h">
                 <h2 className="h2" id="dashboard-todo">
@@ -250,8 +253,6 @@ export function OfficeDashboardPage() {
                 )}
               </ul>
             </section>
-
-            <WorkloadCard />
           </div>
         </>
       )}
