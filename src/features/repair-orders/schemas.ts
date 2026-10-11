@@ -96,7 +96,7 @@ export const orNewClientSchema = newClientSchema.superRefine((values, ctx) => {
   const require = (path: keyof NewClientValues, message: string) =>
     ctx.addIssue({ code: 'custom', path: [path], message });
   if (values.kind === 'individual' && !values.civility) require('civility', 'Choisis la civilité');
-  if (values.kind === 'pro' && !values.siren.trim()) require('siren', 'Indique le SIREN');
+  if (values.kind === 'pro' && !values.siret.trim()) require('siret', 'Indique le SIRET');
   if (!values.phone.trim()) require('phone', 'Indique le téléphone');
   if (!values.email.trim()) require('email', 'Indique l’e-mail');
   if (!values.billing_address.trim()) require('billing_address', 'Indique l’adresse');

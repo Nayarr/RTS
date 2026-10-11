@@ -2,7 +2,7 @@ import { fetchFileUrls } from '@/features/files/api';
 import { fetchSettings, type Settings } from '@/features/settings/api';
 import { imageToDataUrl } from '@/lib/pdf';
 
-/** Logo des réglages (stocké dans R2), sinon l'icône de l'appli. */
+/** Logo des réglages (stocké dans R2), sinon le logo RTS de l'appli (grande taille, net à l'impression). */
 async function companyLogo(logoFileId: string | null): Promise<string | null> {
   if (logoFileId) {
     const noUrls: Record<string, string> = {};
@@ -11,7 +11,7 @@ async function companyLogo(logoFileId: string | null): Promise<string | null> {
     const logo = url ? await imageToDataUrl(url) : null;
     if (logo) return logo;
   }
-  return imageToDataUrl('/icons/icon-192.png');
+  return imageToDataUrl('/icons/icon-512.png');
 }
 
 /** Réglages et logo nécessaires à l'en-tête des documents PDF. */

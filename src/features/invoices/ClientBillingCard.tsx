@@ -7,20 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { updateClientBilling, type ClientBilling } from './api';
 import { useInvoiceMutation } from './hooks';
+import { formatSiret, siretField, siretValue } from '@/lib/siret';
 
 const billingSchema = z.object({
   billing_address: z.string().trim().max(300),
-  siren: z
-    .string()
-    .trim()
-    .refine((value) => value === '' || /^\d{9}$/.test(value.replace(/\s/g, '')), 'SIREN à 9 chiffres'),
+  siret: siretField,
   email: z.union([z.literal(''), z.email('Adresse e-mail invalide')]),
 });
 type BillingValues = z.infer<typeof billingSchema>;
 
 const toForm = (client: ClientBilling): BillingValues => ({
   billing_address: client.billing_address ?? '',
-  siren: client.siren ?? '',
+  siret: formatSiret(client.siret),
   email: client.email ?? '',
 });
 
@@ -37,7 +35,7 @@ export function ClientBillingCard({ clientId, client }: { clientId: string; clie
     (values: BillingValues) =>
       updateClientBilling(clientId, {
         billing_address: values.billing_address || null,
-        siren: values.siren.replace(/\s/g, '') || null,
+        siret: siretValue(values.siret),
         email: values.email.toLowerCase() || null,
       }),
     'Coordonnées du client enregistrées',
@@ -47,7 +45,7 @@ export function ClientBillingCard({ clientId, client }: { clientId: string; clie
     <SectionCard
       id="client-billing"
       title={`Client : ${client.name}`}
-      description="Adresse et SIREN figurent sur la facture ; ils sont enregistrés sur la fiche du client."
+      description="Adresse et SIRET figurent sur la facture ; ils sont enregistrés sur la fiche du client."
       onSubmit={handleSubmit((values) => save.mutate(values))}
       dirty={isDirty}
       pending={save.isPending}
@@ -64,13 +62,13 @@ export function ClientBillingCard({ clientId, client }: { clientId: string; clie
           />
         </div>
         <FormField
-          id="billing-siren"
-          label="SIREN"
+          id="billing-siret"
+          label="SIRET"
           inputMode="numeric"
-          placeholder="123 456 789"
+          placeholder="984 989 137 00018"
           className="num"
-          error={errors.siren?.message}
-          {...register('siren')}
+          error={errors.siret?.message}
+          {...register('siret')}
         />
         <FormField
           id="billing-email"

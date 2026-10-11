@@ -6,7 +6,7 @@
 -- Tout passe par les fonctions métier de l'appli (numéros, totaux, statuts, historique),
 -- en tant que compte réception / direction, puis les dates sont réparties sur les 12
 -- derniers mois (statistiques, trésorerie, rentabilité, performance, relances).
--- Noms, SIREN, adresses et plaques sont inventés.
+-- Noms, SIRET, adresses et plaques sont inventés.
 -- =============================================================================
 
 \set QUIET on
@@ -70,21 +70,21 @@ begin
   select array_agg(id order by sort_order) into v_techs from public.technicians where is_active;
 
   -- ------------------------------------------------------------------ Clients
-  insert into public.clients (name, billing_address, siren, email, phone, discount_percent, hourly_rate, notes) values
-    ('Transports Moreau & Fils', '12 rue des Entrepreneurs, 95190 Goussainville', '412 356 789', 'compta@moreau-transports.fr', '01 39 88 12 40', 5, null, 'Client historique, flotte de 6 tracteurs'),
-    ('Logistique Bernard', 'ZA du Moulin, 4 allée des Frênes, 95500 Gonesse', '523 874 110', 'factures@logistique-bernard.fr', '01 34 45 20 11', 0, null, null),
-    ('TLM Express', '87 avenue du Général de Gaulle, 93290 Tremblay-en-France', '801 223 564', 'atelier@tlm-express.fr', '06 12 45 78 90', 0, null, 'Messagerie express, VUL'),
-    ('Frigo Transports Leroy', '3 rue de la Logistique, 77290 Mitry-Mory', '432 998 071', 'contact@frigo-leroy.fr', '01 60 21 33 48', 3, null, 'Groupes froids : prévenir avant toute intervention'),
-    ('Messagerie du Val-d''Oise', '15 chemin des Postes, 95400 Villiers-le-Bel', '389 551 204', 'gestion@mvo95.fr', '01 39 94 60 02', 0, null, null),
-    ('Déménagements Petit', '22 rue Jean Jaurès, 95200 Sarcelles', '479 012 336', 'petit.demenagements@orange.fr', '06 71 23 45 67', 0, 85, 'Tarif horaire négocié'),
-    ('BTP Martin Location', 'Parc d''activités des Cerisiers, 60270 Gouvieux', '350 128 947', 'parc@btp-martin.fr', '03 44 57 80 10', 8, null, 'Bennes et porte-engins'),
-    ('Transports Girard', '5 impasse des Routiers, 95470 Fosses', '511 667 382', 'girard.transports@wanadoo.fr', '06 80 11 22 33', 0, null, null),
-    ('Citernes Roussel', '41 route de Senlis, 95380 Louvres', '397 404 158', 'maintenance@citernes-roussel.fr', '01 34 72 90 55', 5, null, 'Contrat d''entretien citernes'),
-    ('Autocars Lambert', '9 rue de la Gare, 95270 Luzarches', '402 815 667', 'exploitation@autocars-lambert.fr', '01 34 68 01 77', 0, null, null),
-    ('Fontaine Livraisons', '118 boulevard Salvador Allende, 93000 Bobigny', '844 390 125', 'fontaine.livraisons@gmail.com', '07 68 90 12 34', 0, null, 'Paiement souvent en retard'),
-    ('Transports Mercier Frères', '2 rue du Stade, 77230 Dammartin-en-Goële', '308 771 459', 'mercier.freres@transports-mercier.fr', '01 60 03 44 21', 0, null, null),
-    ('Nordis Fret', 'Zone Paris Nord 2, 13 rue de la Perdrix, 95950 Roissy-en-France', '752 106 833', 'fleet@nordis-fret.fr', '01 48 62 31 00', 10, null, 'Grand compte, remise 10 %'),
-    ('Garnier Bennes', '6 chemin de la Carrière, 95560 Montsoult', '490 663 018', 'garnier.bennes@free.fr', '06 33 44 55 66', 0, null, null);
+  insert into public.clients (name, billing_address, siret, email, phone, discount_percent, hourly_rate, notes) values
+    ('Transports Moreau & Fils', '12 rue des Entrepreneurs, 95190 Goussainville', '41235678900013', 'compta@moreau-transports.fr', '01 39 88 12 40', 5, null, 'Client historique, flotte de 6 tracteurs'),
+    ('Logistique Bernard', 'ZA du Moulin, 4 allée des Frênes, 95500 Gonesse', '52387411000019', 'factures@logistique-bernard.fr', '01 34 45 20 11', 0, null, null),
+    ('TLM Express', '87 avenue du Général de Gaulle, 93290 Tremblay-en-France', '80122356400015', 'atelier@tlm-express.fr', '06 12 45 78 90', 0, null, 'Messagerie express, VUL'),
+    ('Frigo Transports Leroy', '3 rue de la Logistique, 77290 Mitry-Mory', '43299807100018', 'contact@frigo-leroy.fr', '01 60 21 33 48', 3, null, 'Groupes froids : prévenir avant toute intervention'),
+    ('Messagerie du Val-d''Oise', '15 chemin des Postes, 95400 Villiers-le-Bel', '38955120400016', 'gestion@mvo95.fr', '01 39 94 60 02', 0, null, null),
+    ('Déménagements Petit', '22 rue Jean Jaurès, 95200 Sarcelles', '47901233600018', 'petit.demenagements@orange.fr', '06 71 23 45 67', 0, 85, 'Tarif horaire négocié'),
+    ('BTP Martin Location', 'Parc d''activités des Cerisiers, 60270 Gouvieux', '35012894700016', 'parc@btp-martin.fr', '03 44 57 80 10', 8, null, 'Bennes et porte-engins'),
+    ('Transports Girard', '5 impasse des Routiers, 95470 Fosses', '51166738200010', 'girard.transports@wanadoo.fr', '06 80 11 22 33', 0, null, null),
+    ('Citernes Roussel', '41 route de Senlis, 95380 Louvres', '39740415800016', 'maintenance@citernes-roussel.fr', '01 34 72 90 55', 5, null, 'Contrat d''entretien citernes'),
+    ('Autocars Lambert', '9 rue de la Gare, 95270 Luzarches', '40281566700017', 'exploitation@autocars-lambert.fr', '01 34 68 01 77', 0, null, null),
+    ('Fontaine Livraisons', '118 boulevard Salvador Allende, 93000 Bobigny', '84439012500012', 'fontaine.livraisons@gmail.com', '07 68 90 12 34', 0, null, 'Paiement souvent en retard'),
+    ('Transports Mercier Frères', '2 rue du Stade, 77230 Dammartin-en-Goële', '30877145900010', 'mercier.freres@transports-mercier.fr', '01 60 03 44 21', 0, null, null),
+    ('Nordis Fret', 'Zone Paris Nord 2, 13 rue de la Perdrix, 95950 Roissy-en-France', '75210683300011', 'fleet@nordis-fret.fr', '01 48 62 31 00', 10, null, 'Grand compte, remise 10 %'),
+    ('Garnier Bennes', '6 chemin de la Carrière, 95560 Montsoult', '49066301800011', 'garnier.bennes@free.fr', '06 33 44 55 66', 0, null, null);
 
   -- ------------------------------------------------------------------ Véhicules (échéances réparties)
   insert into public.vehicles (plate, client_id, vehicle_type, brand, model, first_registration_date, ct_due_date, tailgate_due_date)

@@ -72,15 +72,15 @@ test('facture d’un OR : brouillon, coordonnées, émission, PDF, paiement, avo
   await page.getByRole('textbox', { name: 'Désignation' }).last().fill('Contrôle freinage OK');
   await page.getByRole('textbox', { name: 'Désignation' }).last().blur();
 
-  // Sans adresse du client : émission bloquée (mention obligatoire) ; SIREN signalé
+  // Sans adresse du client : émission bloquée (mention obligatoire) ; SIRET signalé
   await page.getByRole('button', { name: 'Émettre la facture' }).click();
   let confirm = page.getByRole('dialog', { name: 'Émettre définitivement cette facture ?' });
   await expect(confirm).toContainText('Renseigne l’adresse de facturation du client');
-  await expect(confirm).toContainText('SIREN du client manquant');
+  await expect(confirm).toContainText('SIRET du client manquant');
   await expect(confirm.getByRole('button', { name: 'Émettre la facture' })).toBeDisabled();
   await confirm.getByRole('button', { name: 'Annuler' }).click();
   await page.getByLabel('Adresse de facturation').fill('1 rue du Test\n95190 Goussainville');
-  await page.getByLabel('SIREN').fill('123 456 789');
+  await page.getByLabel('SIRET').fill('123 456 789 00015');
   await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
   await expect(page.getByText('Coordonnées du client enregistrées')).toBeVisible();
 

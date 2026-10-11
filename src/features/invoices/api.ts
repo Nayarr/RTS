@@ -29,7 +29,7 @@ export type InvoiceOverview = Omit<OverviewRow, Guaranteed | 'payment_status'> &
 export interface ClientBilling {
   name: string;
   billing_address: string | null;
-  siren: string | null;
+  siret: string | null;
   email: string | null;
 }
 
@@ -87,7 +87,7 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
   const [client, order] = await Promise.all([
     supabase
       .from('clients')
-      .select('name, billing_address, siren, email, discount_percent')
+      .select('name, billing_address, siret, email, discount_percent')
       .eq('id', overview.client_id)
       .single(),
     overview.repair_order_ids[0]
@@ -200,7 +200,7 @@ export async function deleteInvoiceLine(id: string) {
 /** Coordonnées de facturation gardées sur la fiche client (reprises à l'émission). */
 export async function updateClientBilling(
   clientId: string,
-  billing: Pick<ClientBilling, 'billing_address' | 'siren' | 'email'>,
+  billing: Pick<ClientBilling, 'billing_address' | 'siret' | 'email'>,
 ) {
   const { error } = await supabase.from('clients').update(billing).eq('id', clientId);
   if (error) throw error;

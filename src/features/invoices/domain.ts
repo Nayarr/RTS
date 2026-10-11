@@ -26,7 +26,7 @@ export function issueWarnings(lines: InvoiceLine[], client: ClientBilling): stri
   ).length;
   const warnings: string[] = [];
   if (unpriced) warnings.push(`${unpriced} ligne${unpriced > 1 ? 's' : ''} sans prix`);
-  if (!client.siren?.trim()) warnings.push('SIREN du client manquant');
+  if (!client.siret?.trim()) warnings.push('SIRET du client manquant');
   return warnings;
 }
 

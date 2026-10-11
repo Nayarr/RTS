@@ -89,7 +89,7 @@ test('client pro : conducteur ajouté sans scan, à scanner avant de louer', asy
   await page.goto('/clients/nouveau');
   await page.getByRole('radio', { name: /Professionnel/ }).click();
   await page.getByLabel('Raison sociale *').fill(company);
-  await page.getByLabel('SIREN').fill('123 456 789');
+  await page.getByLabel('SIRET').fill('123 456 789 00015');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText(company);
 

@@ -94,7 +94,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Sur l’OR, carte « Informer le client » : « Véhicule pris en charge », « Devis disponible », « Véhicule prêt ». Le bouton en vert est celui conseillé ; une coche indique un message déjà envoyé.',
       'L’appli prépare le message ; il part par ta messagerie (e-mail) ou ton téléphone (SMS). Chaque envoi est noté dans l’historique de l’OR.',
       'Fiche client : « Espace client en ligne » envoie au client un lien permanent vers ses véhicules, devis et factures. « Changer le lien » désactive l’ancien.',
-      'Renseigne une fois l’e-mail, le téléphone, l’adresse et le SIREN du client : ils sont repris partout.',
+      'Renseigne une fois l’e-mail, le téléphone, l’adresse et le SIRET du client : ils sont repris partout.',
     ],
   },
   {

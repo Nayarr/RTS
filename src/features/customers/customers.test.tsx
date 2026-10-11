@@ -80,7 +80,7 @@ const client = (overrides: Partial<ClientOverview> = {}): ClientOverview =>
     phone: null,
     other_phones: [],
     billing_address: '1 rue du Port, 95190 Goussainville',
-    siren: '123456789',
+    siret: '12345678900015',
     discount_percent: null,
     hourly_rate: 85,
     notes: null,
@@ -201,7 +201,12 @@ describe('clients et véhicules : règles', () => {
   });
 
   it('fiche client : remise et taux horaire envoyés seulement par la direction', () => {
-    const values = { ...clientToForm(client()), siren: '123 456 789', discount_percent: '5,5', phone: ' ' };
+    const values = {
+      ...clientToForm(client()),
+      siret: '123 456 789 00015',
+      discount_percent: '5,5',
+      phone: ' ',
+    };
     expect(clientFromForm(values, false)).toEqual({
       kind: 'pro',
       name: 'Transports Martin',
@@ -215,7 +220,7 @@ describe('clients et véhicules : règles', () => {
       phone: null,
       other_phones: [],
       billing_address: '1 rue du Port, 95190 Goussainville',
-      siren: '123456789',
+      siret: '12345678900015',
       notes: null,
     });
     expect(clientFromForm(values, true)).toMatchObject({ discount_percent: 5.5, hourly_rate: 85 });

@@ -10,6 +10,7 @@ import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
 import { addQuoteLine, deleteQuoteLine, updateQuoteLine, type NewQuoteLine, type QuoteLine } from './api';
 import { PreQuoteWorkCard } from '@/features/repair-orders/PreQuoteWorkCard';
+import { offeredTotal } from '@/features/documents/lines';
 import { computeTotals, isQuoteLocked, nextPosition } from './domain';
 import { QuoteActions, QuoteDocumentActions } from './editor/QuoteActions';
 import { useQuote, useQuoteMutation } from './hooks';
@@ -217,7 +218,7 @@ export function QuotePage() {
           )}
 
           <div className="flex justify-end px-6 py-[18px]">
-            <TotalsList totals={totals} />
+            <TotalsList totals={totals} offered={offeredTotal(lines)} />
           </div>
         </section>
 

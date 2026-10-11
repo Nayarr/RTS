@@ -647,7 +647,7 @@ export const TOOLS: AgentTool[] = [
         db
           .from('v_clients_overview')
           .select(
-            'id, name, kind, contact_name, email, phone, billing_address, siren, discount_percent, hourly_rate, notes, vehicles_count, orders_count, last_visit, revenue_ht, balance_due, overdue_invoices_count',
+            'id, name, kind, contact_name, email, phone, billing_address, siret, discount_percent, hourly_rate, notes, vehicles_count, orders_count, last_visit, revenue_ht, balance_due, overdue_invoices_count',
           )
           .ilike('name', like(nom))
           .order('revenue_ht', { ascending: false, nullsFirst: false })

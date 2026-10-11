@@ -20,6 +20,8 @@ export interface QuoteDetail {
   /** Taux horaire applicable (client, sinon type de véhicule) et remise du client. */
   laborRate: number;
   clientDiscount: number;
+  /** Adresse et SIRET du client, imprimés sur le PDF. */
+  clientBilling?: { billing_address: string | null; siret: string | null } | null;
 }
 
 const NO_CLIENT = '00000000-0000-0000-0000-000000000000';
@@ -63,7 +65,11 @@ export async function fetchQuote(id: string): Promise<QuoteDetail | null> {
       p_vehicle_type: overview.vehicle_type,
     }),
     overview.client_id
-      ? supabase.from('clients').select('discount_percent').eq('id', overview.client_id).maybeSingle()
+      ? supabase
+          .from('clients')
+          .select('discount_percent, billing_address, siret')
+          .eq('id', overview.client_id)
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
   if (rate.error) throw rate.error;
@@ -73,6 +79,9 @@ export async function fetchQuote(id: string): Promise<QuoteDetail | null> {
     lines: lines.data,
     laborRate: rate.data,
     clientDiscount: client.data?.discount_percent ?? 0,
+    clientBilling: client.data
+      ? { billing_address: client.data.billing_address, siret: client.data.siret }
+      : null,
   };
 }
 

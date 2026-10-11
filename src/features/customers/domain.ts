@@ -3,6 +3,7 @@ import { formatPlate, normalizeKey } from '@/features/repair-orders/constants';
 import { decimalField, decimalText, decimalValue } from '@/lib/numbers';
 import type { TablesInsert, TablesUpdate } from '@/types/database';
 import type { ClientOverview, VehicleOverview } from './api';
+import { formatSiret, siretField, siretValue } from '@/lib/siret';
 
 // ---------------------------------------------------------------- Échéances
 
@@ -116,13 +117,6 @@ function requireIdentity(
   }
 }
 
-const sirenField = z
-  .string()
-  .refine(
-    (value) => /^(\d{9}|\d{14})?$/.test(value.replace(/\s/g, '')),
-    'SIREN : 9 chiffres (ou SIRET : 14)',
-  );
-
 export const clientSchema = z
   .object({
     ...identityFields,
@@ -139,7 +133,7 @@ export const clientSchema = z
       )
       .max(MAX_OTHER_PHONES),
     billing_address: z.string().trim().max(300),
-    siren: sirenField,
+    siret: siretField,
     discount_percent: cappedDecimal('Remise', 100),
     hourly_rate: decimalField(),
     notes: z.string().max(2000),
@@ -160,7 +154,7 @@ export const clientToForm = (client: ClientOverview): ClientValues => ({
   phone: client.phone ?? '',
   other_phones: otherPhones(client.other_phones),
   billing_address: client.billing_address ?? '',
-  siren: client.siren ?? '',
+  siret: formatSiret(client.siret),
   discount_percent: decimalText(client.discount_percent),
   hourly_rate: decimalText(client.hourly_rate),
   notes: client.notes ?? '',
@@ -179,7 +173,7 @@ export function clientFromForm(values: ClientValues, withPricing: boolean): Tabl
       phone: phone.trim(),
     })),
     billing_address: text(values.billing_address),
-    siren: text(values.siren.replace(/\s/g, '')),
+    siret: siretValue(values.siret),
     notes: text(values.notes),
     ...(withPricing
       ? {
@@ -267,7 +261,7 @@ export const newClientSchema = z
     ...identityFields,
     name: z.string().trim().max(120),
     contact_name: z.string().trim().max(120),
-    siren: sirenField,
+    siret: siretField,
     phone: z.string().trim().max(30),
     email: z.union([z.literal(''), z.string().trim().email('E-mail invalide')]),
     billing_address: z.string().trim().max(300),
@@ -285,7 +279,7 @@ export const emptyNewClient = (kind: 'pro' | 'individual'): NewClientValues => (
   birth_place: '',
   name: '',
   contact_name: '',
-  siren: '',
+  siret: '',
   phone: '',
   email: '',
   billing_address: '',
@@ -299,7 +293,7 @@ export function newClientFromForm(values: NewClientValues): TablesInsert<'client
     ...identity,
     name: identity.name ?? values.name.trim(),
     contact_name: values.kind === 'pro' ? text(values.contact_name) : null,
-    siren: values.kind === 'pro' ? text(values.siren.replace(/\s/g, '')) : null,
+    siret: values.kind === 'pro' ? siretValue(values.siret) : null,
     phone: text(values.phone),
     email: text(values.email),
     billing_address: text(values.billing_address),

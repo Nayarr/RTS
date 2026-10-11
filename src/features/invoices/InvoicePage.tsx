@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
-import { computeTotals, nextPositionOf } from '@/features/documents/lines';
+import { computeTotals, nextPositionOf, offeredTotal } from '@/features/documents/lines';
 import { formatDate } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
 import { formatEuro } from '@/lib/numbers';
@@ -409,6 +409,7 @@ export function InvoicePage() {
             <div className="flex justify-end border-t px-6 py-[18px]">
               <TotalsList
                 totals={draft ? totals : { ...totals, ht: invoice.total_ht, ttc: invoice.total_ttc }}
+                offered={offeredTotal(lines)}
               />
             </div>
           </section>

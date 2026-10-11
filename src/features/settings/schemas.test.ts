@@ -22,7 +22,6 @@ const company: CompanyValues = {
   city: 'Goussainville',
   email: 'Atelier@RapidTruckService.fr',
   phone: '',
-  siren: '984 989 137',
   siret: '984 989 137 00018',
   vat_number: 'fr 66 984989137',
   rcs: 'RCS Pontoise',
@@ -44,21 +43,15 @@ describe('companySchema', () => {
     expect(companySchema.safeParse(company).success).toBe(true);
   });
 
-  it('contrôle SIREN, SIRET, code postal et TVA', () => {
+  it('contrôle SIRET (longueur et clé), code postal et TVA', () => {
     const result = companySchema.safeParse({
       ...company,
-      siren: '984 989',
       siret: '984 989 137',
       postal_code: '9519',
       vat_number: '66-98',
     });
     expect(messages(result)).toEqual(
-      expect.arrayContaining([
-        'SIREN à 9 chiffres',
-        'SIRET à 14 chiffres',
-        'Code postal à 5 chiffres',
-        'N° de TVA invalide',
-      ]),
+      expect.arrayContaining(['SIRET à 14 chiffres', 'Code postal à 5 chiffres', 'N° de TVA invalide']),
     );
   });
 
@@ -67,8 +60,11 @@ describe('companySchema', () => {
       phone: null,
       email: 'atelier@rapidtruckservice.fr',
       vat_number: 'FR66984989137',
-      siren: '984 989 137',
+      siret: '98498913700018',
     });
+    expect(messages(companySchema.safeParse({ ...company, siret: '984 989 137 00019' }))).toContain(
+      'SIRET invalide : vérifie les chiffres',
+    );
   });
 });
 

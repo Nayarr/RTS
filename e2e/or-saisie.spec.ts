@@ -44,7 +44,7 @@ test('client inconnu : sa fiche complète est demandée et créée avec l’OR',
   await expect(page.getByText('Nouveau client : fiche à compléter')).toBeVisible();
   await page.getByRole('button', { name: 'Créer l’OR' }).click();
   await expect(page.getByText('Indique l’e-mail')).toBeVisible();
-  await page.getByLabel('SIREN *').fill('552100554');
+  await page.getByLabel('SIRET *').fill('552 100 554 00013');
   await page.getByLabel('Téléphone *').fill('0612345678');
   await page.getByLabel('E-mail *').fill(`essai${id}@exemple.test`);
   await page.getByLabel('Adresse de facturation *').fill('2 rue des Essais, 95190 Goussainville');

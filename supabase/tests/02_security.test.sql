@@ -3,7 +3,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(21);
 
 \ir helpers/fixtures.psql
 
@@ -54,8 +54,11 @@ reset role;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
 
 select is((select count(*) from public.repair_orders), 2::bigint, 'La réception voit tous les OR');
-select throws_like($$ insert into public.parts (designation) values ('Filtre') $$,
-                   '%row-level security%', 'Le catalogue pièces est géré par la direction');
+select lives_ok($$ insert into public.parts (designation) values ('Filtre') $$,
+                'La réception enregistre les pièces de ses devis');
+delete from public.parts where designation = 'Filtre';
+select is((select count(*) from public.parts where designation = 'Filtre'), 1::bigint,
+          'Seule la direction supprime une pièce');
 select is((select count(*) from public.clock_events), 0::bigint, 'La réception ne voit pas les pointages');
 
 -- ---------------------------------------------------------------- Direction
