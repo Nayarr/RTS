@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { fetchConsumables, fetchPackages, fetchParts } from './api';
+import { fetchConsumables, fetchPackages, fetchParts, fetchPartStats } from './api';
 
 export const consumablesKey = ['consumables'] as const;
 export const partsKey = ['parts'] as const;
@@ -13,6 +13,10 @@ export function useConsumables() {
 
 export function usePackages() {
   return useQuery({ queryKey: [...packagesKey, 'catalog'], queryFn: fetchPackages });
+}
+
+export function usePartStats() {
+  return useQuery({ queryKey: [...partsKey, 'stats'], queryFn: fetchPartStats });
 }
 
 export function useParts(search: string) {

@@ -569,7 +569,7 @@ export type Database = {
           other_phones: NonNullable<Json>;
           phone: string | null;
           portal_token: string | null;
-          siren: string | null;
+          siret: string | null;
           updated_at: string;
         };
         Insert: {
@@ -593,7 +593,7 @@ export type Database = {
           other_phones?: NonNullable<Json>;
           phone?: string | null;
           portal_token?: string | null;
-          siren?: string | null;
+          siret?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -617,7 +617,7 @@ export type Database = {
           other_phones?: NonNullable<Json>;
           phone?: string | null;
           portal_token?: string | null;
-          siren?: string | null;
+          siret?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -709,7 +709,6 @@ export type Database = {
           quote_validity_days: number;
           rcs: string | null;
           share_capital: string | null;
-          siren: string | null;
           siret: string | null;
           supplies_fee_ht: number | null;
           updated_at: string;
@@ -731,7 +730,6 @@ export type Database = {
           quote_validity_days?: number;
           rcs?: string | null;
           share_capital?: string | null;
-          siren?: string | null;
           siret?: string | null;
           supplies_fee_ht?: number | null;
           updated_at?: string;
@@ -753,7 +751,6 @@ export type Database = {
           quote_validity_days?: number;
           rcs?: string | null;
           share_capital?: string | null;
-          siren?: string | null;
           siret?: string | null;
           supplies_fee_ht?: number | null;
           updated_at?: string;
@@ -1694,6 +1691,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'invoice_lines_part_id_fkey';
+            columns: ['part_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_part_stats';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'invoice_lines_repair_order_id_fkey';
             columns: ['repair_order_id'];
             isOneToOne: false;
@@ -1879,7 +1883,7 @@ export type Database = {
           client_email: string | null;
           client_id: string;
           client_name: string | null;
-          client_siren: string | null;
+          client_siret: string | null;
           created_at: string;
           created_by: string | null;
           due_date: string | null;
@@ -1907,7 +1911,7 @@ export type Database = {
           client_email?: string | null;
           client_id: string;
           client_name?: string | null;
-          client_siren?: string | null;
+          client_siret?: string | null;
           created_at?: string;
           created_by?: string | null;
           due_date?: string | null;
@@ -1935,7 +1939,7 @@ export type Database = {
           client_email?: string | null;
           client_id?: string;
           client_name?: string | null;
-          client_siren?: string | null;
+          client_siret?: string | null;
           created_at?: string;
           created_by?: string | null;
           due_date?: string | null;
@@ -2431,11 +2435,15 @@ export type Database = {
           is_active: boolean;
           legacy_id: string | null;
           manufacturer_ref: string | null;
+          margin_kind: Database['public']['Enums']['margin_kind'];
+          margin_value: number | null;
           oem_ref: string | null;
           purchase_price: number | null;
           sale_price: number | null;
+          shipping_cost: number | null;
           supplier_id: string | null;
           updated_at: string;
+          vehicle_ref: string | null;
         };
         Insert: {
           brand?: string | null;
@@ -2445,11 +2453,15 @@ export type Database = {
           is_active?: boolean;
           legacy_id?: string | null;
           manufacturer_ref?: string | null;
+          margin_kind?: Database['public']['Enums']['margin_kind'];
+          margin_value?: number | null;
           oem_ref?: string | null;
           purchase_price?: number | null;
           sale_price?: number | null;
+          shipping_cost?: number | null;
           supplier_id?: string | null;
           updated_at?: string;
+          vehicle_ref?: string | null;
         };
         Update: {
           brand?: string | null;
@@ -2459,11 +2471,15 @@ export type Database = {
           is_active?: boolean;
           legacy_id?: string | null;
           manufacturer_ref?: string | null;
+          margin_kind?: Database['public']['Enums']['margin_kind'];
+          margin_value?: number | null;
           oem_ref?: string | null;
           purchase_price?: number | null;
           sale_price?: number | null;
+          shipping_cost?: number | null;
           supplier_id?: string | null;
           updated_at?: string;
+          vehicle_ref?: string | null;
         };
         Relationships: [
           {
@@ -2784,6 +2800,13 @@ export type Database = {
             columns: ['part_id'];
             isOneToOne: false;
             referencedRelation: 'parts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'quote_lines_part_id_fkey';
+            columns: ['part_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_part_stats';
             referencedColumns: ['id'];
           },
           {
@@ -3940,6 +3963,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'ro_lines_part_id_fkey';
+            columns: ['part_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_part_stats';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'ro_lines_repair_order_id_fkey';
             columns: ['repair_order_id'];
             isOneToOne: false;
@@ -4797,7 +4827,7 @@ export type Database = {
           phone: string | null;
           portal_token: string | null;
           revenue_ht: number | null;
-          siren: string | null;
+          siret: string | null;
           updated_at: string | null;
           vehicles_count: number | null;
         };
@@ -5038,7 +5068,7 @@ export type Database = {
           client_address: string | null;
           client_id: string | null;
           client_name: string | null;
-          client_siren: string | null;
+          client_siret: string | null;
           created_at: string | null;
           credited_ttc: number | null;
           due_date: string | null;
@@ -5130,6 +5160,38 @@ export type Database = {
             columns: ['repair_order_id'];
             isOneToOne: false;
             referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      v_part_stats: {
+        Row: {
+          brand: string | null;
+          designation: string | null;
+          id: string | null;
+          invoices_count: number | null;
+          last_sold_at: string | null;
+          manufacturer_ref: string | null;
+          margin_ht: number | null;
+          margin_kind: Database['public']['Enums']['margin_kind'] | null;
+          margin_value: number | null;
+          oem_ref: string | null;
+          purchase_price: number | null;
+          quantity_sold: number | null;
+          quotes_count: number | null;
+          revenue_ht: number | null;
+          sale_price: number | null;
+          shipping_cost: number | null;
+          supplier_id: string | null;
+          supplier_name: string | null;
+          vehicle_ref: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'parts_supplier_id_fkey';
+            columns: ['supplier_id'];
+            isOneToOne: false;
+            referencedRelation: 'suppliers';
             referencedColumns: ['id'];
           },
         ];
@@ -6116,6 +6178,7 @@ export type Database = {
       is_migration_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_office: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_system_context: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_valid_siret: { Args: { p_siret: string }; Returns: boolean };
       issue_invoice: { Args: { p_invoice_id: string }; Returns: string };
       keeps_standard_time: { Args: { p_description: string }; Returns: boolean };
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
@@ -6222,6 +6285,15 @@ export type Database = {
         Returns: boolean;
       };
       paris_date: { Args: { p_at: string }; Returns: string };
+      part_sale_price: {
+        Args: {
+          p_kind: Database['public']['Enums']['margin_kind'];
+          p_margin: number;
+          p_purchase: number;
+          p_shipping: number;
+        };
+        Returns: number;
+      };
       postpone_inbox_reply: { Args: { p_id: string }; Returns: boolean };
       pre_quote_work: { Args: { p_repair_order_id: string }; Returns: Json };
       pre_quote_work_alerts: { Args: Record<PropertyKey, never>; Returns: number };
@@ -6693,6 +6765,7 @@ export type Database = {
       leave_status: 'requested' | 'approved' | 'rejected';
       leave_type: 'paid_leave' | 'sick' | 'training' | 'other';
       line_type: 'labor' | 'package' | 'part' | 'consumable' | 'subcontract' | 'travel' | 'text' | 'rental';
+      margin_kind: 'amount' | 'percent';
       message_channel: 'email' | 'sms' | 'other';
       part_order_status: 'to_order' | 'ordered' | 'received';
       payment_method: 'bank_transfer' | 'check' | 'card' | 'cash' | 'bill_of_exchange' | 'direct_debit';
@@ -6864,6 +6937,7 @@ export const Constants = {
       leave_status: ['requested', 'approved', 'rejected'],
       leave_type: ['paid_leave', 'sick', 'training', 'other'],
       line_type: ['labor', 'package', 'part', 'consumable', 'subcontract', 'travel', 'text', 'rental'],
+      margin_kind: ['amount', 'percent'],
       message_channel: ['email', 'sms', 'other'],
       part_order_status: ['to_order', 'ordered', 'received'],
       payment_method: ['bank_transfer', 'check', 'card', 'cash', 'bill_of_exchange', 'direct_debit'],

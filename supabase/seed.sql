@@ -79,5 +79,5 @@ select vault.create_secret('rts-local-cron-secret-0000', 'cron_secret');
 update public.company_settings set supplies_fee_ht = null;
 
 -- Client des tests de bout en bout (fiche complète : un OR pour un client inconnu exige sa fiche).
-insert into public.clients (name, kind, email, phone, billing_address, siren) values
-  ('Transports E2E', 'pro', 'flotte@transports-e2e.test', '0130000000', '1 rue des Essais, 95190 Goussainville', '552100554');
+insert into public.clients (name, kind, email, phone, billing_address, siret) values
+  ('Transports E2E', 'pro', 'flotte@transports-e2e.test', '0130000000', '1 rue des Essais, 95190 Goussainville', '55210055400013');

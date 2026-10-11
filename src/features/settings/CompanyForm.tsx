@@ -87,15 +87,7 @@ export function CompanyForm({ company }: { company: CompanySettings }) {
         />
         <FormField id="rcs" label="RCS" placeholder="RCS Pontoise" {...register('rcs')} />
       </div>
-      <div className="grid gap-3.5 sm:grid-cols-3">
-        <FormField
-          id="siren"
-          label="SIREN"
-          inputMode="numeric"
-          className="num"
-          error={errors.siren?.message}
-          {...register('siren')}
-        />
+      <div className="grid gap-3.5 sm:grid-cols-2">
         <FormField
           id="siret"
           label="SIRET"

@@ -29,7 +29,7 @@ const licenseStarted = (values: LicenseValues) =>
   Boolean(values.recto_file_id || values.verso_file_id || values.license_number.trim());
 
 /**
- * Nouveau client : professionnel (raison sociale, SIREN) ou particulier (identité et permis
+ * Nouveau client : professionnel (raison sociale, SIRET) ou particulier (identité et permis
  * de conduire scanné, qui remplit l'identité automatiquement).
  */
 export function NewClientPage() {
@@ -133,7 +133,7 @@ export function NewClientPage() {
                 >
                   {(
                     [
-                      ['pro', 'Professionnel', 'Raison sociale, SIREN, adresse de facturation', Building2],
+                      ['pro', 'Professionnel', 'Raison sociale, SIRET, adresse de facturation', Building2],
                       ['individual', 'Particulier', 'Identité, permis de conduire, coordonnées', User],
                     ] as const
                   ).map(([value, label, hint, Icon]) => {
@@ -218,12 +218,13 @@ export function NewClientPage() {
                     />
                   </div>
                   <FormField
-                    id="new-client-siren"
-                    label="SIREN"
+                    id="new-client-siret"
+                    label="SIRET"
                     inputMode="numeric"
+                    placeholder="984 989 137 00018"
                     className="num"
-                    error={errors.siren?.message}
-                    {...register('siren')}
+                    error={errors.siret?.message}
+                    {...register('siret')}
                   />
                   <div className="sm:col-span-2">
                     <FormField

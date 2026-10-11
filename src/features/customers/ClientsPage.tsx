@@ -18,13 +18,13 @@ const PAGE_SIZE = 20;
 
 const digits = (value: string) => value.replace(/\D/g, '');
 
-/** Recherche : nom, contact, e-mail, SIREN et tous les numéros (espaces et points ignorés). */
+/** Recherche : nom, contact, e-mail, SIRET et tous les numéros (espaces et points ignorés). */
 const matches = (client: ClientOverview, search: string) => {
   if (!search) return true;
   const text = search.toLowerCase();
   const phones = [client.phone, ...otherPhones(client.other_phones).map((entry) => entry.phone)];
   if (
-    [client.name, client.contact_name, client.email, client.siren, ...phones].some((value) =>
+    [client.name, client.contact_name, client.email, client.siret, ...phones].some((value) =>
       (value ?? '').toLowerCase().includes(text),
     )
   ) {
@@ -80,7 +80,7 @@ export function ClientsPage() {
             <SearchField
               className="sm:w-[340px]"
               aria-label="Rechercher un client"
-              placeholder="Nom, contact, e-mail, téléphone, SIREN…"
+              placeholder="Nom, contact, e-mail, téléphone, SIRET…"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />

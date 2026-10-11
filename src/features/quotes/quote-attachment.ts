@@ -13,6 +13,7 @@ export async function quotePdfFile(quoteId: string): Promise<PdfFile> {
   const { doc, fileName } = await buildQuotePdf({
     quote: detail.quote,
     lines: detail.lines,
+    client: detail.clientBilling,
     company: settings.company,
     logo,
   });

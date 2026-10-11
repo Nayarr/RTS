@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { AppSettings, CompanySettings, LaborRate } from './api';
+import { formatSiret, siretField, siretValue } from '@/lib/siret';
 
 const digits = (value: string) => value.replace(/\s/g, '');
 const optionalText = z.string().trim().max(200);
@@ -22,14 +23,7 @@ export const companySchema = z.object({
   city: z.string().trim().min(1, 'Indique la ville').max(100),
   email: z.union([z.literal(''), z.email('Adresse e-mail invalide')]),
   phone: optionalText,
-  siren: z
-    .string()
-    .trim()
-    .refine((v) => v === '' || /^\d{9}$/.test(digits(v)), 'SIREN à 9 chiffres'),
-  siret: z
-    .string()
-    .trim()
-    .refine((v) => v === '' || /^\d{14}$/.test(digits(v)), 'SIRET à 14 chiffres'),
+  siret: siretField,
   vat_number: z
     .string()
     .trim()
@@ -50,8 +44,7 @@ export const companyToForm = (c: CompanySettings): CompanyValues => ({
   city: c.city,
   email: c.email ?? '',
   phone: c.phone ?? '',
-  siren: c.siren ?? '',
-  siret: c.siret ?? '',
+  siret: formatSiret(c.siret),
   vat_number: c.vat_number ?? '',
   rcs: c.rcs ?? '',
 });
@@ -62,8 +55,7 @@ export const companyFromForm = (v: CompanyValues) => ({
   share_capital: toNull(v.share_capital),
   email: toNull(v.email.toLowerCase()),
   phone: toNull(v.phone),
-  siren: toNull(v.siren),
-  siret: toNull(v.siret),
+  siret: siretValue(v.siret),
   vat_number: toNull(digits(v.vat_number).toUpperCase()),
   rcs: toNull(v.rcs),
 });

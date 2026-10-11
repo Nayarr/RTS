@@ -1,6 +1,5 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { savePart, type Part } from './api';
 import { partsKey, useCatalogMutation } from './hooks';
+import { PartFields } from './PartFields';
 import { partFromForm, partSchema, partToForm, type PartValues } from './schemas';
 
 interface PartDialogProps {
@@ -21,16 +21,12 @@ interface PartDialogProps {
 }
 
 export function PartDialog({ part, onClose }: PartDialogProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<PartValues>({ resolver: zodResolver(partSchema), defaultValues: partToForm(part) });
+  const form = useForm<PartValues>({ resolver: zodResolver(partSchema), defaultValues: partToForm(part) });
 
   const save = useCatalogMutation(
     partsKey,
     (values: PartValues) => savePart(part?.id ?? null, partFromForm(values)),
-    part ? 'Pièce mise à jour' : 'Pièce ajoutée au catalogue',
+    part ? 'Pièce mise à jour' : 'Pièce ajoutée à la base',
   );
 
   return (
@@ -39,48 +35,22 @@ export function PartDialog({ part, onClose }: PartDialogProps) {
         <DialogHeader>
           <DialogTitle>{part ? 'Modifier la pièce' : 'Nouvelle pièce'}</DialogTitle>
           <DialogDescription>
-            Les prix sont repris quand la pièce est ajoutée à un OR ou un devis.
+            Proposée ensuite quand une pièce est ajoutée à un devis, une facture ou un OR.
           </DialogDescription>
         </DialogHeader>
         <form
           id="part-form"
           noValidate
-          className="space-y-4"
-          onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: onClose }))}
+          onSubmit={form.handleSubmit((values) => save.mutate(values, { onSuccess: onClose }))}
         >
-          <FormField
-            id="part-designation"
-            label="Désignation"
-            error={errors.designation?.message}
-            {...register('designation')}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FormField id="part-brand" label="Marque" {...register('brand')} />
-            <FormField id="part-supplier" label="Fournisseur" {...register('supplier_name')} />
-            <FormField id="part-manufacturer-ref" label="Réf. fabricant" {...register('manufacturer_ref')} />
-            <FormField id="part-oem-ref" label="Réf. constructeur" {...register('oem_ref')} />
-            <FormField
-              id="part-purchase"
-              label="Prix d’achat HT (€)"
-              inputMode="decimal"
-              error={errors.purchase_price?.message}
-              {...register('purchase_price')}
-            />
-            <FormField
-              id="part-sale"
-              label="Prix de vente HT (€)"
-              inputMode="decimal"
-              error={errors.sale_price?.message}
-              {...register('sale_price')}
-            />
-          </div>
+          <PartFields form={form} idPrefix="part" />
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Annuler
           </Button>
           <Button type="submit" form="part-form" disabled={save.isPending}>
-            {save.isPending ? 'Enregistrement…' : part ? 'Enregistrer' : 'Ajouter au catalogue'}
+            {save.isPending ? 'Enregistrement…' : part ? 'Enregistrer' : 'Ajouter à la base'}
           </Button>
         </DialogFooter>
       </DialogContent>

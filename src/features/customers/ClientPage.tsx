@@ -229,13 +229,13 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                 )}
                 {!individual && (
                   <FormField
-                    id="client-siren"
-                    label="SIREN"
+                    id="client-siret"
+                    label="SIRET"
                     inputMode="numeric"
-                    placeholder="123 456 789"
+                    placeholder="984 989 137 00018"
                     className="num"
-                    error={errors.siren?.message}
-                    {...register('siren')}
+                    error={errors.siret?.message}
+                    {...register('siret')}
                   />
                 )}
                 <FormField

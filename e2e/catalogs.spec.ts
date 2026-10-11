@@ -65,9 +65,7 @@ test('consommable : création, réapprovisionnement, inventaire, alerte et retra
   await expect(card).toHaveCount(0);
 });
 
-test('catalogue de pièces : ajout avec nouveau fournisseur, recherche, modification, retrait', async ({
-  page,
-}, testInfo) => {
+test('base de pièces : ajout avec marge, recherche, modification, retrait', async ({ page }, testInfo) => {
   const designation = unique('Courroie test', testInfo.project.name);
   await loginAs(page, 'direction@rts.local');
   await page.goto('/stock/pieces');
@@ -77,24 +75,28 @@ test('catalogue de pièces : ajout avec nouveau fournisseur, recherche, modifica
   await create.getByLabel('Désignation').fill(designation);
   await create.getByLabel('Fournisseur').fill(`Fournisseur ${designation}`);
   await create.getByLabel('Prix d’achat HT (€)').fill('40');
-  await create.getByLabel('Prix de vente HT (€)').fill('60');
-  await create.getByRole('button', { name: 'Ajouter au catalogue' }).click();
-  await expect(page.getByText('Pièce ajoutée au catalogue')).toBeVisible();
+  await create.getByLabel('Frais de port HT (€)').fill('10');
+  await create.getByLabel('Marge (%)').fill('20');
+  await expect(create.getByLabel('Prix de vente HT calculé')).toHaveText('60,00 €');
+  await create.getByRole('button', { name: 'Ajouter à la base' }).click();
+  await expect(page.getByText('Pièce ajoutée à la base')).toBeVisible();
 
-  // Recherche côté serveur : les autres pièces disparaissent
+  // Recherche : les autres pièces disparaissent
   await page.getByRole('searchbox', { name: 'Rechercher une pièce' }).fill(designation);
   await expect(page.getByText('Filtre à huile')).toHaveCount(0);
-  // Ligne du tableau (bureau) ou carte (mobile)
-  const item = page.locator('tr, [role="article"]').filter({ hasText: designation });
-  await expect(item.getByText(`Fournisseur ${designation}`)).toBeVisible();
-  await expect(item.getByText('50 %')).toBeVisible();
+  const item = page.getByRole('row', { name: designation });
+  await expect(item).toContainText('50,00 €'); // achat + port
+  await expect(item).toContainText('20 %');
+  await expect(item).toContainText('60,00 €');
 
+  // Marge en euros : prix de vente recalculé, fournisseur gardé
   await page.getByRole('button', { name: `Modifier ${designation}` }).click();
   const edit = page.getByRole('dialog', { name: 'Modifier la pièce' });
   await expect(edit.getByLabel('Fournisseur')).toHaveValue(`Fournisseur ${designation}`);
-  await edit.getByLabel('Prix de vente HT (€)').fill('44');
+  await edit.getByRole('button', { name: 'Marge en euros' }).click();
+  await edit.getByLabel('Marge (€)').fill('4');
   await edit.getByRole('button', { name: 'Enregistrer' }).click();
-  await expect(item.getByText('10 %')).toBeVisible();
+  await expect(item).toContainText('54,00 €');
 
   await page.getByRole('button', { name: `Supprimer ${designation}` }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Retirer' }).click();

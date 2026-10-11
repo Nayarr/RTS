@@ -1,10 +1,10 @@
 import { Fragment } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Gift, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { decimalText, formatEuro, parseDecimal } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
-import { lineNet, type EditableLine, type LineType } from './lines';
+import { isOfferedLine, lineNet, type EditableLine, type LineType } from './lines';
 
 const TYPE_LABELS: Partial<Record<LineType, string>> = {
   labor: 'Main d’œuvre',
@@ -71,7 +71,7 @@ function NumberCell({
 /** En-têtes de colonnes (écran large), alignés sur `LineRow`. */
 export function LineColumns() {
   return (
-    <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_2.25rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground md:grid">
+    <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_4.75rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground md:grid">
       <span>Prestation / pièce</span>
       <span className="text-right">Qté</span>
       <span className="text-right">Prix unit. HT</span>
@@ -97,10 +97,11 @@ export function LineRow({
 }) {
   const isText = line.line_type === 'text';
   const label = TYPE_LABELS[line.line_type];
+  const offered = isOfferedLine(line);
 
   return (
-    <li className="grid grid-cols-[1fr_auto] items-center gap-2 border-b px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_2.25rem] md:px-6">
-      <div className="flex min-w-0 items-start gap-2">
+    <li className="grid grid-cols-[1fr_auto] items-center gap-2 border-b px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_4.75rem] md:px-6">
+      <div className="flex min-w-0 flex-wrap items-start gap-x-2">
         {label && (
           <span className="tag mt-1.5 shrink-0">
             {label}
@@ -126,16 +127,38 @@ export function LineRow({
             if (event.target.value !== line.description) onSave({ description: event.target.value });
           }}
         />
+        {offered && (
+          <span className="badge s-ok mb-1 ml-2 basis-full sm:basis-auto">Offert à titre commercial</span>
+        )}
       </div>
-      <button
-        type="button"
-        className="ibtn sm ghost md:order-last"
-        aria-label={`Supprimer ${line.description || 'la ligne'}`}
-        disabled={locked || deleting}
-        onClick={onDelete}
-      >
-        <Trash2 className="i s" />
-      </button>
+      <div className="flex justify-end gap-0.5 md:order-last">
+        {!isText && (
+          <button
+            type="button"
+            className={cn('ibtn sm ghost', offered && 'text-primary')}
+            aria-label={
+              offered
+                ? `Ne plus offrir ${line.description || 'la ligne'}`
+                : `Offrir ${line.description || 'la ligne'}`
+            }
+            aria-pressed={offered}
+            title={offered ? 'Ne plus offrir' : 'Offrir (geste commercial)'}
+            disabled={locked}
+            onClick={() => onSave({ discount_percent: offered ? 0 : 100 })}
+          >
+            <Gift className="i s" />
+          </button>
+        )}
+        <button
+          type="button"
+          className="ibtn sm ghost"
+          aria-label={`Supprimer ${line.description || 'la ligne'}`}
+          disabled={locked || deleting}
+          onClick={onDelete}
+        >
+          <Trash2 className="i s" />
+        </button>
+      </div>
       {isText ? (
         <span className="hidden md:col-span-4 md:block" />
       ) : (
@@ -152,11 +175,14 @@ export function LineRow({
   );
 }
 
-/** Totaux HT, TVA par taux, TTC. */
+/** Totaux HT, valeur offerte, TVA par taux, TTC. */
 export function TotalsList({
   totals,
+  offered = 0,
 }: {
   totals: { ht: number; ttc: number; rates: { rate: number; amount: number }[] };
+  /** Valeur des prestations offertes (« Dont offert »). */
+  offered?: number;
 }) {
   return (
     <dl
@@ -165,6 +191,12 @@ export function TotalsList({
     >
       <dt className="muted">Total HT</dt>
       <dd className="num">{formatEuro(totals.ht)}</dd>
+      {offered > 0 && (
+        <>
+          <dt className="muted">Dont offert</dt>
+          <dd className="num">{formatEuro(offered)}</dd>
+        </>
+      )}
       {totals.rates.map(({ rate, amount }) => (
         <Fragment key={rate}>
           <dt className="muted">TVA ({String(rate).replace('.', ',')} %)</dt>

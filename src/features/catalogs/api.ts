@@ -83,7 +83,7 @@ export async function fetchParts(search: string): Promise<Part[]> {
   if (term) {
     const pattern = `%${term}%`;
     query = query.or(
-      ['designation', 'brand', 'manufacturer_ref', 'oem_ref']
+      ['designation', 'brand', 'manufacturer_ref', 'oem_ref', 'vehicle_ref']
         .map((column) => `${column}.ilike.${pattern}`)
         .join(','),
     );
@@ -103,13 +103,30 @@ export async function ensureSupplier(name: string): Promise<string | null> {
 
 export type PartInput = Omit<TablesInsert<'parts'>, 'supplier_id'> & { supplier_name: string };
 
-export async function savePart(id: string | null, { supplier_name, ...input }: PartInput) {
+/** Enregistre la pièce dans la base (création ou mise à jour) et renvoie son identifiant. */
+export async function savePart(id: string | null, { supplier_name, ...input }: PartInput): Promise<string> {
   const row = { ...input, supplier_id: await ensureSupplier(supplier_name) };
   const { data, error } = id
     ? await supabase.from('parts').update(row).eq('id', id).select('id')
     : await supabase.from('parts').insert(row).select('id');
   if (error) throw error;
-  if (!data.length) throw new Error('Catalogue modifiable par la direction seulement');
+  const saved = data[0];
+  if (!saved) throw new Error('Base de pièces modifiable par le bureau seulement');
+  return saved.id;
+}
+
+/** Pièce de la base avec ses chiffres (factures émises) : utilisations, ventes, marge. */
+export type PartStats = Tables<'v_part_stats'> & { id: string; designation: string };
+
+export async function fetchPartStats(): Promise<PartStats[]> {
+  const { data, error } = await supabase
+    .from('v_part_stats')
+    .select('*')
+    .order('quantity_sold', { ascending: false })
+    .order('designation')
+    .limit(1000);
+  if (error) throw error;
+  return data as PartStats[];
 }
 
 export async function deletePart(id: string) {

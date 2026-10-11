@@ -65,8 +65,8 @@ select throws_ok($$ select public.ensure_supplier('Pirate') $$, '42501', 'Réser
 
 -- ---------------------------------------------------------------- Pièces
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
-select throws_ok($$ insert into public.parts (designation) values ('Filtre à huile') $$,
-                 '42501', null, 'Le catalogue de pièces est modifié par la direction seulement');
+select lives_ok($$ insert into public.parts (designation) values ('Filtre à huile') $$,
+                'La réception enregistre une pièce dans la base');
 
 select * from finish();
 rollback;

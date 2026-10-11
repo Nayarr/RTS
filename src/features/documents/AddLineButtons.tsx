@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Clock, Package, Plus, Type, Wrench } from 'lucide-react';
 import { z } from 'zod';
@@ -13,9 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { CatalogPicker } from '@/features/catalogs/CatalogPicker';
-import type { Part } from '@/features/catalogs/api';
+import { toast } from 'sonner';
+import { savePart, type Part } from '@/features/catalogs/api';
+import { useParts } from '@/features/catalogs/hooks';
+import { PartFields } from '@/features/catalogs/PartFields';
+import { partFromForm, partSchema, partToForm, type PartValues } from '@/features/catalogs/schemas';
 import { decimalField, decimalValue, formatEuro } from '@/lib/numbers';
+import { useDebounced } from '@/lib/use-debounced';
 import { useServicePackages } from './hooks';
 import { packagesFor, type NewLine, type ServicePackage, type VehicleType } from './lines';
 
@@ -26,6 +30,9 @@ const laborSchema = z.object({
   hours: decimalField({ required: true, positive: true }),
 });
 type LaborValues = z.infer<typeof laborSchema>;
+
+const partLineSchema = partSchema.extend({ quantity: decimalField({ required: true, positive: true }) });
+type PartLineValues = z.infer<typeof partLineSchema>;
 
 function LaborDialog({
   rate,
@@ -135,25 +142,146 @@ function PackageDialog({
   );
 }
 
-function PartDialog({ onAdd, onClose }: { onAdd: (part: Part) => void; onClose: () => void }) {
+/**
+ * Pièce saisie directement : propositions de la base pendant la frappe (désignation ou
+ * référence), puis enregistrement dans la base avant l'ajout de la ligne.
+ */
+function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unknown>; onClose: () => void }) {
+  const form = useForm<PartLineValues>({
+    resolver: zodResolver(partLineSchema),
+    defaultValues: { ...partToForm(null), quantity: '1' },
+  });
+  const [picked, setPicked] = useState<Part | null>(null);
+  const designation = useWatch({ control: form.control, name: 'designation' });
+  const search = useDebounced(picked ? '' : designation, 250);
+  const parts = useParts(search.trim().length >= 2 ? search : '');
+  const suggestions = search.trim().length >= 2 ? (parts.data ?? []).slice(0, 5) : [];
+  const [saving, setSaving] = useState(false);
+
+  const pick = (part: Part) => {
+    setPicked(part);
+    form.reset({ ...partToForm(part), quantity: form.getValues('quantity') });
+  };
+
+  const submit = form.handleSubmit(async (values) => {
+    const input = partFromForm(values);
+    if (input.sale_price === null || input.sale_price === undefined) {
+      form.setError('sale_price', { message: 'Indique le prix de vente ou la marge' });
+      return;
+    }
+    const quantity = decimalValue(values.quantity) ?? 1;
+    const shipping = input.shipping_cost ?? null;
+    setSaving(true);
+    try {
+      const partId = await savePart(picked?.id ?? null, input);
+      await onAdd({
+        line_type: 'part',
+        description: input.designation,
+        unit_price: input.sale_price,
+        quantity,
+        purchase_price: input.purchase_price ?? null,
+        shipping_cost: shipping === null ? null : Math.round(shipping * quantity * 100) / 100,
+        brand: input.brand ?? null,
+        manufacturer_ref: input.manufacturer_ref ?? null,
+        oem_ref: input.oem_ref ?? null,
+        part_id: partId,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Pièce non enregistrée');
+    } finally {
+      setSaving(false);
+    }
+  });
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Ajouter une pièce du catalogue</DialogTitle>
-          <DialogDescription>Désignation, références et prix de vente sont repris.</DialogDescription>
+          <DialogTitle>Ajouter une pièce</DialogTitle>
+          <DialogDescription>
+            La pièce est enregistrée dans la base et proposée la prochaine fois.
+          </DialogDescription>
         </DialogHeader>
-        <CatalogPicker
-          onPick={onAdd}
-          emptyHint="Aucune pièce correspondante : ajoute une ligne libre et saisis-la."
-        />
+        <form id="part-line-form" noValidate className="space-y-4" onSubmit={submit}>
+          <PartFields
+            form={form as unknown as UseFormReturn<PartValues>}
+            idPrefix="part-line"
+            designation={
+              <div className="space-y-2">
+                <FormField
+                  id="part-line-designation"
+                  label="Désignation"
+                  autoComplete="off"
+                  placeholder="Désignation ou référence"
+                  error={form.formState.errors.designation?.message}
+                  {...form.register('designation')}
+                />
+                {picked ? (
+                  <p className="hint flex flex-wrap items-center gap-2">
+                    Pièce de la base, mise à jour à l’ajout.
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => {
+                        setPicked(null);
+                        form.reset({ ...partToForm(null), quantity: form.getValues('quantity') });
+                      }}
+                    >
+                      Nouvelle pièce
+                    </button>
+                  </p>
+                ) : (
+                  suggestions.length > 0 && (
+                    <ul aria-label="Pièces de la base" className="divide-y rounded-md border bg-card">
+                      {suggestions.map((part) => (
+                        <li key={part.id}>
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-muted"
+                            onClick={() => pick(part)}
+                          >
+                            <span>
+                              <span className="font-medium">{part.designation}</span>
+                              <span className="block text-xs text-muted-foreground">
+                                {[part.manufacturer_ref, part.vehicle_ref, part.brand]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </span>
+                            </span>
+                            <span className="shrink-0 tabular-nums">{formatEuro(part.sale_price)}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                )}
+              </div>
+            }
+          />
+          <FormField
+            id="part-line-quantity"
+            label="Quantité"
+            inputMode="decimal"
+            className="num sm:max-w-[10rem]"
+            error={form.formState.errors.quantity?.message}
+            {...form.register('quantity')}
+          />
+        </form>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" form="part-line-form" disabled={saving}>
+            {saving ? 'Enregistrement…' : 'Ajouter la pièce'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
 /**
- * Boutons d'ajout de l'ancienne appli : ligne libre, forfait, pièce du catalogue,
+ * Boutons d'ajout de l'ancienne appli : ligne libre, forfait, pièce (saisie et gardée dans la base),
  * main d'œuvre au taux applicable, texte. Le document enregistre la ligne (`onAdd`).
  */
 export function AddLineButtons({
@@ -190,7 +318,7 @@ export function AddLineButtons({
         <Package /> Insérer un forfait
       </Button>
       <Button variant="outline" size="sm" onClick={() => setOpen('part')}>
-        <Wrench /> Ajouter une pièce du catalogue
+        <Wrench /> Ajouter une pièce
       </Button>
       <Button variant="outline" size="sm" onClick={() => setOpen('labor')}>
         <Clock /> Ajouter de la main d’œuvre
@@ -239,19 +367,8 @@ export function AddLineButtons({
       {open === 'part' && (
         <PartDialog
           onClose={() => setOpen(null)}
-          onAdd={(part) =>
-            add({
-              line_type: 'part',
-              description: part.designation,
-              unit_price: part.sale_price,
-              purchase_price: part.purchase_price,
-              supplier_id: part.supplier_id,
-              brand: part.brand,
-              manufacturer_ref: part.manufacturer_ref,
-              oem_ref: part.oem_ref,
-              part_id: part.id,
-            })
-          }
+          // Fenêtre fermée une fois la ligne enregistrée (l'erreur est signalée par le document)
+          onAdd={(line) => onAdd(line).then(() => setOpen(null))}
         />
       )}
     </div>

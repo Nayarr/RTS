@@ -23,8 +23,8 @@ insert into public.technicians (id, profile_id, display_name, legacy_email) valu
   ('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'Bruno', 'tech.bruno@test.fr');
 
 -- Référentiels
-insert into public.clients (id, name, billing_address, siren, email) values
-  ('20000000-0000-0000-0000-000000000001', 'Transports Dupont', '1 rue du Test, 75000 Paris', '123456789', 'compta@dupont.fr'),
+insert into public.clients (id, name, billing_address, siret, email) values
+  ('20000000-0000-0000-0000-000000000001', 'Transports Dupont', '1 rue du Test, 75000 Paris', '12345678900015', 'compta@dupont.fr'),
   ('20000000-0000-0000-0000-000000000002', 'Logistique Martin', null, null, null);
 
 insert into public.vehicles (id, plate, client_id, vehicle_type) values

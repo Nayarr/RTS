@@ -92,15 +92,14 @@ describe('document PDF', () => {
       email: 'atelier@rapidtruckservice.fr',
       legal_form: 'SASU',
       share_capital: '181 726 €',
-      siren: '984 989 137',
-      siret: '984 989 137 00018',
+      siret: '98498913700018',
       vat_number: 'FR66984989137',
       rcs: 'RCS Pontoise',
     } as CompanySettings;
     expect(companyLines(company)).toEqual([
       'RAPID TRUCK SERVICE',
       '19 rue Gaston Monmousseau, 95190 Goussainville · atelier@rapidtruckservice.fr',
-      'SASU au capital de 181 726 € · SIREN 984 989 137 · SIRET 984 989 137 00018',
+      'SASU au capital de 181 726 € · SIRET 984 989 137 00018',
       'TVA intracommunautaire : FR66984989137 · RCS Pontoise',
     ]);
     expect(companyLines({ ...company, email: null, vat_number: null, rcs: null })[1]).toBe(

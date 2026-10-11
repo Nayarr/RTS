@@ -39,6 +39,8 @@ export interface NewLine {
   part_id?: string | null;
   supplier_id?: string | null;
   purchase_price?: number | null;
+  /** Frais de port de la ligne (port de la pièce × quantité). */
+  shipping_cost?: number | null;
   brand?: string | null;
   manufacturer_ref?: string | null;
   oem_ref?: string | null;
@@ -89,6 +91,19 @@ export function computeTotals(lines: PricedLine[]) {
     rates.push({ rate, amount: euros(amount) });
   }
   return { ht: euros(ht), vat: euros(vat), ttc: euros(ht + vat), rates };
+}
+
+/** Ligne offerte (geste commercial) : chiffrée, avec 100 % de remise. */
+export const isOfferedLine = (line: Pick<PricedLine, 'line_type' | 'unit_price' | 'discount_percent'>) =>
+  line.line_type !== 'text' && line.discount_percent >= 100 && (line.unit_price ?? 0) > 0;
+
+/** Valeur des prestations offertes (prix × quantité), affichée « Dont offert ». */
+export function offeredTotal(lines: PricedLine[]) {
+  let cents = 0n;
+  for (const line of lines) {
+    if (isOfferedLine(line)) cents += lineNetCents({ ...line, discount_percent: 0 });
+  }
+  return euros(cents);
 }
 
 /** Forfait applicable au type de véhicule (même règle que `package_fits_vehicle`). */

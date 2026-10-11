@@ -74,7 +74,7 @@ const invoice = (overrides: Partial<InvoiceOverview> = {}): InvoiceOverview =>
     client_id: 'c1',
     client_name: 'Transports Martin',
     client_address: null,
-    client_siren: null,
+    client_siret: null,
     vehicle_label: 'GH-512-RT',
     mileage: 184320,
     service_date: null,
@@ -160,7 +160,7 @@ function setupInvoice(detail: Partial<InvoiceDetail> = {}) {
     ],
     payments: [],
     creditNotes: [],
-    client: { name: 'Transports Martin', billing_address: null, siren: null, email: null },
+    client: { name: 'Transports Martin', billing_address: null, siret: null, email: null },
     vehicleType: 'pl',
     laborRate: 90,
     clientDiscount: 5,
@@ -177,10 +177,10 @@ function setupInvoice(detail: Partial<InvoiceDetail> = {}) {
 
 describe('règles de facturation', () => {
   it('points à vérifier avant l’émission (comme l’ancienne appli)', () => {
-    const client = { name: 'X', billing_address: null, siren: '', email: null };
+    const client = { name: 'X', billing_address: null, siret: '', email: null };
     expect(issueWarnings([line(), line({ id: 'l2', unit_price: null })], client)).toEqual([
       '1 ligne sans prix',
-      'SIREN du client manquant',
+      'SIRET du client manquant',
     ]);
     // Adresse de facturation : mention obligatoire, elle bloque l'émission
     expect(issueBlockers(client)).toHaveLength(1);
@@ -192,7 +192,7 @@ describe('règles de facturation', () => {
           line({ id: 't', line_type: 'text', unit_price: null }),
           line({ id: 'p', line_type: 'package', unit_price: null }),
         ],
-        { name: 'X', billing_address: '1 rue A', siren: '123456789', email: null },
+        { name: 'X', billing_address: '1 rue A', siret: '12345678900015', email: null },
       ),
     ).toEqual([]);
   });
@@ -343,11 +343,11 @@ describe('brouillon de facture', () => {
   it('émission après confirmation, avec les points à vérifier', async () => {
     vi.mocked(issueInvoice).mockResolvedValue('F11887');
     setupInvoice({
-      client: { name: 'Transports Martin', billing_address: '1 rue A', siren: null, email: null },
+      client: { name: 'Transports Martin', billing_address: '1 rue A', siret: null, email: null },
     });
     await userEvent.click(await screen.findByRole('button', { name: /Émettre la facture/ }));
     const dialog = screen.getByRole('dialog', { name: 'Émettre définitivement cette facture ?' });
-    expect(dialog).toHaveTextContent('SIREN du client manquant');
+    expect(dialog).toHaveTextContent('SIRET du client manquant');
     expect(dialog).toHaveTextContent(/720,00\s€ TTC/);
     await userEvent.click(within(dialog).getByRole('button', { name: 'Émettre la facture' }));
     await waitFor(() => expect(issueInvoice).toHaveBeenCalledWith('i1'));

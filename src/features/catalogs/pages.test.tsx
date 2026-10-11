@@ -5,14 +5,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
 import {
   fetchConsumables,
-  fetchParts,
+  fetchPartStats,
   removeConsumable,
   restockConsumable,
   saveConsumable,
   savePart,
   setConsumableStock,
   type Consumable,
-  type Part,
+  type PartStats,
 } from './api';
 import type * as CatalogApi from './api';
 import { ConsumablesPage } from './ConsumablesPage';
@@ -25,7 +25,7 @@ vi.mock('./api', async (importOriginal) => ({
   restockConsumable: vi.fn(),
   setConsumableStock: vi.fn(),
   removeConsumable: vi.fn(),
-  fetchParts: vi.fn(),
+  fetchPartStats: vi.fn(),
   savePart: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -45,21 +45,28 @@ const consumable = (overrides: Partial<Consumable> = {}): Consumable => ({
   ...overrides,
 });
 
-const part: Part = {
+const part = (overrides: Partial<PartStats> = {}): PartStats => ({
   id: 'p1',
   designation: 'Filtre à huile',
-  brand: 'Mann-Filter',
+  vehicle_ref: 'Volvo FH 500',
   manufacturer_ref: 'HU 12 140 x',
+  brand: 'Mann-Filter',
   oem_ref: null,
   supplier_id: 's1',
   supplier_name: 'PL Pièces 95',
   purchase_price: 21.5,
-  sale_price: 32,
-  is_active: true,
-  legacy_id: null,
-  created_at: '2026-09-27T08:00:00Z',
-  updated_at: '2026-09-27T08:00:00Z',
-};
+  shipping_cost: 2.5,
+  margin_kind: 'percent',
+  margin_value: 30,
+  sale_price: 31.2,
+  invoices_count: 3,
+  quotes_count: 4,
+  quantity_sold: 5,
+  revenue_ht: 156,
+  margin_ht: 36,
+  last_sold_at: '2026-10-01T08:00:00Z',
+  ...overrides,
+});
 
 const setup = (path: string) =>
   renderRoutes(
@@ -159,36 +166,59 @@ describe('consommables', () => {
   });
 });
 
-describe('catalogue de pièces', () => {
-  it('affiche prix et marge, et recherche côté serveur', async () => {
-    vi.mocked(fetchParts).mockResolvedValue([part]);
+describe('pièces', () => {
+  it('chiffres des ventes, pièces les plus utilisées en premier, recherche par référence véhicule', async () => {
+    vi.mocked(fetchPartStats).mockResolvedValue([
+      part({
+        id: 'p2',
+        designation: 'Ampoule H7',
+        quantity_sold: 1,
+        revenue_ht: 9,
+        margin_ht: 1,
+        vehicle_ref: null,
+      }),
+      part(),
+    ]);
     setup('/stock/pieces');
-    const row = await screen.findByRole('row', { name: 'Filtre à huile' });
-    expect(within(row).getByText('49 %')).toBeInTheDocument();
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher une pièce' }), 'mann');
-    await waitFor(() => expect(fetchParts).toHaveBeenLastCalledWith('mann'));
+    const rows = await screen.findAllByRole('row');
+    expect(rows[1]).toHaveAccessibleName('Filtre à huile');
+    const row = screen.getByRole('row', { name: 'Filtre à huile' });
+    expect(within(row).getByText('23 %')).toBeInTheDocument(); // 36 / 156
+    expect(within(row).getByText('30 %')).toBeInTheDocument(); // marge réglée
+    expect(within(row).getByText('Sur 4 devis')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Chiffres des pièces' })).toHaveTextContent('Pièces vendues6');
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Rechercher une pièce' }), 'volvo');
+    expect(screen.queryByRole('row', { name: 'Ampoule H7' })).not.toBeInTheDocument();
+    expect(screen.getByRole('row', { name: 'Filtre à huile' })).toBeInTheDocument();
   });
 
-  it('modifie une pièce en gardant son fournisseur', async () => {
-    vi.mocked(fetchParts).mockResolvedValue([part]);
-    vi.mocked(savePart).mockResolvedValue();
+  it('prix de vente calculé depuis la marge, fournisseur gardé', async () => {
+    vi.mocked(fetchPartStats).mockResolvedValue([part()]);
+    vi.mocked(savePart).mockResolvedValue('p1');
     setup('/stock/pieces');
     await userEvent.click(await screen.findByRole('button', { name: 'Modifier Filtre à huile' }));
     const dialog = screen.getByRole('dialog');
-    const sale = within(dialog).getByLabelText('Prix de vente HT (€)');
-    expect(sale).toHaveValue('32');
-    await userEvent.clear(sale);
-    await userEvent.type(sale, '34,90');
+    expect(within(dialog).getByLabelText('Prix de vente HT calculé')).toHaveTextContent('31,20');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Marge en euros' }));
+    const margin = within(dialog).getByLabelText('Marge (€)');
+    await userEvent.clear(margin);
+    await userEvent.type(margin, '10');
+    expect(within(dialog).getByLabelText('Prix de vente HT calculé')).toHaveTextContent('34,00');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
       expect(savePart).toHaveBeenCalledWith('p1', {
         designation: 'Filtre à huile',
-        brand: 'Mann-Filter',
+        vehicle_ref: 'Volvo FH 500',
         manufacturer_ref: 'HU 12 140 x',
+        brand: 'Mann-Filter',
         oem_ref: null,
         supplier_name: 'PL Pièces 95',
         purchase_price: 21.5,
-        sale_price: 34.9,
+        shipping_cost: 2.5,
+        margin_kind: 'amount',
+        margin_value: 10,
+        sale_price: 34,
       }),
     );
   });

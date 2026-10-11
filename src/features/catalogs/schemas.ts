@@ -43,33 +43,74 @@ export const isLowStock = (c: Consumable) => c.alert_threshold !== null && c.sto
 
 // ---------------------------------------------------------------- Pièces
 
+export type MarginKind = 'amount' | 'percent';
+
+/** Prix de vente HT = achat + port + marge (montant ou % du coût), comme la base (`part_sale_price`). */
+export function partSalePrice(
+  purchase: number | null,
+  shipping: number | null,
+  kind: MarginKind,
+  margin: number | null,
+): number | null {
+  if (purchase === null || margin === null) return null;
+  const cost = purchase + (shipping ?? 0);
+  const price = kind === 'amount' ? cost + margin : cost * (1 + margin / 100);
+  return Math.round(price * 100) / 100;
+}
+
 export const partSchema = z.object({
   designation: z.string().trim().min(1, 'Indique la désignation').max(200),
-  brand: optionalText,
+  vehicle_ref: optionalText,
   manufacturer_ref: optionalText,
+  brand: optionalText,
   oem_ref: optionalText,
   supplier_name: optionalText,
   purchase_price: decimalField(),
+  shipping_cost: decimalField(),
+  margin_kind: z.enum(['amount', 'percent']),
+  margin_value: decimalField(),
   sale_price: decimalField(),
 });
 export type PartValues = z.infer<typeof partSchema>;
 
 export const partToForm = (p: Part | null): PartValues => ({
   designation: p?.designation ?? '',
-  brand: p?.brand ?? '',
+  vehicle_ref: p?.vehicle_ref ?? '',
   manufacturer_ref: p?.manufacturer_ref ?? '',
+  brand: p?.brand ?? '',
   oem_ref: p?.oem_ref ?? '',
   supplier_name: p?.supplier_name ?? '',
   purchase_price: decimalText(p?.purchase_price),
+  shipping_cost: decimalText(p?.shipping_cost),
+  margin_kind: p?.margin_kind ?? 'percent',
+  margin_value: decimalText(p?.margin_value),
   sale_price: decimalText(p?.sale_price),
 });
 
+/** Prix de vente du formulaire : calculé depuis la marge, sinon celui saisi. */
+export function formSalePrice(
+  v: Pick<PartValues, 'purchase_price' | 'shipping_cost' | 'margin_kind' | 'margin_value' | 'sale_price'>,
+) {
+  return (
+    partSalePrice(
+      decimalValue(v.purchase_price),
+      decimalValue(v.shipping_cost),
+      v.margin_kind,
+      decimalValue(v.margin_value),
+    ) ?? decimalValue(v.sale_price)
+  );
+}
+
 export const partFromForm = (v: PartValues): PartInput => ({
   designation: v.designation.trim(),
-  brand: orNull(v.brand),
+  vehicle_ref: orNull(v.vehicle_ref),
   manufacturer_ref: orNull(v.manufacturer_ref),
+  brand: orNull(v.brand),
   oem_ref: orNull(v.oem_ref),
   supplier_name: v.supplier_name.trim(),
   purchase_price: decimalValue(v.purchase_price),
-  sale_price: decimalValue(v.sale_price),
+  shipping_cost: decimalValue(v.shipping_cost),
+  margin_kind: v.margin_kind,
+  margin_value: decimalValue(v.margin_value),
+  sale_price: formSalePrice(v),
 });

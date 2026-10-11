@@ -18,6 +18,7 @@ export function useQuotePdf(quoteId: string) {
     const { doc, fileName } = await buildQuotePdf({
       quote: detail.quote,
       lines: detail.lines,
+      client: detail.clientBilling,
       company: settings.company,
       logo,
     });

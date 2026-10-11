@@ -65,11 +65,15 @@ test('devis d’un OR : chiffrage, pièce, PDF, accord du client, OR des travaux
   );
   await expect(totals).toContainText('270,00 €');
 
-  // Pièce du catalogue
-  await page.getByRole('button', { name: 'Ajouter une pièce du catalogue' }).click();
-  const partDialog = page.getByRole('dialog', { name: 'Ajouter une pièce du catalogue' });
-  await partDialog.getByRole('searchbox', { name: 'Chercher dans le catalogue' }).fill('filtre à huile');
-  await partDialog.getByRole('button', { name: /Filtre à huile/ }).click();
+  // Pièce proposée par la base pendant la saisie
+  await page.getByRole('button', { name: 'Ajouter une pièce' }).click();
+  const partDialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  await partDialog.getByLabel('Désignation').fill('filtre à huile');
+  await partDialog
+    .getByRole('list', { name: 'Pièces de la base' })
+    .getByRole('button', { name: /Filtre à huile/ })
+    .click();
+  await partDialog.getByRole('button', { name: 'Ajouter la pièce' }).click();
   await expect(totals).toContainText('302,00 €');
   await expect(totals).toContainText('362,40 €');
 

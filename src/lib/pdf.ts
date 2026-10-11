@@ -1,6 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import type { UserOptions } from 'jspdf-autotable';
 import type { CompanySettings } from '@/features/settings/api';
+import { formatSiret } from './siret';
 
 /**
  * Documents PDF (devis, factures) : même mise en page que l'ancienne appli
@@ -33,8 +34,11 @@ export async function createPdf(): Promise<PdfKit> {
 /** Espaces insécables (saisies copiées, formats français) → espaces simples, lisibles par la police du PDF. */
 export const pdfText = (value: string) => value.replace(/\s/g, ' ');
 
-/** Montant tel qu'imprimé sur les documents (« 138.00 € », police standard du PDF). */
-export const pdfMoney = (value: number) => `${value.toFixed(2)} €`;
+/** Montant tel qu'imprimé sur les documents (« 1 234,56 € », espaces simples lisibles par la police du PDF). */
+export const pdfMoney = (value: number) => {
+  const [int = '0', cents = '00'] = Math.abs(value).toFixed(2).split('.');
+  return `${value < 0 ? '-' : ''}${int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')},${cents} €`;
+};
 
 export const pdfDate = (date: Date) =>
   date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -46,8 +50,7 @@ export function companyLines(company: CompanySettings): string[] {
     company.legal_form && company.share_capital
       ? `${company.legal_form} au capital de ${company.share_capital}`
       : company.legal_form,
-    company.siren && `SIREN ${company.siren}`,
-    company.siret && `SIRET ${company.siret}`,
+    company.siret && `SIRET ${formatSiret(company.siret)}`,
   ];
   return [
     company.legal_name,

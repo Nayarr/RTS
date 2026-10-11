@@ -42,8 +42,8 @@ select is(public.issue_invoice((select id from public.invoices where status = 'd
           'F11887', 'La numérotation reprend après F11886 (GTA PRO)');
 
 select results_eq(
-  $$ select total_ht, total_vat, total_ttc, client_name, client_siren from public.invoices where number = 'F11887' $$,
-  $$ values (280.00::numeric, 56.00::numeric, 336.00::numeric, 'Transports Dupont'::text, '123456789'::text) $$,
+  $$ select total_ht, total_vat, total_ttc, client_name, client_siret from public.invoices where number = 'F11887' $$,
+  $$ values (280.00::numeric, 56.00::numeric, 336.00::numeric, 'Transports Dupont'::text, '12345678900015'::text) $$,
   'Totaux et instantané client figés à l''émission');
 
 select is((select status from public.repair_orders where id = '50000000-0000-0000-0000-000000000001'),
