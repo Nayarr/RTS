@@ -65,23 +65,26 @@ test('sans réseau, le technicien rouvre ses OR et son kilométrage part au reto
   // Laisse le temps au cache d'être écrit sur l'appareil (écritures regroupées toutes les 2 s)
   await page.waitForTimeout(2500);
 
+  // Bandeau du bas (la fiche a aussi son encadré « À compléter avant de terminer »)
+  const banner = page.getByRole('status').filter({ hasText: 'Hors connexion' });
+
   // Coupure du réseau : bandeau, puis réouverture de l'appli depuis le cache
   await context.setOffline(true);
-  await expect(page.getByRole('status')).toContainText('Hors connexion');
+  await expect(banner).toContainText('Hors connexion');
   await page.reload();
   await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
-  await expect(page.getByRole('status')).toContainText('Hors connexion');
+  await expect(banner).toContainText('Hors connexion');
 
   // Kilométrage saisi hors connexion : mis en attente
   await page.getByLabel('Kilométrage').fill('250000');
   await page.getByLabel('Kilométrage').press('Enter');
-  await expect(page.getByRole('status')).toContainText('1 modification en attente.');
+  await expect(banner).toContainText('1 modification en attente.');
 
   // Retour du réseau : envoi automatique
   await context.setOffline(false);
   await expect(page.getByText('Connexion rétablie : envoi des modifications en attente')).toBeVisible();
   await expect(page.getByText('Kilométrage enregistré')).toBeVisible();
-  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(banner).toHaveCount(0);
 
   const reception = client();
   await reception.auth.signInWithPassword({ email: 'reception@rts.local', password: PASSWORD });
