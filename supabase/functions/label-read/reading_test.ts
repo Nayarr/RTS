@@ -2,6 +2,7 @@ import { assertEquals, assertMatch } from '@std/assert';
 import { inspectionReadingPrompt, validPlate, validVin } from './inspection-reading.ts';
 import { addMonths, nextDueDate, readingPrompt, validDate } from './reading.ts';
 import { checkedLicense, licenseReadingPrompt } from './license-reading.ts';
+import { checkedRegistration, registrationReadingPrompt } from './registration-reading.ts';
 
 const TODAY = '2026-10-02';
 const reading = (next: string, last: string) => ({
@@ -111,4 +112,55 @@ Deno.test('permis : valeurs lues contrôlées (dates, numéro, catégories), per
     null,
   ]);
   assertMatch(licenseReadingPrompt(TODAY), /Nous sommes le 2026-10-02/);
+});
+
+Deno.test('carte grise : plaque, VIN, date, catégorie et carburant reconnus', () => {
+  const read = checkedRegistration(
+    {
+      plate: 'ge 781 uv',
+      first_registration: '2021-04-12',
+      brand: ' RENAULT ',
+      model: 'MASTER',
+      vin: 'VF1MA000123456789',
+      genre: 'CTTE',
+      energy: 'GO',
+      confidence: 'haute',
+    },
+    TODAY,
+  );
+  assertEquals(read, {
+    plate: 'GE-781-UV',
+    first_registration: '2021-04-12',
+    brand: 'RENAULT',
+    model: 'MASTER',
+    vin: 'VF1MA000123456789',
+    category: 'van',
+    fuel_type: 'Gazole',
+    confidence: 'haute',
+  });
+  const tractor = checkedRegistration(
+    {
+      ...read,
+      plate: '?',
+      first_registration: '2099-01-01',
+      vin: 'court',
+      genre: 'TRR',
+      energy: 'XX',
+      brand: '',
+      model: '',
+    },
+    TODAY,
+  );
+  assertEquals(
+    [
+      tractor.plate,
+      tractor.first_registration,
+      tractor.vin,
+      tractor.category,
+      tractor.fuel_type,
+      tractor.brand,
+    ],
+    [null, null, null, 'tractor', null, null],
+  );
+  assertMatch(registrationReadingPrompt(TODAY), /« numéro de série »/);
 });

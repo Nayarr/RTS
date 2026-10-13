@@ -6,7 +6,8 @@ export type AutoMailKind =
   | 'ct'
   | 'tailgate'
   | 'antipollution'
-  | 'maintenance';
+  | 'maintenance'
+  | 'rental_end';
 
 /** E-mail préparé par la base (prepare_auto_mails). */
 export interface AutoMailItem {
@@ -16,6 +17,7 @@ export interface AutoMailItem {
   client_id?: string | null;
   vehicle_id?: string | null;
   appointment_id?: string | null;
+  rental_id?: string | null;
   client_name?: string | null;
   plate?: string | null;
   reason?: string | null;
@@ -25,6 +27,10 @@ export interface AutoMailItem {
   /** Échéance : date limite et jeton du lien de prise de rendez-vous. */
   due_date?: string | null;
   token?: string | null;
+  /** Fin de location : numéro du contrat, reconduction tacite et son unité (« un jour »). */
+  number?: string | null;
+  tacit_renewal?: boolean | null;
+  unit?: string | null;
 }
 
 export interface AutoMailContext {
@@ -74,6 +80,29 @@ export function buildAutoMail(item: AutoMailItem, context: AutoMailContext): Aut
   const greeting = item.client_name ? `Bonjour ${item.client_name},` : 'Bonjour,';
   const vehicle = item.plate ? ` pour votre véhicule ${item.plate}` : '';
   const reason = cleanReason(item.reason);
+
+  if (item.kind === 'rental_end') {
+    if (!item.date || !item.time) return null;
+    const contract = item.number ? `Votre location ${item.number}` : 'Votre location';
+    const what = item.plate ? ` (véhicule ${item.plate})` : '';
+    const next = item.tacit_renewal
+      ? `Sans restitution à cette date, le contrat est reconduit tacitement d’${
+        item.unit ?? 'un jour'
+      }, et ainsi de suite jusqu’au retour du véhicule.`
+      : 'Merci de restituer le véhicule à cette date.';
+    return {
+      subject: `Fin de votre location le ${frenchDay(item.date)} à ${hour(item.time)}`,
+      text: [
+        greeting,
+        `${contract}${what} se termine le ${frenchDay(item.date)} à ${hour(item.time)}.`,
+        next,
+        context.phone ? `Pour toute question : ${context.phone}.` : '',
+        signature(context),
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+    };
+  }
 
   if (item.kind === 'appointment_reminder' || item.kind === 'appointment_confirmed') {
     if (!item.date || !item.time) return null;

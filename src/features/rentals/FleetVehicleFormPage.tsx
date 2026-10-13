@@ -1,7 +1,9 @@
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Check } from 'lucide-react';
+import { Check, ScanLine } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '@/app/PageHeader';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
@@ -10,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUploadButton } from '@/features/files/ImageUploadButton';
 import { cn } from '@/lib/utils';
-import { saveFleetVehicle } from './fleet-api';
+import { readRegistration, saveFleetVehicle, type RegistrationReading } from './fleet-api';
 import { CATEGORIES, CATEGORY_META, hasEngine, LICENSE_CATEGORIES } from './fleet-domain';
 import { useFleetMutation, useFleetVehicle } from './fleet-hooks';
 import {
@@ -53,6 +55,34 @@ function FleetVehicleForm({ id, initial }: { id: string | null; initial: FleetVe
   const category = useWatch({ control, name: 'category' });
   const photo = useWatch({ control, name: 'photo_file_id' });
   const engine = hasEngine(category);
+  const [reading, setReading] = useState<'idle' | 'reading' | RegistrationReading>('idle');
+
+  // Carte grise lue : les champs lus remplacent la saisie, à vérifier avant d'enregistrer
+  const readCard = async (fileId: string) => {
+    setReading('reading');
+    try {
+      const read = await readRegistration(fileId);
+      const fill = (
+        name: 'plate' | 'brand' | 'model' | 'vin' | 'first_registration',
+        value: string | null,
+      ) => {
+        if (value) setValue(name, value, { shouldDirty: true, shouldValidate: true });
+      };
+      fill('plate', read.plate);
+      fill('brand', read.brand);
+      fill('model', read.model);
+      fill('vin', read.vin);
+      fill('first_registration', read.first_registration);
+      if (read.category) setValue('category', read.category, { shouldDirty: true });
+      if (read.fuel_type) setValue('fuel_type', read.fuel_type, { shouldDirty: true });
+      setReading(read);
+    } catch (error) {
+      setReading('idle');
+      toast.error(
+        error instanceof Error ? error.message : 'Carte grise illisible : complète les champs à la main',
+      );
+    }
+  };
   const save = useFleetMutation(
     (values: FleetVehicleOutput) => saveFleetVehicle(id, fleetVehicleFromForm(values)),
     id ? 'Véhicule enregistré' : 'Véhicule ajouté à la flotte',
@@ -283,6 +313,14 @@ function FleetVehicleForm({ id, initial }: { id: string | null; initial: FleetVe
                   {...register('month_rate')}
                 />
                 <FormField
+                  id="year_rate"
+                  label="Année (€)"
+                  placeholder="facultatif"
+                  inputMode="decimal"
+                  error={errors.year_rate?.message}
+                  {...register('year_rate')}
+                />
+                <FormField
                   id="franchise"
                   label="Franchise (€)"
                   inputMode="decimal"
@@ -320,6 +358,34 @@ function FleetVehicleForm({ id, initial }: { id: string | null; initial: FleetVe
         </div>
 
         <div className="col gap-4">
+          <section data-slot="card" className="card" aria-labelledby="fleet-registration">
+            <div className="card-h">
+              <h2 className="h2" id="fleet-registration">
+                Carte grise
+              </h2>
+            </div>
+            <div className="card-b col gap-2.5">
+              <p className="hint">
+                Photographie la carte grise : immatriculation, marque, modèle, VIN, première immatriculation,
+                catégorie et carburant sont remplis, à vérifier avant d’enregistrer.
+              </p>
+              <ImageUploadButton
+                category="registration_doc"
+                size="sm"
+                onUploaded={(fileId) => void readCard(fileId)}
+              >
+                <ScanLine /> {reading === 'reading' ? 'Lecture…' : 'Lire la carte grise'}
+              </ImageUploadButton>
+              {typeof reading === 'object' && (
+                <p className={cn('alert', reading.confidence === 'faible' ? 's-warn' : 's-ok')} role="status">
+                  {reading.confidence === 'faible'
+                    ? 'Carte grise lue avec doute : vérifie chaque champ.'
+                    : 'Carte grise lue : vérifie les champs remplis avant d’enregistrer.'}
+                </p>
+              )}
+            </div>
+          </section>
+
           <section data-slot="card" className="card" aria-labelledby="fleet-photo">
             <div className="card-h">
               <h2 className="h2" id="fleet-photo">

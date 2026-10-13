@@ -24,6 +24,7 @@ const vehicle = (patch: Partial<FleetVehicle> = {}): FleetVehicle => ({
   weekend_rate: null,
   week_rate: null,
   month_rate: null,
+  year_rate: null,
   km_included_per_day: 200,
   extra_km_price: 0.35,
   deposit: 1500,

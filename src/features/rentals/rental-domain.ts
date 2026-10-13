@@ -51,6 +51,7 @@ export const RATE_PERIODS = [
   { value: 'weekend', label: 'Week-end', unit: 'week-end', units: 'week-ends' },
   { value: 'week', label: 'Semaine', unit: 'semaine', units: 'semaines' },
   { value: 'month', label: 'Mois', unit: 'mois', units: 'mois' },
+  { value: 'year', label: 'Année', unit: 'an', units: 'ans' },
 ] as const;
 export type RatePeriod = (typeof RATE_PERIODS)[number]['value'];
 
@@ -70,6 +71,26 @@ export const DEFAULT_EQUIPMENT = [
   '2 clés',
 ];
 
+export const round2 = (value: number) => Math.round(value * 100) / 100;
+
+/** Durées proposées à la création du contrat (la tacite reconduction se fait à cette unité). */
+export const CONTRACT_UNITS = [
+  { value: 'day', label: 'Jour' },
+  { value: 'month', label: 'Mois' },
+  { value: 'year', label: 'Année' },
+] as const;
+export type ContractUnit = (typeof CONTRACT_UNITS)[number]['value'];
+
+/** Date de retour : départ + n jours, mois ou années (« AAAA-MM-JJ »). */
+export function contractEnd(departureDate: string, unit: ContractUnit, count: number): string {
+  const [year = 0, month = 1, day = 1] = departureDate.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  if (unit === 'day') date.setUTCDate(date.getUTCDate() + count);
+  else if (unit === 'month') date.setUTCMonth(date.getUTCMonth() + count);
+  else date.setUTCFullYear(date.getUTCFullYear() + count);
+  return date.toISOString().slice(0, 10);
+}
+
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
@@ -80,8 +101,9 @@ export function rentalDays(departure: string, plannedReturn: string): number {
   return Math.max(1, Math.ceil(span / DAY - 1 / 24)); // 1 h de tolérance
 }
 
-/** Nombre de périodes pour le tarif choisi (week-end : 1 ; semaine : 7 jours ; mois : 30 jours). */
+/** Nombre de périodes pour le tarif choisi (week-end : 1 ; semaine : 7 jours ; mois : 30 jours ; an : 365 jours). */
 export function periodsFor(period: RatePeriod, days: number): number {
+  if (period === 'year') return Math.max(1, Math.ceil(days / 365));
   if (period === 'week') return Math.max(1, Math.ceil(days / 7));
   if (period === 'month') return Math.max(1, Math.ceil(days / 30));
   if (period === 'weekend') return 1;
@@ -97,11 +119,11 @@ export function vehicleRate(vehicle: FleetVehicle, period: RatePeriod): number {
         ? vehicle.week_rate
         : period === 'month'
           ? vehicle.month_rate
-          : vehicle.daily_rate;
+          : period === 'year'
+            ? (vehicle.year_rate ?? (present(vehicle.month_rate) ? round2(vehicle.month_rate * 12) : null))
+            : vehicle.daily_rate;
   return rate ?? vehicle.daily_rate;
 }
-
-export const round2 = (value: number) => Math.round(value * 100) / 100;
 
 /** Montant de location HT (avant frais du retour). */
 export const rentalBase = (rental: Pick<Rental, 'unit_price' | 'periods' | 'discount_percent'>) =>

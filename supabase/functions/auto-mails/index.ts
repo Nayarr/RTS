@@ -43,12 +43,18 @@ export default {
     const sender = senderFor('workshop', settings, { from: fromAddress, replyTo: company?.email ?? null });
     if (!sender) return json(503, { error: 'Domaine d’envoi non réglé' });
 
-    const { data: prepared, error } = await admin.rpc('prepare_auto_mails');
-    if (error) {
-      console.error(error);
+    const [prepared, rentals] = await Promise.all([
+      admin.rpc('prepare_auto_mails'),
+      admin.rpc('prepare_rental_mails'),
+    ]);
+    if (prepared.error || rentals.error) {
+      console.error(prepared.error ?? rentals.error);
       return json(500, { error: 'Erreur inattendue' });
     }
-    const items = ((prepared ?? []) as AutoMailItem[]).filter((item) => item.kind && item.to);
+    const items = [
+      ...((prepared.data ?? []) as AutoMailItem[]),
+      ...((rentals.data ?? []) as AutoMailItem[]),
+    ].filter((item) => item.kind && item.to);
 
     const { count } = await admin
       .from('email_deliveries')
@@ -105,6 +111,7 @@ export default {
         p_appointment_id: item.appointment_id ?? undefined,
         p_provider_message_id: result?.id ?? undefined,
         p_error: failure ?? undefined,
+        p_rental_id: item.rental_id ?? undefined,
       });
       if (recordError) console.error(recordError);
       if (ok) {
