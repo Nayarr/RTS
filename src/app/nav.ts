@@ -38,6 +38,7 @@ export const GROUPS: NavGroup[] = [
       { to: '/atelier-en-direct', label: 'Atelier en direct' },
       { to: '/planning', label: 'Planning' },
       { to: '/rendez-vous', label: 'Rendez-vous', count: (data) => data.reminders_to_send, hot: true },
+      { to: '/documentation', label: 'Documentation technique', roles: ['direction'] },
     ],
   },
   {

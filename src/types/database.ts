@@ -3,6 +3,63 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      agent_actions: {
+        Row: {
+          conversation_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          error: string | null;
+          id: string;
+          kind: string;
+          payload: NonNullable<Json>;
+          profile_id: string;
+          result: Json | null;
+          status: string;
+          summary: string;
+        };
+        Insert: {
+          conversation_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          error?: string | null;
+          id?: string;
+          kind: string;
+          payload: NonNullable<Json>;
+          profile_id?: string;
+          result?: Json | null;
+          status?: string;
+          summary: string;
+        };
+        Update: {
+          conversation_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          error?: string | null;
+          id?: string;
+          kind?: string;
+          payload?: NonNullable<Json>;
+          profile_id?: string;
+          result?: Json | null;
+          status?: string;
+          summary?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agent_actions_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'agent_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'agent_actions_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       agent_briefings: {
         Row: {
           cache_read_tokens: number;
@@ -1197,6 +1254,71 @@ export type Database = {
           },
         ];
       };
+      diagnostic_requests: {
+        Row: {
+          answer: string;
+          created_at: string;
+          id: string;
+          input_tokens: number;
+          output_tokens: number;
+          profile_id: string | null;
+          question: string;
+          repair_order_id: string | null;
+          sources: NonNullable<Json>;
+        };
+        Insert: {
+          answer: string;
+          created_at?: string;
+          id?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          profile_id?: string | null;
+          question: string;
+          repair_order_id?: string | null;
+          sources?: NonNullable<Json>;
+        };
+        Update: {
+          answer?: string;
+          created_at?: string;
+          id?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          profile_id?: string | null;
+          question?: string;
+          repair_order_id?: string | null;
+          sources?: NonNullable<Json>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'diagnostic_requests_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'diagnostic_requests_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'diagnostic_requests_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'diagnostic_requests_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       document_sequences: {
         Row: {
           key: string;
@@ -2315,6 +2437,95 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      knowledge_chunks: {
+        Row: {
+          content: string;
+          document_id: string;
+          id: string;
+          page: number;
+          position: number;
+          tsv: unknown;
+        };
+        Insert: {
+          content: string;
+          document_id: string;
+          id?: string;
+          page: number;
+          position?: number;
+          tsv?: never;
+        };
+        Update: {
+          content?: string;
+          document_id?: string;
+          id?: string;
+          page?: number;
+          position?: number;
+          tsv?: never;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'knowledge_chunks_document_id_fkey';
+            columns: ['document_id'];
+            isOneToOne: false;
+            referencedRelation: 'knowledge_documents';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      knowledge_documents: {
+        Row: {
+          chunks: number;
+          created_at: string;
+          created_by: string | null;
+          error: string | null;
+          file_id: string | null;
+          id: string;
+          pages: number | null;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          chunks?: number;
+          created_at?: string;
+          created_by?: string | null;
+          error?: string | null;
+          file_id?: string | null;
+          id?: string;
+          pages?: number | null;
+          status?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          chunks?: number;
+          created_at?: string;
+          created_by?: string | null;
+          error?: string | null;
+          file_id?: string | null;
+          id?: string;
+          pages?: number | null;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'knowledge_documents_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'knowledge_documents_file_id_fkey';
+            columns: ['file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       labor_rates: {
         Row: {
@@ -6194,6 +6405,7 @@ export type Database = {
         Args: { p_category: Database['public']['Enums']['file_category'] };
         Returns: boolean;
       };
+      cancel_agent_action: { Args: { p_action_id: string }; Returns: undefined };
       cancel_rental: { Args: { p_rental_id: string }; Returns: undefined };
       cancel_signature_request: { Args: { p_request_id: string }; Returns: undefined };
       claim_push_batch: { Args: { p_limit?: number }; Returns: Json };
@@ -6393,6 +6605,28 @@ export type Database = {
         Returns: Record<string, unknown>;
       };
       ensure_supplier: { Args: { p_name: string }; Returns: string };
+      execute_agent_action: {
+        Args: { p_action_id: string };
+        Returns: {
+          conversation_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          error: string | null;
+          id: string;
+          kind: string;
+          payload: NonNullable<Json>;
+          profile_id: string;
+          result: Json | null;
+          status: string;
+          summary: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'agent_actions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       expire_pending_files: { Args: Record<PropertyKey, never>; Returns: number };
       file_max_bytes: { Args: { p_category: Database['public']['Enums']['file_category'] }; Returns: number };
       file_mime_allowed: {
@@ -6813,6 +7047,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      search_knowledge: {
+        Args: { p_limit?: number; p_query: string };
+        Returns: {
+          content: string;
+          page: number;
+          rank: number;
+          title: string;
+        }[];
+      };
       send_test_push: { Args: Record<PropertyKey, never>; Returns: undefined };
       set_consumable_stock: {
         Args: { p_consumable_id: string; p_note?: string; p_quantity: number };
@@ -6996,6 +7239,7 @@ export type Database = {
         };
       };
       valid_client_phones: { Args: { p_phones: Json }; Returns: boolean };
+      vehicle_history_for_diagnosis: { Args: { p_repair_order_id: string }; Returns: Json };
       verify_kiosk_exit_code: { Args: { p_code: string }; Returns: boolean };
       workshop_board: { Args: Record<PropertyKey, never>; Returns: Json };
       workshop_workload: { Args: { p_from: string; p_to: string }; Returns: Json };
