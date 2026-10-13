@@ -33,6 +33,11 @@ export const routes: RouteObject[] = [
         path: '/d/:token',
         lazy: page(() => import('@/features/public/PublicDocumentPage'), 'PublicDocumentPage'),
       },
+      // Lien de l'e-mail d'échéance : prise de rendez-vous par le client, sans compte.
+      {
+        path: '/rdv/:token',
+        lazy: page(() => import('@/features/public/PublicBookingPage'), 'PublicBookingPage'),
+      },
       {
         element: <RequireAuth />,
         children: [

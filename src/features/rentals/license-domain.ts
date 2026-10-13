@@ -19,8 +19,6 @@ export const ALL_LICENSE_CATEGORIES = [
   'D',
   'DE',
 ] as const;
-/** Catégories proposées au comptoir (véhicules qu'un garage poids lourds loue). */
-export const COUNTER_CATEGORIES = ['B', 'BE', 'C1', 'C1E', 'C', 'CE'] as const;
 
 /** Le permis couvre-t-il la catégorie demandée ? (mêmes règles que la base) */
 export function licenseCovers(categories: readonly string[], required: string): boolean {

@@ -60,7 +60,10 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
     setValue,
     formState: { errors, isDirty },
   } = useForm<VehicleValues>({ resolver: zodResolver(vehicleSchema), defaultValues: vehicleToForm(vehicle) });
-  const [ctDue, tailgateDue] = useWatch({ control, name: ['ct_due_date', 'tailgate_due_date'] });
+  const [ctDue, tailgateDue, antipollutionDue, vehicleType] = useWatch({
+    control,
+    name: ['ct_due_date', 'tailgate_due_date', 'antipollution_due_date', 'vehicle_type'],
+  });
   const save = useCustomerMutation(
     (values: VehicleValues) => updateVehicle(vehicle.id, vehicleFromForm(values)),
     'Fiche véhicule enregistrée',
@@ -276,6 +279,9 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                 [
                   ['ct', 'ct_due_date', ctDue],
                   ['tailgate', 'tailgate_due_date', tailgateDue],
+                  ...(vehicleType === 'vul'
+                    ? ([['antipollution', 'antipollution_due_date', antipollutionDue]] as const)
+                    : []),
                 ] as const
               ).map(([kind, field, value]) => {
                 const status = deadlineStatus(value, today);

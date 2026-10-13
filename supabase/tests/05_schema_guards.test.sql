@@ -44,8 +44,8 @@ select is(
   (select string_agg(p.proname::text, ', ' order by p.proname::text)
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'EXECUTE')),
-  'public_get_document',
-  'Seule public_get_document est exécutable par un visiteur anonyme');
+  'public_book_appointment, public_booking, public_get_document',
+  'Seules les pages publiques (document, prise de rendez-vous) sont exécutables par un visiteur anonyme');
 
 select is_empty(
   $$ select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace

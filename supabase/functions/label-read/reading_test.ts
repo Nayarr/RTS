@@ -61,6 +61,7 @@ Deno.test('vignette : immatriculation et VIN seulement, « numéro de série » 
 Deno.test('permis : valeurs lues contrôlées (dates, numéro, catégories), permis expiré gardé', () => {
   const read = checkedLicense(
     {
+      civility: 'Mme',
       last_name: ' MARTIN ',
       first_name: 'Julie',
       birth_date: '1991-03-14',
@@ -74,6 +75,7 @@ Deno.test('permis : valeurs lues contrôlées (dates, numéro, catégories), per
     TODAY,
   );
   assertEquals(read, {
+    civility: 'Mme',
     last_name: 'MARTIN',
     first_name: 'Julie',
     birth_date: '1991-03-14',
@@ -85,10 +87,24 @@ Deno.test('permis : valeurs lues contrôlées (dates, numéro, catégories), per
     confidence: 'haute',
   });
   const blurry = checkedLicense(
-    { ...read, birth_date: '2030-01-01', license_number: '12', issued_on: '22/06/2010', valid_until: '' },
+    {
+      ...read,
+      civility: '',
+      birth_date: '2030-01-01',
+      license_number: '12',
+      issued_on: '22/06/2010',
+      valid_until: '',
+    },
     TODAY,
   );
-  assertEquals([blurry.birth_date, blurry.license_number, blurry.issued_on, blurry.valid_until], [
+  assertEquals([
+    blurry.civility,
+    blurry.birth_date,
+    blurry.license_number,
+    blurry.issued_on,
+    blurry.valid_until,
+  ], [
+    null,
     null,
     null,
     null,

@@ -7,11 +7,12 @@ import { formatSiret, siretField, siretValue } from '@/lib/siret';
 
 // ---------------------------------------------------------------- Échéances
 
-export type DeadlineKind = 'ct' | 'tailgate';
+export type DeadlineKind = 'ct' | 'tailgate' | 'antipollution';
 
 export const DEADLINE_LABELS: Record<DeadlineKind, string> = {
   ct: 'Contrôle technique',
   tailgate: 'Contrôle hayon',
+  antipollution: 'Contrôle antipollution',
 };
 
 export type DeadlineTone = 'overdue' | 'soon' | 'ok';
@@ -193,6 +194,7 @@ export const vehicleSchema = z.object({
   first_registration_date: z.string(),
   ct_due_date: z.string(),
   tailgate_due_date: z.string(),
+  antipollution_due_date: z.string(),
   notes: z.string().max(2000),
 });
 export type VehicleValues = z.infer<typeof vehicleSchema>;
@@ -206,6 +208,7 @@ export const vehicleToForm = (vehicle: VehicleOverview): VehicleValues => ({
   first_registration_date: vehicle.first_registration_date ?? '',
   ct_due_date: vehicle.ct_due_date ?? '',
   tailgate_due_date: vehicle.tailgate_due_date ?? '',
+  antipollution_due_date: vehicle.antipollution_due_date ?? '',
   notes: vehicle.notes ?? '',
 });
 
@@ -220,6 +223,8 @@ export function vehicleFromForm(values: VehicleValues): TablesUpdate<'vehicles'>
     first_registration_date: values.first_registration_date || null,
     ct_due_date: values.ct_due_date || null,
     tailgate_due_date: values.tailgate_due_date || null,
+    // Utilitaires seulement (contrôle antipollution un an avant le contrôle technique)
+    antipollution_due_date: values.vehicle_type === 'vul' ? values.antipollution_due_date || null : null,
     notes: text(values.notes),
   };
 }

@@ -511,3 +511,12 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/ro-signature/deno.json"
 entrypoint = "./functions/ro-signature/index.ts"
+
+[functions.auto-mails]
+enabled = true
+# E-mails automatiques (rappels de rendez-vous, échéances) par Resend, appelée par la tâche
+# planifiée run_auto_mails() : secret partagé vérifié dans la fonction. Secret APP_URL : adresse
+# de l'appli pour le lien de prise de rendez-vous.
+verify_jwt = false
+import_map = "./functions/auto-mails/deno.json"
+entrypoint = "./functions/auto-mails/index.ts"

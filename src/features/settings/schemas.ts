@@ -154,6 +154,7 @@ export const workshopSchema = z
     agent_enabled: z.boolean(),
     agent_memo: z.string().max(4000, '4 000 caractères au plus'),
     mail_send_enabled: z.boolean(),
+    auto_mails_enabled: z.boolean(),
     mail_domain: z
       .string()
       .trim()
@@ -200,6 +201,7 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
   agent_enabled: a.agent_enabled,
   agent_memo: a.agent_memo,
   mail_send_enabled: a.mail_send_enabled,
+  auto_mails_enabled: a.auto_mails_enabled,
   mail_domain: a.mail_domain ?? '',
   mail_billing_local: a.mail_billing_local,
   mail_workshop_local: a.mail_workshop_local,

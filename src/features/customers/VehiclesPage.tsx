@@ -25,11 +25,12 @@ const matches = (vehicle: VehicleOverview, search: string) => {
   );
 };
 
-/** Échéance la plus proche du véhicule (contrôle technique ou hayon). */
+/** Échéance la plus proche du véhicule (contrôle technique, hayon ou antipollution). */
 function nextDeadline(vehicle: VehicleOverview, today: string) {
   const items = [
     { kind: 'CT', status: deadlineStatus(vehicle.ct_due_date, today) },
     { kind: 'Hayon', status: deadlineStatus(vehicle.tailgate_due_date, today) },
+    { kind: 'Antipollution', status: deadlineStatus(vehicle.antipollution_due_date, today) },
   ].flatMap(({ kind, status }) => (status ? [{ kind, ...status }] : []));
   return items.sort((a, b) => a.days - b.days)[0] ?? null;
 }

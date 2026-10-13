@@ -1,13 +1,13 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
-import { CalendarDays, ChevronRight, MessageSquare, Plus } from 'lucide-react';
+import { CalendarDays, Check, ChevronRight, Globe, MessageSquare, Plus, X } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { Button } from '@/components/ui/button';
 import { todayIso } from '@/features/repair-orders/schemas';
-import type { Appointment } from './api';
+import { cancelAppointment, confirmAppointmentRequest, type Appointment } from './api';
 import { AppointmentDialog } from './AppointmentDialog';
 import { addDays, needsReminder, shortTime } from './domain';
-import { useUpcomingAppointments } from './hooks';
+import { usePlanningMutation, useUpcomingAppointments } from './hooks';
 
 const dayName = (iso: string) => {
   const label = new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', {
@@ -31,7 +31,14 @@ export function AppointmentsPage() {
   const appointments = useUpcomingAppointments(today);
   const [open, setOpen] = useState<{ appointment: Appointment | null } | null>(null);
 
-  const list = appointments.data ?? [];
+  const all = appointments.data ?? [];
+  const requests = all.filter((appointment) => appointment.status === 'requested');
+  const list = all.filter((appointment) => appointment.status === 'planned');
+  const confirm = usePlanningMutation(
+    (id: string) => confirmAppointmentRequest(id),
+    'Rendez-vous confirmé : le client reçoit la confirmation par e-mail',
+  );
+  const decline = usePlanningMutation((id: string) => cancelAppointment(id), 'Demande refusée');
   const days = new Map<string, Appointment[]>();
   for (const appointment of list) {
     days.set(appointment.scheduled_date, [...(days.get(appointment.scheduled_date) ?? []), appointment]);
@@ -65,11 +72,59 @@ export function AppointmentsPage() {
               {reminders} rappel{reminders > 1 ? 's' : ''} à envoyer
             </b>{' '}
             <span className="muted">
-              pour les rendez-vous de demain. Le rappel se fait la veille, par e-mail ou SMS depuis ton
-              téléphone.
+              pour les rendez-vous de demain. Le rappel part tout seul la veille par e-mail si les envois
+              automatiques sont activés ; sinon, envoie-le par e-mail ou SMS depuis ton téléphone.
             </span>
           </div>
         </div>
+      )}
+
+      {requests.length > 0 && (
+        <section data-slot="card" className="card overflow-hidden" aria-label="Demandes en ligne">
+          <div className="row gap-2.5 border-b bg-head px-5 py-2.5">
+            <Globe className="i s" />
+            <b>Demandes en ligne à confirmer</b>
+            <span className="cnt">{requests.length}</span>
+          </div>
+          <ul>
+            {requests.map((appointment) => (
+              <li
+                key={appointment.id}
+                className="li flex-wrap gap-[18px] border-b sm:flex-nowrap"
+                aria-label={`Demande ${appointment.plate ?? ''}`}
+              >
+                <span className="flex h-[52px] w-28 shrink-0 flex-col items-center justify-center rounded-[7px] border bg-card text-center">
+                  <b className="num font-display leading-none">{shortTime(appointment.start_time)}</b>
+                  <span className="hint text-[11px]">{dayName(appointment.scheduled_date)}</span>
+                </span>
+                <span className="col grow gap-[3px]">
+                  <span className="row gap-2.5">
+                    <span className="plate">{appointment.plate ?? 'sans immatriculation'}</span>
+                    <span className="b">{appointment.client_name}</span>
+                  </span>
+                  <span className="muted text-[13px]">{appointment.reason}</span>
+                </span>
+                <span className="row gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={decline.isPending || confirm.isPending}
+                    onClick={() => decline.mutate(appointment.id)}
+                  >
+                    <X /> Refuser
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={confirm.isPending || decline.isPending}
+                    onClick={() => confirm.mutate(appointment.id)}
+                  >
+                    <Check /> Confirmer
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {appointments.isPending && <p className="text-muted-foreground">Chargement…</p>}

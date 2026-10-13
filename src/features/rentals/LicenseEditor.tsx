@@ -10,12 +10,7 @@ import { StoredImage } from '@/features/files/StoredImage';
 import { fetchLabelScanEnabled } from '@/features/workshop/api';
 import { cn } from '@/lib/utils';
 import { readLicense, type LicenseReading } from './license-api';
-import {
-  ALL_LICENSE_CATEGORIES,
-  applyReading,
-  COUNTER_CATEGORIES,
-  type LicenseValues,
-} from './license-domain';
+import { ALL_LICENSE_CATEGORIES, applyReading, type LicenseValues } from './license-domain';
 
 type Side = 'recto' | 'verso';
 const SIDE_FIELD = { recto: 'recto_file_id', verso: 'verso_file_id' } as const;
@@ -234,10 +229,8 @@ export function LicenseEditor({
         control={control}
         name="categories"
         render={({ field }) => {
-          const shown = ALL_LICENSE_CATEGORIES.filter(
-            (category) =>
-              (COUNTER_CATEGORIES as readonly string[]).includes(category) || field.value.includes(category),
-          );
+          // Toutes les catégories du permis européen, dans l'ordre du verso
+          const shown = ALL_LICENSE_CATEGORIES;
           return (
             <div className="field">
               <span className="lbl" id={id('categories')}>
