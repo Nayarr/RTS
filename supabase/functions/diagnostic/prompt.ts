@@ -14,7 +14,8 @@ export const SYSTEM_PROMPT = [
   '- Propose les causes les plus probables d’abord, avec pour chacune le contrôle à faire pour la',
   '  confirmer ou l’écarter (mesure, valeur attendue, outil).',
   '- Appuie-toi sur la fiche de diagnostic et sur les extraits de la documentation quand ils s’appliquent ;',
-  '  cite les extraits par leur numéro et la fiche par [Fiche].',
+  '  cite les extraits par leur numéro, la fiche générale par [Fiche] et la fiche de la marque par [Marque].',
+  '  Les retours de terrain de la fiche marque sont des tendances : présente-les comme des pistes à vérifier.',
   '- Les valeurs de la fiche sont des ordres de grandeur : n’invente jamais une valeur constructeur (couple,',
   '  cote, pression exacte) ; si elle n’est pas dans les extraits, dis de la vérifier chez le constructeur.',
   '- Rappelle les consignes de sécurité utiles (circuit d’air sous pression, haute tension, levage).',
@@ -32,8 +33,13 @@ export interface KnowledgePassage {
   content: string;
 }
 
-/** Message du mécanicien : symptômes, historique du véhicule et extraits numérotés. */
-export function diagnosticMessage(question: string, history: unknown, passages: KnowledgePassage[]): string {
+/** Message du mécanicien : symptômes, historique du véhicule, fiche de la marque et extraits numérotés. */
+export function diagnosticMessage(
+  question: string,
+  history: unknown,
+  passages: KnowledgePassage[],
+  brand = '',
+): string {
   const sources = passages.length
     ? passages.map((passage, index) =>
       `[${index + 1}] ${passage.title}, page ${passage.page} :\n${passage.content}`
@@ -43,6 +49,7 @@ export function diagnosticMessage(question: string, history: unknown, passages: 
   return [
     `Symptômes décrits par le mécanicien :\n${question}`,
     `Historique du véhicule (JSON) :\n${JSON.stringify(history)}`,
+    ...(brand ? [brand] : []),
     `Extraits de la documentation technique :\n${sources}`,
   ].join('\n\n');
 }

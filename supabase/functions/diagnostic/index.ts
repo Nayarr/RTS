@@ -11,6 +11,7 @@ import '@supabase/functions-js/edge-runtime.d.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
+import { brandText, sheetsFor } from './brands.ts';
 import { diagnosticMessage, type KnowledgePassage, searchQuery, SYSTEM_WITH_SHEET } from './prompt.ts';
 
 z.config(z.locales.fr());
@@ -61,6 +62,12 @@ export default {
       p_limit: 6,
     });
     const passages = ((found ?? []) as KnowledgePassage[]).slice(0, 6);
+    // Fiche de la marque (poids lourd), des utilitaires, des remorques ou du hayon selon le véhicule
+    const vehicle = (history as
+      | { vehicule?: { marque?: string | null; modele?: string | null; type?: string | null } }
+      | null)
+      ?.vehicule;
+    const brand = brandText(sheetsFor(vehicle, question));
 
     let response: Anthropic.Message;
     try {
@@ -69,7 +76,7 @@ export default {
         max_tokens: 2000,
         system: [{ type: 'text', text: SYSTEM_WITH_SHEET, cache_control: { type: 'ephemeral' } }],
         output_config: { effort: 'low' },
-        messages: [{ role: 'user', content: diagnosticMessage(question, history, passages) }],
+        messages: [{ role: 'user', content: diagnosticMessage(question, history, passages, brand) }],
       });
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) {
