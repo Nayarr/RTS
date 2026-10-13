@@ -15,6 +15,7 @@ const uid = (project: string) => `${String(Date.now()).slice(-7)}${project.inclu
 test('pièce saisie sur le devis avec sa marge, gardée dans la base ; prestation offerte', async ({
   page,
 }, testInfo) => {
+  test.slow(); // deux comptes successifs, PDF généré
   const id = uid(testInfo.project.name);
   const part = `Courroie alternateur ${id}`;
   const ref = `CA-${id}`;
@@ -66,6 +67,7 @@ test('pièce saisie sur le devis avec sa marge, gardée dans la base ; prestatio
 
   // La direction retrouve la pièce et sa marge dans la page Pièces
   await page.getByRole('button', { name: 'Se déconnecter' }).click();
+  await expect(page.getByLabel('E-mail')).toBeVisible();
   await loginAs(page, 'direction@rts.local');
   await page.goto('/stock/pieces');
   await page.getByRole('searchbox', { name: 'Rechercher une pièce' }).fill(ref);
