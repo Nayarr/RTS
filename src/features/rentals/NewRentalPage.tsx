@@ -101,6 +101,14 @@ export function NewRentalPage() {
   const vehicle = (fleet.data ?? []).find((item) => item.id === vehicleId) ?? null;
   const vehicleProblem = vehicle ? availability(vehicle.id) : null;
 
+  const durationCount = Number(count);
+  const durationPeriods =
+    Number.isInteger(durationCount) &&
+    durationCount > 0 &&
+    returnDate === contractEnd(departureDate, unit, durationCount)
+      ? durationCount
+      : null;
+
   const create = useRentalMutation(() => {
     if (!vehicle || !client || !from || !to) throw new Error('Complète le client, le véhicule et les dates');
     const days = rentalDays(from, to);
@@ -113,7 +121,8 @@ export function NewRentalPage() {
       planned_return_at: to,
       rate_period: unit,
       unit_price: kind === 'loan' ? 0 : (vehicleRate(vehicle, unit) ?? vehicle.daily_rate),
-      periods: periodsFor(unit, days),
+      // Durée saisie (2 mois = 2 périodes, quelle que soit la longueur des mois), sinon d'après les dates
+      periods: durationPeriods ?? periodsFor(unit, days),
       tacit_renewal: kind === 'rental',
       km_included: present(vehicle.km_included_per_day) ? vehicle.km_included_per_day * days : null,
       extra_km_price: vehicle.extra_km_price,
