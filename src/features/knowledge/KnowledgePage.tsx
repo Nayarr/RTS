@@ -61,9 +61,10 @@ export function KnowledgePage() {
         </div>
         <div className="card-b col gap-3">
           <p className="hint">
-            Manuels d’atelier, notes techniques, fiches de diagnostic en PDF (20 Mo au plus, avec du texte :
-            un document scanné doit d’abord passer en reconnaissance de texte). L’aide au diagnostic y cherche
-            les passages utiles et les cite au mécanicien.
+            Facultatif : l’aide au diagnostic s’appuie déjà sur la fiche de diagnostic de l’atelier (méthodes
+            poids lourd, utilitaire, remorque et hayon). Ajoute ici tes manuels d’atelier ou notes techniques
+            en PDF (20 Mo au plus, avec du texte : un document scanné doit d’abord passer en reconnaissance de
+            texte) pour qu’elle cite aussi leurs valeurs exactes.
           </p>
           <div className="row flex-wrap items-end gap-3">
             <div className="grow">
@@ -98,7 +99,8 @@ export function KnowledgePage() {
       {documents.isError && <p className="text-destructive">Impossible de charger la documentation.</p>}
       {documents.data?.length === 0 && (
         <p className="empty">
-          Aucun document : l’aide au diagnostic s’appuie seulement sur l’historique du véhicule.
+          Aucun document ajouté : l’aide au diagnostic s’appuie sur l’historique du véhicule et la fiche de
+          diagnostic de l’atelier.
         </p>
       )}
       {documents.data && documents.data.length > 0 && (

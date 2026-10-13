@@ -3,14 +3,15 @@
 //
 // Le technicien décrit les symptômes ; la fonction lit, avec ses droits, l'historique du véhicule
 // (vehicle_history_for_diagnosis) et les passages utiles de la documentation technique
-// (search_knowledge), puis demande des pistes à Claude Sonnet, qui cite ses sources. Chaque
+// (search_knowledge, facultative) et sa fiche de diagnostic (knowledge.ts), puis demande des pistes à
+// Claude Sonnet, qui cite ses sources. Chaque
 // demande est notée (diagnostic_requests). Clé : secret ANTHROPIC_API_KEY (sans clé : indisponible).
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
-import { diagnosticMessage, type KnowledgePassage, searchQuery, SYSTEM_PROMPT } from './prompt.ts';
+import { diagnosticMessage, type KnowledgePassage, searchQuery, SYSTEM_WITH_SHEET } from './prompt.ts';
 
 z.config(z.locales.fr());
 
@@ -66,7 +67,7 @@ export default {
       response = await claude.messages.create({
         model: MODEL,
         max_tokens: 2000,
-        system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+        system: [{ type: 'text', text: SYSTEM_WITH_SHEET, cache_control: { type: 'ephemeral' } }],
         output_config: { effort: 'low' },
         messages: [{ role: 'user', content: diagnosticMessage(question, history, passages) }],
       });
