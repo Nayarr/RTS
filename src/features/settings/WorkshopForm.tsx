@@ -217,6 +217,25 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             </div>
           )}
         />
+        <Controller
+          control={control}
+          name="auto_mails_enabled"
+          render={({ field }) => (
+            <div className="row gap-3 rounded-xl border px-3.5 py-3">
+              <Switch id="auto_mails_enabled" checked={field.value} onCheckedChange={field.onChange} />
+              <span className="col gap-0">
+                <Label htmlFor="auto_mails_enabled" className="text-sm font-bold">
+                  Rappels et échéances envoyés automatiquement
+                </Label>
+                <span className="hint">
+                  Rappel du rendez-vous la veille ; 48 h avant un contrôle technique, hayon ou antipollution
+                  et quand l’entretien d’un contrat est à refaire, un e-mail avec un lien pour prendre
+                  rendez-vous en ligne. Avec l’envoi depuis l’appli activé.
+                </span>
+              </span>
+            </div>
+          )}
+        />
         <FormField
           id="mail_domain"
           label="Domaine d’envoi"

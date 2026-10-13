@@ -77,12 +77,12 @@ export async function fetchPlanning(from: string, to: string): Promise<PlanningD
   };
 }
 
-/** Rendez-vous à venir (à partir d'aujourd'hui). */
+/** Rendez-vous à venir (à partir d'aujourd'hui), avec ceux demandés en ligne à confirmer. */
 export async function fetchUpcomingAppointments(today: string): Promise<Appointment[]> {
   const { data, error } = await supabase
     .from('v_appointments_overview')
     .select('*')
-    .eq('status', 'planned')
+    .in('status', ['planned', 'requested'])
     .gte('scheduled_date', today)
     .order('scheduled_date')
     .order('start_time');
@@ -141,6 +141,12 @@ async function updateAppointment(id: string, patch: { status?: 'cancelled'; remi
 }
 
 export const cancelAppointment = (id: string) => updateAppointment(id, { status: 'cancelled' });
+
+/** Rendez-vous demandé en ligne confirmé : le client reçoit la confirmation par e-mail. */
+export async function confirmAppointmentRequest(id: string) {
+  const { error } = await supabase.rpc('confirm_appointment_request', { p_appointment_id: id });
+  if (error) throw error;
+}
 
 export const markAppointmentReminded = (id: string) =>
   updateAppointment(id, { reminder_sent_at: new Date().toISOString() });

@@ -123,6 +123,7 @@ describe('workshopSchema', () => {
     agent_enabled: false,
     agent_memo: '',
     mail_send_enabled: false,
+    auto_mails_enabled: true,
     mail_domain: '',
     mail_billing_local: 'facturation',
     mail_workshop_local: 'atelier',

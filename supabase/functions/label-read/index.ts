@@ -47,6 +47,7 @@ const readingSchema = z.object({
 });
 
 const licenseSchema = z.object({
+  civility: z.enum(['M.', 'Mme', '']).catch(''),
   last_name: z.string().max(100),
   first_name: z.string().max(100),
   birth_date: z.string(),

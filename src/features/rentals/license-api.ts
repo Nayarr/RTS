@@ -35,6 +35,8 @@ export async function deleteLicense(id: string) {
 }
 
 export interface LicenseReading {
+  /** Déduite du prénom et de la photo ; null en cas de doute. */
+  civility?: 'M.' | 'Mme' | null;
   last_name: string;
   first_name: string;
   birth_date: string | null;

@@ -24,6 +24,12 @@ type LicenseCategory = (typeof LICENSE_CATEGORIES)[number];
 export const LICENSE_READING_SCHEMA = {
   type: 'object',
   properties: {
+    civility: {
+      type: 'string',
+      enum: ['M.', 'Mme', ''],
+      description:
+        'Civilité du titulaire déduite du prénom et de la photo : « M. » ou « Mme », chaîne vide en cas de doute.',
+    },
     last_name: { type: 'string', description: 'Nom (rubrique 1), ou chaîne vide si illisible.' },
     first_name: { type: 'string', description: 'Prénom(s) (rubrique 2), ou chaîne vide si illisible.' },
     birth_date: {
@@ -51,6 +57,7 @@ export const LICENSE_READING_SCHEMA = {
     confidence: { type: 'string', enum: ['haute', 'moyenne', 'faible'] },
   },
   required: [
+    'civility',
     'last_name',
     'first_name',
     'birth_date',
@@ -71,6 +78,7 @@ export function licenseReadingPrompt(today: string): string {
     'd’un permis de conduire (format carte européen, ou ancien permis rose en papier).',
     'Lis l’identité du titulaire, le numéro du permis, ses dates de délivrance et de fin de validité,',
     'et les catégories réellement obtenues (au verso, celles qui ont une date en colonne 10).',
+    'Civilité : le permis ne l’indique pas ; déduis « M. » ou « Mme » du prénom et de la photo, et laisse vide en cas de doute (prénom mixte, photo illisible).',
     `Nous sommes le ${today}.`,
     'Donne les dates au format AAAA-MM-JJ, le nom en majuscules tel qu’écrit, le numéro sans espace ;',
     'laisse une chaîne vide (ou une liste vide) pour ce qui est illisible ou absent, sans l’inventer.',
@@ -79,6 +87,7 @@ export function licenseReadingPrompt(today: string): string {
 }
 
 export interface LicenseReading {
+  civility: 'M.' | 'Mme' | '';
   last_name: string;
   first_name: string;
   birth_date: string;
@@ -105,6 +114,7 @@ export function checkedLicense(reading: LicenseReading, today: string) {
   };
   const number = reading.license_number.replace(/[\s-]/g, '').toUpperCase();
   return {
+    civility: reading.civility === 'M.' || reading.civility === 'Mme' ? reading.civility : null,
     last_name: reading.last_name.trim(),
     first_name: reading.first_name.trim(),
     birth_date: past(reading.birth_date),

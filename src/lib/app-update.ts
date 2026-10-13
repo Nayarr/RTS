@@ -15,7 +15,7 @@ export function setAutoUpdate(enabled: boolean) {
   if (enabled) applyWhenQuiet();
 }
 
-const isPublicPage = () => location.pathname.startsWith('/d/');
+const isPublicPage = () => /^\/(d|rdv)\//.test(location.pathname);
 const dialogOpen = () => document.querySelector('[role="dialog"], [role="alertdialog"]') !== null;
 
 /** Borne : mise à jour dès qu'aucune fenêtre (signature, sortie) n'est ouverte. */

@@ -65,6 +65,9 @@ export function NewClientPage() {
       fill('first_name', reading.first_name && properName(reading.first_name));
       fill('birth_date', reading.birth_date);
       fill('birth_place', reading.birth_place);
+      if (reading.civility && !getValues('civility')) {
+        setValue('civility', reading.civility, { shouldDirty: true });
+      }
     },
     [getValues, setValue],
   );

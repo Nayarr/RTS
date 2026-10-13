@@ -10,6 +10,7 @@ import type * as SettingsApi from '@/features/settings/api';
 import { renderRoutes } from '@/test/render';
 import {
   cancelAppointment,
+  confirmAppointmentRequest,
   convertAppointment,
   fetchPlannableOrders,
   fetchPlanning,
@@ -44,6 +45,7 @@ vi.mock('./api', async (importOriginal) => ({
   fetchPlannableOrders: vi.fn(),
   saveAppointment: vi.fn(),
   cancelAppointment: vi.fn(),
+  confirmAppointmentRequest: vi.fn(),
   markAppointmentReminded: vi.fn(),
   convertAppointment: vi.fn(),
 }));
@@ -458,5 +460,23 @@ describe('rendez-vous', () => {
     expect(items[2]).toHaveTextContent('sans immatriculation');
     expect(items[2]).toHaveTextContent('Alice');
     expect(items[2]).toHaveTextContent('Rappel la veille');
+  });
+
+  it('demande en ligne : à part, confirmée ou refusée par le bureau', async () => {
+    vi.mocked(fetchUpcomingAppointments).mockResolvedValue([
+      appointment({ id: 'r1', status: 'requested', reason: 'Contrôle technique (demandé en ligne)' }),
+      appointment({ id: 'a1', scheduled_date: addDays(todayIso(), 3) }),
+    ]);
+    vi.mocked(confirmAppointmentRequest).mockResolvedValue();
+    renderRoutes([{ path: '/rendez-vous', element: <AppointmentsPage /> }], { initialPath: '/rendez-vous' });
+    const requests = await screen.findByRole('region', { name: 'Demandes en ligne' });
+    expect(requests).toHaveTextContent('Contrôle technique (demandé en ligne)');
+    expect(screen.getByRole('region', { name: 'Rendez-vous à venir' })).not.toHaveTextContent(
+      'demandé en ligne',
+    );
+    await userEvent.click(within(requests).getByRole('button', { name: /Confirmer/ }));
+    await waitFor(() => expect(confirmAppointmentRequest).toHaveBeenCalledWith('r1'));
+    await userEvent.click(within(requests).getByRole('button', { name: /Refuser/ }));
+    await waitFor(() => expect(cancelAppointment).toHaveBeenCalledWith('r1'));
   });
 });

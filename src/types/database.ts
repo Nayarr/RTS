@@ -158,6 +158,7 @@ export type Database = {
         Row: {
           agent_enabled: boolean;
           agent_memo: string;
+          auto_mails_enabled: boolean;
           clock_photo_retention_months: number;
           daily_hours: number;
           expected_arrival: string;
@@ -185,6 +186,7 @@ export type Database = {
         Insert: {
           agent_enabled?: boolean;
           agent_memo?: string;
+          auto_mails_enabled?: boolean;
           clock_photo_retention_months?: number;
           daily_hours?: number;
           expected_arrival?: string;
@@ -212,6 +214,7 @@ export type Database = {
         Update: {
           agent_enabled?: boolean;
           agent_memo?: string;
+          auto_mails_enabled?: boolean;
           clock_photo_retention_months?: number;
           daily_hours?: number;
           expected_arrival?: string;
@@ -383,6 +386,205 @@ export type Database = {
           },
           {
             foreignKeyName: 'appointments_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      auto_mail_log: {
+        Row: {
+          appointment_id: string | null;
+          attempts: number;
+          client_id: string | null;
+          created_at: string;
+          error: string | null;
+          key: string;
+          kind: string;
+          provider_message_id: string | null;
+          recipient: string;
+          sent_at: string | null;
+          vehicle_id: string | null;
+        };
+        Insert: {
+          appointment_id?: string | null;
+          attempts?: number;
+          client_id?: string | null;
+          created_at?: string;
+          error?: string | null;
+          key: string;
+          kind: string;
+          provider_message_id?: string | null;
+          recipient: string;
+          sent_at?: string | null;
+          vehicle_id?: string | null;
+        };
+        Update: {
+          appointment_id?: string | null;
+          attempts?: number;
+          client_id?: string | null;
+          created_at?: string;
+          error?: string | null;
+          key?: string;
+          kind?: string;
+          provider_message_id?: string | null;
+          recipient?: string;
+          sent_at?: string | null;
+          vehicle_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'auto_mail_log_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_appointments_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      booking_links: {
+        Row: {
+          appointment_id: string | null;
+          client_id: string;
+          created_at: string;
+          due_date: string | null;
+          expires_at: string;
+          kind: string;
+          maintenance_contract_id: string | null;
+          token: string;
+          vehicle_id: string;
+        };
+        Insert: {
+          appointment_id?: string | null;
+          client_id: string;
+          created_at?: string;
+          due_date?: string | null;
+          expires_at?: string;
+          kind: string;
+          maintenance_contract_id?: string | null;
+          token?: string;
+          vehicle_id: string;
+        };
+        Update: {
+          appointment_id?: string | null;
+          client_id?: string;
+          created_at?: string;
+          due_date?: string | null;
+          expires_at?: string;
+          kind?: string;
+          maintenance_contract_id?: string | null;
+          token?: string;
+          vehicle_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'booking_links_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'appointments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_links_appointment_id_fkey';
+            columns: ['appointment_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_appointments_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_links_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_links_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_links_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'maintenance_contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_links_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contract_vehicle_status';
+            referencedColumns: ['contract_id'];
+          },
+          {
+            foreignKeyName: 'booking_links_maintenance_contract_id_fkey';
+            columns: ['maintenance_contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_contracts_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_links_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'booking_links_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_links_vehicle_id_fkey';
             columns: ['vehicle_id'];
             isOneToOne: false;
             referencedRelation: 'vehicles';
@@ -4467,6 +4669,7 @@ export type Database = {
       };
       vehicles: {
         Row: {
+          antipollution_due_date: string | null;
           brand: string | null;
           client_id: string | null;
           created_at: string;
@@ -4484,6 +4687,7 @@ export type Database = {
           vin: string | null;
         };
         Insert: {
+          antipollution_due_date?: string | null;
           brand?: string | null;
           client_id?: string | null;
           created_at?: string;
@@ -4501,6 +4705,7 @@ export type Database = {
           vin?: string | null;
         };
         Update: {
+          antipollution_due_date?: string | null;
           brand?: string | null;
           client_id?: string | null;
           created_at?: string;
@@ -5711,6 +5916,7 @@ export type Database = {
       };
       v_vehicles_overview: {
         Row: {
+          antipollution_due_date: string | null;
           brand: string | null;
           client_id: string | null;
           client_name: string | null;
@@ -5929,6 +6135,27 @@ export type Database = {
       assert_direction: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_office: { Args: Record<PropertyKey, never>; Returns: undefined };
       assign_quote_number: { Args: { p_mark_sent?: boolean; p_quote_id: string }; Returns: string };
+      auto_mail_deadline_item: {
+        Args: {
+          p_client_id: string;
+          p_client_name: string;
+          p_contract_id: string;
+          p_due_date: string;
+          p_email: string;
+          p_kind: string;
+          p_plate: string;
+          p_vehicle_id: string;
+        };
+        Returns: Json;
+      };
+      booking_free_slots: {
+        Args: { p_days?: number; p_from: string };
+        Returns: {
+          slot_date: string;
+          slot_time: string;
+        }[];
+      };
+      booking_reason: { Args: { p_kind: string }; Returns: string };
       build_contract_invoice_draft: { Args: { p_contract_id: string; p_month?: string }; Returns: string };
       build_invoice_draft: { Args: { p_repair_order_ids: string[] }; Returns: string };
       build_quote_from_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
@@ -5987,6 +6214,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      confirm_appointment_request: { Args: { p_appointment_id: string }; Returns: undefined };
       confirm_file_upload: {
         Args: { p_file_id: string; p_mime_type: string; p_size_bytes: number; p_user_id: string };
         Returns: undefined;
@@ -6319,6 +6547,7 @@ export type Database = {
           suggested_price: number;
         }[];
       };
+      prepare_auto_mails: { Args: { p_now?: string }; Returns: Json };
       profiles_with_roles: {
         Args: { p_roles: Database['public']['Enums']['app_role'][] };
         Returns: string[];
@@ -6339,6 +6568,8 @@ export type Database = {
           worked_hours: number;
         }[];
       };
+      public_book_appointment: { Args: { p_date: string; p_time: string; p_token: string }; Returns: Json };
+      public_booking: { Args: { p_token: string }; Returns: Json };
       public_find_document: { Args: { p_token: string }; Returns: Json };
       public_get_document: { Args: { p_token: string }; Returns: Json };
       public_respond_quote: {
@@ -6360,6 +6591,19 @@ export type Database = {
       queue_push: {
         Args: { p_body?: string; p_link?: string; p_profile_ids: string[]; p_tag?: string; p_title: string };
         Returns: number;
+      };
+      record_auto_mail: {
+        Args: {
+          p_appointment_id: string;
+          p_client_id: string;
+          p_error: string;
+          p_key: string;
+          p_kind: string;
+          p_provider_message_id: string;
+          p_recipient: string;
+          p_vehicle_id: string;
+        };
+        Returns: undefined;
       };
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
@@ -6428,6 +6672,7 @@ export type Database = {
       reset_client_portal: { Args: { p_client_id: string }; Returns: string };
       retry_inbox_triage: { Args: Record<PropertyKey, never>; Returns: number };
       return_rental: { Args: { p_rental_id: string; p_returned_at: string }; Returns: undefined };
+      run_auto_mails: { Args: Record<PropertyKey, never>; Returns: number };
       save_appointment: {
         Args: {
           p_client_name: string;
@@ -6692,6 +6937,7 @@ export type Database = {
       update_vehicle_deadlines: {
         Args: { p_patch: Json; p_repair_order_id: string };
         Returns: {
+          antipollution_due_date: string | null;
           brand: string | null;
           client_id: string | null;
           created_at: string;
@@ -6726,7 +6972,7 @@ export type Database = {
     };
     Enums: {
       app_role: 'direction' | 'reception' | 'technician' | 'kiosk';
-      appointment_status: 'planned' | 'converted' | 'cancelled';
+      appointment_status: 'requested' | 'planned' | 'converted' | 'cancelled';
       client_kind: 'pro' | 'individual';
       client_message_type:
         | 'vehicle_received'
@@ -6895,7 +7141,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ['direction', 'reception', 'technician', 'kiosk'],
-      appointment_status: ['planned', 'converted', 'cancelled'],
+      appointment_status: ['requested', 'planned', 'converted', 'cancelled'],
       client_kind: ['pro', 'individual'],
       client_message_type: [
         'vehicle_received',
