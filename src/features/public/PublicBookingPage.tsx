@@ -57,7 +57,7 @@ export function PublicBookingPage() {
       <main className="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 py-6 sm:px-6">
         <section data-slot="card" className="card">
           <div className="card-b col gap-1.5">
-            <h1 className="h1">{data.reason}</h1>
+            <h1 className="title xl">{data.reason}</h1>
             <p className="muted">
               {data.plate ? (
                 <>
