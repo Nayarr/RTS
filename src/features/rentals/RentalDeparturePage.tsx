@@ -362,6 +362,7 @@ function RatesStep({ detail }: { detail: RentalDetail }) {
     deposit_mode: rental.deposit_mode ?? '',
     franchise: text(rental.franchise),
     billable: rental.billable,
+    tacit_renewal: rental.tacit_renewal,
   });
   const num = (value: string) => (value.trim() ? Number(value.replace(/\s/g, '').replace(',', '.')) : null);
   const invalid = Object.entries(values).some(
@@ -387,6 +388,7 @@ function RatesStep({ detail }: { detail: RentalDetail }) {
         deposit_mode: values.deposit_mode || null,
         franchise: num(values.franchise),
         billable: values.billable,
+        tacit_renewal: rental.kind === 'rental' && values.tacit_renewal,
       }),
     'Tarifs enregistrés',
   );
@@ -464,6 +466,29 @@ function RatesStep({ detail }: { detail: RentalDetail }) {
               </button>
             ))}
           </div>
+          {rental.kind === 'rental' && (
+            <div className="row between gap-3 rounded-xl border px-3.5 py-3">
+              <span className="c2">
+                <b id="tacit-renewal">Tacite reconduction</b>
+                <span>
+                  Non rendu à la date prévue : contrat prolongé d’
+                  {values.rate_period === 'month'
+                    ? 'un mois'
+                    : values.rate_period === 'year'
+                      ? 'un an'
+                      : values.rate_period === 'week'
+                        ? 'une semaine'
+                        : 'un jour'}{' '}
+                  à la fois, facturé en plus ; le client est prévenu avant chaque fin.
+                </span>
+              </span>
+              <Switch
+                aria-labelledby="tacit-renewal"
+                checked={values.tacit_renewal}
+                onCheckedChange={(tacit_renewal) => setValues((current) => ({ ...current, tacit_renewal }))}
+              />
+            </div>
+          )}
           <div className="grid gap-3.5 sm:grid-cols-4">
             {field('unit_price', 'Prix HT (€)')}
             {field('periods', 'Nombre de périodes', `${days} jour${days > 1 ? 's' : ''} réservés`)}

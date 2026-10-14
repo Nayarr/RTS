@@ -404,6 +404,7 @@ export type Database = {
           kind: string;
           provider_message_id: string | null;
           recipient: string;
+          rental_id: string | null;
           sent_at: string | null;
           vehicle_id: string | null;
         };
@@ -417,6 +418,7 @@ export type Database = {
           kind: string;
           provider_message_id?: string | null;
           recipient: string;
+          rental_id?: string | null;
           sent_at?: string | null;
           vehicle_id?: string | null;
         };
@@ -430,6 +432,7 @@ export type Database = {
           kind?: string;
           provider_message_id?: string | null;
           recipient?: string;
+          rental_id?: string | null;
           sent_at?: string | null;
           vehicle_id?: string | null;
         };
@@ -460,6 +463,20 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'rentals';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auto_mail_log_rental_id_fkey';
+            columns: ['rental_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_rentals_overview';
             referencedColumns: ['id'];
           },
           {
@@ -1479,6 +1496,7 @@ export type Database = {
           vin: string | null;
           week_rate: number | null;
           weekend_rate: number | null;
+          year_rate: number | null;
         };
         Insert: {
           brand: string;
@@ -1515,6 +1533,7 @@ export type Database = {
           vin?: string | null;
           week_rate?: number | null;
           weekend_rate?: number | null;
+          year_rate?: number | null;
         };
         Update: {
           brand?: string;
@@ -1551,6 +1570,7 @@ export type Database = {
           vin?: string | null;
           week_rate?: number | null;
           weekend_rate?: number | null;
+          year_rate?: number | null;
         };
         Relationships: [
           {
@@ -3474,11 +3494,13 @@ export type Database = {
           planned_return_at: string;
           public_token: string | null;
           rate_period: string;
+          renewals: number;
           repair_order_id: string | null;
           returned_at: string | null;
           signature_file_id: string | null;
           signed_at: string | null;
           status: Database['public']['Enums']['rental_status'];
+          tacit_renewal: boolean;
           terms_accepted: boolean;
           unit_price: number;
           updated_at: string;
@@ -3512,11 +3534,13 @@ export type Database = {
           planned_return_at: string;
           public_token?: string | null;
           rate_period?: string;
+          renewals?: number;
           repair_order_id?: string | null;
           returned_at?: string | null;
           signature_file_id?: string | null;
           signed_at?: string | null;
           status?: Database['public']['Enums']['rental_status'];
+          tacit_renewal?: boolean;
           terms_accepted?: boolean;
           unit_price?: number;
           updated_at?: string;
@@ -3549,11 +3573,13 @@ export type Database = {
           planned_return_at?: string;
           public_token?: string | null;
           rate_period?: string;
+          renewals?: number;
           repair_order_id?: string | null;
           returned_at?: string | null;
           signature_file_id?: string | null;
           signed_at?: string | null;
           status?: Database['public']['Enums']['rental_status'];
+          tacit_renewal?: boolean;
           terms_accepted?: boolean;
           unit_price?: number;
           updated_at?: string;
@@ -5595,13 +5621,16 @@ export type Database = {
           periods: number | null;
           planned_return_at: string | null;
           plate: string | null;
+          public_token: string | null;
           rate_period: string | null;
+          renewals: number | null;
           repair_order_id: string | null;
           repair_order_number: string | null;
           returned_at: string | null;
           signature_file_id: string | null;
           signed_at: string | null;
           status: Database['public']['Enums']['rental_status'] | null;
+          tacit_renewal: boolean | null;
           terms_accepted: boolean | null;
           unit_price: number | null;
           updated_at: string | null;
@@ -6548,6 +6577,7 @@ export type Database = {
         }[];
       };
       prepare_auto_mails: { Args: { p_now?: string }; Returns: Json };
+      prepare_rental_mails: { Args: { p_now?: string }; Returns: Json };
       profiles_with_roles: {
         Args: { p_roles: Database['public']['Enums']['app_role'][] };
         Returns: string[];
@@ -6601,6 +6631,7 @@ export type Database = {
           p_kind: string;
           p_provider_message_id: string;
           p_recipient: string;
+          p_rental_id?: string;
           p_vehicle_id: string;
         };
         Returns: undefined;
@@ -6641,6 +6672,7 @@ export type Database = {
         Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent?: string };
         Returns: undefined;
       };
+      renew_overdue_rentals: { Args: { p_now?: string }; Returns: number };
       rental_missing: {
         Args: { p_phase: Database['public']['Enums']['rental_phase']; p_rental_id: string };
         Returns: string[];
@@ -6653,7 +6685,9 @@ export type Database = {
         Args: { p_rental: Database['public']['Tables']['rentals']['Row'] };
         Returns: Json;
       };
+      rental_renewal_step: { Args: { p_rate_period: string }; Returns: string };
       rental_signature_request: { Args: { p_rental_id: string }; Returns: Json };
+      rental_unit_label: { Args: { p_rate_period: string }; Returns: string };
       repair_order_planned_hours: { Args: { p_end: string; p_id: string; p_start: string }; Returns: number };
       repair_order_signature_request: { Args: { p_repair_order_id: string }; Returns: Json };
       repair_order_status_label: {

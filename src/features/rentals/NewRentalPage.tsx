@@ -15,7 +15,18 @@ import type { FleetCategory } from './fleet-api';
 import { blockReason, CATEGORIES, CATEGORY_META, vehicleTitle } from './fleet-domain';
 import { useFleet } from './fleet-hooks';
 import { createRental, type RentalKind } from './rental-api';
-import { present, parisInstant, periodsFor, RENTAL_STEPS, rentalDays, vehicleFree } from './rental-domain';
+import {
+  CONTRACT_UNITS,
+  contractEnd,
+  present,
+  parisInstant,
+  periodsFor,
+  RENTAL_STEPS,
+  rentalDays,
+  vehicleFree,
+  vehicleRate,
+  type ContractUnit,
+} from './rental-domain';
 import { useBusyPeriods, useRentalMutation } from './rental-hooks';
 import { Stepper, VehicleVisual } from './ui';
 
@@ -43,6 +54,13 @@ export function NewRentalPage() {
   const [departureTime, setDepartureTime] = useState('');
   const [returnDate, setReturnDate] = useState('');
   const [returnTime, setReturnTime] = useState('18:00');
+  // Contrat au jour, au mois ou à l'année : la date de retour en découle, la reconduction aussi
+  const [unit, setUnit] = useState<ContractUnit>('day');
+  const [count, setCount] = useState('');
+  const applyDuration = (nextUnit: ContractUnit, nextCount: string, start = departureDate) => {
+    const n = Number(nextCount);
+    if (start && Number.isInteger(n) && n > 0) setReturnDate(contractEnd(start, nextUnit, n));
+  };
 
   const from = departureDate && departureTime ? parisInstant(departureDate, departureTime) : null;
   const to = returnDate ? parisInstant(returnDate, returnTime || '18:00') : null;
@@ -83,6 +101,14 @@ export function NewRentalPage() {
   const vehicle = (fleet.data ?? []).find((item) => item.id === vehicleId) ?? null;
   const vehicleProblem = vehicle ? availability(vehicle.id) : null;
 
+  const durationCount = Number(count);
+  const durationPeriods =
+    Number.isInteger(durationCount) &&
+    durationCount > 0 &&
+    returnDate === contractEnd(departureDate, unit, durationCount)
+      ? durationCount
+      : null;
+
   const create = useRentalMutation(() => {
     if (!vehicle || !client || !from || !to) throw new Error('Complète le client, le véhicule et les dates');
     const days = rentalDays(from, to);
@@ -93,9 +119,11 @@ export function NewRentalPage() {
       fleet_vehicle_id: vehicle.id,
       departure_at: from,
       planned_return_at: to,
-      rate_period: 'day',
-      unit_price: kind === 'loan' ? 0 : vehicle.daily_rate,
-      periods: periodsFor('day', days),
+      rate_period: unit,
+      unit_price: kind === 'loan' ? 0 : (vehicleRate(vehicle, unit) ?? vehicle.daily_rate),
+      // Durée saisie (2 mois = 2 périodes, quelle que soit la longueur des mois), sinon d'après les dates
+      periods: durationPeriods ?? periodsFor(unit, days),
+      tacit_renewal: kind === 'rental',
       km_included: present(vehicle.km_included_per_day) ? vehicle.km_included_per_day * days : null,
       extra_km_price: vehicle.extra_km_price,
       fuel_price_per_liter: vehicle.fuel_price_per_liter,
@@ -236,6 +264,50 @@ export function NewRentalPage() {
             </h2>
           </div>
           <div className="card-b col gap-2.5">
+            {kind === 'rental' && (
+              <div className="row flex-wrap items-end gap-3.5">
+                <div className="field">
+                  <span className="lbl" id="contract-unit">
+                    Contrat
+                  </span>
+                  <div className="seg w-fit" role="group" aria-labelledby="contract-unit">
+                    {CONTRACT_UNITS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={cn(unit === option.value && 'on')}
+                        aria-pressed={unit === option.value}
+                        onClick={() => {
+                          setUnit(option.value);
+                          applyDuration(option.value, count);
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field w-[140px]">
+                  <Label htmlFor="contract-count">
+                    Durée ({unit === 'day' ? 'jours' : unit === 'month' ? 'mois' : 'ans'})
+                  </Label>
+                  <Input
+                    id="contract-count"
+                    inputMode="numeric"
+                    className="num"
+                    value={count}
+                    onChange={(event) => {
+                      setCount(event.target.value);
+                      applyDuration(unit, event.target.value);
+                    }}
+                  />
+                </div>
+                <p className="hint grow">
+                  Tacite reconduction : non rendu à la date prévue, le contrat se prolonge d’
+                  {unit === 'day' ? 'un jour' : unit === 'month' ? 'un mois' : 'un an'} à la fois.
+                </p>
+              </div>
+            )}
             <div className="grid gap-3.5 sm:grid-cols-4">
               <div className="field">
                 <Label htmlFor="departure-date">Date de départ *</Label>
@@ -243,7 +315,10 @@ export function NewRentalPage() {
                   id="departure-date"
                   type="date"
                   value={departureDate}
-                  onChange={(event) => setDepartureDate(event.target.value)}
+                  onChange={(event) => {
+                    setDepartureDate(event.target.value);
+                    applyDuration(unit, count, event.target.value);
+                  }}
                 />
               </div>
               <div className="field">

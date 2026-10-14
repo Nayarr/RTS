@@ -256,6 +256,19 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                 <dd>{shortDateTime(rental.departed_at ?? rental.departure_at)}</dd>
                 <dt>Retour prévu</dt>
                 <dd>{shortDateTime(rental.planned_return_at)}</dd>
+                {rental.kind === 'rental' && (
+                  <>
+                    <dt>Reconduction</dt>
+                    <dd>
+                      {rental.tacit_renewal
+                        ? `Tacite, d’${period.value === 'year' ? 'un an' : period.value === 'month' ? 'un mois' : period.value === 'week' ? 'une semaine' : 'un jour'} à la fois`
+                        : 'Non'}
+                      {rental.renewals > 0 && (
+                        <span className="badge s-warn ml-2">Reconduit {rental.renewals} fois</span>
+                      )}
+                    </dd>
+                  </>
+                )}
                 {rental.returned_at && (
                   <>
                     <dt>Rendu</dt>

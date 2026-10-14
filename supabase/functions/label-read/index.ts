@@ -1,7 +1,8 @@
 // =============================================================================
 // Edge Function « label-read » : lecture automatique de l'étiquette du contrôle hayon
 // (kind « tailgate »), du contrôle technique (kind « technical_inspection » : échéance et VIN)
-// ou d'un permis de conduire (kind « driving_license » : recto et verso, identité et catégories).
+// ou d'un permis de conduire (kind « driving_license » : recto et verso, identité et catégories),
+// ou d'une carte grise (kind « registration_card » : fiche d'un véhicule de la flotte).
 //
 // Appelée par la fiche OR du technicien juste après la photo, ou par le comptoir de location
 // après le scan du permis (réglage « Lecture automatique des étiquettes » activé par la direction). La photo est relue dans le stockage avec les
@@ -27,12 +28,17 @@ import {
   licenseReadingPrompt,
 } from './license-reading.ts';
 import { nextDueDate, READING_SCHEMA, readingPrompt, validDate } from './reading.ts';
+import {
+  checkedRegistration,
+  REGISTRATION_READING_SCHEMA,
+  registrationReadingPrompt,
+} from './registration-reading.ts';
 
 z.config(z.locales.fr());
 
 const requestSchema = z.object({
   file_id: z.guid(),
-  kind: z.enum(['tailgate', 'technical_inspection', 'driving_license']),
+  kind: z.enum(['tailgate', 'technical_inspection', 'driving_license', 'registration_card']),
   // Verso du permis (kind « driving_license »)
   verso_file_id: z.guid().optional(),
 });
@@ -56,6 +62,17 @@ const licenseSchema = z.object({
   issued_on: z.string(),
   valid_until: z.string(),
   categories: z.array(z.enum(LICENSE_CATEGORIES)).max(20),
+  confidence: z.enum(['haute', 'moyenne', 'faible']),
+});
+
+const registrationSchema = z.object({
+  plate: z.string().max(40),
+  first_registration: z.string(),
+  brand: z.string().max(80),
+  model: z.string().max(120),
+  vin: z.string().max(100),
+  genre: z.string().max(20),
+  energy: z.string().max(20),
   confidence: z.enum(['haute', 'moyenne', 'faible']),
 });
 
@@ -123,14 +140,29 @@ export default {
 
     const today = parisToday();
     const inspection = parsed.data.kind === 'technical_inspection';
-    const document = license ? 'Permis' : inspection ? 'Contrôle technique' : 'Étiquette';
-    const schema = license ? LICENSE_READING_SCHEMA : inspection ? INSPECTION_READING_SCHEMA : READING_SCHEMA;
+    const registration = parsed.data.kind === 'registration_card';
+    const document = license
+      ? 'Permis'
+      : inspection
+      ? 'Contrôle technique'
+      : registration
+      ? 'Carte grise'
+      : 'Étiquette';
+    const schema = license
+      ? LICENSE_READING_SCHEMA
+      : inspection
+      ? INSPECTION_READING_SCHEMA
+      : registration
+      ? REGISTRATION_READING_SCHEMA
+      : READING_SCHEMA;
     const prompt = license
       ? licenseReadingPrompt(today)
       : inspection
       ? inspectionReadingPrompt(today)
+      : registration
+      ? registrationReadingPrompt(today)
       : readingPrompt(today);
-    const manual = license ? 'complète les champs à la main' : 'saisis la date à la main';
+    const manual = license || registration ? 'complète les champs à la main' : 'saisis la date à la main';
     let message;
     try {
       message = await claude.beta.messages.create({
@@ -162,6 +194,13 @@ export default {
     if (license) {
       try {
         return json(200, checkedLicense(licenseSchema.parse(JSON.parse(raw)), today));
+      } catch {
+        return fail(422, unreadable);
+      }
+    }
+    if (registration) {
+      try {
+        return json(200, checkedRegistration(registrationSchema.parse(JSON.parse(raw)), today));
       } catch {
         return fail(422, unreadable);
       }

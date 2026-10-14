@@ -1,3 +1,4 @@
+import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 import type { Database, Tables, TablesInsert } from '@/types/database';
 
@@ -61,4 +62,20 @@ export async function deleteFleetDocument(id: string) {
   const { data, error } = await supabase.from('fleet_documents').delete().eq('id', id).select('id');
   if (error) throw error;
   if (!data.length) throw new Error('Suppression non autorisée');
+}
+
+/** Carte grise lue par l'assistant (Edge Function « label-read ») : valeurs à vérifier. */
+export interface RegistrationReading {
+  plate: string | null;
+  first_registration: string | null;
+  brand: string | null;
+  model: string | null;
+  vin: string | null;
+  category: FleetCategory | null;
+  fuel_type: string | null;
+  confidence: 'haute' | 'moyenne' | 'faible';
+}
+
+export function readRegistration(fileId: string) {
+  return invokeFunction<RegistrationReading>('label-read', { file_id: fileId, kind: 'registration_card' });
 }

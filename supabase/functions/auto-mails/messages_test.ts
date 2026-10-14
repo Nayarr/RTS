@@ -74,6 +74,27 @@ Deno.test('échéance : date, lien de prise de rendez-vous', () => {
   });
 });
 
+Deno.test('fin de location : date, reconduction tacite annoncée', () => {
+  const mail = buildAutoMail(
+    {
+      key: 'k',
+      kind: 'rental_end',
+      to: 'c@e.fr',
+      client_name: 'Julie Martin',
+      number: 'LC-2026-0004',
+      plate: 'GE-781-UV',
+      date: '2026-10-14',
+      time: '18:00',
+      tacit_renewal: true,
+      unit: 'un mois',
+    },
+    context,
+  );
+  assertEquals(mail?.subject, 'Fin de votre location le mercredi 14 octobre à 18h00');
+  assertStringIncludes(mail!.text, 'Votre location LC-2026-0004 (véhicule GE-781-UV) se termine');
+  assertStringIncludes(mail!.text, 'reconduit tacitement d’un mois');
+});
+
 Deno.test('entretien de contrat ; sans adresse de l’appli, pas d’e-mail d’échéance', () => {
   const item = { key: 'k', kind: 'maintenance' as const, to: 'c@e.fr', plate: 'AB-123-CD', token: 'abc' };
   assertStringIncludes(

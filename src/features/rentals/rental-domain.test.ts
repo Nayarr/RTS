@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  contractEnd,
   lineTotal,
   parisInstant,
   parisParts,
   periodsFor,
   proposedLines,
+  RATE_PERIODS,
   rentalDays,
   rentalStatus,
   returnFees,
@@ -133,5 +135,20 @@ describe('location : frais du retour et facture', () => {
         true,
       ),
     ).toEqual([]);
+  });
+});
+
+describe('durée du contrat et tacite reconduction', () => {
+  it('retour prévu : départ + jours, mois ou années', () => {
+    expect(contractEnd('2026-10-14', 'day', 5)).toBe('2026-10-19');
+    expect(contractEnd('2026-10-31', 'month', 1)).toBe('2026-12-01');
+    expect(contractEnd('2026-10-14', 'month', 5)).toBe('2027-03-14');
+    expect(contractEnd('2026-10-14', 'year', 1)).toBe('2027-10-14');
+  });
+
+  it('contrat à l’année : périodes et tarif annuel (sinon 12 mois)', () => {
+    expect(periodsFor('year', 365)).toBe(1);
+    expect(periodsFor('year', 400)).toBe(2);
+    expect(RATE_PERIODS.map((period) => period.value)).toContain('year');
   });
 });
