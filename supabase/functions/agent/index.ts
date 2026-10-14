@@ -3,7 +3,9 @@
 //
 // La page « Assistant » envoie la question ; l'assistant Claude (Sonnet) choisit les outils de
 // lecture utiles (tools.ts), qui interrogent la base avec les droits de la personne connectée,
-// puis répond. Rien n'est modifié dans la base hormis l'historique de la conversation.
+// puis répond. Il peut aussi préparer trois actions (actions.ts : rendez-vous, travail sur un OR,
+// technicien assigné), notées « proposées » et renvoyées à la page : rien ne s'exécute avant la
+// validation de la direction. Hormis ces propositions, seul l'historique de la conversation est écrit.
 // Réservé à la direction, réglage « Assistant de la direction » activé, limite de questions par
 // jour. Clé : secret ANTHROPIC_AGENT_API_KEY (sans clé : assistant indisponible).
 //
@@ -23,6 +25,7 @@ import {
   workshopContext,
 } from './prompt.ts';
 import { runTool, TOOL_DEFINITIONS } from './tools.ts';
+import { ACTION_DEFINITIONS, isActionTool, type ProposedAction, runAction } from './actions.ts';
 import {
   BRIEFING_JSON_SCHEMA,
   briefingRequest,
@@ -201,6 +204,7 @@ export default {
     const context = await loadContext();
     const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
     const used = new Set<string>();
+    const proposed: ProposedAction[] = [];
     let answer: string | null = null;
     let keep = true;
 
@@ -215,7 +219,7 @@ export default {
             { type: 'text', text: context, cache_control: { type: 'ephemeral' } },
           ],
           cache_control: { type: 'ephemeral' },
-          tools: TOOL_DEFINITIONS,
+          tools: [...TOOL_DEFINITIONS, ...ACTION_DEFINITIONS],
           output_config: { effort: 'low' },
           messages,
         });
@@ -235,6 +239,17 @@ export default {
           const results = await Promise.all(
             calls.map(async (call) => {
               used.add(call.name);
+              if (isActionTool(call.name)) {
+                // Action préparée seulement : la direction la valide ensuite dans l'appli
+                const { action, ...result } = await runAction(
+                  ctx.supabase,
+                  call.name,
+                  call.input,
+                  conversationId ?? null,
+                );
+                if (action) proposed.push(action);
+                return { type: 'tool_result' as const, tool_use_id: call.id, ...result };
+              }
               const result = await runTool(ctx.supabase, call.name, call.input);
               return { type: 'tool_result' as const, tool_use_id: call.id, ...result };
             }),
@@ -282,6 +297,14 @@ export default {
         return fail(500, 'Conversation non enregistrée : réessaie');
       }
       id = data.id as string;
+      // Actions préparées dans une nouvelle conversation : rattachées à celle-ci
+      if (proposed.length) {
+        const { error: linkError } = await admin
+          .from('agent_actions')
+          .update({ conversation_id: id })
+          .in('id', proposed.map((item) => item.id));
+        if (linkError) console.error(linkError);
+      }
     }
 
     const { data: turn, error: turnError } = await admin
@@ -302,7 +325,7 @@ export default {
       .single();
     if (turnError) console.error(turnError); // réponse obtenue : le journal ne bloque pas
 
-    return json(200, { conversation_id: id, turn_id: turn?.id ?? null, answer });
+    return json(200, { conversation_id: id, turn_id: turn?.id ?? null, answer, actions: proposed });
   }),
 };
 

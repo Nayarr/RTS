@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -28,10 +28,13 @@ import {
   deleteConversation,
   fetchBriefing,
   fetchConversations,
+  fetchPendingActions,
   fetchPreparedReplies,
   fetchTurns,
   type AgentTurn,
 } from './api';
+import { AgentActions, type AgentActionsHandle } from './AgentActions';
+import { isGoAhead } from './agent-actions';
 import { BriefingPlayer } from './BriefingPlayer';
 import type { OrbState } from './orb-mesh';
 import { saveVoicePreference, speak, speechSupported, stopSpeaking, voicePreference } from './speech';
@@ -78,6 +81,14 @@ export function AssistantPage() {
     queryFn: countMailsToHandle,
     refetchInterval: 2 * 60_000,
   });
+  // Actions préparées par l'agent dans cette conversation, à valider
+  const actions = useQuery({
+    queryKey: ['agent', 'actions', conversationId],
+    queryFn: () => fetchPendingActions(conversationId ?? ''),
+    enabled: Boolean(conversationId),
+  });
+  const pendingActions = actions.data ?? [];
+  const actionsRef = useRef<AgentActionsHandle>(null);
   const shownTurns = conversationId ? (turns.data ?? []) : [];
   const lastTurn = shownTurns.at(-1);
   const earlier = shownTurns.slice(0, -1);
@@ -108,6 +119,7 @@ export function AssistantPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['agent', 'turns', result.conversation_id] }),
         queryClient.invalidateQueries({ queryKey: ['agent', 'conversations'] }),
+        queryClient.invalidateQueries({ queryKey: ['agent', 'actions', result.conversation_id] }),
       ]);
       setPending(null);
       if (voiceOn) read(result.turn_id ?? 'derniere', result.answer);
@@ -124,6 +136,12 @@ export function AssistantPage() {
   const send = (question: string, spoken: boolean, alternatives: string[] = []) => {
     const text = question.trim();
     if (!text || ask.isPending) return;
+    // « Vas-y » avec une action en attente : on la valide plutôt que de reposer une question
+    if (pendingActions.length > 0 && isGoAhead(text)) {
+      setDraft('');
+      actionsRef.current?.validateFirst();
+      return;
+    }
     setDraft('');
     ask.mutate({ conversationId, question: text, spoken, ...(alternatives.length ? { alternatives } : {}) });
   };
@@ -302,6 +320,7 @@ export function AssistantPage() {
                   ))}
                 {lastTurn.tools.length > 0 && <span>{sourcesLabel(lastTurn.tools)}</span>}
               </p>
+              <AgentActions actions={pendingActions} ref={actionsRef} />
             </div>
           ) : null}
 

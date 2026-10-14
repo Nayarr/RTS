@@ -7,6 +7,7 @@ import { useProfile } from '@/features/auth/useProfile';
 import { OPEN_STATUSES, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useRepairOrder } from '@/features/repair-orders/hooks';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
+import { DiagnosticHelp } from '@/features/knowledge/DiagnosticHelp';
 import { TaskList } from '@/features/repair-orders/TaskList';
 import { fetchLabelScanEnabled, markSeen } from './api';
 import { CT_PHOTO_LABEL, finishBlockers, TAILGATE_PHOTO_LABEL } from './domain';
@@ -133,6 +134,11 @@ export function TechRepairOrderPage() {
         photoLabels={photos.map((photo) => photo.label)}
       />
       {/* Comme l'ancienne appli : kilométrage, photos, fiche de contrôle, puis travaux. */}
+      {!locked && (
+        <div className="row justify-end">
+          <DiagnosticHelp repairOrderId={order.id} />
+        </div>
+      )}
       <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
       <PartsSection lines={lines} />
       {ctScan && (

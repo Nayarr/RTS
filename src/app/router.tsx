@@ -214,6 +214,10 @@ export const routes: RouteObject[] = [
                 children: [
                   { path: '/equipe', lazy: page(() => import('@/features/team/TeamPage'), 'TeamPage') },
                   {
+                    path: '/documentation',
+                    lazy: page(() => import('@/features/knowledge/KnowledgePage'), 'KnowledgePage'),
+                  },
+                  {
                     path: '/pointages',
                     lazy: page(() => import('@/features/attendance/AttendancePage'), 'AttendancePage'),
                   },

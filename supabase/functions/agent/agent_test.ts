@@ -1,4 +1,5 @@
 import { assert, assertEquals, assertMatch, assertStringIncludes } from '@std/assert';
+import { ACTION_TOOLS } from './actions.ts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   answerText,
@@ -271,7 +272,7 @@ Deno.test('fiche atelier : statuts des OR, confusions de dictée et noms d’out
   assertStringIncludes(SYSTEM_PROMPT, 'Assigné (assigned');
   assertStringIncludes(SYSTEM_PROMPT, '« horaires »');
   assertStringIncludes(SYSTEM_PROMPT, 'hayon');
-  const names = new Set(TOOLS.map((tool) => tool.name));
+  const names = new Set([...TOOLS, ...ACTION_TOOLS].map((tool) => tool.name));
   for (const [, name] of SYSTEM_PROMPT.matchAll(/\b([a-z]+(?:_[a-z]+)+)\b/g)) {
     if (
       /_(?:id|at|ht|ttc)$|^(?:in_progress|work_done|quote_pending|to_invoice|to_order|paid_leave)$/.test(name)

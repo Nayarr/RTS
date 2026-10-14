@@ -31,6 +31,9 @@ vi.mock('./api', () => ({
   fetchConversations: vi.fn(),
   fetchTurns: vi.fn(),
   deleteConversation: vi.fn(),
+  fetchPendingActions: vi.fn(() => Promise.resolve([])),
+  executeAgentAction: vi.fn(),
+  cancelAgentAction: vi.fn(),
 }));
 vi.mock('./speech', async (importOriginal) => ({
   ...(await importOriginal<typeof SpeechModule>()),

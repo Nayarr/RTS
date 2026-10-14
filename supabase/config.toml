@@ -520,3 +520,19 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/auto-mails/deno.json"
 entrypoint = "./functions/auto-mails/index.ts"
+
+[functions.knowledge-ingest]
+enabled = true
+# Découpe un PDF de la documentation technique en passages (direction seulement).
+# Le jeton de l'appelant est vérifié dans la fonction elle-même (withSupabase({ auth: "user" })).
+verify_jwt = false
+import_map = "./functions/knowledge-ingest/deno.json"
+entrypoint = "./functions/knowledge-ingest/index.ts"
+
+[functions.diagnostic]
+enabled = true
+# Aide au diagnostic du mécanicien (Claude Sonnet, secret ANTHROPIC_API_KEY) : historique du
+# véhicule et passages de la documentation technique. Jeton vérifié dans la fonction.
+verify_jwt = false
+import_map = "./functions/diagnostic/deno.json"
+entrypoint = "./functions/diagnostic/index.ts"

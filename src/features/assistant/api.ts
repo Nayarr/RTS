@@ -15,6 +15,42 @@ export interface AgentAnswer {
   conversation_id: string;
   turn_id: string | null;
   answer: string;
+  /** Actions préparées pendant cette question (à valider). */
+  actions?: Pick<AgentAction, 'id' | 'kind' | 'summary'>[];
+}
+
+/** Action préparée par l'agent (rendez-vous, travail sur un OR, technicien assigné). */
+export type AgentAction = Pick<
+  Tables['agent_actions']['Row'],
+  'id' | 'conversation_id' | 'summary' | 'status' | 'error' | 'created_at'
+> & {
+  kind: 'appointment' | 'ro_work' | 'assign_technician';
+  result: { link?: string } | null;
+};
+
+/** Actions encore à valider d'une conversation (30 minutes au plus). */
+export async function fetchPendingActions(conversationId: string): Promise<AgentAction[]> {
+  const { data, error } = await supabase
+    .from('agent_actions')
+    .select('id, conversation_id, kind, summary, status, result, error, created_at')
+    .eq('conversation_id', conversationId)
+    .eq('status', 'proposed')
+    .gte('created_at', new Date(Date.now() - 30 * 60_000).toISOString())
+    .order('created_at');
+  if (error) throw error;
+  return data as AgentAction[];
+}
+
+/** Exécute une action validée par la direction (droits vérifiés par la base). */
+export async function executeAgentAction(id: string): Promise<AgentAction> {
+  const { data, error } = await supabase.rpc('execute_agent_action', { p_action_id: id });
+  if (error) throw error;
+  return data as unknown as AgentAction;
+}
+
+export async function cancelAgentAction(id: string) {
+  const { error } = await supabase.rpc('cancel_agent_action', { p_action_id: id });
+  if (error) throw error;
 }
 
 /** Pose une question à l'assistant (nouvelle conversation si `conversationId` est absent). */
