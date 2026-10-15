@@ -1,4 +1,4 @@
-import type { RepairOrderStatus } from '@/features/repair-orders/constants';
+import type { RepairOrderCategory } from '@/features/repair-orders/constants';
 import { supabase } from '@/lib/supabase';
 
 export interface WorkloadRow {
@@ -10,7 +10,8 @@ export interface WorkloadRow {
 }
 
 export interface OfficeDashboard {
-  repair_orders: Partial<Record<RepairOrderStatus, number>>;
+  /** OR non facturés par catégorie (« unassigned » : sans technicien). */
+  repair_orders: Partial<Record<RepairOrderCategory, number>>;
   parts_to_order: number;
   quotes_awaiting_response: number;
   quotes_to_convert: number;

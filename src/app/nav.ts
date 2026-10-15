@@ -1,7 +1,7 @@
 import { ChartColumn, Clock, KeyRound, Package, Receipt, Users, Wrench, type LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/features/auth/roles';
 import type { OfficeDashboard } from '@/features/dashboard/api';
-import { STATUS_ORDER } from '@/features/repair-orders/constants';
+import { CATEGORY_ORDER } from '@/features/repair-orders/constants';
 
 export interface NavLeaf {
   to: string;
@@ -21,8 +21,8 @@ export interface NavGroup {
 }
 
 const activeOrders = (data: OfficeDashboard) =>
-  STATUS_ORDER.filter((status) => status !== 'invoiced').reduce(
-    (sum, status) => sum + (data.repair_orders[status] ?? 0),
+  CATEGORY_ORDER.filter((category) => category !== 'invoiced').reduce(
+    (sum, category) => sum + (data.repair_orders[category] ?? 0),
     0,
   );
 

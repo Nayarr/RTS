@@ -25,6 +25,22 @@ export const STATUS_ORDER: RepairOrderStatus[] = [
   'invoiced',
 ];
 
+/** Catégorie des listes et du tableau de bord : un OR « assigned » sans technicien est à part. */
+export type RepairOrderCategory = RepairOrderStatus | 'unassigned';
+
+export const CATEGORY_META: Record<RepairOrderCategory, { label: string; color: string }> = {
+  unassigned: UNASSIGNED_META,
+  ...STATUS_META,
+};
+
+export const CATEGORY_ORDER: RepairOrderCategory[] = ['unassigned', ...STATUS_ORDER];
+
+export const orderCategory = (order: {
+  status: RepairOrderStatus;
+  technician_id: string | null;
+}): RepairOrderCategory =>
+  order.status === 'assigned' && order.technician_id === null ? 'unassigned' : order.status;
+
 /** Statuts pendant lesquels le technicien assigné peut encore travailler sur l'OR. */
 export const OPEN_STATUSES: RepairOrderStatus[] = ['assigned', 'in_progress'];
 
