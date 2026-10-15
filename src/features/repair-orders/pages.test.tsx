@@ -139,6 +139,31 @@ describe('liste des OR', () => {
     expect(screen.getByText('EF-456-GH')).toBeInTheDocument();
     expect(screen.queryByText('GH-512-RT')).not.toBeInTheDocument();
   });
+
+  it('OR sans technicien : dans « Non assigné », pas dans « Assigné »', async () => {
+    vi.mocked(fetchRepairOrders).mockResolvedValue([
+      order(),
+      order({
+        id: 'ro4',
+        number: 'OR00004',
+        plate: 'JK-789-LM',
+        plate_key: 'JK789LM',
+        technician_id: null,
+        technician_name: null,
+      }),
+    ]);
+    render('/or');
+
+    expect(await screen.findByText('JK-789-LM')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /^Assigné/ }));
+    expect(screen.getByText('GH-512-RT')).toBeInTheDocument();
+    expect(screen.queryByText('JK-789-LM')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /^Non assigné/ }));
+    expect(screen.getByText('JK-789-LM')).toBeInTheDocument();
+    expect(screen.queryByText('GH-512-RT')).not.toBeInTheDocument();
+  });
 });
 
 describe('nouvel OR', () => {

@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { AlertsBell } from '@/features/alerts/AlertsBell';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
-import { STATUS_META, STATUS_ORDER } from '@/features/repair-orders/constants';
+import { CATEGORY_META, CATEGORY_ORDER } from '@/features/repair-orders/constants';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { fetchOfficeDashboard } from './api';
@@ -100,7 +100,7 @@ export function OfficeDashboardPage() {
   });
   const data = dashboard.data;
   const isDirection = profile?.role === 'direction';
-  const openStatuses = STATUS_ORDER.filter((status) => status !== 'invoiced');
+  const openCategories = CATEGORY_ORDER.filter((category) => category !== 'invoiced');
   const todoCount = data
     ? [
         data.quotes_awaiting_response,
@@ -164,14 +164,14 @@ export function OfficeDashboardPage() {
                 Voir tous les OR →
               </Link>
             </div>
-            <ul className="kstrip grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
-              {openStatuses.map((status) => (
+            <ul className="kstrip grid-cols-2 sm:grid-cols-4 xl:grid-cols-7">
+              {openCategories.map((category) => (
                 <Tile
-                  key={status}
-                  to={`/or?filtre=${status}`}
-                  value={data.repair_orders[status] ?? 0}
-                  label={STATUS_META[status].label}
-                  color={STATUS_META[status].color}
+                  key={category}
+                  to={`/or?filtre=${category}`}
+                  value={data.repair_orders[category] ?? 0}
+                  label={CATEGORY_META[category].label}
+                  color={CATEGORY_META[category].color}
                 />
               ))}
               <Tile

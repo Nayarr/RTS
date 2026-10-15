@@ -8,25 +8,26 @@ import { useIsDesktop } from '@/lib/use-media-query';
 import { usePagination } from '@/lib/use-pagination';
 import type { RepairOrderOverview } from './api';
 import {
+  CATEGORY_META,
+  CATEGORY_ORDER,
   formatDate,
   formatDuration,
   normalizeKey,
-  STATUS_META,
-  STATUS_ORDER,
-  type RepairOrderStatus,
+  orderCategory,
+  type RepairOrderCategory,
 } from './constants';
 import { useRepairOrders } from './hooks';
 import { StatusBadge } from './StatusBadge';
 import { taskSummary } from './tasks';
 
-type Filter = 'active' | 'all' | 'parts' | RepairOrderStatus;
+type Filter = 'active' | 'all' | 'parts' | RepairOrderCategory;
 
 const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'active', label: 'En cours de traitement' },
-  ...STATUS_ORDER.map((status) => ({
-    value: status,
-    label: STATUS_META[status].label,
-    color: STATUS_META[status].color,
+  ...CATEGORY_ORDER.map((category) => ({
+    value: category,
+    label: CATEGORY_META[category].label,
+    color: CATEGORY_META[category].color,
   })),
   { value: 'parts', label: 'Pièces en attente', color: '#B5453A' },
   { value: 'all', label: 'Tous' },
@@ -38,7 +39,7 @@ function matchesFilter(order: RepairOrderOverview, filter: Filter) {
   if (filter === 'active') return order.status !== 'invoiced';
   if (filter === 'all') return true;
   if (filter === 'parts') return (order.parts_pending_count ?? 0) > 0;
-  return order.status === filter;
+  return orderCategory(order) === filter;
 }
 
 function matchesSearch(order: RepairOrderOverview, search: string) {
