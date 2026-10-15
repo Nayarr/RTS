@@ -88,7 +88,8 @@ test('tableau de bord : compteurs d’OR en une seule bande, panneaux sans cadre
   await loginAs(page, 'direction@rts.local');
   const orders = page.getByRole('region', { name: 'Ordres de réparation' });
   const counters = orders.getByRole('listitem');
-  await expect(counters).toHaveCount(6);
+  // Non assigné, Assigné, En cours, Terminé atelier, Devis à faire, Facture à faire, Pièces à commander
+  await expect(counters).toHaveCount(7);
   await expect(counters.getByRole('link').first()).toBeVisible();
 
   const layout = await page.evaluate(() => {
@@ -104,7 +105,7 @@ test('tableau de bord : compteurs d’OR en une seule bande, panneaux sans cadre
   });
   expect(layout.stripBorder).toBe('1px');
   expect(layout.stripRadius).toBe('10px');
-  expect(layout.tileBorders).toEqual(Array(6).fill('0px'));
+  expect(layout.tileBorders).toEqual(Array(7).fill('0px'));
   expect(layout.panelBorders).toEqual(['0px', '0px']);
   await expect(page.getByRole('heading', { name: 'À suivre' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Charge de travail atelier' })).toBeVisible();
