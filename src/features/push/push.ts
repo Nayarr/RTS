@@ -68,7 +68,22 @@ export async function enablePush(
 ): Promise<boolean> {
   const permission = await permissionRequest;
   if (permission !== 'granted') return false;
+  await registerDevice();
+  await supabase.rpc('send_test_push');
+  return true;
+}
 
+/**
+ * Notifications déjà autorisées sur l'appareil (reconnexion, autre compte sur le même poste) :
+ * l'appareil est réabonné pour le compte connecté, sans redemander ni notification d'essai.
+ */
+export async function resumePush(): Promise<string | null> {
+  if (pushSupport() !== 'available' || Notification.permission !== 'granted') return null;
+  return (await registerDevice()).endpoint;
+}
+
+/** Abonnement de l'appareil (créé au besoin) enregistré pour le compte connecté. */
+async function registerDevice(): Promise<PushSubscription> {
   const reg = await registration(20_000);
   if (!reg) throw new Error('Service worker indisponible : recharge l’appli puis réessaie');
   const subscription =
@@ -86,8 +101,7 @@ export async function enablePush(
     p_user_agent: navigator.userAgent,
   });
   if (error) throw error;
-  await supabase.rpc('send_test_push');
-  return true;
+  return subscription;
 }
 
 /** À la déconnexion : l'appareil ne reçoit plus les notifications de ce compte. */

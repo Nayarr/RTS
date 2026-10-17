@@ -407,6 +407,24 @@ describe('Agent Direction', () => {
     expect(fetchBriefing).toHaveBeenCalledTimes(1);
   });
 
+  it('nouvelle conversation : page vide prête pour une question, la suivante part sans conversation', async () => {
+    vi.mocked(askAgent).mockResolvedValue({ conversation_id: 'c1', turn_id: 't1', answer: turn().answer });
+    vi.mocked(fetchTurns).mockResolvedValue([turn()]);
+    setup();
+    await screen.findByText(/Transports Moreau/);
+    await userEvent.click(screen.getByRole('button', { name: SUGGESTIONS[0] }));
+    expect(await screen.findByText(turn().answer)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Nouvelle conversation' }));
+    expect(screen.queryByText(turn().answer)).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Point du jour' })).toBeNull();
+    expect(screen.getByRole('list', { name: 'Exemples de questions' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: SUGGESTIONS[1] }));
+    await waitFor(() => expect(askAgent).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(askAgent).mock.calls[1]?.[0]).toMatchObject({ conversationId: undefined });
+  });
+
   it('point du jour indisponible : raison affichée, questions toujours possibles', async () => {
     vi.mocked(fetchBriefing).mockRejectedValue(new Error('Assistant pas encore configuré'));
     setup();

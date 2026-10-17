@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { currentSubscription, enablePush, pushSupport, requestNotificationPermission } from './push';
+import { enablePush, pushSupport, requestNotificationPermission, resumePush } from './push';
 
 const HIDDEN_KEY = 'rts_push_banner_hidden_until';
 const HIDE_DAYS = 7;
@@ -26,7 +26,8 @@ export function PushBanner() {
   const [hidden, setHidden] = useState(() => hiddenUntil() > Date.now());
   const subscription = useQuery({
     queryKey: ['push-subscription'],
-    queryFn: async () => (await currentSubscription())?.endpoint ?? null,
+    // Déjà autorisées sur l'appareil (après une déconnexion par exemple) : réabonné sans invitation
+    queryFn: () => resumePush().catch(() => null),
     enabled: support === 'available' && !hidden,
     staleTime: Infinity,
   });

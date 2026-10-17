@@ -30,7 +30,11 @@ async function signedIn(email: string) {
 const uid = (project: string) => `${String(Date.now()).slice(-6)}${project.includes('mobile') ? 'M' : 'D'}`;
 
 /** Même jour, un an plus tôt (« 2028-03-15 » → « 2027-03-15 »). */
-const yearBefore = (iso: string) => `${Number(iso.slice(0, 4)) - 1}${iso.slice(4)}`;
+// Un an avant ; le 29 février d'une année bissextile donne le 28 février (comme la base)
+const yearBefore = (iso: string) => {
+  const rest = iso.slice(4) === '-02-29' ? '-02-28' : iso.slice(4);
+  return `${Number(iso.slice(0, 4)) - 1}${rest}`;
+};
 
 test('utilitaire : contrôle antipollution proposé un an avant le contrôle technique', async ({
   page,
