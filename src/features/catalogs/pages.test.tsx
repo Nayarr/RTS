@@ -193,18 +193,19 @@ describe('pièces', () => {
     expect(screen.getByRole('row', { name: 'Filtre à huile' })).toBeInTheDocument();
   });
 
-  it('prix de vente calculé depuis la marge, fournisseur gardé', async () => {
+  it('marge sur le prix d’achat liée au prix de vente, fournisseur gardé', async () => {
     vi.mocked(fetchPartStats).mockResolvedValue([part()]);
     vi.mocked(savePart).mockResolvedValue('p1');
     setup('/stock/pieces');
     await userEvent.click(await screen.findByRole('button', { name: 'Modifier Filtre à huile' }));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByLabelText('Prix de vente HT calculé')).toHaveTextContent('31,20');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Marge en euros' }));
-    const margin = within(dialog).getByLabelText('Marge (€)');
+    expect(within(dialog).getByLabelText('Prix de vente HT (€)')).toHaveValue('31,2');
+    // (31,20 - 21,50) / 21,50 = 45,12 %
+    expect(within(dialog).getByLabelText('Marge (%)')).toHaveValue('45,12');
+    const margin = within(dialog).getByLabelText('Marge (%)');
     await userEvent.clear(margin);
-    await userEvent.type(margin, '10');
-    expect(within(dialog).getByLabelText('Prix de vente HT calculé')).toHaveTextContent('34,00');
+    await userEvent.type(margin, '40');
+    expect(within(dialog).getByLabelText('Prix de vente HT (€)')).toHaveValue('30,1');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
       expect(savePart).toHaveBeenCalledWith('p1', {
@@ -216,9 +217,9 @@ describe('pièces', () => {
         supplier_name: 'PL Pièces 95',
         purchase_price: 21.5,
         shipping_cost: 2.5,
-        margin_kind: 'amount',
-        margin_value: 10,
-        sale_price: 34,
+        margin_kind: 'percent',
+        margin_value: 40,
+        sale_price: 30.1,
       }),
     );
   });

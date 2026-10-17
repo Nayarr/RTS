@@ -6641,6 +6641,10 @@ export type Database = {
           storage_key: string;
         }[];
       };
+      find_catalog_part: {
+        Args: { p_brand: string; p_designation: string; p_manufacturer_ref: string };
+        Returns: string;
+      };
       fleet_vehicle_block_reason: {
         Args: { p_on: string; p_vehicle: Database['public']['Tables']['fleet_vehicles']['Row'] };
         Returns: string;

@@ -115,6 +115,20 @@ export async function savePart(id: string | null, { supplier_name, ...input }: P
   return saved.id;
 }
 
+/**
+ * Pièce ajoutée à un devis ou un OR, gardée au catalogue : même désignation, même référence et
+ * même marque qu'une pièce existante → ses prix sont mis à jour ; sinon nouvelle pièce.
+ */
+export async function saveCatalogPart(input: PartInput): Promise<string> {
+  const { data: existing, error } = await supabase.rpc('find_catalog_part', {
+    p_designation: input.designation,
+    p_manufacturer_ref: input.manufacturer_ref ?? '',
+    p_brand: input.brand ?? '',
+  });
+  if (error) throw error;
+  return savePart(existing ?? null, { ...input, is_active: true });
+}
+
 /** Pièce de la base avec ses chiffres (factures émises) : utilisations, ventes, marge. */
 export type PartStats = Tables<'v_part_stats'> & { id: string; designation: string };
 

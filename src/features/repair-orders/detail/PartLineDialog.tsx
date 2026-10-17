@@ -1,4 +1,5 @@
-import { Controller, useForm } from 'react-hook-form';
+import { useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { CatalogPicker } from '@/features/catalogs/CatalogPicker';
+import { saveCatalogPart } from '@/features/catalogs/api';
+import { MarginField } from '@/features/catalogs/MarginField';
+import { PartSuggestions } from '@/features/catalogs/PartSuggestions';
+import { marginPercent } from '@/lib/margin';
 import type { RoLine } from '../api';
 import { useRepairOrderMutation } from '../hooks';
 import {
@@ -45,6 +49,7 @@ export function PartLineDialog({
     register,
     handleSubmit,
     getValues,
+    setValue,
     reset,
     formState: { errors },
   } = useForm<PartLineValues>({
@@ -52,11 +57,31 @@ export function PartLineDialog({
     defaultValues: partLineToForm(line, supplierName),
   });
 
+  // Pièce reprise de la base : plus de propositions pendant la saisie
+  const [picked, setPicked] = useState(false);
+  const [description, quantity, unitPrice, purchasePrice] = useWatch({
+    control,
+    name: ['description', 'quantity', 'unit_price', 'purchase_price'],
+  });
+
   const save = useRepairOrderMutation(
-    (values: PartLineValues) =>
-      line
-        ? updatePartLine(line.id, partLineFromForm(values))
-        : addPartLine(repairOrderId, nextPosition, partLineFromForm(values)),
+    async (values: PartLineValues) => {
+      const input = partLineFromForm(values);
+      // Gardée au catalogue : même désignation, référence et marque → prix mis à jour ; sinon nouvelle pièce
+      const partId = await saveCatalogPart({
+        designation: input.description,
+        manufacturer_ref: input.manufacturer_ref,
+        oem_ref: input.oem_ref,
+        brand: input.brand,
+        supplier_name: input.supplier_name,
+        purchase_price: input.purchase_price,
+        sale_price: input.unit_price,
+        margin_kind: 'percent',
+        margin_value: marginPercent(input.purchase_price, input.unit_price),
+      });
+      const withPart = { ...input, part_id: partId };
+      return line ? updatePartLine(line.id, withPart) : addPartLine(repairOrderId, nextPosition, withPart);
+    },
     line ? 'Pièce mise à jour' : 'Pièce ajoutée',
   );
 
@@ -68,20 +93,30 @@ export function PartLineDialog({
           <DialogDescription>Pièce fournie pour cette intervention, facturée avec l’OR.</DialogDescription>
         </DialogHeader>
 
-        {!line && <CatalogPicker onPick={(part) => reset(partFromCatalog(part, getValues()))} />}
-
         <form
           id="part-line-form"
           noValidate
           className="space-y-4"
           onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: onClose }))}
         >
-          <FormField
-            id="part-line-description"
-            label="Désignation"
-            error={errors.description?.message}
-            {...register('description')}
-          />
+          <div className="space-y-2">
+            <FormField
+              id="part-line-description"
+              label="Désignation"
+              autoComplete="off"
+              placeholder="Désignation ou référence"
+              error={errors.description?.message}
+              {...register('description')}
+            />
+            <PartSuggestions
+              text={description}
+              hidden={picked || line !== null}
+              onPick={(part) => {
+                setPicked(true);
+                reset(partFromCatalog(part, getValues()));
+              }}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <FormField
               id="part-line-quantity"
@@ -110,6 +145,15 @@ export function PartLineDialog({
               inputMode="decimal"
               error={errors.shipping_cost?.message}
               {...register('shipping_cost')}
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <MarginField
+              id="part-line-margin"
+              purchase={purchasePrice}
+              sale={unitPrice}
+              quantity={quantity}
+              onSale={(sale) => setValue('unit_price', sale, { shouldDirty: true, shouldValidate: true })}
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { fetchParts, savePart, type Part } from '@/features/catalogs/api';
+import { fetchParts, saveCatalogPart, type Part } from '@/features/catalogs/api';
 import type * as CatalogApi from '@/features/catalogs/api';
 import { renderRoutes } from '@/test/render';
 import { AddLineButtons } from './AddLineButtons';
@@ -11,7 +11,7 @@ import { computeTotals, offeredTotal, type EditableLine } from './lines';
 vi.mock('@/features/catalogs/api', async (importOriginal) => ({
   ...(await importOriginal<typeof CatalogApi>()),
   fetchParts: vi.fn(),
-  savePart: vi.fn(),
+  saveCatalogPart: vi.fn(),
 }));
 vi.mock('./hooks', () => ({ useServicePackages: () => ({ data: [], isSuccess: true }) }));
 
@@ -41,9 +41,9 @@ const renderButtons = (onAdd = vi.fn().mockResolvedValue(undefined)) => {
 };
 
 describe('ajout d’une pièce', () => {
-  it('saisie directe : prix de vente calculé, pièce enregistrée dans la base puis ajoutée', async () => {
+  it('saisie directe : marge liée au prix de vente, total de la ligne, pièce gardée au catalogue', async () => {
     vi.mocked(fetchParts).mockResolvedValue([]);
-    vi.mocked(savePart).mockResolvedValue('new-part');
+    vi.mocked(saveCatalogPart).mockResolvedValue('new-part');
     const onAdd = renderButtons();
     await userEvent.click(screen.getByRole('button', { name: 'Ajouter une pièce' }));
     const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
@@ -51,23 +51,34 @@ describe('ajout d’une pièce', () => {
     await userEvent.type(within(dialog).getByLabelText('Référence pièce'), 'DF-22');
     await userEvent.type(within(dialog).getByLabelText('Prix d’achat HT (€)'), '80');
     await userEvent.type(within(dialog).getByLabelText('Frais de port HT (€)'), '5');
+    // Marge saisie : prix de vente recalculé (sur le prix d'achat seul)
     await userEvent.type(within(dialog).getByLabelText('Marge (%)'), '20');
-    expect(within(dialog).getByLabelText('Prix de vente HT calculé')).toHaveTextContent('102,00');
+    expect(within(dialog).getByLabelText('Prix de vente HT (€)')).toHaveValue('96');
+    // Prix de vente changé : marge recalculée
+    const sale = within(dialog).getByLabelText('Prix de vente HT (€)');
+    await userEvent.clear(sale);
+    await userEvent.type(sale, '100');
+    expect(within(dialog).getByLabelText('Marge (%)')).toHaveValue('25');
     const quantity = within(dialog).getByLabelText('Quantité');
     await userEvent.clear(quantity);
     await userEvent.type(quantity, '2');
+    expect(within(dialog).getByLabelText('Total HT de la ligne')).toHaveTextContent('200,00');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la pièce' }));
 
     await waitFor(() => expect(onAdd).toHaveBeenCalled());
-    expect(savePart).toHaveBeenCalledWith(
-      null,
-      expect.objectContaining({ sale_price: 102, margin_value: 20 }),
+    expect(saveCatalogPart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        designation: 'Disque de frein',
+        manufacturer_ref: 'DF-22',
+        sale_price: 100,
+        margin_value: 25,
+      }),
     );
     expect(onAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         line_type: 'part',
         description: 'Disque de frein',
-        unit_price: 102,
+        unit_price: 100,
         quantity: 2,
         purchase_price: 80,
         shipping_cost: 10,
@@ -77,9 +88,9 @@ describe('ajout d’une pièce', () => {
     );
   });
 
-  it('pièce proposée par la base : reprise puis mise à jour', async () => {
+  it('pièce proposée par la base : fenêtre remplie, modèle modifiable avant l’ajout', async () => {
     vi.mocked(fetchParts).mockResolvedValue([basePart]);
-    vi.mocked(savePart).mockResolvedValue('p1');
+    vi.mocked(saveCatalogPart).mockResolvedValue('p2');
     const onAdd = renderButtons();
     await userEvent.click(screen.getByRole('button', { name: 'Ajouter une pièce' }));
     const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
@@ -87,10 +98,21 @@ describe('ajout d’une pièce', () => {
     const suggestions = await within(dialog).findByRole('list', { name: 'Pièces de la base' });
     await userEvent.click(within(suggestions).getByRole('button', { name: /Plaquettes de frein avant/ }));
     expect(within(dialog).getByLabelText('Référence véhicule')).toHaveValue('Volvo FH 500');
-    expect(within(dialog).getByLabelText('Prix de vente HT calculé')).toHaveTextContent('137,50');
+    expect(within(dialog).getByLabelText('Prix de vente HT (€)')).toHaveValue('137,5');
+    expect(within(dialog).getByLabelText('Marge (%)')).toHaveValue('37,5');
+    // Autre marque : la base en fera une nouvelle pièce
+    const brand = within(dialog).getByLabelText('Marque');
+    await userEvent.clear(brand);
+    await userEvent.type(brand, 'Textar');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la pièce' }));
-    await waitFor(() => expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ part_id: 'p1' })));
-    expect(savePart).toHaveBeenCalledWith('p1', expect.anything());
+    await waitFor(() => expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ part_id: 'p2' })));
+    expect(saveCatalogPart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        designation: 'Plaquettes de frein avant',
+        brand: 'Textar',
+        manufacturer_ref: 'K-1137',
+      }),
+    );
   });
 });
 

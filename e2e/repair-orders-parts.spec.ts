@@ -60,8 +60,12 @@ test('la réception suit pièces, sous-traitance et consommables ; le technicien
   const parts = card(page, 'Pièces');
   await parts.getByRole('button', { name: 'Ajouter une pièce' }).click();
   const partDialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
-  await partDialog.getByRole('searchbox', { name: 'Chercher dans le catalogue' }).fill('filtre à huile');
-  await partDialog.getByRole('button', { name: /Filtre à huile/ }).click();
+  // Proposée pendant la saisie de la désignation
+  await partDialog.getByLabel('Désignation').fill('filtre à huile');
+  await partDialog
+    .getByRole('list', { name: 'Pièces de la base' })
+    .getByRole('button', { name: /Filtre à huile/ })
+    .click();
   await expect(partDialog.getByLabel('Fournisseur')).toHaveValue('PL Pièces 95');
   await partDialog.getByLabel('Quantité').fill('2');
   await partDialog.getByRole('button', { name: 'Enregistrer' }).click();

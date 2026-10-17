@@ -3,7 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
-import { fetchConsumables, fetchParts, type Consumable, type Part } from '@/features/catalogs/api';
+import {
+  fetchConsumables,
+  fetchParts,
+  saveCatalogPart,
+  type Consumable,
+  type Part,
+} from '@/features/catalogs/api';
 import type * as CatalogApi from '@/features/catalogs/api';
 import { saveWarrantyClaim } from '@/features/warranties/api';
 import type * as WarrantiesApi from '@/features/warranties/api';
@@ -37,6 +43,7 @@ vi.mock('@/features/catalogs/api', async (importOriginal) => ({
   ...(await importOriginal<typeof CatalogApi>()),
   fetchParts: vi.fn(),
   fetchConsumables: vi.fn(),
+  saveCatalogPart: vi.fn().mockResolvedValue('p1'),
 }));
 vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof RoApi>()),
@@ -251,15 +258,17 @@ describe('fiche OR : pièces', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /Ajouter une pièce/ }));
     const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
-    await userEvent.type(
-      within(dialog).getByRole('searchbox', { name: 'Chercher dans le catalogue' }),
-      'filtre',
-    );
-    await userEvent.click(await within(dialog).findByRole('button', { name: /Filtre à huile/ }));
+    // Pièces de la base proposées pendant la saisie de la désignation
+    await userEvent.type(within(dialog).getByLabelText('Désignation'), 'filtre');
+    const suggestions = await within(dialog).findByRole('list', { name: 'Pièces de la base' });
+    await userEvent.click(within(suggestions).getByRole('button', { name: /Filtre à huile/ }));
     expect(within(dialog).getByLabelText('Désignation')).toHaveValue('Filtre à huile');
+    // (32 - 21,50) / 21,50 = 48,84 % ; total de la ligne avec la quantité
+    expect(within(dialog).getByLabelText('Marge (%)')).toHaveValue('48,84');
     const quantity = within(dialog).getByLabelText('Quantité');
     await userEvent.clear(quantity);
     await userEvent.type(quantity, '2');
+    expect(within(dialog).getByLabelText('Total HT de la ligne')).toHaveTextContent('64,00');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() =>
@@ -275,6 +284,13 @@ describe('fiche OR : pièces', () => {
         oem_ref: null,
         part_id: 'p1',
         order_status: 'to_order',
+      }),
+    );
+    expect(saveCatalogPart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        designation: 'Filtre à huile',
+        manufacturer_ref: 'HU 12 140 x',
+        sale_price: 32,
       }),
     );
   });

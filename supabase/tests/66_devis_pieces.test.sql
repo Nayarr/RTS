@@ -21,11 +21,11 @@ select throws_ok($$ update public.clients set siret = '12345678900016' where id 
 insert into public.parts (id, designation, vehicle_ref, manufacturer_ref, purchase_price, shipping_cost, margin_kind, margin_value)
 values ('60000000-0000-0000-0000-000000000001', 'Plaquettes avant', 'Volvo FH 500', 'K-1137', 100, 10, 'percent', 30);
 select is((select sale_price from public.parts where id = '60000000-0000-0000-0000-000000000001'),
-          143.00::numeric, 'Marge 30 % sur achat + port : (100 + 10) × 1,3 = 143 € HT');
+          130.00::numeric, 'Marge 30 % sur le prix d''achat (port facturé à part) : 100 × 1,3 = 130 € HT');
 
-update public.parts set margin_kind = 'amount', margin_value = 25 where id = '60000000-0000-0000-0000-000000000001';
+update public.parts set margin_kind = 'amount', margin_value = 25, sale_price = null where id = '60000000-0000-0000-0000-000000000001';
 select is((select sale_price from public.parts where id = '60000000-0000-0000-0000-000000000001'),
-          135.00::numeric, 'Marge fixe de 25 € : 100 + 10 + 25 = 135 € HT');
+          125.00::numeric, 'Marge fixe de 25 € : 100 + 25 = 125 € HT');
 
 insert into public.parts (id, designation, sale_price) values ('60000000-0000-0000-0000-000000000002', 'Ampoule H7', 9.5);
 select is((select sale_price from public.parts where id = '60000000-0000-0000-0000-000000000002'),
