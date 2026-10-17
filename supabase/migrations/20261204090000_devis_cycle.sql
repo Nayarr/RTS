@@ -160,7 +160,7 @@ language plpgsql
 set search_path = ''
 as $$
 begin
-  if new.status = 'work_done' and old.status in ('assigned', 'in_progress') then
+  if new.status = 'work_done' and old.status in ('assigned', 'in_progress') and not public.is_office() then
     new.status := 'to_invoice';
     new.completed_at := coalesce(new.completed_at, now());
   end if;
