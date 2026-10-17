@@ -21,6 +21,8 @@ import { decimalField, decimalValue, formatEuro } from '@/lib/numbers';
 import { useServicePackages } from './hooks';
 import { packagesFor, type NewLine, type ServicePackage, type VehicleType } from './lines';
 import { PartSuggestions } from '@/features/catalogs/PartSuggestions';
+import { useQueryClient } from '@tanstack/react-query';
+import { partsKey } from '@/features/catalogs/hooks';
 
 type Dialogs = 'labor' | 'package' | 'part' | null;
 
@@ -154,6 +156,7 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
   const designation = useWatch({ control: form.control, name: 'designation' });
   const quantity = useWatch({ control: form.control, name: 'quantity' });
   const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
 
   const pick = (part: Part) => {
     setPicked(part);
@@ -172,6 +175,7 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
     try {
       // Même désignation, référence et marque : pièce du catalogue mise à jour ; sinon nouvelle pièce
       const partId = await saveCatalogPart(input);
+      await queryClient.invalidateQueries({ queryKey: partsKey });
       await onAdd({
         line_type: 'part',
         description: input.designation,

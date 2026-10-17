@@ -27,6 +27,8 @@ import {
   type PartLineValues,
 } from '../supplies';
 import { addPartLine, updatePartLine } from '../supplies-api';
+import { useQueryClient } from '@tanstack/react-query';
+import { partsKey } from '@/features/catalogs/hooks';
 
 interface PartLineDialogProps {
   repairOrderId: string;
@@ -59,6 +61,7 @@ export function PartLineDialog({
 
   // Pièce reprise de la base : plus de propositions pendant la saisie
   const [picked, setPicked] = useState(false);
+  const queryClient = useQueryClient();
   const [description, quantity, unitPrice, purchasePrice] = useWatch({
     control,
     name: ['description', 'quantity', 'unit_price', 'purchase_price'],
@@ -79,6 +82,8 @@ export function PartLineDialog({
         margin_kind: 'percent',
         margin_value: marginPercent(input.purchase_price, input.unit_price),
       });
+      // Nouvelle pièce ou nouveaux prix : proposés tout de suite à la prochaine saisie
+      await queryClient.invalidateQueries({ queryKey: partsKey });
       const withPart = { ...input, part_id: partId };
       return line ? updatePartLine(line.id, withPart) : addPartLine(repairOrderId, nextPosition, withPart);
     },
