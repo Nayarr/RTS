@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { RouterProvider } from 'react-router';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { invalidateDashboard } from '@/features/dashboard/hooks';
 import { OfflineBanner } from '@/features/offline/OfflineBanner';
 import {
   createOfflinePersister,
@@ -14,7 +15,9 @@ import {
 import { createAppRouter } from './router';
 
 function createQueryClient() {
-  return new QueryClient({
+  const client: QueryClient = new QueryClient({
+    // Après chaque action réussie, les chiffres de l'accueil sont relus (sans attendre la minute)
+    mutationCache: new MutationCache({ onSuccess: () => invalidateDashboard(client) }),
     defaultOptions: {
       queries: {
         staleTime: 30 * 1000,
@@ -25,6 +28,7 @@ function createQueryClient() {
       },
     },
   });
+  return client;
 }
 
 export function App() {

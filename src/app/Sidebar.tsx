@@ -1,11 +1,10 @@
 import { useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
 import { AudioLines, ChevronDown, CircleHelp, House, LogOut, Moon, Settings, Sun, Tv } from 'lucide-react';
 import { signOut } from '@/features/auth/api';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
-import { fetchOfficeDashboard } from '@/features/dashboard/api';
+import { useOfficeDashboard } from '@/features/dashboard/hooks';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { setTheme, useTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -41,12 +40,7 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
   const { pathname } = useLocation();
   const role = profile?.role;
   const isOffice = role === 'direction' || role === 'reception';
-  const dashboard = useQuery({
-    queryKey: ['office-dashboard'],
-    queryFn: fetchOfficeDashboard,
-    refetchInterval: 60_000,
-    enabled: isOffice,
-  });
+  const dashboard = useOfficeDashboard({ enabled: isOffice });
 
   const current = activePath(pathname);
   const activeGroup = GROUPS.find((group) => group.items.some((item) => item.to === current))?.id;

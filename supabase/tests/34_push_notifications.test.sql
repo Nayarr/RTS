@@ -56,11 +56,11 @@ select is((select count(*)::integer from public.push_outbox where profile_id = '
 -- ---------------------------------------------------------------- Bureau : réponse à un devis en ligne
 insert into public.notifications (recipient_role, type, title, body, link, dedupe_key) values
   ('direction', 'quote_response', 'Devis DV00001 accepté en ligne', 'Transports Dupont · AB-123-CD', '/devis/x', 'qr-1'),
-  ('direction', 'low_stock', 'Stock bas : AdBlue', null, '/stock/consommables', 'stock-1');
+  ('direction', 'rental_renewed', 'Location LC-2026-0001 reconduite', null, '/location', 'renew-1');
 select results_eq(
   $$select title from public.push_outbox where profile_id = '00000000-0000-0000-0000-0000000000d1' order by created_at, title$$,
   $$values ('Demande de congé : Bruno'), ('Devis DV00001 accepté en ligne')$$,
-  'Devis accepté en ligne envoyé en push ; les autres alertes restent dans la cloche');
+  'Devis accepté en ligne envoyé en push ; une simple information reste dans la cloche');
 
 -- ---------------------------------------------------------------- Lecture et envoi
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');

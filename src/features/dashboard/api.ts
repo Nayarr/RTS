@@ -28,3 +28,16 @@ export async function fetchOfficeDashboard(): Promise<OfficeDashboard> {
   if (error) throw error;
   return data as unknown as OfficeDashboard;
 }
+
+/** Tables dont un changement modifie les chiffres de l'accueil (droits de l'utilisateur appliqués). */
+const LIVE_TABLES = ['repair_orders', 'ro_lines', 'quotes', 'invoices', 'appointments', 'leave_requests'];
+
+/** Changements en direct (Supabase Realtime) des données de l'accueil. */
+export function subscribeToDashboardChanges(onChange: () => void): () => void {
+  const channel = LIVE_TABLES.reduce(
+    (current, table) => current.on('postgres_changes', { event: '*', schema: 'public', table }, onChange),
+    supabase.channel('office-dashboard'),
+  );
+  channel.subscribe();
+  return () => void supabase.removeChannel(channel);
+}

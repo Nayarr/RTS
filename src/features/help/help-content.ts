@@ -161,6 +161,11 @@ export const FAQ: HelpQuestion[] = [
       'L’appli prépare le message, c’est ta messagerie qui l’envoie. Sur le poste du bureau, mets l’adresse de l’atelier comme compte par défaut (Outlook ou Mail), ou utilise « Ouvrir dans Gmail » : il s’ouvre sur le compte de l’atelier.',
   },
   {
+    question: 'Quelles notifications je reçois sur mon téléphone ?',
+    answer:
+      'Bureau : chaque alerte de la cloche qui demande une action (devis accepté ou refusé, travaux avant devis, OR en retard, factures en retard, stock bas, demande de rendez-vous, borne bloquée…). La nuit (21 h - 7 h), elles attendent 7 h, sauf la réponse d’un client à un devis. Direction : les demandes de congé. Technicien : OR confié, modifié ou rouvert, et réponse à sa demande de congé.',
+  },
+  {
     question: 'Je ne reçois pas les notifications',
     answer:
       'Sur chaque téléphone, touche « Activer les notifications » dans le bandeau en haut de l’écran et accepte. Sur iPhone, installe d’abord l’appli (Partager, puis « Sur l’écran d’accueil ») et ouvre-la depuis l’icône. Si tu les as refusées, réautorise-les dans les réglages du navigateur. Se déconnecter coupe les notifications sur cet appareil.',
