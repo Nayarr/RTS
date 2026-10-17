@@ -56,13 +56,17 @@ export function voiceLabel(voice: Pick<SpeechSynthesisVoice, 'name'>): string {
  * la première lecture partirait avec la voix par défaut (souvent robotique).
  */
 function voicesReady(waitMs = 1500): Promise<void> {
-  if (!speechSupported() || window.speechSynthesis.getVoices().length > 0) return Promise.resolve();
+  const synth = speechSupported() ? window.speechSynthesis : null;
+  // Voix déjà là, ou navigateur qui ne prévient pas de leur chargement : lecture tout de suite
+  if (!synth || synth.getVoices().length > 0 || typeof synth.addEventListener !== 'function') {
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
     const done = () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', done);
+      synth.removeEventListener('voiceschanged', done);
       resolve();
     };
-    window.speechSynthesis.addEventListener('voiceschanged', done);
+    synth.addEventListener('voiceschanged', done);
     setTimeout(done, waitMs);
   });
 }
