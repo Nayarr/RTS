@@ -443,7 +443,7 @@ describe('rendez-vous', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Rendez-vous 09:00 AB-123-CD' }));
     await userEvent.click(screen.getByRole('button', { name: 'Le véhicule est arrivé : créer l’OR' }));
     expect(await screen.findByText('Fiche OR')).toBeInTheDocument();
-    expect(convertAppointment).toHaveBeenCalledWith('a1');
+    expect(convertAppointment).toHaveBeenCalledWith('a1', false);
   });
 
   it('rappel au client : enregistré puis message prêt à envoyer', async () => {

@@ -36,6 +36,8 @@ import { balanceHt, issueBlockers, issueWarnings, mainVatRate, PAYMENT_METHODS }
 import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
+import { DuplicateButton } from '@/components/DuplicateButton';
+import { duplicateInvoice } from './api';
 
 type Dialog = 'issue' | 'payment' | 'credit' | 'rebuild' | 'delete' | null;
 
@@ -299,13 +301,21 @@ export function InvoicePage() {
           </>
         }
         actions={
-          singleOrder && (
-            <Button variant="ghost" asChild>
-              <Link to={`/or/${singleOrder}`}>
-                <ArrowLeft /> Retour à l’OR {invoice.repair_order_numbers[0] ?? ''}
-              </Link>
-            </Button>
-          )
+          <>
+            {singleOrder && (
+              <Button variant="ghost" asChild>
+                <Link to={`/or/${singleOrder}`}>
+                  <ArrowLeft /> Retour à l’OR {invoice.repair_order_numbers[0] ?? ''}
+                </Link>
+              </Button>
+            )}
+            <DuplicateButton
+              label="Dupliquer la facture"
+              duplicate={() => duplicateInvoice(invoice.id)}
+              path={(copy) => `/factures/${copy}`}
+              success="Facture dupliquée en brouillon"
+            />
+          </>
         }
       />
 

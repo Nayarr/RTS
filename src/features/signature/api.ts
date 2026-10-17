@@ -19,8 +19,12 @@ export interface SignatureRequest {
   created_at: string;
 }
 
-/** Demande affichée sur la borne : l'OR à signer. */
+/** Demande affichée sur la borne : l'OR ou le devis à signer. */
 export interface KioskSignatureRequest extends SignatureRequest {
+  /** OR (autorisation des travaux) ou devis (acceptation). */
+  kind?: 'repair_order' | 'quote';
+  /** Devis : total TTC affiché au client. */
+  total_ttc?: number | null;
   number: string;
   vehicle_plate: string | null;
   client_name: string | null;

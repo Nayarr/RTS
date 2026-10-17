@@ -152,9 +152,11 @@ export const markAppointmentReminded = (id: string) =>
   updateAppointment(id, { reminder_sent_at: new Date().toISOString() });
 
 /** « Le véhicule est arrivé : créer l'OR » ; renvoie l'identifiant de l'OR créé. */
-export async function convertAppointment(id: string): Promise<string> {
+export async function convertAppointment(id: string, inspectionRequired = false): Promise<string> {
   const { data, error } = await supabase.rpc('create_repair_order_from_appointment', {
     p_appointment_id: id,
+    // Direction : tous les points de la fiche de contrôle exigés avant de terminer
+    p_inspection_required: inspectionRequired,
   });
   if (error) throw error;
   return data;

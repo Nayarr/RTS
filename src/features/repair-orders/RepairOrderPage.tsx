@@ -23,6 +23,8 @@ import { TimeCard } from './detail/TimeCard';
 import { useRepairOrder, useRepairOrderMutation, useRepairOrderSupplies } from './hooks';
 import { PreQuoteWorkCard } from './PreQuoteWorkCard';
 import type { SignatureChannel } from '@/features/signature/api';
+import { DuplicateButton } from '@/components/DuplicateButton';
+import { duplicateRepairOrder } from './api';
 
 /** Travaux terminés (ou devis à faire) : l'OR passe en « Facture à faire ». */
 function ValidateButton({ order }: { order: RepairOrderOverview }) {
@@ -109,6 +111,12 @@ export function RepairOrderPage() {
         order.number,
         <>
           {editable && <PrepareQuoteButton order={order} variant="outline" />}
+          <DuplicateButton
+            label="Dupliquer l’OR"
+            duplicate={() => duplicateRepairOrder(order.id)}
+            path={(copy) => `/or/${copy}`}
+            success="OR dupliqué : non assigné, à compléter"
+          />
           <ValidateButton order={order} />
         </>,
       )}

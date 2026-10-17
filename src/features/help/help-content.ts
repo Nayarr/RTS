@@ -75,7 +75,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     items: [
       'Sur l’OR, « Préparer le devis » reprend les travaux à prévoir, calcule la main d’œuvre au taux horaire et applique les forfaits. Ajoute pièces, main d’œuvre, texte et remises.',
       '« Envoyer au client (lien à signer) » prépare un lien : le client consulte et signe en ligne, le devis passe seul en « Accepté ».',
-      'Devis accepté : « Créer l’OR avec les travaux acceptés » et choisis le technicien.',
+      'Devis accepté (en ligne, sur la borne ou au bureau) : l’OR d’origine passe « Facture à faire » ; « Créer l’OR avec les travaux acceptés » et choisis le technicien. Travaux terminés sans devis : l’OR passe directement « Facture à faire ».',
       'Travaux déjà faits avant le devis (diagnostic, contrôle) : dès que le devis est accepté, choisis pour chaque ligne « Facturer » (facture séparée émise tout de suite, prix modifiable) ou « Offrir » (visible sur la facture avec 100 % de remise). Un bandeau orange reste sur l’OR tant que ce n’est pas fait.',
     ],
   },

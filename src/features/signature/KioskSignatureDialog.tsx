@@ -12,6 +12,7 @@ import { TaskList } from '@/features/repair-orders/TaskList';
 import { fetchKioskPendingSignature, kioskSign, kioskSignatureKey, type KioskSignatureRequest } from './api';
 import { remainingPercent } from './domain';
 import { useCountdown } from './use-countdown';
+import { formatEuro } from '@/lib/numbers';
 
 const errorMessage = (error: unknown) =>
   error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
@@ -80,6 +81,12 @@ function SignatureForm({
           <span className="muted">{request.client_name ?? ''}</span>
         </span>
         <TaskList text={request.requested_work} className="text-[15px]" />
+        {request.kind === 'quote' && typeof request.total_ttc === 'number' && (
+          <p className="row justify-between border-t pt-2 text-base">
+            <span>Total TTC</span>
+            <b className="num">{formatEuro(request.total_ttc)}</b>
+          </p>
+        )}
       </div>
       <div className="field">
         <Label htmlFor="kiosk-signer">Votre nom (facultatif)</Label>
@@ -166,10 +173,14 @@ export function KioskSignatureDialog() {
           <>
             <DialogHeader>
               <DialogTitle className="text-[22px]">
-                Signature de l’ordre de réparation {request.number}
+                {request.kind === 'quote'
+                  ? `Signature du devis ${request.number}`
+                  : `Signature de l’ordre de réparation ${request.number}`}
               </DialogTitle>
               <DialogDescription>
-                En signant, vous autorisez l’atelier à réaliser les travaux ci-dessous.
+                {request.kind === 'quote'
+                  ? 'En signant, vous acceptez ce devis et les travaux ci-dessous.'
+                  : 'En signant, vous autorisez l’atelier à réaliser les travaux ci-dessous.'}
               </DialogDescription>
             </DialogHeader>
             <SignatureForm key={request.id} request={request} readAt={active?.readAt ?? 0} onDone={close} />

@@ -20,12 +20,15 @@ import {
   assignQuoteNumber,
   createRepairOrderFromQuote,
   deleteQuote,
+  duplicateQuote,
   setQuoteResponse,
   type QuoteOverview,
 } from '../api';
 import { useQuoteMutation } from '../hooks';
 import { useQuotePdf } from '../use-quote-pdf';
+import { QuoteKioskButton } from './QuoteKioskButton';
 import { ShareQuoteButton } from './ShareQuoteButton';
+import { DuplicateButton } from '@/components/DuplicateButton';
 import { InspectionRequiredToggle } from '@/features/repair-orders/InspectionRequiredToggle';
 
 type Confirm = 'accepted' | 'refused' | 'delete' | null;
@@ -155,7 +158,14 @@ export function QuoteDocumentActions({ quote, hasLines }: { quote: QuoteOverview
       >
         <FileDown /> {pdf.generate.isPending ? 'Génération…' : 'Générer le PDF'}
       </Button>
+      {!answered && <QuoteKioskButton quote={quote} disabled={!hasLines} />}
       {!answered && <ShareQuoteButton quote={quote} disabled={!hasLines} />}
+      <DuplicateButton
+        label="Dupliquer le devis"
+        duplicate={() => duplicateQuote(quote.id)}
+        path={(copy) => `/devis/${copy}`}
+        success="Devis dupliqué en brouillon"
+      />
       <PdfPreviewDialog file={pdf.file} onClose={pdf.close} />
     </>
   );
