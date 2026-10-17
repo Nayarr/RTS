@@ -147,7 +147,7 @@ export function RepairOrderPage() {
             plate={order.plate}
             number={order.number}
           />
-          <InspectionCard data={inspection} />
+          <InspectionCard data={inspection} vehicleType={order.vehicle_type} />
         </div>
         <div className="col gap-5">
           <TimeCard order={order} loadedAt={detail.dataUpdatedAt} showComparison={isDirection} />

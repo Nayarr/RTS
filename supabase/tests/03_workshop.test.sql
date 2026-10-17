@@ -4,7 +4,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(28);
 
 \ir helpers/fixtures.psql
 
@@ -54,8 +54,8 @@ select results_eq(
 select results_eq(
   $$ select description, estimated_hours from public.ro_lines
      where repair_order_id = '50000000-0000-0000-0000-000000000001' and description like 'Remplacement%' $$,
-  $$ values ('Remplacement Extincteur 1 kg cabine'::text, 0.30::numeric) $$,
-  'Extincteur HS sans forfait : ligne « Remplacement … » avec son temps par défaut');
+  $$ values ('Remplacement Extincteur 1 kg cabine'::text, null::numeric) $$,
+  'Extincteur HS sans forfait : ligne « Remplacement … » sans temps (estimé par le technicien)');
 
 update public.inspections set data = '{"usure": {"plaquettes_avant": "OK"}, "controles": {"extincteur1": "HS"}}'
 where repair_order_id = :ro;
@@ -69,6 +69,9 @@ insert into public.ro_lines (repair_order_id, kind, description) values (:ro, 'd
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000001') $$,
                    '%Temps estimé manquant : 1 tâche des travaux effectués%', 'Clôture impossible sans temps sur chaque travail effectué');
 update public.ro_lines set estimated_hours = 2 where repair_order_id = :ro and kind = 'done';
+select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000001', true) $$,
+                   '%Temps estimé manquant : 1 tâche à prévoir%', 'Ligne ajoutée par la fiche : estimation exigée aussi');
+update public.ro_lines set estimated_hours = 0.3 where repair_order_id = :ro and kind = 'planned';
 select lives_ok($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000001', true) $$,
                 'Le technicien termine l''intervention (devis nécessaire)');
 select is((select status from public.repair_orders where id = :ro), 'quote_pending'::public.repair_order_status,

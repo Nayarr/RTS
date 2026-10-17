@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 import { addLine, deleteLine, updateLine, type LinePatch } from '../api';
 import {
   isExtinguisherLine,
-  keepsStandardTime,
   parseTimeOption,
   timeOptionLabel,
   timeOptionsFor,
@@ -37,15 +36,6 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
   // Temps estimé par le technicien, aussi bien pour les travaux effectués que pour ceux à prévoir.
   // Le technicien ne voit ni les forfaits ni les heures facturées au devis.
   const timeLabel = 'Temps estimé';
-  // Barème affiché seulement pour les extincteurs et les étiquettes (hayon, angles morts).
-  const standardHours =
-    line.kind === 'planned' &&
-    line.line_type === 'package' &&
-    line.standard_hours !== null &&
-    keepsStandardTime(line.description)
-      ? line.standard_hours
-      : null;
-
   return (
     <li className="row items-start gap-2 rounded-[7px] border p-2">
       <div className="col min-w-0 grow gap-1">
@@ -70,10 +60,8 @@ function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolea
         value={time}
         onChange={(event) => update.mutate(parseTimeOption(event.target.value))}
       >
-        <option value="">
-          {/* Extincteur, étiquettes : leur temps barème s'applique tant qu'il n'est pas changé */}
-          {standardHours !== null ? `Barème ${timeOptionLabel(`${standardHours}h`)}` : 'Estim. ·'}
-        </option>
+        {/* Estimation à l'aveugle : le barème n'est jamais montré au technicien */}
+        <option value="">Estimation</option>
         {timeOptionsFor(time, isExtinguisherLine(line.description)).map((option) => (
           <option key={option} value={option}>
             {timeOptionLabel(option)}

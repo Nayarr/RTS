@@ -192,20 +192,31 @@ describe('fiche OR technicien', () => {
     await waitFor(() => expect(markSeen).toHaveBeenCalledWith('ro1', '00000000-0000-0000-0000-0000000000a1'));
   });
 
-  it('pneus : essieu du milieu, essieu ajouté, valeur choisie en couleur', async () => {
+  it('pneus : avant et arrière, essieu ajouté, valeur choisie en couleur', async () => {
     vi.mocked(saveInspection).mockResolvedValue();
     setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }) });
-    expect(await screen.findByRole('radiogroup', { name: 'Pneus milieu' })).toBeInTheDocument();
+    expect(await screen.findByRole('radiogroup', { name: 'Pneus avant' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: 'Pneus arrière' })).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Pneus milieu' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Ajouter un essieu' }));
-    const axle = screen.getByRole('radiogroup', { name: 'Pneus essieu 4' });
+    const axle = screen.getByRole('radiogroup', { name: 'Pneus essieu 3' });
     const hs = within(axle).getByRole('radio', { name: 'HS' });
     await userEvent.click(hs);
     expect(hs).toHaveClass('tone');
     expect(hs).toHaveStyle({ '--c': '#B23A32' });
-    await userEvent.type(screen.getByRole('textbox', { name: 'Taille pneus essieu 4' }), '31580225');
-    expect(screen.getByRole('textbox', { name: 'Taille pneus essieu 4' })).toHaveValue('315/80/22.5');
-    await userEvent.click(screen.getByRole('button', { name: 'Retirer : Pneus essieu 4' }));
-    expect(screen.queryByRole('radiogroup', { name: 'Pneus essieu 4' })).toBeNull();
+    await userEvent.type(screen.getByRole('textbox', { name: 'Taille pneus essieu 3' }), '31580225');
+    expect(screen.getByRole('textbox', { name: 'Taille pneus essieu 3' })).toHaveValue('315/80/22.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer : Pneus essieu 3' }));
+    expect(screen.queryByRole('radiogroup', { name: 'Pneus essieu 3' })).toBeNull();
+  });
+
+  it('utilitaire : ni barres ni ajout d’essieu, kit accessoires gardé', async () => {
+    setup('/atelier/or/ro1', { order: order({ status: 'in_progress', vehicle_type: 'vul' }) });
+    expect(await screen.findByRole('radiogroup', { name: 'Plaquettes avant' })).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Barre de direction' })).toBeNull();
+    expect(screen.queryByRole('radiogroup', { name: 'Barre d’accouplement' })).toBeNull();
+    expect(screen.getByRole('radiogroup', { name: 'Kit accessoires' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ajouter un essieu' })).toBeNull();
   });
 
   it('kilométrage enregistré tout seul après la saisie, sans bouton', async () => {

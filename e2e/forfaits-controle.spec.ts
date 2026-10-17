@@ -93,10 +93,10 @@ test('disques à refaire : forfait disques et plaquettes seul, barème caché au
   await expect(planned.getByText('Forfait', { exact: true })).toHaveCount(0);
   await expect(planned.getByRole('option', { name: /Barème/ })).toHaveCount(0);
 
-  // Essieu ajouté, taille mise en forme toute seule
-  await page.getByRole('button', { name: 'Ajouter un essieu' }).click();
-  await page.getByRole('textbox', { name: 'Taille pneus essieu 4' }).fill('31580225');
-  await expect(page.getByRole('textbox', { name: 'Taille pneus essieu 4' })).toHaveValue('315/80/22.5');
+  // Utilitaire : pneus avant et arrière seulement, ni essieu à ajouter ni barres de direction
+  await expect(page.getByRole('radiogroup', { name: 'Pneus arrière' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ajouter un essieu' })).toHaveCount(0);
+  await expect(page.getByRole('radiogroup', { name: 'Barre de direction' })).toHaveCount(0);
 
   // Photo du contrôle technique exigée pour terminer
   await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'OUI' }).click();

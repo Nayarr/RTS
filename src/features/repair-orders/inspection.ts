@@ -36,6 +36,22 @@ export const WEAR_FIELDS = [
   ['kit_accessoires', 'Kit accessoires'],
 ] as const;
 
+type VehicleKind = 'pl' | 'vul' | 'remorque';
+
+/** Éléments d'usure sans objet selon le véhicule (comme la base, inspection_wear_fields_for). */
+const WEAR_EXCLUDED: Record<VehicleKind, readonly string[]> = {
+  pl: [],
+  vul: ['barre_accouplement', 'barre_direction'],
+  remorque: ['barre_accouplement', 'barre_direction', 'kit_accessoires'],
+};
+
+/** Usure contrôlée pour ce type de véhicule (VUL et remorque : pas de barres, remorque : pas de kit). */
+export const wearFieldsFor = (vehicleType: VehicleKind | null | undefined) =>
+  WEAR_FIELDS.filter(([key]) => !WEAR_EXCLUDED[vehicleType ?? 'pl'].includes(key));
+
+/** Essieux ajoutables (camion à plusieurs essieux, remorque) ; pas sur un utilitaire. */
+export const canAddAxles = (vehicleType: VehicleKind | null | undefined) => vehicleType !== 'vul';
+
 export const CHECK_FIELDS = [
   ['etiquettes', 'Étiquettes angles morts'],
   ['hayon', 'Étiquette contrôle hayon'],
@@ -70,17 +86,31 @@ export const FLUID_FIELDS = [
 /** Essieux de base (2 roues chacun) ; d'autres essieux peuvent être ajoutés (pneus.essieux). */
 export const TIRE_AXLES = [
   ['avant', 'Pneus avant'],
-  ['milieu', 'Pneus milieu'],
   ['arriere', 'Pneus arrière'],
 ] as const;
 
-/** Libellé d'un essieu ajouté : le 4e, le 5e… */
-export const extraAxleLabel = (index: number) => `Pneus essieu ${index + 4}`;
+/** Essieu « milieu » des anciennes fiches : affiché seulement s'il a été rempli. */
+export const LEGACY_MIDDLE_AXLE = ['milieu', 'Pneus milieu'] as const;
+
+/** Essieux de base à afficher : avant et arrière, plus le milieu d'une ancienne fiche remplie. */
+export function tireAxlesFor(data: InspectionData | null | undefined) {
+  const middle = data?.pneus?.milieu_etat || data?.pneus?.milieu_taille;
+  return middle ? [TIRE_AXLES[0], LEGACY_MIDDLE_AXLE, TIRE_AXLES[1]] : [...TIRE_AXLES];
+}
+
+/** Libellé d'un essieu ajouté : le 3e, le 4e… (après l'avant et l'arrière). */
+export const extraAxleLabel = (index: number) => `Pneus essieu ${index + 3}`;
 
 /** Cases pouvant déclencher un forfait : toute la fiche sauf les niveaux (mêmes clés que la base). */
 export const PACKAGE_TRIGGER_GROUPS: { title: string; fields: [string, string][] }[] = [
   { title: 'Usure', fields: WEAR_FIELDS.map(([key, label]) => [key, label]) },
-  { title: 'Pneus', fields: TIRE_AXLES.map(([key, label]) => [`pneus.${key}_etat`, label]) },
+  {
+    title: 'Pneus',
+    fields: [TIRE_AXLES[0], LEGACY_MIDDLE_AXLE, TIRE_AXLES[1]].map(([key, label]) => [
+      `pneus.${key}_etat`,
+      label,
+    ]),
+  },
   { title: 'Contrôles', fields: CHECK_FIELDS.map(([key, label]) => [`controles.${key}`, label]) },
   {
     title: 'Voyants allumés',
@@ -109,7 +139,7 @@ export interface InspectionData {
     milieu_etat?: string;
     arriere_taille?: string;
     arriere_etat?: string;
-    /** Essieux ajoutés au-delà de l'avant, du milieu et de l'arrière. */
+    /** Essieux ajoutés au-delà de l'avant et de l'arrière (et du milieu des anciennes fiches). */
     essieux?: { taille?: string; etat?: string }[];
   };
   controles?: Partial<Record<CheckKey, string>>;
@@ -146,8 +176,13 @@ export function countAlerts(data: InspectionData | null | undefined): number {
  * Points OK / 50 % / HS non renseignés (usure, état des pneus, contrôles), comme la base
  * (inspection_missing_points) : exigés quand la direction impose la fiche complète.
  */
-export function inspectionMissingPoints(data: InspectionData | null | undefined): number {
-  const wear = WEAR_FIELDS.filter(([key]) => !['OK', '50', 'HS'].includes(data?.usure?.[key] ?? '')).length;
+export function inspectionMissingPoints(
+  data: InspectionData | null | undefined,
+  vehicleType: VehicleKind | null | undefined = 'pl',
+): number {
+  const wear = wearFieldsFor(vehicleType).filter(
+    ([key]) => !['OK', '50', 'HS'].includes(data?.usure?.[key] ?? ''),
+  ).length;
   const tyres = (['avant_etat', 'arriere_etat'] as const).filter(
     (key) => !['OK', '50', 'HS'].includes(data?.pneus?.[key] ?? ''),
   ).length;

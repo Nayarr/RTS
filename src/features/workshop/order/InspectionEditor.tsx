@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import {
   CHECK_FIELDS,
   CHECK_PHOTO_FIELDS,
+  canAddAxles,
   extraAxleLabel,
   FLUID_FIELDS,
   inspectionMissingPoints,
   OK_HS_OPTIONS,
-  TIRE_AXLES,
+  tireAxlesFor,
   WARNING_LIGHT_FIELDS,
-  WEAR_FIELDS,
+  wearFieldsFor,
   WEAR_OPTIONS,
   YES_NO_OPTIONS,
   type ChipOption,
@@ -105,6 +106,7 @@ export function InspectionEditor({
   photoLabels,
   locked,
   vehicleId,
+  vehicleType,
   required = false,
   tailgateScan,
   onTailgateScanDone,
@@ -116,6 +118,8 @@ export function InspectionEditor({
   photoLabels: string[];
   locked: boolean;
   vehicleId: string;
+  /** Type du véhicule : éléments d'usure et essieux proposés en dépendent. */
+  vehicleType: 'pl' | 'vul' | 'remorque';
   /** Fiche complète exigée par la direction : tous les points OK / 50 % / HS avant de terminer. */
   required?: boolean;
   /** Photo de l'étiquette du hayon à lire automatiquement (réglage de la direction). */
@@ -123,7 +127,7 @@ export function InspectionEditor({
   onTailgateScanDone?: () => void;
 }) {
   const [data, setData] = useState<InspectionData>(initial ?? {});
-  const missingPoints = inspectionMissingPoints(data);
+  const missingPoints = inspectionMissingPoints(data, vehicleType);
   const save = useWorkshopMutation(repairOrderId, (next: InspectionData) =>
     saveInspection(repairOrderId, next),
   );
@@ -271,7 +275,7 @@ export function InspectionEditor({
         );
       })}
 
-      {WEAR_FIELDS.map(([key, label]) => (
+      {wearFieldsFor(vehicleType).map(([key, label]) => (
         <ChipRow
           key={key}
           label={label}
@@ -282,7 +286,7 @@ export function InspectionEditor({
         />
       ))}
 
-      {TIRE_AXLES.map(([side, label]) =>
+      {tireAxlesFor(data).map(([side, label]) =>
         tireRow(
           side,
           label,
@@ -293,7 +297,7 @@ export function InspectionEditor({
       )}
       {extraAxles.map((axle, index) =>
         tireRow(
-          `essieu-${index + 4}`,
+          `essieu-${index + 3}`,
           extraAxleLabel(index),
           axle,
           (value) => setAxle(index, { etat: value }),
@@ -301,7 +305,7 @@ export function InspectionEditor({
           () => setAxles(extraAxles.filter((_, at) => at !== index)),
         ),
       )}
-      {!locked && (
+      {!locked && canAddAxles(vehicleType) && (
         <Button
           type="button"
           variant="outline"
