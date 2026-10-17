@@ -189,7 +189,7 @@ test('onglet du menu, question proposée : réponse affichée avec ses sources e
   ).toHaveAttribute('aria-current', 'true');
 });
 
-test('point du jour à l’ouverture : affiché, écouté, refait, masqué pendant une conversation', async ({
+test('point du jour à l’ouverture : affiché, écouté, refait, masqué pendant une conversation, nouvelle conversation vide', async ({
   page,
 }) => {
   await fakeSpeech(page);
@@ -216,7 +216,12 @@ test('point du jour à l’ouverture : affiché, écouté, refait, masqué penda
   await page.getByRole('button', { name: 'Combien on a facturé ce mois-ci ?' }).click();
   await expect(page.getByText(ANSWER)).toBeVisible();
   await expect(card).toBeHidden();
+  // Nouvelle conversation : page vide prête pour une question ; « Point du jour » le rouvre
   await page.getByRole('button', { name: 'Nouvelle conversation' }).click();
+  await expect(page.getByText(ANSWER)).toBeHidden();
+  await expect(card).toBeHidden();
+  await expect(page.getByRole('list', { name: 'Exemples de questions' })).toBeVisible();
+  await page.getByRole('button', { name: 'Point du jour' }).click();
   await expect(card.getByText('Rien d’urgent ce matin.')).toBeVisible();
 });
 
