@@ -126,6 +126,19 @@ describe('invitation à activer les notifications', () => {
     expect(screen.queryByRole('region', { name: 'Notifications de l’appareil' })).toBeNull();
   });
 
+  it('reconnexion, notifications déjà autorisées : réabonné sans invitation ni notification d’essai', async () => {
+    browser('granted');
+    renderBanner();
+    await waitFor(() =>
+      expect(rpc).toHaveBeenCalledWith(
+        'register_push_subscription',
+        expect.objectContaining({ p_endpoint: subscription.endpoint }),
+      ),
+    );
+    expect(rpc).not.toHaveBeenCalledWith('send_test_push');
+    expect(screen.queryByRole('region', { name: 'Notifications de l’appareil' })).toBeNull();
+  });
+
   it('« Plus tard » la masque pour 7 jours', async () => {
     browser('default');
     const { unmount } = renderBanner();
