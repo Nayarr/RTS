@@ -294,3 +294,7 @@ begin
   return v_ro;
 end;
 $$;
+
+-- « Contrôle hayon » à prévoir : plus de 0,5 h mis d'office, le technicien l'estime comme le reste.
+drop trigger ro_lines_tailgate_check_hours on public.ro_lines;
+drop function public.default_tailgate_check_hours();

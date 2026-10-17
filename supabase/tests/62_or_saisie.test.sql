@@ -37,7 +37,7 @@ insert into public.ro_lines (repair_order_id, kind, position, line_type, descrip
 values (:'ro', 'planned', 50, 'labor', 'Contrôle hayon'),
        (:'ro', 'planned', 51, 'labor', 'Graissage');
 select is((select estimated_hours from public.ro_lines where repair_order_id = :'ro' and description = 'Contrôle hayon'),
-          0.5::numeric, 'Contrôle hayon à prévoir : 0,5 h par défaut');
+          null, 'Contrôle hayon à prévoir : pas de temps mis d''office (estimé par le technicien)');
 select is((select estimated_hours from public.ro_lines where repair_order_id = :'ro' and description = 'Graissage'),
           null, 'Autre réparation : pas de temps imposé');
 
