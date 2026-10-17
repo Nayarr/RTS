@@ -27,7 +27,13 @@ import {
   LICENSE_READING_SCHEMA,
   licenseReadingPrompt,
 } from './license-reading.ts';
-import { nextDueDate, READING_SCHEMA, readingPrompt, validDate } from './reading.ts';
+import {
+  nextDueMonth,
+  TAILGATE_READING_SCHEMA,
+  tailgateReadingPrompt,
+  validDate,
+  validMonth,
+} from './reading.ts';
 import {
   checkedRegistration,
   REGISTRATION_READING_SCHEMA,
@@ -41,6 +47,13 @@ const requestSchema = z.object({
   kind: z.enum(['tailgate', 'technical_inspection', 'driving_license', 'registration_card']),
   // Verso du permis (kind « driving_license »)
   verso_file_id: z.guid().optional(),
+});
+
+const tailgateSchema = z.object({
+  due_month: z.string(),
+  last_control_month: z.string(),
+  label_text: z.string().max(500),
+  confidence: z.enum(['haute', 'moyenne', 'faible']),
 });
 
 const readingSchema = z.object({
@@ -154,15 +167,19 @@ export default {
       ? INSPECTION_READING_SCHEMA
       : registration
       ? REGISTRATION_READING_SCHEMA
-      : READING_SCHEMA;
+      : TAILGATE_READING_SCHEMA;
     const prompt = license
       ? licenseReadingPrompt(today)
       : inspection
       ? inspectionReadingPrompt(today)
       : registration
       ? registrationReadingPrompt(today)
-      : readingPrompt(today);
-    const manual = license || registration ? 'complète les champs à la main' : 'saisis la date à la main';
+      : tailgateReadingPrompt(today);
+    const manual = license || registration
+      ? 'complète les champs à la main'
+      : inspection
+      ? 'saisis la date à la main'
+      : 'choisis le mois à la main';
     let message;
     try {
       message = await claude.beta.messages.create({
@@ -206,6 +223,21 @@ export default {
       }
     }
 
+    if (!inspection) {
+      // Hayon : mois et année seulement, au format MMAAAA
+      try {
+        const tailgate = tailgateSchema.parse(JSON.parse(raw));
+        return json(200, {
+          due_month: nextDueMonth(tailgate, today),
+          last_control_month: validMonth(tailgate.last_control_month, today),
+          label_text: tailgate.label_text.trim(),
+          confidence: tailgate.confidence,
+        });
+      } catch {
+        return fail(422, unreadable);
+      }
+    }
+
     let reading;
     try {
       reading = readingSchema.parse(JSON.parse(raw));
@@ -213,19 +245,12 @@ export default {
       return fail(422, unreadable);
     }
 
-    if (inspection) {
-      return json(200, {
-        next_due_date: validDate(reading.next_due_date, today),
-        last_control_date: validDate(reading.last_control_date, today),
-        vin: validVin(reading.vin ?? ''),
-        plate: validPlate(reading.plate ?? ''),
-        label_text: reading.label_text.trim(),
-        confidence: reading.confidence,
-      });
-    }
+    // Procès-verbal du contrôle technique : échéance, VIN et immatriculation
     return json(200, {
-      next_due_date: nextDueDate(reading, today),
+      next_due_date: validDate(reading.next_due_date, today),
       last_control_date: validDate(reading.last_control_date, today),
+      vin: validVin(reading.vin ?? ''),
+      plate: validPlate(reading.plate ?? ''),
       label_text: reading.label_text.trim(),
       confidence: reading.confidence,
     });

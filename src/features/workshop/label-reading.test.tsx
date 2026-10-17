@@ -33,58 +33,64 @@ const renderDialog = (onApply = vi.fn(), onClose = vi.fn()) => {
 };
 
 describe('étiquette du contrôle hayon', () => {
-  it('verdict : à faire dans les 30 jours ou dépassé, sinon OK', () => {
+  it('verdict au mois : valable jusqu’à la fin du mois, à faire dans les 30 jours ou dépassé', () => {
     expect(daysUntil('2026-10-12', '2026-10-02')).toBe(10);
-    expect(tailgateVerdict('2026-10-12', '2026-10-02')).toEqual({
+    // Mois d'octobre 2026 : valable jusqu'au 31/10
+    expect(tailgateVerdict('2026-10-01', '2026-10-02')).toEqual({
       value: 'HS',
-      label: 'À FAIRE · échéance dans 10 j',
+      label: 'À FAIRE · échéance dans 29 j',
     });
-    expect(tailgateVerdict('2026-09-30', '2026-10-02').label).toBe('À FAIRE · dépassé depuis 2 j');
-    expect(tailgateVerdict('2027-03-31', '2026-10-02')).toEqual({
+    expect(tailgateVerdict('2026-09-01', '2026-10-02').label).toBe('À FAIRE · dépassé depuis 2 j');
+    expect(tailgateVerdict('2027-03-01', '2026-10-02')).toEqual({
       value: 'OK',
       label: 'OK · valable encore 180 jours',
     });
   });
 
-  it('date lue proposée, vérifiée puis enregistrée avec le verdict', async () => {
+  it('mois lu (MMAAAA) proposé, vérifié puis enregistré avec le verdict', async () => {
     vi.mocked(readTailgateLabel).mockResolvedValue({
-      next_due_date: '2099-03-31',
-      last_control_date: '2098-09-01',
-      label_text: 'Contrôle hayon 09/2098 · prochain 03/2099',
+      due_month: '032099',
+      last_control_month: '092098',
+      label_text: 'VGP Secure · mois 3 et année 99 percés',
       confidence: 'haute',
     });
     vi.mocked(updateDeadlines).mockResolvedValue();
     const { onApply, onClose } = renderDialog();
 
     expect(
-      await screen.findByText('Lu sur l’étiquette : « Contrôle hayon 09/2098 · prochain 03/2099 »'),
+      await screen.findByText('Lu sur l’étiquette : « VGP Secure · mois 3 et année 99 percés »'),
     ).toBeInTheDocument();
-    expect(screen.getByText('01/09/2098')).toBeInTheDocument();
-    expect(screen.getByLabelText('Prochain contrôle hayon (modifiable)')).toHaveValue('2099-03-31');
+    expect(screen.getByText('09/2098')).toBeInTheDocument();
+    expect(screen.getByLabelText('Prochain contrôle hayon (modifiable) : mois')).toHaveValue('03');
+    expect(screen.getByLabelText('Prochain contrôle hayon (modifiable) : année')).toHaveValue('2099');
     expect(screen.getByText(/^OK · valable encore/)).toBeInTheDocument();
     expect(screen.queryByText(/Lecture incertaine/)).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
     await waitFor(() =>
-      expect(updateDeadlines).toHaveBeenCalledWith('ro1', { tailgate_due_date: '2099-03-31' }),
+      expect(updateDeadlines).toHaveBeenCalledWith('ro1', { tailgate_due_date: '2099-03-01' }),
     );
     expect(onApply).toHaveBeenCalledWith('OK');
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('lecture incertaine ou sans date : le technicien vérifie ou saisit', async () => {
+  it('lecture incertaine ou sans mois : le technicien choisit le mois et l’année', async () => {
     vi.mocked(readTailgateLabel).mockResolvedValue({
-      next_due_date: null,
-      last_control_date: null,
+      due_month: null,
+      last_control_month: null,
       label_text: '',
       confidence: 'faible',
     });
     renderDialog();
     expect(
-      await screen.findByText('Aucune date trouvée sur la photo : saisis-la à la main.'),
+      await screen.findByText('Aucun mois trouvé sur la photo : choisis-le à la main.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Valider' })).toBeDisabled();
-    await userEvent.type(screen.getByLabelText('Prochain contrôle hayon (modifiable)'), '2000-01-15');
+    await userEvent.selectOptions(screen.getByLabelText('Prochain contrôle hayon (modifiable) : mois'), '01');
+    await userEvent.selectOptions(
+      screen.getByLabelText('Prochain contrôle hayon (modifiable) : année'),
+      String(new Date().getFullYear() - 1),
+    );
     expect(screen.getByText(/^À FAIRE · dépassé depuis/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Valider' })).toBeEnabled();
   });

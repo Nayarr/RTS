@@ -11,6 +11,7 @@ import { fleetDeadlineRows } from '@/features/rentals/fleet-domain';
 import { useFleet } from '@/features/rentals/fleet-hooks';
 import { cn } from '@/lib/utils';
 import { CustomersTabs } from './CustomersTabs';
+import { monthLabel } from '@/lib/month';
 import { DEADLINE_BADGE_CLASS, DEADLINE_LABELS, deadlineStatus, type DeadlineKind } from './domain';
 import { useDeadlines } from './hooks';
 
@@ -139,7 +140,14 @@ export function DeadlinesPage() {
                             </Link>
                           </td>
                           <td className="b">{DEADLINE_LABELS[kind]}</td>
-                          <td className="num">{deadline.due_date ? frenchDate(deadline.due_date) : '-'}</td>
+                          <td className="num">
+                            {/* Hayon : mois seulement (valable jusqu'à la fin du mois) */}
+                            {deadline.due_date
+                              ? kind === 'tailgate'
+                                ? monthLabel(deadline.due_date)
+                                : frenchDate(deadline.due_date)
+                              : '-'}
+                          </td>
                           <td>{deadline.client_name ?? '-'}</td>
                           <td>
                             {status && (

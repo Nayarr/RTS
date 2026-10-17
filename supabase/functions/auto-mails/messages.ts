@@ -62,6 +62,24 @@ export function frenchDay(iso: string): string {
 /** « 2026-10-14 » → « 14/10/2026 ». */
 const shortDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 
+const MONTHS = [
+  'janvier',
+  'février',
+  'mars',
+  'avril',
+  'mai',
+  'juin',
+  'juillet',
+  'août',
+  'septembre',
+  'octobre',
+  'novembre',
+  'décembre',
+];
+
+/** Échéance au mois (hayon) : « 2026-05-01 » → « fin mai 2026 ». */
+const endOfMonth = (iso: string) => `fin ${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
+
 /** « 09:30 » → « 9h30 ». */
 const hour = (time: string) => `${Number(time.slice(0, 2))}h${time.slice(3, 5)}`;
 
@@ -154,7 +172,12 @@ export function buildAutoMail(item: AutoMailItem, context: AutoMailContext): Aut
     };
   }
   const label = reason || 'Contrôle';
-  const due = item.due_date ? ` le ${shortDate(item.due_date)}` : ' bientôt';
+  // Hayon : seulement un mois et une année, valable jusqu'à la fin du mois
+  const due = !item.due_date
+    ? ' bientôt'
+    : item.kind === 'tailgate'
+    ? ` ${endOfMonth(item.due_date)}`
+    : ` le ${shortDate(item.due_date)}`;
   return {
     subject: `${label} de ${plate} : échéance${due}`,
     text: [

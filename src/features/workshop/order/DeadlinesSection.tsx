@@ -2,6 +2,7 @@ import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MonthYearField } from '@/components/MonthYearField';
 import { cn } from '@/lib/utils';
 import { updateDeadlines, type VehicleDeadlines } from '../api';
 import { CT_PHOTO_LABEL } from '../domain';
@@ -47,38 +48,56 @@ export function DeadlinesSection({
       )}
       {/* Sur téléphone, l'une sous l'autre : les libellés longs ne décalent plus les dates */}
       <div className="grid gap-3 sm:grid-cols-2 sm:items-end sm:gap-2">
-        {FIELDS.map(([key, label]) => (
-          <div key={key} className="field">
-            <Label htmlFor={`deadline-${key}`}>{label}</Label>
-            <div className="row gap-2">
-              <Input
-                id={`deadline-${key}`}
-                type="date"
-                className="grow"
-                disabled={locked || deadlines.isPending}
-                defaultValue={deadlines.data?.[key] ?? ''}
-                key={deadlines.data?.[key] ?? 'vide'}
-                onBlur={(event) => {
-                  const value = event.target.value || null;
-                  if (value !== (deadlines.data?.[key] ?? null)) save.mutate({ [key]: value });
-                }}
-              />
-              {key === 'ct_due_date' && !locked && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className={cn('shrink-0', ctTaken ? 'text-success' : 'border-destructive text-destructive')}
-                  aria-label={`Photo du contrôle technique${ctTaken ? ' (déjà prise)' : ''}`}
-                  disabled={capture.uploadingLabel === CT_PHOTO_LABEL}
-                  onClick={() => capture.openCamera(CT_PHOTO_LABEL)}
-                >
-                  <Camera className="size-5" />
-                </Button>
-              )}
+        {FIELDS.map(([key, label]) =>
+          key === 'tailgate_due_date' ? (
+            // Hayon : mois et année seulement, comme sur l'étiquette
+            <MonthYearField
+              key={key}
+              id="deadline-tailgate"
+              label={label}
+              disabled={locked || deadlines.isPending}
+              value={deadlines.data?.tailgate_due_date ?? ''}
+              onChange={(value) => {
+                if (value !== (deadlines.data?.tailgate_due_date ?? ''))
+                  save.mutate({ [key]: value || null });
+              }}
+            />
+          ) : (
+            <div key={key} className="field">
+              <Label htmlFor={`deadline-${key}`}>{label}</Label>
+              <div className="row gap-2">
+                <Input
+                  id={`deadline-${key}`}
+                  type="date"
+                  className="grow"
+                  disabled={locked || deadlines.isPending}
+                  defaultValue={deadlines.data?.[key] ?? ''}
+                  key={deadlines.data?.[key] ?? 'vide'}
+                  onBlur={(event) => {
+                    const value = event.target.value || null;
+                    if (value !== (deadlines.data?.[key] ?? null)) save.mutate({ [key]: value });
+                  }}
+                />
+                {key === 'ct_due_date' && !locked && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className={cn(
+                      'shrink-0',
+                      ctTaken ? 'text-success' : 'border-destructive text-destructive',
+                    )}
+                    aria-label={`Photo du contrôle technique${ctTaken ? ' (déjà prise)' : ''}`}
+                    disabled={capture.uploadingLabel === CT_PHOTO_LABEL}
+                    onClick={() => capture.openCamera(CT_PHOTO_LABEL)}
+                  >
+                    <Camera className="size-5" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
     </section>
   );

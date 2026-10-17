@@ -1,6 +1,7 @@
 import type { CompanySettings } from '@/features/settings/api';
 import { createPdf, drawLetterhead, GREEN, MARGIN, pdfDate, pdfFileName, pdfText } from '@/lib/pdf';
 import type { VehicleDetail } from './api';
+import { monthLabel } from '@/lib/month';
 import { DEADLINE_LABELS } from './domain';
 
 const frenchDate = (iso: string | null | undefined) =>
@@ -51,7 +52,7 @@ export async function buildMaintenanceBookPdf(
   doc.text(`Édité le ${pdfDate(now)} · ${orders.length} intervention(s)`, MARGIN, y + 12);
   doc.text(
     pdfText(
-      `${DEADLINE_LABELS.ct} : ${frenchDate(vehicle.ct_due_date)}    ${DEADLINE_LABELS.tailgate} : ${frenchDate(vehicle.tailgate_due_date)}`,
+      `${DEADLINE_LABELS.ct} : ${frenchDate(vehicle.ct_due_date)}    ${DEADLINE_LABELS.tailgate} : ${monthLabel(vehicle.tailgate_due_date)}`,
     ),
     MARGIN,
     y + 18,

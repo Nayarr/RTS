@@ -2,6 +2,7 @@ import type { RepairOrderOverview, RoLine } from '@/features/repair-orders/api';
 import { OPEN_STATUSES } from '@/features/repair-orders/constants';
 import { inspectionMissingPoints, type InspectionData } from '@/features/repair-orders/inspection';
 import { todayIso } from '@/features/repair-orders/schemas';
+import { monthEnd } from '@/lib/month';
 
 /** Estimations proposées au technicien (comme l'ancienne appli, plus 0,5 h) ; « 12h+ » = au moins 12 h. */
 export const TIME_OPTIONS = [
@@ -192,8 +193,9 @@ export function daysUntil(date: string, today = todayIso()) {
 }
 
 /** Comme l'ancienne appli : échéance dans 30 jours ou moins → contrôle hayon « HS » (à faire). */
-export function tailgateVerdict(date: string, today = todayIso()) {
-  const days = daysUntil(date, today);
+/** Contrôle hayon (mois d'échéance, valable jusqu'à la fin du mois) : OK, ou à faire. */
+export function tailgateVerdict(month: string, today = todayIso()) {
+  const days = daysUntil(monthEnd(month), today);
   if (days < 0) return { value: 'HS' as const, label: `À FAIRE · dépassé depuis ${-days} j` };
   if (days <= 30) return { value: 'HS' as const, label: `À FAIRE · échéance dans ${days} j` };
   return { value: 'OK' as const, label: `OK · valable encore ${days} jours` };

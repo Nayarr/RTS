@@ -9,7 +9,13 @@ import { useSignaturePad } from '@/components/use-signature-pad';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DEADLINE_BADGE_CLASS, DEADLINE_TONE_CLASS, deadlineStatus } from '@/features/customers/domain';
+import {
+  DEADLINE_BADGE_CLASS,
+  DEADLINE_TONE_CLASS,
+  deadlineStatus,
+  tailgateDueEnd,
+} from '@/features/customers/domain';
+import { monthLabel } from '@/lib/month';
 import { PAYMENT_STATUS_META } from '@/features/invoices/domain';
 import { formatDate, formatDateTime } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
@@ -357,9 +363,10 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
   );
 }
 
-function Deadline({ label, date }: { label: string; date: string | null }) {
-  const status = deadlineStatus(date, todayIso());
-  const text = `${label} : ${date ? formatDate(date) : '-'}`;
+function Deadline({ label, date, month = false }: { label: string; date: string | null; month?: boolean }) {
+  // Hayon : mois seulement, valable jusqu'à la fin du mois
+  const status = deadlineStatus(month ? tailgateDueEnd(date) : date, todayIso());
+  const text = `${label} : ${date ? (month ? monthLabel(date) : formatDate(date)) : '-'}`;
   if (!date || !status || status.tone === 'ok') {
     return <span className={cn('hint', status && DEADLINE_TONE_CLASS[status.tone])}>{text}</span>;
   }
@@ -428,7 +435,7 @@ function PortalDocument({ portal }: { portal: PublicPortal }) {
                     </span>
                     <span className="col items-end gap-1">
                       <Deadline label="Contrôle technique" date={vehicle.ct_due_date} />
-                      <Deadline label="Contrôle hayon" date={vehicle.tailgate_due_date} />
+                      <Deadline label="Contrôle hayon" date={vehicle.tailgate_due_date} month />
                     </span>
                   </li>
                 ))}

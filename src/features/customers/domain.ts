@@ -4,6 +4,7 @@ import { decimalField, decimalText, decimalValue } from '@/lib/numbers';
 import type { TablesInsert, TablesUpdate } from '@/types/database';
 import type { ClientOverview, VehicleOverview } from './api';
 import { formatSiret, siretField, siretValue } from '@/lib/siret';
+import { monthEnd } from '@/lib/month';
 
 // ---------------------------------------------------------------- Échéances
 
@@ -21,6 +22,9 @@ const dayNumber = (iso: string) =>
   Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000;
 
 /** État d'une échéance (ancienne appli) : dépassée, dans les 30 jours, ou OK. */
+/** Échéance du hayon (mois seulement) : comptée jusqu'à la fin du mois. */
+export const tailgateDueEnd = (month: string | null | undefined) => (month ? monthEnd(month) : null);
+
 export function deadlineStatus(
   dueDate: string | null | undefined,
   today: string,

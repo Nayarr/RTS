@@ -11,15 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { formatDate } from '@/features/repair-orders/constants';
+import { MonthYearField } from '@/components/MonthYearField';
+import { monthFromLabel, monthLabel } from '@/lib/month';
 import { cn } from '@/lib/utils';
 import { readTailgateLabel, updateDeadlines } from '../api';
 import { tailgateVerdict } from '../domain';
 
 const errorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : 'Lecture impossible : saisis la date à la main';
+  error instanceof Error ? error.message : 'Lecture impossible : choisis le mois à la main';
 
 /**
  * Lecture automatique de l'étiquette du contrôle hayon qui vient d'être photographiée : date
@@ -45,9 +44,10 @@ export function TailgateLabelDialog({
     retry: false,
     staleTime: Infinity,
   });
-  // Date modifiée par le technicien ; sinon celle lue sur l'étiquette.
+  // Mois modifié par le technicien ; sinon celui lu sur l'étiquette (MMAAAA).
   const [edited, setEdited] = useState<string | null>(null);
-  const date = edited ?? reading.data?.next_due_date ?? '';
+  const date = edited ?? monthFromLabel(reading.data?.due_month) ?? '';
+  const lastControl = monthFromLabel(reading.data?.last_control_month);
   const verdict = date ? tailgateVerdict(date) : null;
 
   const save = useMutation({
@@ -69,7 +69,7 @@ export function TailgateLabelDialog({
         <DialogHeader>
           <DialogTitle>Lecture de l’étiquette du hayon</DialogTitle>
           <DialogDescription>
-            La photo est ajoutée à l’OR. Vérifie la date avant de valider.
+            La photo est ajoutée à l’OR. Vérifie le mois et l’année avant de valider.
           </DialogDescription>
         </DialogHeader>
 
@@ -88,26 +88,23 @@ export function TailgateLabelDialog({
             {reading.data.label_text && (
               <p className="hint">Lu sur l’étiquette : « {reading.data.label_text} »</p>
             )}
-            {reading.data.last_control_date && (
+            {lastControl && (
               <p className="text-sm">
-                Dernier contrôle : <b>{formatDate(reading.data.last_control_date)}</b>
+                Dernier contrôle : <b>{monthLabel(lastControl)}</b>
               </p>
             )}
-            {!reading.data.next_due_date && (
-              <p className="err">Aucune date trouvée sur la photo : saisis-la à la main.</p>
+            {!reading.data.due_month && (
+              <p className="err">Aucun mois trouvé sur la photo : choisis-le à la main.</p>
             )}
-            {reading.data.next_due_date && reading.data.confidence !== 'haute' && (
-              <p className="alert s-warn">Lecture incertaine : vérifie la date sur l’étiquette.</p>
+            {reading.data.due_month && reading.data.confidence !== 'haute' && (
+              <p className="alert s-warn">Lecture incertaine : vérifie le mois et l’année sur l’étiquette.</p>
             )}
-            <div className="field">
-              <Label htmlFor="tailgate-scan-date">Prochain contrôle hayon (modifiable)</Label>
-              <Input
-                id="tailgate-scan-date"
-                type="date"
-                value={date}
-                onChange={(event) => setEdited(event.target.value)}
-              />
-            </div>
+            <MonthYearField
+              id="tailgate-scan"
+              label="Prochain contrôle hayon (modifiable)"
+              value={date}
+              onChange={setEdited}
+            />
             {verdict && (
               <p
                 className={cn(

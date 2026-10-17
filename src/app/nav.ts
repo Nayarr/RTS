@@ -1,6 +1,7 @@
 import { ChartColumn, Clock, KeyRound, Package, Receipt, Users, Wrench, type LucideIcon } from 'lucide-react';
 import type { AppRole } from '@/features/auth/roles';
 import type { OfficeDashboard } from '@/features/dashboard/api';
+import { DIAGNOSTIC_HELP_ENABLED } from '@/features/knowledge/flags';
 import { CATEGORY_ORDER } from '@/features/repair-orders/constants';
 
 export interface NavLeaf {
@@ -38,7 +39,10 @@ export const GROUPS: NavGroup[] = [
       { to: '/atelier-en-direct', label: 'Atelier en direct' },
       { to: '/planning', label: 'Planning' },
       { to: '/rendez-vous', label: 'Rendez-vous', count: (data) => data.reminders_to_send, hot: true },
-      { to: '/documentation', label: 'Documentation technique', roles: ['direction'] },
+      // Aide au diagnostic masquée pour le moment : la page reste joignable par son adresse
+      ...(DIAGNOSTIC_HELP_ENABLED
+        ? [{ to: '/documentation', label: 'Documentation technique', roles: ['direction'] as AppRole[] }]
+        : []),
     ],
   },
   {
