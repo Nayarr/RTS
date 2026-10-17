@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
 import { goTo } from './support/nav';
+import { fillNewProClient } from './support/new-client';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -116,7 +117,8 @@ test('devis sans OR : demande de prix, refus puis réouverture, transformation e
   await loginAs(page, 'reception@rts.local');
   await goTo(page, 'Facturation', 'Devis');
   await page.getByRole('link', { name: 'Nouveau devis' }).click();
-  await page.getByLabel('Client').fill(`Client ${plate}`);
+  await page.getByLabel('Client', { exact: true }).fill(`Client ${plate}`);
+  await fillNewProClient(page);
   await page.getByLabel('Immatriculation (facultatif)').fill(plate);
   await page.getByRole('button', { name: 'Créer le devis' }).click();
   await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 2 })).toBeVisible();

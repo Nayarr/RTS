@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { fillNewProClient } from './support/new-client';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 // Comptes de développement créés par supabase/seed.sql (base locale uniquement).
@@ -43,7 +44,8 @@ test('ligne « Fournitures et recyclage » : réglée par la direction, ajoutée
     await expect(page.getByText('Réglages de facturation enregistrés')).toBeVisible();
 
     await page.goto('/devis/nouveau');
-    await page.getByLabel('Client').fill(`Client ${plate}`);
+    await page.getByLabel('Client', { exact: true }).fill(`Client ${plate}`);
+    await fillNewProClient(page);
     await page.getByLabel('Immatriculation (facultatif)').fill(plate);
     await page.getByRole('button', { name: 'Créer le devis' }).click();
     await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 2 })).toBeVisible();

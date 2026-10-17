@@ -3,6 +3,7 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
 import { isSunday, parisDay } from './support/dates';
+import { fillNewProClient } from './support/new-client';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 const PASSWORD = 'atelier-dev-2026';
@@ -46,7 +47,8 @@ test('rendez-vous pris au planning, puis OR créé à l’arrivée du véhicule'
   await page.goto(`/planning?vue=semaine&date=${date}`);
   await page.getByRole('button', { name: 'Nouveau rendez-vous' }).click();
   const dialog = page.getByRole('dialog', { name: 'Nouveau rendez-vous' });
-  await dialog.getByLabel('Client').fill(`Client planning ${id}`);
+  await dialog.getByLabel('Client', { exact: true }).fill(`Client planning ${id}`);
+  await fillNewProClient(dialog);
   await dialog.getByLabel('Immatriculation').fill(plate);
   await dialog.getByLabel('Date').fill(date);
   await dialog.getByLabel('Heure').fill('10:00');
