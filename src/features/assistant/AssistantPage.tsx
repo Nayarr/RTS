@@ -37,7 +37,17 @@ import { AgentActions, type AgentActionsHandle } from './AgentActions';
 import { isGoAhead } from './agent-actions';
 import { BriefingPlayer } from './BriefingPlayer';
 import type { OrbState } from './orb-mesh';
-import { saveVoicePreference, speak, speechSupported, stopSpeaking, voicePreference } from './speech';
+import {
+  chosenVoiceName,
+  saveVoiceName,
+  saveVoicePreference,
+  speak,
+  speechSupported,
+  stopSpeaking,
+  voiceLabel,
+  voicePreference,
+} from './speech';
+import { useFrenchVoices } from './use-french-voices';
 import { sourcesLabel, SUGGESTIONS } from './suggestions';
 import { VoiceOrb } from './VoiceOrb';
 
@@ -57,6 +67,8 @@ export function AssistantPage() {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   // Sans conversation ouverte : point du jour (à l'ouverture) ou page vide pour une nouvelle question
   const [briefingShown, setBriefingShown] = useState(true);
+  const voices = useFrenchVoices();
+  const [voiceName, setVoiceName] = useState(chosenVoiceName);
 
   const conversations = useQuery({ queryKey: ['agent', 'conversations'], queryFn: fetchConversations });
   const turns = useQuery({
@@ -237,6 +249,25 @@ export function AssistantPage() {
                 {voiceOn ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
                 Réponses lues
               </button>
+            )}
+            {voiceOn && voices.length > 1 && (
+              <select
+                className="inp h-9! w-auto!"
+                aria-label="Voix de lecture"
+                value={voices.some((voice) => voice.name === voiceName) ? voiceName : ''}
+                onChange={(event) => {
+                  setVoiceName(event.target.value);
+                  saveVoiceName(event.target.value);
+                  read('essai-voix', 'Bonjour, voici la voix qui lira le point du jour.');
+                }}
+              >
+                <option value="">Voix la plus naturelle</option>
+                {voices.map((voice) => (
+                  <option key={voice.name} value={voice.name}>
+                    {voiceLabel(voice)}
+                  </option>
+                ))}
+              </select>
             )}
             <Button
               variant="outline"
