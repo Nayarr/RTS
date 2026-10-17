@@ -55,6 +55,8 @@ export function AssistantPage() {
   const [failure, setFailure] = useState<string | null>(null);
   const [voiceOn, setVoiceOn] = useState(voicePreference);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  // Sans conversation ouverte : point du jour (à l'ouverture) ou page vide pour une nouvelle question
+  const [briefingShown, setBriefingShown] = useState(true);
 
   const conversations = useQuery({ queryKey: ['agent', 'conversations'], queryFn: fetchConversations });
   const turns = useQuery({
@@ -179,10 +181,12 @@ export function AssistantPage() {
     saveVoicePreference(next);
     if (!next) silence();
   };
-  const startNew = () => {
+  const leaveConversation = (briefing: boolean) => {
     silence();
     setFailure(null);
+    setEarlierOpen(false);
     setConversationId(undefined);
+    setBriefingShown(briefing);
   };
   const listen = () => {
     silence();
@@ -194,7 +198,7 @@ export function AssistantPage() {
     send(draft, false);
   };
 
-  const showBriefing = !lastTurn && !pending && !dictation.listening;
+  const showBriefing = briefingShown && !lastTurn && !pending && !dictation.listening;
   const phase: OrbState = dictation.listening
     ? 'listening'
     : ask.isPending
@@ -238,7 +242,7 @@ export function AssistantPage() {
               variant="outline"
               className={cn(showBriefing && 'border-transparent! bg-accent! text-accent-foreground!')}
               aria-pressed={showBriefing}
-              onClick={startNew}
+              onClick={() => leaveConversation(true)}
             >
               <Sun /> Point du jour
             </Button>
@@ -260,7 +264,7 @@ export function AssistantPage() {
             >
               <History /> Historique
             </Button>
-            <Button variant="outline" onClick={startNew}>
+            <Button variant="outline" onClick={() => leaveConversation(false)}>
               <Plus /> Nouvelle conversation
             </Button>
           </>
