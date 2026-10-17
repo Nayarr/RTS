@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   AlertTriangle,
@@ -23,27 +22,22 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { createClient } from '@/features/customers/api';
-import { newClientFromForm, type NewClientValues } from '@/features/customers/domain';
+import type { NewClientValues } from '@/features/customers/domain';
 import { uploadFile } from '@/features/files/api';
-import { useDebounced } from '@/lib/use-debounced';
-import { createRepairOrder, findClientByName } from './api';
-import { formatPlate, normalizeKey, STATUS_META, VEHICLE_TYPES } from './constants';
+import { createRepairOrder } from './api';
+import { formatPlate, STATUS_META, VEHICLE_TYPES } from './constants';
 import {
   useActiveTechnicians,
-  useClientByName,
-  useClientSuggestions,
   useKnownVehicle,
   useRepairOrderMutation,
   useVehicleSuggestions,
 } from './hooks';
 import { InspectionRequiredToggle } from './InspectionRequiredToggle';
 import { NewClientFields } from './NewClientFields';
+import { useClientEntry } from './use-client-entry';
 import {
   newRepairOrderDefaults,
   newRepairOrderSchema,
-  orNewClientDefaults,
-  orNewClientSchema,
   toNewRepairOrderInput,
   type NewRepairOrderValues,
 } from './schemas';
@@ -86,7 +80,6 @@ export function NewRepairOrderPage() {
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('screen');
   const [inspectionRequired, setInspectionRequired] = useState(false);
   const technicians = useActiveTechnicians();
-  const queryClient = useQueryClient();
   const [pending, setPending] = useState<Submission | null>(null);
 
   const {
@@ -106,23 +99,9 @@ export function NewRepairOrderPage() {
   const plannedStart = useWatch({ control, name: 'planned_start' });
   const knownVehicle = useKnownVehicle(plate).data ?? null;
   const vehicleSuggestions = useVehicleSuggestions(plate).data ?? [];
-  const clientSuggestions = useClientSuggestions(clientName).data ?? [];
-  // Client pas encore en base (vérifié après une pause de frappe) : sa fiche se remplit ici.
-  const clientLookup = useClientByName(useDebounced(clientName, 500));
-  // Nom vérifié au moment de créer l'OR (saisie trop rapide pour la vérification ci-dessus).
-  const [checkedNewClient, setCheckedNewClient] = useState<string | null>(null);
-  const isNewClient =
-    (clientName.trim().length >= 2 && clientLookup.isSuccess && clientLookup.data === null) ||
-    (checkedNewClient !== null && checkedNewClient === normalizeKey(clientName));
-  const clientForm = useForm<NewClientValues>({
-    resolver: zodResolver(orNewClientSchema),
-    defaultValues: orNewClientDefaults('pro', ''),
-  });
-  // Pro / particulier : identité reprise du nom saisi, coordonnées gardées.
-  const changeClientKind = (kind: NewClientValues['kind']) => {
-    const { phone, email, billing_address } = clientForm.getValues();
-    clientForm.reset({ ...orNewClientDefaults(kind, clientName), phone, email, billing_address });
-  };
+  const clientEntry = useClientEntry(clientName, { label: 'créer l’OR' });
+  const { isNewClient } = clientEntry;
+  const clientSuggestions = clientEntry.suggestions;
 
   // Véhicule connu : type et client repris, sauf s'ils ont déjà été saisis.
   useEffect(() => {
@@ -136,13 +115,7 @@ export function NewRepairOrderPage() {
   const create = useRepairOrderMutation(
     async ({ values, client }: Submission) => {
       // Nouveau client : sa fiche est créée d'abord, l'OR lui est rattaché par son nom.
-      let clientName = values.client_name;
-      if (client) {
-        const fields = newClientFromForm(client);
-        await createClient(fields);
-        clientName = fields.name ?? clientName;
-        await queryClient.invalidateQueries({ queryKey: ['clients'] });
-      }
+      const clientName = client ? await clientEntry.createNewClient(client) : values.client_name;
       const blob = signatureMode === 'screen' ? await signature.toBlob() : null;
       const signatureFileId = blob
         ? await uploadFile(blob, { category: 'signature', name: 'signature-client.png' })
@@ -173,29 +146,11 @@ export function NewRepairOrderPage() {
   };
   const onSubmit = handleSubmit(
     async (values) => {
-      if (!isNewClient && values.client_name.trim()) {
-        const key = normalizeKey(values.client_name);
-        const existing = await queryClient.fetchQuery({
-          queryKey: ['clients', 'by-name', key],
-          queryFn: () => findClientByName(values.client_name),
-          staleTime: 30_000,
-        });
-        if (existing === null) {
-          // Client inconnu : sa fiche s'affiche, à compléter avant de créer l'OR.
-          setCheckedNewClient(key);
-          toast.info('Nouveau client : complète sa fiche pour créer l’OR');
-          return;
-        }
-      }
-      if (!isNewClient) {
-        confirmOrSubmit({ values, client: null });
-        return;
-      }
-      clientForm.setValue('name', values.client_name.trim());
-      void clientForm.handleSubmit((client) => confirmOrSubmit({ values, client }))();
+      const result = await clientEntry.check(values.client_name);
+      if (result.ok) confirmOrSubmit({ values, client: result.client });
     },
     () => {
-      if (isNewClient) void clientForm.trigger();
+      if (isNewClient) void clientEntry.form.trigger();
     },
   );
 
@@ -338,7 +293,9 @@ export function NewRepairOrderPage() {
                 />
               </div>
 
-              {isNewClient && <NewClientFields form={clientForm} onKindChange={changeClientKind} />}
+              {isNewClient && (
+                <NewClientFields form={clientEntry.form} onKindChange={clientEntry.changeKind} />
+              )}
             </div>
           </section>
 

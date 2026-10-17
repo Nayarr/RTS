@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { BellRing, CarFront } from 'lucide-react';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormField } from '@/components/FormField';
 import { SendLinkDialog } from '@/components/SendLinkDialog';
+import { SuggestField } from '@/components/SuggestField';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,10 +18,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import { fetchClientContact, updateClientContact } from '@/features/documents/client-contact';
 import { formatPlate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
-import { useActiveTechnicians } from '@/features/repair-orders/hooks';
+import { useActiveTechnicians, useKnownVehicle } from '@/features/repair-orders/hooks';
+import { NewClientFields } from '@/features/repair-orders/NewClientFields';
+import { useClientEntry } from '@/features/repair-orders/use-client-entry';
 import { fetchSettings } from '@/features/settings/api';
+import type { NewClientValues } from '@/features/customers/domain';
 import type { ContactValues, SendLinkMessage } from '@/lib/send-links';
 import {
   cancelAppointment,
@@ -63,22 +68,39 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
   const [reminder, setReminder] = useState<Reminder | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     setValue,
+    getFieldState,
     formState: { errors },
   } = useForm<AppointmentValues>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: appointmentToForm(appointment, preset),
   });
+  const clientName = useWatch({ control, name: 'client_name' }) ?? '';
+  const plate = useWatch({ control, name: 'plate' }) ?? '';
+  const clientEntry = useClientEntry(clientName, { label: 'enregistrer le rendez-vous' });
+  const knownVehicle = useKnownVehicle(plate).data ?? null;
+
+  // Véhicule connu : type et client repris, sauf s'ils ont déjà été saisis.
+  useEffect(() => {
+    if (!knownVehicle) return;
+    if (!getFieldState('vehicle_type').isDirty) setValue('vehicle_type', knownVehicle.vehicle_type);
+    if (!getFieldState('client_name').isDirty && knownVehicle.client_name) {
+      setValue('client_name', knownVehicle.client_name);
+    }
+  }, [knownVehicle, getFieldState, setValue]);
 
   const save = usePlanningMutation(
-    (values: AppointmentValues) =>
-      saveAppointment(appointment?.id ?? null, {
-        ...appointmentFromForm(values),
-        ...(preset?.maintenance_contract_id
-          ? { maintenance_contract_id: preset.maintenance_contract_id }
-          : {}),
-      }),
+    ({ values, client }: { values: AppointmentValues; client: NewClientValues | null }) =>
+      (client ? clientEntry.createNewClient(client) : Promise.resolve(values.client_name)).then((name) =>
+        saveAppointment(appointment?.id ?? null, {
+          ...appointmentFromForm({ ...values, client_name: name }),
+          ...(preset?.maintenance_contract_id
+            ? { maintenance_contract_id: preset.maintenance_contract_id }
+            : {}),
+        }),
+      ),
     'Rendez-vous enregistré',
   );
   const convert = usePlanningMutation(
@@ -131,28 +153,52 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent showCloseButton={false} className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        showCloseButton={false}
+        className={cn('max-h-[90dvh] overflow-y-auto sm:max-w-lg', clientEntry.isNewClient && 'sm:max-w-2xl')}
+      >
         <DialogHeader>
           <DialogTitle>{appointment ? 'Rendez-vous' : 'Nouveau rendez-vous'}</DialogTitle>
           <DialogDescription>
             {appointment?.reminder_sent_at
               ? 'Rappel déjà envoyé au client.'
-              : 'Client et véhicule retrouvés ou créés automatiquement.'}
+              : 'Client existant proposé pendant la saisie ; nouveau client : fiche à compléter.'}
           </DialogDescription>
         </DialogHeader>
         <form
           id="appointment-form"
           noValidate
           className="space-y-4"
-          onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: onClose }))}
+          onSubmit={handleSubmit(
+            async (values) => {
+              const result = await clientEntry.check(values.client_name);
+              if (result.ok) save.mutate({ values, client: result.client }, { onSuccess: onClose });
+            },
+            () => {
+              if (clientEntry.isNewClient) void clientEntry.form.trigger();
+            },
+          )}
         >
           <div className="grid gap-3 sm:grid-cols-[1fr_9rem_7rem]">
-            <FormField
-              id="appointment-client"
-              label="Client"
-              autoComplete="off"
-              error={errors.client_name?.message}
-              {...register('client_name')}
+            <Controller
+              control={control}
+              name="client_name"
+              render={({ field }) => (
+                <SuggestField
+                  id="appointment-client"
+                  label="Client"
+                  placeholder="Nom du client / société"
+                  error={errors.client_name?.message}
+                  value={field.value ?? ''}
+                  onBlur={field.onBlur}
+                  onValueChange={field.onChange}
+                  suggestions={clientEntry.suggestions.map((client) => ({
+                    key: client.id,
+                    label: client.name,
+                  }))}
+                  onPick={(item) => field.onChange(item.label)}
+                />
+              )}
             />
             <FormField
               id="appointment-plate"
@@ -175,6 +221,9 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
               </select>
             </div>
           </div>
+          {clientEntry.isNewClient && (
+            <NewClientFields form={clientEntry.form} onKindChange={clientEntry.changeKind} />
+          )}
           <div className="grid grid-cols-3 gap-3">
             <FormField
               id="appointment-date"

@@ -2,7 +2,8 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
-import { fetchActiveTechnicians, updateRepairOrder } from '@/features/repair-orders/api';
+import { createClient } from '@/features/customers/api';
+import { fetchActiveTechnicians, findClientByName, updateRepairOrder } from '@/features/repair-orders/api';
 import type * as RepairOrdersApi from '@/features/repair-orders/api';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { fetchSettings, type Settings } from '@/features/settings/api';
@@ -53,6 +54,13 @@ vi.mock('@/features/repair-orders/api', async (importOriginal) => ({
   ...(await importOriginal<typeof RepairOrdersApi>()),
   fetchActiveTechnicians: vi.fn(),
   updateRepairOrder: vi.fn(),
+  searchClients: vi.fn().mockResolvedValue([]),
+  findClientByName: vi.fn().mockResolvedValue({ id: 'c1', name: 'Transports Martin' }),
+  findVehicleByPlate: vi.fn().mockResolvedValue(null),
+}));
+vi.mock('@/features/customers/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createClient: vi.fn().mockResolvedValue('c9'),
 }));
 vi.mock('@/features/settings/api', async (importOriginal) => ({
   ...(await importOriginal<typeof SettingsApi>()),
@@ -63,7 +71,7 @@ vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
   fetchClientContact: vi.fn().mockResolvedValue({ email: 'contact@martin.fr', phone: null }),
   updateClientContact: vi.fn(),
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 const HOURS = {
   workday_start: '09:00:00',
@@ -398,6 +406,35 @@ describe('rendez-vous', () => {
         technician_id: 't2',
       }),
     );
+  });
+
+  it('nouveau client : sa fiche est demandée, puis créée avec le rendez-vous', async () => {
+    vi.mocked(findClientByName).mockResolvedValue(null);
+    vi.mocked(saveAppointment).mockResolvedValue(appointment());
+    renderPlanning();
+    await userEvent.click(await screen.findByRole('button', { name: 'Nouveau rendez-vous' }));
+    const dialog = screen.getByRole('dialog', { name: 'Nouveau rendez-vous' });
+    await userEvent.type(within(dialog).getByLabelText('Client'), 'Garage Lefèvre');
+    await within(dialog).findByText('Nouveau client : fiche à compléter');
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    expect(await within(dialog).findByText('Indique le SIRET')).toBeInTheDocument();
+    expect(saveAppointment).not.toHaveBeenCalled();
+
+    await userEvent.type(within(dialog).getByLabelText('SIRET *'), '98498913700018');
+    await userEvent.type(within(dialog).getByLabelText('Téléphone *'), '0612345678');
+    await userEvent.type(within(dialog).getByLabelText('E-mail *'), 'atelier@lefevre.fr');
+    await userEvent.type(
+      within(dialog).getByLabelText('Adresse de facturation *'),
+      '1 rue des Lilas 95500 Gonesse',
+    );
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(saveAppointment).toHaveBeenCalled());
+    expect(vi.mocked(createClient).mock.calls[0]?.[0]).toMatchObject({
+      name: 'Garage Lefèvre',
+      email: 'atelier@lefevre.fr',
+    });
+    expect(vi.mocked(saveAppointment).mock.calls[0]?.[1]).toMatchObject({ client_name: 'Garage Lefèvre' });
   });
 
   it('le véhicule est arrivé : OR créé puis ouvert', async () => {
