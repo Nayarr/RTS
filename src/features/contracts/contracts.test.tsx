@@ -27,6 +27,9 @@ vi.mock('@/features/planning/api', async (importOriginal) => ({
 vi.mock('@/features/repair-orders/api', async (importOriginal) => ({
   ...(await importOriginal<typeof RepairOrdersApi>()),
   fetchActiveTechnicians: vi.fn(),
+  searchClients: vi.fn().mockResolvedValue([]),
+  findClientByName: vi.fn((name: string) => Promise.resolve({ id: 'c1', name })),
+  findVehicleByPlate: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 

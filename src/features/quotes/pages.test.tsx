@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
-import { fetchActiveTechnicians } from '@/features/repair-orders/api';
+import { fetchActiveTechnicians, findClientByName } from '@/features/repair-orders/api';
+import { createClient } from '@/features/customers/api';
 import type * as RoApi from '@/features/repair-orders/api';
 import { fetchSettings, type Settings } from '@/features/settings/api';
 import type * as SettingsApi from '@/features/settings/api';
@@ -45,6 +46,11 @@ vi.mock('@/features/repair-orders/api', async (importOriginal) => ({
   fetchActiveTechnicians: vi.fn(),
   searchClients: vi.fn().mockResolvedValue([]),
   findVehicleByPlate: vi.fn().mockResolvedValue(null),
+  findClientByName: vi.fn(),
+}));
+vi.mock('@/features/customers/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createClient: vi.fn().mockResolvedValue('c9'),
 }));
 vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof QuotesApi>()),
@@ -173,6 +179,7 @@ describe('liste des devis', () => {
   });
 
   it('nouveau devis sans OR, puis ouverture de l’éditeur', async () => {
+    vi.mocked(findClientByName).mockResolvedValue({ id: 'c1', name: 'Garage Nouveau' });
     vi.mocked(createQuote).mockResolvedValue('q9');
     setup('/devis/nouveau');
     await userEvent.type(await screen.findByLabelText('Client'), 'Garage Nouveau');
@@ -186,6 +193,26 @@ describe('liste des devis', () => {
       }),
     );
     expect(await screen.findByRole('heading', { name: 'DEVIS' })).toBeInTheDocument();
+  });
+
+  it('nouveau client : fiche complète demandée, client créé avant le devis', async () => {
+    vi.mocked(findClientByName).mockResolvedValue(null);
+    vi.mocked(createQuote).mockResolvedValue('q9');
+    setup('/devis/nouveau');
+    await userEvent.type(await screen.findByLabelText('Client'), 'Martine Roux');
+    await screen.findByText('Nouveau client : fiche à compléter');
+    await userEvent.click(screen.getByRole('button', { name: 'Particulier' }));
+    await userEvent.selectOptions(screen.getByLabelText('Civilité *'), 'Mme');
+    await userEvent.type(screen.getByLabelText('Téléphone *'), '0612345678');
+    await userEvent.type(screen.getByLabelText('E-mail *'), 'martine.roux@exemple.fr');
+    await userEvent.type(screen.getByLabelText('Adresse *'), '3 rue Haute 95190 Goussainville');
+    await userEvent.click(screen.getByRole('button', { name: 'Créer le devis' }));
+    await waitFor(() => expect(createQuote).toHaveBeenCalled());
+    expect(vi.mocked(createClient).mock.calls[0]?.[0]).toMatchObject({
+      first_name: 'Martine',
+      last_name: 'Roux',
+      email: 'martine.roux@exemple.fr',
+    });
   });
 });
 

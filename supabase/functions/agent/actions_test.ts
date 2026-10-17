@@ -117,6 +117,38 @@ Deno.test('rendez-vous : date passée ou ni véhicule ni client refusés', async
   assertEquals(inserts, []);
 });
 
+Deno.test('rendez-vous : seulement un client déjà en base, sous son nom exact', async () => {
+  const known = fakeDb({ technicians: TECHS, clients: [{ name: 'Transports Moreau' }] });
+  const ok = await runAction(known.db, 'preparer_rendez_vous', {
+    date: '2099-01-01',
+    heure: '09:00',
+    client: 'transports moreau',
+    motif: 'Vidange',
+  }, null);
+  assertEquals(ok.is_error, false, ok.content);
+  assertEquals(known.inserts[0]!.row.payload, {
+    client_name: 'Transports Moreau',
+    plate: '',
+    vehicle_type: 'pl',
+    date: '2099-01-01',
+    start_time: '09:00',
+    end_time: null,
+    reason: 'Vidange',
+    technician_id: null,
+  });
+
+  const unknown = fakeDb({ technicians: TECHS, clients: [] });
+  const refused = await runAction(unknown.db, 'preparer_rendez_vous', {
+    date: '2099-01-01',
+    heure: '09:00',
+    client: 'Garage Inconnu',
+    motif: 'Vidange',
+  }, null);
+  assert(refused.is_error);
+  assertStringIncludes(refused.content, 'introuvable');
+  assertEquals(unknown.inserts, []);
+});
+
 Deno.test('travail ajouté à un OR et technicien assigné : préparés sur l’OR trouvé', async () => {
   const { db, inserts } = fakeDb({ technicians: TECHS, v_repair_orders_overview: [ORDER] });
   const work = await runAction(db, 'preparer_travail_or', {

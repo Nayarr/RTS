@@ -6,9 +6,13 @@ import { CircleCheck } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { z } from 'zod';
 import { FormField } from '@/components/FormField';
+import { SuggestField } from '@/components/SuggestField';
 import { Button } from '@/components/ui/button';
 import { formatPlate } from '@/features/repair-orders/constants';
-import { useClientSuggestions, useKnownVehicle } from '@/features/repair-orders/hooks';
+import type { NewClientValues } from '@/features/customers/domain';
+import { useKnownVehicle } from '@/features/repair-orders/hooks';
+import { NewClientFields } from '@/features/repair-orders/NewClientFields';
+import { useClientEntry } from '@/features/repair-orders/use-client-entry';
 import { createQuote } from './api';
 import { useQuoteMutation } from './hooks';
 import { cn } from '@/lib/utils';
@@ -31,7 +35,6 @@ export function NewQuotePage() {
   const navigate = useNavigate();
   const {
     control,
-    register,
     handleSubmit,
     setValue,
     getFieldState,
@@ -44,7 +47,7 @@ export function NewQuotePage() {
   const plate = useWatch({ control, name: 'plate' });
   const clientName = useWatch({ control, name: 'client_name' });
   const knownVehicle = useKnownVehicle(plate).data ?? null;
-  const clientSuggestions = useClientSuggestions(clientName).data ?? [];
+  const clientEntry = useClientEntry(clientName, { label: 'créer le devis' });
 
   useEffect(() => {
     if (!knownVehicle) return;
@@ -54,16 +57,20 @@ export function NewQuotePage() {
     }
   }, [knownVehicle, getFieldState, setValue]);
 
-  const create = useQuoteMutation(async (values: NewQuoteValues) => {
-    const id = await createQuote({
-      client_name: values.client_name.trim(),
-      plate: values.plate.trim(),
-      vehicle_type: values.vehicle_type,
-    });
-    await navigate(`/devis/${id}`);
-  }, 'Devis créé');
+  const create = useQuoteMutation(
+    async ({ values, client }: { values: NewQuoteValues; client: NewClientValues | null }) => {
+      const clientName = client ? await clientEntry.createNewClient(client) : values.client_name.trim();
+      const id = await createQuote({
+        client_name: clientName,
+        plate: values.plate.trim(),
+        vehicle_type: values.vehicle_type,
+      });
+      await navigate(`/devis/${id}`);
+    },
+    'Devis créé',
+  );
 
-  const knownClient = clientSuggestions.some(
+  const knownClient = clientEntry.suggestions.some(
     (client) => client.name.toLowerCase() === clientName.trim().toLowerCase(),
   );
 
@@ -80,7 +87,15 @@ export function NewQuotePage() {
           id="new-quote"
           noValidate
           className="card w-full max-w-[640px] overflow-hidden"
-          onSubmit={handleSubmit((values) => create.mutate(values))}
+          onSubmit={handleSubmit(
+            async (values) => {
+              const result = await clientEntry.check(values.client_name);
+              if (result.ok) create.mutate({ values, client: result.client });
+            },
+            () => {
+              if (clientEntry.isNewClient) void clientEntry.form.trigger();
+            },
+          )}
         >
           <div className="card-h flex-col items-start gap-1 px-6 py-5">
             <h2 className="h2 text-[22px]">Demande de prix</h2>
@@ -90,28 +105,36 @@ export function NewQuotePage() {
           </div>
           <div className="card-b col gap-[18px] px-6 py-[22px]">
             <div>
-              <FormField
-                id="quote-client"
-                label="Client"
-                placeholder="Nom du client / société"
-                autoComplete="off"
-                list="quote-client-suggestions"
-                className="h-12 text-[15px]"
-                error={errors.client_name?.message}
-                hint={undefined}
-                {...register('client_name')}
+              <Controller
+                control={control}
+                name="client_name"
+                render={({ field }) => (
+                  <SuggestField
+                    id="quote-client"
+                    label="Client"
+                    placeholder="Nom du client / société"
+                    className="h-12 text-[15px]"
+                    error={errors.client_name?.message}
+                    value={field.value}
+                    onBlur={field.onBlur}
+                    onValueChange={field.onChange}
+                    suggestions={clientEntry.suggestions.map((client) => ({
+                      key: client.id,
+                      label: client.name,
+                    }))}
+                    onPick={(item) => field.onChange(item.label)}
+                  />
+                )}
               />
               {knownClient && (
                 <span className="hint row mt-1.5 gap-1.5 text-success!">
                   <CircleCheck className="i xs" /> Client existant : coordonnées reprises sur le devis
                 </span>
               )}
-              <datalist id="quote-client-suggestions">
-                {clientSuggestions.map((client) => (
-                  <option key={client.id} value={client.name} />
-                ))}
-              </datalist>
             </div>
+            {clientEntry.isNewClient && (
+              <NewClientFields form={clientEntry.form} onKindChange={clientEntry.changeKind} />
+            )}
             <Controller
               control={control}
               name="plate"

@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { parisDay } from './support/dates';
+import { fillNewProClient } from './support/new-client';
 
 const PASSWORD = 'atelier-dev-2026';
 
@@ -27,7 +28,8 @@ test('contrat d’entretien : entretien planifié, facture du mois, fin du contr
   // Bouton de la barre de titre (la liste vide en affiche un second)
   await page.getByRole('button', { name: 'Nouveau contrat' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Nouveau contrat d’entretien' });
-  await dialog.getByLabel('Client').fill(clientName);
+  await dialog.getByLabel('Client', { exact: true }).fill(clientName);
+  await fillNewProClient(dialog);
   await dialog.getByLabel('Prestation').fill('Vidange + contrôle général');
   await dialog.getByLabel(/Véhicules/).fill(`${plateA}, ${plateB}`);
   await dialog.getByLabel('Tous les … mois').fill('6');

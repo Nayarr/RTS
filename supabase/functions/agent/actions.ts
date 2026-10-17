@@ -160,6 +160,22 @@ export const ACTION_TOOLS: ActionTool[] = [
           clientName = clientName || known.client_name || '';
         }
       }
+      // Client nommé : seulement un client déjà en base (un nouveau client a besoin de sa fiche complète)
+      if (input.client) {
+        const { data } = await db
+          .from('clients')
+          .select('name')
+          .eq('name_key', plateKey(input.client))
+          .limit(1);
+        const found = (data ?? [])[0] as { name: string } | undefined;
+        if (!found) {
+          throw new Error(
+            `client « ${input.client} » introuvable : ce n'est pas un client de l'atelier. Dis-le à la direction : ` +
+              'un nouveau client se crée avec sa fiche complète depuis Rendez-vous, Nouveau rendez-vous.',
+          );
+        }
+        clientName = found.name;
+      }
       const tech = input.technicien ? await findTechnician(db, input.technicien) : null;
       const [h = 0, m = 0] = input.heure.split(':').map(Number);
       const end = input.duree_minutes ? h * 60 + m + input.duree_minutes : null;

@@ -27,6 +27,7 @@ import {
   vehicleRate,
   type ContractUnit,
 } from './rental-domain';
+import { NewClientInline } from './NewClientInline';
 import { useBusyPeriods, useRentalMutation } from './rental-hooks';
 import { Stepper, VehicleVisual } from './ui';
 
@@ -48,6 +49,7 @@ export function NewRentalPage() {
   const repairOrderId = kind === 'loan' ? params.get('or') : null;
   const [search, setSearch] = useState('');
   const [clientId, setClientId] = useState(params.get('client') ?? '');
+  const [newClient, setNewClient] = useState(false);
   const [category, setCategory] = useState<FleetCategory | null>(null);
   const [vehicleId, setVehicleId] = useState(params.get('vehicule') ?? '');
   const [departureDate, setDepartureDate] = useState(today);
@@ -201,11 +203,11 @@ export function NewRentalPage() {
             <h2 className="h2" id="rental-client">
               Client
             </h2>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/clients/nouveau">
+            {!client && !newClient && (
+              <Button variant="outline" size="sm" onClick={() => setNewClient(true)}>
                 <UserPlus /> Nouveau client
-              </Link>
-            </Button>
+              </Button>
+            )}
           </div>
           <div className="card-b col gap-3">
             {client ? (
@@ -222,6 +224,15 @@ export function NewRentalPage() {
                   Changer
                 </Button>
               </div>
+            ) : newClient ? (
+              <NewClientInline
+                initialName={search.trim()}
+                onCreated={(id) => {
+                  setNewClient(false);
+                  setClientId(id);
+                }}
+                onCancel={() => setNewClient(false)}
+              />
             ) : (
               <>
                 <SearchField
@@ -248,8 +259,16 @@ export function NewRentalPage() {
                   ))}
                 </ul>
                 {clients.isSuccess && clientList.length === 0 && (
-                  <p className="hint">
-                    Aucun client trouvé : crée-le d’abord (permis scanné pour un particulier).
+                  <p className="hint row wrap gap-2">
+                    Aucun client trouvé.
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0"
+                      onClick={() => setNewClient(true)}
+                    >
+                      Créer ce client
+                    </Button>
                   </p>
                 )}
               </>

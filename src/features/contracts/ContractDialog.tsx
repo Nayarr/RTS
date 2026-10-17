@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormField } from '@/components/FormField';
+import { SuggestField } from '@/components/SuggestField';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,7 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import type { NewClientValues } from '@/features/customers/domain';
+import { NewClientFields } from '@/features/repair-orders/NewClientFields';
 import { todayIso } from '@/features/repair-orders/schemas';
+import { useClientEntry } from '@/features/repair-orders/use-client-entry';
+import { cn } from '@/lib/utils';
 import { endContract, saveContract, type Contract } from './api';
 import { contractFromForm, contractSchema, contractToForm, type ContractValues } from './domain';
 import { useContractMutation } from './hooks';
@@ -22,21 +27,29 @@ export function ContractDialog({ contract, onClose }: { contract: Contract | nul
   const [confirmEnd, setConfirmEnd] = useState(false);
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<ContractValues>({
     resolver: zodResolver(contractSchema),
     defaultValues: contractToForm(contract),
   });
+  const clientName = useWatch({ control, name: 'client_name' });
+  const clientEntry = useClientEntry(clientName, { label: 'enregistrer le contrat' });
   const save = useContractMutation(
-    (values: ContractValues) => saveContract(contract?.id ?? null, contractFromForm(values)),
+    async ({ values, client }: { values: ContractValues; client: NewClientValues | null }) => {
+      const name = client ? await clientEntry.createNewClient(client) : values.client_name;
+      return saveContract(contract?.id ?? null, contractFromForm({ ...values, client_name: name }));
+    },
     'Contrat enregistré',
   );
   const end = useContractMutation((id: string) => endContract(id, todayIso()), 'Contrat terminé');
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        className={cn('max-h-[90dvh] overflow-y-auto sm:max-w-lg', clientEntry.isNewClient && 'sm:max-w-2xl')}
+      >
         <DialogHeader>
           <DialogTitle>{contract ? 'Contrat d’entretien' : 'Nouveau contrat d’entretien'}</DialogTitle>
           <DialogDescription>
@@ -47,14 +60,36 @@ export function ContractDialog({ contract, onClose }: { contract: Contract | nul
           id="contract-form"
           noValidate
           className="space-y-4"
-          onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: onClose }))}
+          onSubmit={handleSubmit(
+            async (values) => {
+              const result = await clientEntry.check(values.client_name);
+              if (result.ok) save.mutate({ values, client: result.client }, { onSuccess: onClose });
+            },
+            () => {
+              if (clientEntry.isNewClient) void clientEntry.form.trigger();
+            },
+          )}
         >
-          <FormField
-            id="contract-client"
-            label="Client"
-            error={errors.client_name?.message}
-            {...register('client_name')}
+          <Controller
+            control={control}
+            name="client_name"
+            render={({ field }) => (
+              <SuggestField
+                id="contract-client"
+                label="Client"
+                placeholder="Nom du client / société"
+                error={errors.client_name?.message}
+                value={field.value}
+                onBlur={field.onBlur}
+                onValueChange={field.onChange}
+                suggestions={clientEntry.suggestions.map((item) => ({ key: item.id, label: item.name }))}
+                onPick={(item) => field.onChange(item.label)}
+              />
+            )}
           />
+          {clientEntry.isNewClient && (
+            <NewClientFields form={clientEntry.form} onKindChange={clientEntry.changeKind} />
+          )}
           <FormField
             id="contract-service"
             label="Prestation"
