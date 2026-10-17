@@ -8,20 +8,11 @@ import { docNumber, plateKey } from './tools.ts';
 
 type Db = SupabaseClient;
 
-const day = z.string().regex(
-  /^\d{4}-\d{2}-\d{2}$/,
-  'date attendue au format AAAA-MM-JJ',
-);
-const time = z.string().regex(
-  /^([01]\d|2[0-3]):[0-5]\d$/,
-  'heure attendue au format HH:MM',
-);
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date attendue au format AAAA-MM-JJ');
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'heure attendue au format HH:MM');
 const text = (max = 200) => z.string().trim().min(1).max(max);
 const string = (description: string) => ({ type: 'string', description });
-const schema = (
-  properties: Record<string, unknown>,
-  required: string[] = [],
-) => ({
+const schema = (properties: Record<string, unknown>, required: string[] = []) => ({
   type: 'object',
   properties,
   required,
@@ -39,21 +30,13 @@ interface ActionTool {
   description: string;
   input_schema: Record<string, unknown>;
   input: z.ZodType;
-  run: (
-    db: Db,
-    input: never,
-    conversationId: string | null,
-  ) => Promise<ProposedAction>;
+  run: (db: Db, input: never, conversationId: string | null) => Promise<ProposedAction>;
 }
 
 const action = <S extends z.ZodType>(
   spec: Omit<ActionTool, 'input' | 'run'> & {
     input: S;
-    run: (
-      db: Db,
-      input: z.infer<S>,
-      conversationId: string | null,
-    ) => Promise<ProposedAction>;
+    run: (db: Db, input: z.infer<S>, conversationId: string | null) => Promise<ProposedAction>;
   },
 ): ActionTool => spec as ActionTool;
 
@@ -66,19 +49,11 @@ export const frenchDay = (iso: string) =>
     timeZone: 'UTC',
   });
 const hour = (value: string) => `${Number(value.slice(0, 2))}h${value.slice(3, 5)}`;
-const parisToday = () =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(
-    new Date(),
-  );
+const parisToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
 
 /** Technicien actif reconnu par son prénom (sans accent ni casse). */
-async function findTechnician(
-  db: Db,
-  name: string,
-): Promise<{ id: string; display_name: string }> {
-  const { data, error } = await db.from('technicians').select(
-    'id, display_name',
-  ).eq('is_active', true);
+async function findTechnician(db: Db, name: string): Promise<{ id: string; display_name: string }> {
+  const { data, error } = await db.from('technicians').select('id, display_name').eq('is_active', true);
   if (error) throw new Error(error.message);
   const key = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
   const wanted = key(name);
@@ -98,27 +73,18 @@ async function findTechnician(
 /** OR désigné par son numéro, sinon l'OR en cours du véhicule (le plus récent pas encore facturé). */
 async function findOrder(
   db: Db,
-  input: {
-    numero_or?: string | undefined;
-    immatriculation?: string | undefined;
-  },
-): Promise<
-  { id: string; number: string; plate: string | null; status: string }
-> {
-  let query = db.from('v_repair_orders_overview').select(
-    'id, number, plate, status',
-  );
-  if (input.numero_or) {
-    query = query.eq('number', docNumber('OR', input.numero_or));
-  } else if (input.immatriculation) {
+  input: { numero_or?: string | undefined; immatriculation?: string | undefined },
+): Promise<{ id: string; number: string; plate: string | null; status: string }> {
+  let query = db.from('v_repair_orders_overview').select('id, number, plate, status');
+  if (input.numero_or) query = query.eq('number', docNumber('OR', input.numero_or));
+  else if (input.immatriculation) {
     query = query.eq('plate_key', plateKey(input.immatriculation)).not(
       'status',
       'in',
       '(to_invoice,invoiced)',
     );
   } else throw new Error('indique le numéro de l’OR ou l’immatriculation');
-  const { data, error } = await query.order('created_at', { ascending: false })
-    .limit(1);
+  const { data, error } = await query.order('created_at', { ascending: false }).limit(1);
   if (error) throw new Error(error.message);
   const order = (data ?? [])[0] as
     | { id: string; number: string; plate: string | null; status: string }
@@ -188,10 +154,7 @@ export const ACTION_TOOLS: ActionTool[] = [
           .select('vehicle_type, client_name')
           .eq('plate_key', plateKey(plate))
           .limit(1);
-        const known = (data ?? [])[0] as {
-          vehicle_type: string;
-          client_name: string | null;
-        } | undefined;
+        const known = (data ?? [])[0] as { vehicle_type: string; client_name: string | null } | undefined;
         if (known) {
           vehicleType = known.vehicle_type;
           clientName = clientName || known.client_name || '';
@@ -247,9 +210,7 @@ export const ACTION_TOOLS: ActionTool[] = [
     input_schema: schema(
       {
         numero_or: string('Numéro de l’OR (ex. 488 ou OR00488)'),
-        immatriculation: string(
-          'Immatriculation, si le numéro n’est pas donné',
-        ),
+        immatriculation: string('Immatriculation, si le numéro n’est pas donné'),
         travail: string('Travail à faire, tel que dit'),
         heures: { type: 'number', minimum: 0.1, maximum: 100 },
       },
@@ -267,11 +228,7 @@ export const ACTION_TOOLS: ActionTool[] = [
         db,
         conversationId,
         'ro_work',
-        {
-          repair_order_id: order.id,
-          description: input.travail,
-          estimated_hours: input.heures ?? null,
-        },
+        { repair_order_id: order.id, description: input.travail, estimated_hours: input.heures ?? null },
         `Ajouter « ${input.travail} »${
           input.heures ? ` (${String(input.heures).replace('.', ',')} h)` : ''
         } aux travaux de l’OR ${order.number}${order.plate ? ` (${order.plate})` : ''}`,
@@ -285,9 +242,7 @@ export const ACTION_TOOLS: ActionTool[] = [
     input_schema: schema(
       {
         numero_or: string('Numéro de l’OR (ex. 488 ou OR00488)'),
-        immatriculation: string(
-          'Immatriculation, si le numéro n’est pas donné',
-        ),
+        immatriculation: string('Immatriculation, si le numéro n’est pas donné'),
         technicien: string('Prénom du technicien'),
       },
       ['technicien'],
@@ -298,10 +253,7 @@ export const ACTION_TOOLS: ActionTool[] = [
       technicien: text(60),
     }),
     run: async (db, input, conversationId) => {
-      const [order, tech] = await Promise.all([
-        findOrder(db, input),
-        findTechnician(db, input.technicien),
-      ]);
+      const [order, tech] = await Promise.all([findOrder(db, input), findTechnician(db, input.technicien)]);
       return propose(
         db,
         conversationId,
@@ -313,9 +265,7 @@ export const ACTION_TOOLS: ActionTool[] = [
   }),
 ];
 
-export const ACTION_DEFINITIONS = ACTION_TOOLS.map((
-  { name, description, input_schema },
-) => ({
+export const ACTION_DEFINITIONS = ACTION_TOOLS.map(({ name, description, input_schema }) => ({
   name,
   description,
   input_schema: input_schema as { type: 'object'; [key: string]: unknown },
@@ -334,10 +284,7 @@ export async function runAction(
   if (!found) return { content: `Outil inconnu : ${name}`, is_error: true };
   const parsed = found.input.safeParse(input);
   if (!parsed.success) {
-    return {
-      content: `Paramètres invalides : ${parsed.error.issues[0]?.message ?? ''}`,
-      is_error: true,
-    };
+    return { content: `Paramètres invalides : ${parsed.error.issues[0]?.message ?? ''}`, is_error: true };
   }
   try {
     const proposed = await found.run(db, parsed.data as never, conversationId);
