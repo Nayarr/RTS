@@ -83,6 +83,9 @@ test('lecture activée : la photo de l’étiquette ouvre la lecture ; sans clé
     const dialog = page.getByRole('dialog', { name: 'Lecture de l’étiquette du hayon' });
     await expect(dialog).toBeVisible();
     // Pas de clé de l'assistant en test : lecture indisponible, la photo est gardée
+    await expect(dialog.getByRole('alert')).toContainText(
+      'Lecture impossible : renseigne les informations à la main.',
+    );
     await expect(dialog.getByRole('alert')).toContainText('saisis la date à la main');
     await dialog.getByRole('button', { name: 'Fermer' }).first().click();
     await expect(dialog).toBeHidden();
