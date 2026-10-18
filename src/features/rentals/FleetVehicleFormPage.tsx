@@ -25,6 +25,7 @@ import {
   type FleetVehicleValues,
 } from './fleet-schemas';
 import { VehicleVisual } from './ui';
+import { READING_FAILED, readingFailedMessage } from '@/lib/reading';
 
 /** Ajout d'un véhicule à la flotte, ou modification (identification, tarifs, échéances). */
 export function FleetVehicleFormPage() {
@@ -75,12 +76,16 @@ function FleetVehicleForm({ id, initial }: { id: string | null; initial: FleetVe
       fill('first_registration', read.first_registration);
       if (read.category) setValue('category', read.category, { shouldDirty: true });
       if (read.fuel_type) setValue('fuel_type', read.fuel_type, { shouldDirty: true });
+      // Rien de lu sur la photo : saisie à la main
+      if (![read.plate, read.brand, read.model, read.vin, read.first_registration].some(Boolean)) {
+        setReading('idle');
+        toast.error(READING_FAILED);
+        return;
+      }
       setReading(read);
     } catch (error) {
       setReading('idle');
-      toast.error(
-        error instanceof Error ? error.message : 'Carte grise illisible : complète les champs à la main',
-      );
+      toast.error(readingFailedMessage(error));
     }
   };
   const save = useFleetMutation(

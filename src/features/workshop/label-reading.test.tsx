@@ -82,9 +82,9 @@ describe('étiquette du contrôle hayon', () => {
       confidence: 'faible',
     });
     renderDialog();
-    expect(
-      await screen.findByText('Aucun mois trouvé sur la photo : choisis-le à la main.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Lecture impossible : renseigne les informations à la main.',
+    );
     expect(screen.getByRole('button', { name: 'Valider' })).toBeDisabled();
     await userEvent.selectOptions(screen.getByLabelText('Prochain contrôle hayon (modifiable) : mois'), '01');
     await userEvent.selectOptions(
@@ -100,7 +100,9 @@ describe('étiquette du contrôle hayon', () => {
       new Error('Lecture automatique non configurée : saisis la date à la main'),
     );
     renderDialog();
-    expect(await screen.findByRole('alert')).toHaveTextContent('Lecture automatique non configurée');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Lecture impossible : renseigne les informations à la main. (Lecture automatique non configurée',
+    );
     expect(screen.queryByRole('button', { name: 'Valider' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Fermer' }).length).toBeGreaterThan(0);
   });
