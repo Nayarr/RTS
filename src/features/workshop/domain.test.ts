@@ -5,7 +5,6 @@ import {
   CT_PHOTO_LABEL,
   finishBlockers,
   formatTireSize,
-  keepsStandardTime,
   parseTimeOption,
   planMyDay,
   seenState,
@@ -15,7 +14,13 @@ import {
   timeOptionsFor,
   timeOptionValue,
 } from './domain';
-import { CHECK_FIELDS, inspectionMissingPoints, WEAR_FIELDS } from '@/features/repair-orders/inspection';
+import {
+  canAddAxles,
+  CHECK_FIELDS,
+  inspectionMissingPoints,
+  WEAR_FIELDS,
+  wearFieldsFor,
+} from '@/features/repair-orders/inspection';
 
 const order = (overrides: Partial<RepairOrderOverview>): RepairOrderOverview =>
   ({
@@ -81,7 +86,7 @@ describe('clôture de l’OR par le technicien', () => {
     expect(finishBlockers([], null, [])).toEqual(['Photo du contrôle technique obligatoire']);
   });
 
-  it('temps estimé de chaque tâche ; barème gardé seulement pour extincteurs et étiquettes', () => {
+  it('temps estimé de chaque tâche, à l’aveugle : le barème ne compte jamais pour le technicien', () => {
     const lines = [
       line({}),
       line({ kind: 'planned' }),
@@ -93,19 +98,33 @@ describe('clôture de l’OR par le technicien', () => {
     ];
     expect(finishBlockers(lines, null, CT)).toEqual([
       'Temps estimé manquant : 2 tâches des travaux effectués',
-      'Temps estimé manquant : 3 tâches à prévoir',
+      'Temps estimé manquant : 4 tâches à prévoir',
     ]);
-    expect(keepsStandardTime('Étiquette contrôle hayon')).toBe(true);
-    expect(keepsStandardTime('Étiquettes angles morts')).toBe(true);
-    expect(keepsStandardTime('Remplacement plaquettes')).toBe(false);
   });
 
-  it('taille des pneus : essieu du milieu et essieux ajoutés aussi', () => {
+  it('taille des pneus : essieux ajoutés (3e, 4e…) et milieu d’une ancienne fiche aussi', () => {
     const inspection = { pneus: { milieu_etat: 'HS', essieux: [{ etat: '50' }, { etat: 'OK' }] } };
     expect(finishBlockers([], inspection, CT)).toEqual([
       'Taille des pneus milieu obligatoire (HS)',
-      'Taille des pneus essieu 4 obligatoire (50 %)',
+      'Taille des pneus essieu 3 obligatoire (50 %)',
     ]);
+  });
+
+  it('fiche complète selon le véhicule : pas de barres sur un VUL, ni de kit sur une remorque', () => {
+    const tyres = { avant_etat: 'OK', arriere_etat: 'OK' };
+    const controles = Object.fromEntries(CHECK_FIELDS.map(([key]) => [key, 'OK']));
+    const brakes = {
+      plaquettes_avant: 'OK',
+      plaquettes_arriere: 'OK',
+      disques_avant: 'OK',
+      disques_arriere: 'OK',
+    };
+    expect(inspectionMissingPoints({ usure: brakes, pneus: tyres, controles }, 'pl')).toBe(3);
+    expect(inspectionMissingPoints({ usure: brakes, pneus: tyres, controles }, 'vul')).toBe(1);
+    expect(inspectionMissingPoints({ usure: brakes, pneus: tyres, controles }, 'remorque')).toBe(0);
+    expect(wearFieldsFor('remorque').map(([key]) => key)).not.toContain('kit_accessoires');
+    expect(canAddAxles('vul')).toBe(false);
+    expect(canAddAxles('remorque')).toBe(true);
   });
 
   it('taille des pneus mise en forme : barres et point posés tout seuls', () => {

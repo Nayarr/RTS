@@ -6649,9 +6649,18 @@ export type Database = {
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       global_search: { Args: { p_query: string }; Returns: Json };
       inspection_activated_fields: { Args: { p_data: Json }; Returns: string[] };
-      inspection_missing_points: { Args: { p_data: Json }; Returns: number };
+      inspection_missing_points:
+        | { Args: { p_data: Json }; Returns: number }
+        | {
+            Args: { p_data: Json; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
+            Returns: number;
+          };
       inspection_trigger_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
       inspection_wear_fields: { Args: Record<PropertyKey, never>; Returns: string[] };
+      inspection_wear_fields_for: {
+        Args: { p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
+        Returns: string[];
+      };
       invoiced_ro_lines: {
         Args: { p_from: string; p_to: string };
         Returns: {

@@ -6,9 +6,9 @@ import {
   FLUID_FIELDS,
   OK_HS_OPTIONS,
   optionFor,
-  TIRE_AXLES,
+  tireAxlesFor,
   WARNING_LIGHT_FIELDS,
-  WEAR_FIELDS,
+  wearFieldsFor,
   WEAR_OPTIONS,
   YES_NO_OPTIONS,
   type ChipOption,
@@ -35,7 +35,13 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** Fiche de contrôle remplie par le technicien (lecture seule côté bureau). */
-export function InspectionCard({ data }: { data: InspectionData | null }) {
+export function InspectionCard({
+  data,
+  vehicleType,
+}: {
+  data: InspectionData | null;
+  vehicleType: 'pl' | 'vul' | 'remorque';
+}) {
   const alerts = countAlerts(data);
   const lights = WARNING_LIGHT_FIELDS.filter(([key]) => data?.voyants?.[key]).map(([, label]) => label);
 
@@ -78,16 +84,14 @@ export function InspectionCard({ data }: { data: InspectionData | null }) {
           </div>
           <div className="col gap-2">
             <h3 className="overline">Pneus · usure</h3>
-            {WEAR_FIELDS.map(([key, label]) => (
+            {wearFieldsFor(vehicleType).map(([key, label]) => (
               <Row key={key} label={label}>
                 <Value value={data.usure?.[key]} options={WEAR_OPTIONS} />
               </Row>
             ))}
-            {TIRE_AXLES.map(([side, label]) => {
+            {tireAxlesFor(data).map(([side, label]) => {
               const size = data.pneus?.[`${side}_taille`];
               const state = data.pneus?.[`${side}_etat`];
-              // Essieu du milieu : affiché seulement s'il a été renseigné
-              if (side === 'milieu' && !size && !state) return null;
               return (
                 <Row key={side} label={`${label}${size ? ` (${size})` : ''}`}>
                   <Value value={state} options={WEAR_OPTIONS} />

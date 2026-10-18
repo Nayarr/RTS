@@ -20,7 +20,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
     title: 'Fiche de contrôle',
     items: [
       'Choisis OK, 50 % ou HS pour chaque élément : la fiche est enregistrée automatiquement. Un élément HS ou à 50 % ajoute tout seul la ligne « Remplacement … » dans les travaux à prévoir, avec ton temps estimé à donner.',
-      'Pneus : avant, milieu et arrière. Pour un camion à plus d’essieux ou une remorque, « Ajouter un essieu ». Tape la taille en chiffres (31570225) : les barres et le point se mettent tout seuls.',
+      'Pneus : avant et arrière. Pour un camion à plus d’essieux ou une remorque, « Ajouter un essieu » (pas sur un utilitaire). Tape la taille en chiffres (31570225) : les barres et le point se mettent tout seuls.',
       'Photographie les étiquettes (contrôle hayon, extincteurs) avec le bouton appareil photo à côté de chacune.',
       'Dans « Échéances du véhicule », renseigne les dates du contrôle technique et du contrôle hayon lues sur le camion. La photo du contrôle technique est obligatoire pour terminer l’OR.',
     ],
@@ -30,7 +30,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
     items: [
       '« Travaux effectués » : ce que tu as réellement fait. C’est ce qui sera facturé.',
       '« Pièces / réparations à prévoir (devis) » : ce qu’il faudra faire plus tard. Cela sert au devis.',
-      'Indique ton temps estimé pour chaque ligne.',
+      'Indique ton temps estimé pour chaque ligne : chaque temps part de « Estimation », à toi de choisir.',
     ],
   },
   {

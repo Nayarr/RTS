@@ -74,20 +74,8 @@ export function formatTireSize(value: string) {
 /** Photo exigée quand l'étiquette du contrôle hayon est HS (même libellé que le bouton photo). */
 export const TAILGATE_PHOTO_LABEL = 'Étiquette contrôle hayon';
 
-/**
- * Travaux dont le temps barème reste affiché et suffit (comme la base, quote_time_is_adjustable) :
- * extincteurs, étiquettes angles morts et étiquette du hayon. Les autres forfaits à prévoir ont leur
- * temps estimé par le technicien, sans voir le barème.
- */
-export const keepsStandardTime = (description: string) =>
-  /(extincteur|angles?\s+morts?|[ée]tiquettes?.*hayon|hayon.*[ée]tiquette)/i.test(description);
-
-const hasTime = (line: RoLine) =>
-  line.estimated_hours !== null ||
-  (line.kind === 'planned' &&
-    line.line_type === 'package' &&
-    line.standard_hours !== null &&
-    keepsStandardTime(line.description));
+/** Temps estimé par le technicien, à l'aveugle (le barème reste réservé au bureau). */
+const hasTime = (line: RoLine) => line.estimated_hours !== null;
 
 const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? 's' : ''}`;
 
@@ -102,6 +90,7 @@ export function finishBlockers(
   photoLabels: string[],
   /** Fiche de contrôle complète exigée par la direction. */
   inspectionRequired = false,
+  vehicleType: 'pl' | 'vul' | 'remorque' = 'pl',
 ): string[] {
   const blockers: string[] = [];
   const timed = (kind: RoLine['kind']) =>
@@ -118,7 +107,7 @@ export function finishBlockers(
     ['milieu', { etat: inspection?.pneus?.milieu_etat, taille: inspection?.pneus?.milieu_taille }],
     ['arrière', { etat: inspection?.pneus?.arriere_etat, taille: inspection?.pneus?.arriere_taille }],
     ...(inspection?.pneus?.essieux ?? []).map((axle, index): [string, typeof axle] => [
-      `essieu ${index + 4}`,
+      `essieu ${index + 3}`,
       axle,
     ]),
   ];
@@ -131,7 +120,7 @@ export function finishBlockers(
   if (inspection?.controles?.hayon === 'HS' && !photoLabels.includes(TAILGATE_PHOTO_LABEL)) {
     blockers.push('Photo de l’étiquette contrôle hayon obligatoire (HS)');
   }
-  const missingPoints = inspectionRequired ? inspectionMissingPoints(inspection) : 0;
+  const missingPoints = inspectionRequired ? inspectionMissingPoints(inspection, vehicleType) : 0;
   if (missingPoints) {
     blockers.push(
       `Fiche de contrôle complète exigée : ${plural(missingPoints, 'point')} OK / 50 % / HS non renseigné${missingPoints > 1 ? 's' : ''}`,

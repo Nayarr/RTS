@@ -42,13 +42,13 @@ select is((select count(*)::int from public.ro_lines where repair_order_id = :ro
           'Case couverte par un forfait : pas de ligne « Mise aux normes » en plus');
 
 update public.inspections set data = '{"pneus": {"essieux": [{"etat": "HS"}]}}' where repair_order_id = :ro;
-select is((select count(*)::int from public.ro_lines where repair_order_id = :ro and description = 'Remplacement Pneus essieu 4'), 1,
+select is((select count(*)::int from public.ro_lines where repair_order_id = :ro and description = 'Remplacement Pneus essieu 3'), 1,
           'Essieu ajouté à HS : remplacement à prévoir');
 
 -- ---------------------------------------------------------------- Clôture
 update public.ro_lines set estimated_hours = 1 where repair_order_id = :ro and kind = 'planned';
 select throws_like(format($$ select public.complete_repair_order(%L) $$, :ro),
-  '%Taille des pneus essieu 4 obligatoire (HS) ; Photo du contrôle technique obligatoire%',
+  '%Taille des pneus essieu 3 obligatoire (HS) ; Photo du contrôle technique obligatoire%',
   'Taille de l''essieu ajouté et photo du contrôle technique exigées');
 update public.inspections set data = '{"pneus": {"essieux": [{"etat": "HS", "taille": "315/70/22.5"}]}}' where repair_order_id = :ro;
 insert into public.ro_photos (repair_order_id, file_id, label)
