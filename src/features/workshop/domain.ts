@@ -97,7 +97,11 @@ export function finishBlockers(
   const timed = (kind: RoLine['kind']) =>
     lines.filter(
       (line) =>
-        line.kind === kind && (line.line_type === 'labor' || line.line_type === 'package') && !hasTime(line),
+        line.kind === kind &&
+        // Forfaits « devis et facture seulement » : jamais montrés au technicien, rien à estimer
+        line.visibility !== 'quote' &&
+        (line.line_type === 'labor' || line.line_type === 'package') &&
+        !hasTime(line),
     ).length;
   const done = timed('done');
   const planned = timed('planned');

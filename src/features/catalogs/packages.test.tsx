@@ -107,6 +107,7 @@ describe('forfaits : écran', () => {
         keywords: ['plaquette avant'],
         trigger_fields: ['plaquettes_avant'],
         details: null,
+        quote_only: false,
       }),
     );
   });

@@ -3,6 +3,12 @@ import { formatHours } from '../constants';
 
 const TYPE_LABELS: Partial<Record<RoLine['line_type'], string>> = { package: 'Forfait' };
 
+/** Où va la ligne : forfaits des pneus au devis seulement, remplacement des pneus à l'atelier seulement. */
+const VISIBILITY_LABELS: Partial<Record<string, string>> = {
+  quote: 'Devis et facture seulement',
+  workshop: 'Atelier seulement (pas au devis)',
+};
+
 function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
   if (lines.length === 0) return <p className="hint py-2.5">{empty}</p>;
   return (
@@ -11,8 +17,15 @@ function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
         <li key={line.id} className="row between top border-b py-2.5 last:border-b-0">
           <span className="col min-w-0 gap-1">
             <span className="whitespace-pre-line">{line.description || <em>(sans description)</em>}</span>
-            {TYPE_LABELS[line.line_type] && (
-              <span className="tag self-start">{TYPE_LABELS[line.line_type]}</span>
+            {(TYPE_LABELS[line.line_type] ?? VISIBILITY_LABELS[line.visibility]) && (
+              <span className="row gap-1.5">
+                {TYPE_LABELS[line.line_type] && (
+                  <span className="tag self-start">{TYPE_LABELS[line.line_type]}</span>
+                )}
+                {VISIBILITY_LABELS[line.visibility] && (
+                  <span className="tag self-start">{VISIBILITY_LABELS[line.visibility]}</span>
+                )}
+              </span>
             )}
           </span>
           <span className="col shrink-0 items-end gap-0.5">

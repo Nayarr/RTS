@@ -137,6 +137,27 @@ export function PackageDialog({ pkg, onClose }: { pkg: ServicePackage | null; on
               )}
             />
           </fieldset>
+          <Controller
+            control={control}
+            name="quote_only"
+            render={({ field }) => (
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="package-quote-only"
+                  className="mt-0.5"
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                />
+                <span className="col gap-0.5">
+                  <Label htmlFor="package-quote-only">Devis et facture seulement</Label>
+                  <span className="hint">
+                    Le technicien ne voit pas ce forfait et n’a pas de temps à donner (forfaits des pneus,
+                    recyclage…). Il garde sa propre tâche, comme « Remplacement Pneus avant ».
+                  </span>
+                </span>
+              </div>
+            )}
+          />
           <div className="space-y-2">
             <Label htmlFor="package-details">Détail des opérations (une par ligne)</Label>
             <Textarea
