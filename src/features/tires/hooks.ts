@@ -14,9 +14,14 @@ import {
 export const tiresKey = ['tires'] as const;
 export const suppliersKey = ['suppliers'] as const;
 
-export const useTireLines = () => useQuery({ queryKey: [...tiresKey, 'lines'], queryFn: fetchTireLines });
-export const useTireLots = () => useQuery({ queryKey: [...tiresKey, 'lots'], queryFn: fetchTireLots });
-export const useTireKpis = () => useQuery({ queryKey: [...tiresKey, 'kpis'], queryFn: fetchTireKpis });
+// Stock relu à chaque ouverture de l'écran (un arrivage ou une vente a pu passer entre-temps)
+const fresh = { refetchOnMount: 'always' } as const;
+export const useTireLines = () =>
+  useQuery({ queryKey: [...tiresKey, 'lines'], queryFn: fetchTireLines, ...fresh });
+export const useTireLots = () =>
+  useQuery({ queryKey: [...tiresKey, 'lots'], queryFn: fetchTireLots, ...fresh });
+export const useTireKpis = () =>
+  useQuery({ queryKey: [...tiresKey, 'kpis'], queryFn: fetchTireKpis, ...fresh });
 export const useTireBrands = () => useQuery({ queryKey: [...tiresKey, 'brands'], queryFn: fetchTireBrands });
 export const useSuppliers = () => useQuery({ queryKey: suppliersKey, queryFn: fetchSuppliers });
 
