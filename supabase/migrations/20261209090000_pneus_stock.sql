@@ -347,9 +347,8 @@ declare
   v_line uuid;
 begin
   update public.tires set stock_qty = stock_qty + new.quantity where id = new.tire_id returning line_id into v_line;
-  if new.quantity < 0 then
-    perform public.tire_line_alert(v_line);
-  end if;
+  -- Sortie, ou arrivage qui laisse la ligne sous le seuil (une alerte par jour au plus)
+  perform public.tire_line_alert(v_line);
   return null;
 end;
 $$;

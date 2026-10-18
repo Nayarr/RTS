@@ -3,7 +3,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(26);
 
 \ir helpers/fixtures.psql
 
@@ -110,6 +110,12 @@ select results_eq(
      from public.tire_stock_kpis() k $$,
   $$ values (2, 840.00::numeric, 200.00::numeric, 31.3::numeric) $$,
   'Ventes et marge des 30 derniers jours');
+
+-- Arrivage qui laisse une nouvelle ligne sous son seuil : alerte aussi
+select public.add_tires('vul', '2356516C', 'toutes', 'Continental', 'VanContact', 'neuf', 2, 108, 145, null, null, null, null, 4);
+reset role;
+select is((select count(*)::integer from public.notifications where title = 'Pneus à commander : 235/65 R16C'), 2,
+          'Arrivage sous le seuil mini : direction et réception prévenues');
 
 -- ---------------------------------------------------------------- Accès
 select is((select count(*)::integer from public.v_part_stats where designation like 'Pneu %'), 0,
