@@ -7,8 +7,12 @@ select plan(9);
 
 \ir helpers/fixtures.psql
 
-select is((select count(*)::integer from public.service_packages where legacy_id like 'pneus:%' and standard_hours = 0), 12,
-          'Forfaits des pneus PL et VUL créés, temps de barème à 0 h');
+select results_eq(
+  $$ select legacy_id, standard_hours from public.service_packages
+     where legacy_id like 'pneus:%' and standard_hours > 0 order by 1 $$,
+  $$ values ('pneus:pl:roue-x2', 0.50::numeric), ('pneus:pl:roue-x4', 1.00),
+            ('pneus:vul:roue-x2', 0.50), ('pneus:vul:roue-x4', 1.00) $$,
+  'Barème : 30 min à l''avant, 1 h à l''arrière (sur la dépose/repose des roues), le reste à 0 h');
 
 -- ---------------------------------------------------------------- Poids lourd
 insert into public.repair_orders (id, vehicle_id, requested_work, technician_id, status) values
@@ -18,12 +22,12 @@ insert into public.repair_orders (id, vehicle_id, requested_work, technician_id,
 
 insert into public.inspections (repair_order_id, data)
 values ('50000000-0000-0000-0000-000000000781', '{"pneus": {"avant_etat": "HS"}}');
-select results_eq(
+select set_eq(
   $$ select description, unit_price from public.ro_lines
-     where repair_order_id = '50000000-0000-0000-0000-000000000781' and kind = 'planned' order by position $$,
+     where repair_order_id = '50000000-0000-0000-0000-000000000781' and kind = 'planned' $$,
   $$ values ('DÉPOSE/REPOSE PNEUMATIQUE X2 (avant)', 36.00::numeric), ('DÉPOSE/REPOSE ROUE X2 (avant)', 36.00),
-            ('RECYCLAGE PNEUMATIQUE X2 (avant)', 16.00) $$,
-  'PL, pneus avant HS : dépose/repose roue et pneumatique x2, recyclage x2 (barème PL), sans ligne « Remplacement »');
+            ('RECYCLAGE PNEUMATIQUE X2 (avant)', 16.00), ('ÉQUILIBRAGE X2 (avant)', 70.00) $$,
+  'PL, pneus avant HS : dépose/repose roue et pneumatique x2, recyclage x2, équilibrage x2 (barème PL), sans ligne « Remplacement »');
 
 update public.inspections set data = '{"pneus": {"avant_etat": "HS", "arriere_etat": "50"}}'
 where repair_order_id = '50000000-0000-0000-0000-000000000781';
@@ -34,7 +38,7 @@ select results_eq(
             ('RECYCLAGE PNEUMATIQUE X4 (arrière)', 32.00) $$,
   'Pneus arrière à 50 % : les mêmes forfaits x4');
 select is((select count(*)::integer from public.ro_lines where repair_order_id = '50000000-0000-0000-0000-000000000781'
-           and kind = 'planned'), 6, 'Avant et arrière : 6 forfaits, pas de doublon');
+           and kind = 'planned'), 7, 'Avant et arrière : 7 forfaits, pas de doublon');
 
 update public.inspections set data = '{"pneus": {"avant_etat": "OK", "arriere_etat": "HS",
                                        "essieux": [{"etat": "HS"}, {"etat": "50"}]}}'
@@ -50,13 +54,13 @@ select is((select count(*)::integer from public.ro_lines where repair_order_id =
 -- ---------------------------------------------------------------- Utilitaire et remorque
 insert into public.inspections (repair_order_id, data) values
   ('50000000-0000-0000-0000-000000000782', '{"pneus": {"avant_etat": "50"}}'),
-  ('50000000-0000-0000-0000-000000000783', '{"pneus": {"arriere_etat": "HS"}}');
+  ('50000000-0000-0000-0000-000000000783', '{"pneus": {"avant_etat": "HS", "arriere_etat": "HS"}}');
 select results_eq(
   $$ select unit_price from public.ro_lines where repair_order_id = '50000000-0000-0000-0000-000000000782' order by position $$,
   $$ values (16.00::numeric), (16.00), (8.00) $$,
-  'Utilitaire : barème VUL 8 / 8 / 4 € HT par pneu');
+  'Utilitaire : barème VUL 8 / 8 / 4 € HT par pneu, sans équilibrage');
 select is((select sum(unit_price) from public.ro_lines where repair_order_id = '50000000-0000-0000-0000-000000000783'),
-          176.00::numeric, 'Remorque : barème PL (72 + 72 + 32 € HT à l''arrière)');
+          264.00::numeric, 'Remorque : barème PL (88 € HT à l''avant, 176 € HT à l''arrière), sans équilibrage');
 
 select * from finish();
 rollback;

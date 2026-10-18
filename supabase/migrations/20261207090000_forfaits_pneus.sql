@@ -3,8 +3,9 @@
 --
 -- Pneus avant, ou essieu ajouté, à 50 % ou HS : dépose/repose roue x2, dépose/repose
 -- pneumatique x2, recyclage pneumatique x2 ; pneus arrière : les mêmes x4. Barème PL (remorque
--- comprise) 18 / 18 / 8 € HT par pneu, VUL 8 / 8 / 4 € HT. Temps de barème à 0 h, à régler
--- dans Stock › Forfaits comme les prix et les libellés.
+-- comprise) 18 / 18 / 8 € HT par pneu, VUL 8 / 8 / 4 € HT. Poids lourd, pneus avant : équilibrage
+-- x2 en plus (35 € HT par roue). Temps de barème : 30 min à l'avant (et par essieu ajouté), 1 h à
+-- l'arrière, portés par la dépose/repose des roues. Tout se règle dans Stock › Forfaits.
 -- Contrairement aux autres cases de la fiche, une case de pneus déclenche tous ses forfaits, et
 -- chaque essieu ajouté son propre lot ; la position est rappelée dans le libellé (« (avant) »).
 -- =============================================================================
@@ -26,17 +27,22 @@ $$;
 
 -- Forfaits des pneus (rejouable : repérés par leur clé, jamais en double)
 insert into public.service_packages (legacy_id, name, category, standard_hours, price, trigger_fields)
-select 'pneus:' || c.category || ':' || f.code, f.name, c.category::public.labor_category, 0,
+select 'pneus:' || c.category || ':' || f.code, f.name, c.category::public.labor_category, f.hours,
        f.qty * case c.category when 'pl' then f.pl else f.vul end, f.triggers
 from (values ('pl'), ('vul')) as c(category)
 cross join (values
-  ('roue-x2',      'DÉPOSE/REPOSE ROUE X2',         2, 18, 8, array['pneus.avant_etat', 'pneus.milieu_etat', 'pneus.essieu_etat']),
-  ('pneu-x2',      'DÉPOSE/REPOSE PNEUMATIQUE X2',  2, 18, 8, array['pneus.avant_etat', 'pneus.milieu_etat', 'pneus.essieu_etat']),
-  ('recyclage-x2', 'RECYCLAGE PNEUMATIQUE X2',      2,  8, 4, array['pneus.avant_etat', 'pneus.milieu_etat', 'pneus.essieu_etat']),
-  ('roue-x4',      'DÉPOSE/REPOSE ROUE X4',         4, 18, 8, array['pneus.arriere_etat']),
-  ('pneu-x4',      'DÉPOSE/REPOSE PNEUMATIQUE X4',  4, 18, 8, array['pneus.arriere_etat']),
-  ('recyclage-x4', 'RECYCLAGE PNEUMATIQUE X4',      4,  8, 4, array['pneus.arriere_etat'])
-) as f(code, name, qty, pl, vul, triggers)
+  ('roue-x2',      'DÉPOSE/REPOSE ROUE X2',         2, 18, 8, 0.5, array['pneus.avant_etat', 'pneus.milieu_etat', 'pneus.essieu_etat']),
+  ('pneu-x2',      'DÉPOSE/REPOSE PNEUMATIQUE X2',  2, 18, 8, 0,   array['pneus.avant_etat', 'pneus.milieu_etat', 'pneus.essieu_etat']),
+  ('recyclage-x2', 'RECYCLAGE PNEUMATIQUE X2',      2,  8, 4, 0,   array['pneus.avant_etat', 'pneus.milieu_etat', 'pneus.essieu_etat']),
+  ('roue-x4',      'DÉPOSE/REPOSE ROUE X4',         4, 18, 8, 1,   array['pneus.arriere_etat']),
+  ('pneu-x4',      'DÉPOSE/REPOSE PNEUMATIQUE X4',  4, 18, 8, 0,   array['pneus.arriere_etat']),
+  ('recyclage-x4', 'RECYCLAGE PNEUMATIQUE X4',      4,  8, 4, 0,   array['pneus.arriere_etat'])
+) as f(code, name, qty, pl, vul, hours, triggers)
+on conflict (legacy_id) do nothing;
+
+-- Poids lourd seulement (ni utilitaire, ni remorque) : équilibrage des 2 roues avant
+insert into public.service_packages (legacy_id, name, category, standard_hours, price, trigger_fields)
+values ('pneus:pl:equilibrage-x2', 'ÉQUILIBRAGE X2', 'pl', 0, 70, array['pneus.avant_etat'])
 on conflict (legacy_id) do nothing;
 
 create or replace function public.sync_inspection_work(p_repair_order_id uuid, p_old jsonb, p_new jsonb)
@@ -140,6 +146,8 @@ begin
     join public.service_packages p
       on p.is_active and w.key = any (p.trigger_fields)
          and public.package_fits_vehicle(p.category, v_ro.vehicle_type)
+         -- Équilibrage : camion seulement (une remorque prend le tarif PL, pas l'équilibrage)
+         and not (p.legacy_id = 'pneus:pl:equilibrage-x2' and v_ro.vehicle_type <> 'pl')
   ),
   removed as (
     delete from public.ro_lines l
