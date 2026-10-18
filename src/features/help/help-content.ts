@@ -129,6 +129,7 @@ export const DIRECTION_TOPICS: HelpTopic[] = [
     items: [
       '« Stock », onglet « Forfaits » : donne à chaque forfait sa catégorie (PL, VUL…) et des mots-clés précis, par exemple « disque avant, plaquette avant ».',
       'Un forfait peut aussi être déclenché par n’importe quelle case de la fiche de contrôle (usure, pneus, contrôles, voyants), sauf les niveaux. Disques à refaire : le forfait des disques remplace celui des plaquettes du même essieu.',
+      'Pneus à 50 % ou HS : tous les forfaits des pneus de la position sont ajoutés (dépose/repose roue, dépose/repose pneumatique, recyclage), x2 à l’avant et pour chaque essieu ajouté, x4 à l’arrière. Prix, libellés et temps de barème (0 h au départ) se changent dans « Stock », onglet « Forfaits ».',
       '« Stock », onglet « Consommables » : produits en vrac, prix et stock ; une alerte signale un stock sous le seuil.',
       'Borne de pointage et écran atelier (télé) : choisis d’abord le code de sortie dans « Pointages ». Sur la borne, la roue ⚙ et ce code permettent de quitter ou de passer en écran télé.',
       'Sauvegarde : automatique chaque nuit, chiffrée chez l’hébergeur (30 jours de copies de la base, photos et PDF gardés). Rien à faire dans l’appli.',

@@ -106,10 +106,14 @@ export const PACKAGE_TRIGGER_GROUPS: { title: string; fields: [string, string][]
   { title: 'Usure', fields: WEAR_FIELDS.map(([key, label]) => [key, label]) },
   {
     title: 'Pneus',
-    fields: [TIRE_AXLES[0], LEGACY_MIDDLE_AXLE, TIRE_AXLES[1]].map(([key, label]) => [
-      `pneus.${key}_etat`,
-      label,
-    ]),
+    fields: [
+      ...[TIRE_AXLES[0], LEGACY_MIDDLE_AXLE, TIRE_AXLES[1]].map(([key, label]): [string, string] => [
+        `pneus.${key}_etat`,
+        label,
+      ]),
+      // Chaque essieu ajouté déclenche son propre lot de forfaits
+      ['pneus.essieu_etat', 'Pneus d’un essieu ajouté'],
+    ],
   },
   { title: 'Contrôles', fields: CHECK_FIELDS.map(([key, label]) => [`controles.${key}`, label]) },
   {

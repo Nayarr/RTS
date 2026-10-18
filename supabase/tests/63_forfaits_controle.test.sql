@@ -42,8 +42,8 @@ select is((select count(*)::int from public.ro_lines where repair_order_id = :ro
           'Case couverte par un forfait : pas de ligne « Mise aux normes » en plus');
 
 update public.inspections set data = '{"pneus": {"essieux": [{"etat": "HS"}]}}' where repair_order_id = :ro;
-select is((select count(*)::int from public.ro_lines where repair_order_id = :ro and description = 'Remplacement Pneus essieu 3'), 1,
-          'Essieu ajouté à HS : remplacement à prévoir');
+select is((select count(*)::int from public.ro_lines where repair_order_id = :ro and description like '% (essieu 3)'), 3,
+          'Essieu ajouté à HS : forfaits des pneus de l''essieu à prévoir');
 
 -- ---------------------------------------------------------------- Clôture
 update public.ro_lines set estimated_hours = 1 where repair_order_id = :ro and kind = 'planned';

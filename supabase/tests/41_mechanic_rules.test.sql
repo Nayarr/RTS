@@ -36,8 +36,8 @@ select throws_like($$ select public.complete_repair_order('50000000-0000-0000-00
 update public.ro_lines set estimated_hours = 1
 where repair_order_id = :ro and estimated_hours is null and line_type = 'labor';
 select throws_like($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000041') $$,
-  '%Temps estimé manquant : 1 tâche à prévoir%',
-  'Forfait à prévoir : le technicien donne son temps estimé (barème caché)');
+  '%Temps estimé manquant : 7 tâches à prévoir%',
+  'Forfaits à prévoir (contrôle hayon, pneus avant et arrière) : le technicien donne son temps estimé (barème caché)');
 update public.ro_lines set estimated_hours = 1.5
 where repair_order_id = :ro and kind = 'planned' and line_type = 'package';
 

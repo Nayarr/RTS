@@ -85,10 +85,11 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   // Terminer : ce qui manque est listé, le bouton attend
   await page.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'OUI' }).click();
   const blockers = page.getByRole('status', { name: 'À compléter avant de terminer' });
-  // Aucun temps mis d'office : les deux tâches à prévoir attendent l'estimation du technicien
-  await expect(blockers).toContainText('Temps estimé manquant : 2 tâches à prévoir');
+  // Aucun temps mis d'office : les 4 tâches à prévoir (forfaits des pneus avant : roue, pneumatique,
+  // recyclage ; contrôle hayon) attendent l'estimation du technicien
+  await expect(blockers).toContainText('Temps estimé manquant : 4 tâches à prévoir');
   await expect(times.filter({ has: page.locator('option:checked', { hasText: 'Estimation' }) })).toHaveCount(
-    2,
+    4,
   );
   await expect(blockers).toContainText('Taille des pneus avant obligatoire (HS)');
   await expect(blockers).toContainText('Photo de l’étiquette contrôle hayon obligatoire (HS)');
@@ -119,7 +120,7 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   await expect(page.getByRole('button', { name: 'Photo du contrôle technique (déjà prise)' })).toBeVisible({
     timeout: 15_000,
   });
-  for (const index of [0, 1]) {
+  for (const index of [0, 1, 2, 3]) {
     await times.nth(index).selectOption('1h');
     await expect(times.nth(index)).toHaveValue('1h');
   }
