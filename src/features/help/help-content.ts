@@ -76,6 +76,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Sur l’OR, « Préparer le devis » reprend les travaux à prévoir, calcule la main d’œuvre au taux horaire et applique les forfaits. Ajoute pièces, main d’œuvre, texte et remises.',
       '« Envoyer au client (lien à signer) » prépare un lien : le client consulte et signe en ligne, le devis passe seul en « Accepté ».',
       'Devis accepté (en ligne, sur la borne ou au bureau) : l’OR d’origine passe « Facture à faire » ; « Créer l’OR avec les travaux acceptés » et choisis le technicien.',
+      'Devis envoyé resté sans réponse : le dernier jour travaillé du mois (samedi compris) à 8 h, la réception et la direction sont prévenues, et l’OR d’origine passe « Facture à faire » pour facturer le travail déjà fait. Le devis reste signable par le client.',
       'Travaux déjà faits avant le devis (diagnostic, contrôle) : dès que le devis est accepté, choisis pour chaque ligne « Facturer » (facture séparée émise tout de suite, prix modifiable) ou « Offrir » (visible sur la facture avec 100 % de remise). Un bandeau orange reste sur l’OR tant que ce n’est pas fait.',
     ],
   },
@@ -163,7 +164,7 @@ export const FAQ: HelpQuestion[] = [
   {
     question: 'Quelles notifications je reçois sur mon téléphone ?',
     answer:
-      'Bureau : chaque alerte de la cloche qui demande une action (devis accepté ou refusé, travaux avant devis, OR en retard, factures en retard, stock bas, demande de rendez-vous, borne bloquée…). La nuit (21 h - 7 h), elles attendent 7 h, sauf la réponse d’un client à un devis. Direction : les demandes de congé. Technicien : OR confié, modifié ou rouvert, et réponse à sa demande de congé.',
+      'Bureau : chaque alerte de la cloche qui demande une action (devis accepté ou refusé, devis sans réponse en fin de mois, travaux avant devis, OR en retard, factures en retard, stock bas, demande de rendez-vous, borne bloquée…). La nuit (21 h - 7 h), elles attendent 7 h, sauf la réponse d’un client à un devis. Direction : les demandes de congé. Technicien : OR confié, modifié ou rouvert, et réponse à sa demande de congé.',
   },
   {
     question: 'Je ne reçois pas les notifications',
