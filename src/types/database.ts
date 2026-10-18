@@ -6729,6 +6729,7 @@ export type Database = {
       is_migration_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_office: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_system_context: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_tailgate_check_line: { Args: { p_description: string; p_package_id: string }; Returns: boolean };
       is_valid_siret: { Args: { p_siret: string }; Returns: boolean };
       issue_invoice: { Args: { p_invoice_id: string }; Returns: string };
       keeps_standard_time: { Args: { p_description: string }; Returns: boolean };
