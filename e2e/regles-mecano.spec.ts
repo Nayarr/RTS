@@ -147,7 +147,7 @@ test('fiche de contrôle sur téléphone : photo à droite de OK / HS, échéanc
   }
 
   const ct = await page.getByLabel('Prochain contrôle technique').boundingBox();
-  const tailgate = await page.getByLabel('Prochain contrôle hayon').boundingBox();
+  const tailgate = await page.getByLabel('Prochain contrôle hayon : mois').boundingBox();
   expect(tailgate?.x).toBe(ct?.x);
   expect(tailgate?.y ?? 0).toBeGreaterThan((ct?.y ?? 0) + (ct?.height ?? 0));
   // Photo du contrôle technique : sur la ligne de sa date, à droite

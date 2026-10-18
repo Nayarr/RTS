@@ -1,13 +1,13 @@
 import { assertEquals, assertMatch } from '@std/assert';
 import { inspectionReadingPrompt, validPlate, validVin } from './inspection-reading.ts';
-import { addMonths, nextDueDate, readingPrompt, validDate } from './reading.ts';
+import { addMonthsToMonth, nextDueMonth, tailgateReadingPrompt, validDate, validMonth } from './reading.ts';
 import { checkedLicense, licenseReadingPrompt } from './license-reading.ts';
 import { checkedRegistration, registrationReadingPrompt } from './registration-reading.ts';
 
 const TODAY = '2026-10-02';
-const reading = (next: string, last: string) => ({
-  next_due_date: next,
-  last_control_date: last,
+const reading = (due: string, last: string) => ({
+  due_month: due,
+  last_control_month: last,
   label_text: '',
   confidence: 'haute' as const,
 });
@@ -22,22 +22,37 @@ Deno.test('dates : seules les vraies dates plausibles sont gardées', () => {
   assertEquals(validDate('', TODAY), null);
 });
 
-Deno.test('ajout de mois : reste sur un jour qui existe', () => {
-  assertEquals(addMonths('2026-04-15', 6), '2026-10-15');
-  assertEquals(addMonths('2026-08-31', 6), '2027-02-28');
-  assertEquals(addMonths('2027-08-31', 6), '2028-02-29');
+Deno.test('hayon : mois MMAAAA réel et plausible, sinon rien', () => {
+  assertEquals(validMonth('052025', TODAY), '052025');
+  assertEquals(validMonth(' 122026 ', TODAY), '122026');
+  assertEquals(validMonth('132025', TODAY), null);
+  assertEquals(validMonth('002025', TODAY), null);
+  assertEquals(validMonth('05/2025', TODAY), null);
+  assertEquals(validMonth('051999', TODAY), null);
+  assertEquals(validMonth('052045', TODAY), null);
+  assertEquals(validMonth('', TODAY), null);
 });
 
-Deno.test('échéance : lue sur l’étiquette, sinon dernier contrôle + 6 mois', () => {
-  assertEquals(nextDueDate(reading('2027-03-31', '2026-09-01'), TODAY), '2027-03-31');
-  assertEquals(nextDueDate(reading('', '2026-09-01'), TODAY), '2027-03-01');
-  assertEquals(nextDueDate(reading('illisible', ''), TODAY), null);
+Deno.test('hayon : ajout de mois sur un mois MMAAAA', () => {
+  assertEquals(addMonthsToMonth('052025', 6), '112025');
+  assertEquals(addMonthsToMonth('092025', 6), '032026');
+  assertEquals(addMonthsToMonth('122025', 12), '122026');
 });
 
-Deno.test('consigne : date du jour et format attendu', () => {
-  const prompt = readingPrompt(TODAY);
+Deno.test('hayon : échéance lue sur l’étiquette, sinon dernier contrôle + 6 mois', () => {
+  assertEquals(nextDueMonth(reading('052025', '112024'), TODAY), '052025');
+  assertEquals(nextDueMonth(reading('', '112024'), TODAY), '052025');
+  assertEquals(nextDueMonth(reading('illisible', ''), TODAY), null);
+});
+
+Deno.test('hayon : consigne pour les disques poinçonnés, sortie MMAAAA sans le jour', () => {
+  const prompt = tailgateReadingPrompt(TODAY);
   assertEquals(prompt.includes('Nous sommes le 2026-10-02.'), true);
-  assertEquals(prompt.includes('AAAA-MM-JJ'), true);
+  assertEquals(prompt.includes('MMAAAA'), true);
+  assertEquals(prompt.includes('PERCÉE'), true);
+  assertEquals(prompt.includes('Prochain contrôle le'), true);
+  assertEquals(prompt.includes('Date de fin'), true);
+  assertEquals(prompt.includes('ignore le jour'), true);
 });
 
 Deno.test('contrôle technique : VIN de 17 caractères sans I, O ni Q', () => {

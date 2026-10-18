@@ -108,7 +108,8 @@ const vehicle = (overrides: Partial<VehicleOverview> = {}): VehicleOverview =>
     first_registration_date: null,
     // Relatives à aujourd'hui : l'écran compte les jours depuis la date du jour
     ct_due_date: addDays(todayIso(), 12),
-    tailgate_due_date: addDays(todayIso(), -8),
+    // Hayon : mois seulement (1er du mois), ici il y a deux mois : dépassé
+    tailgate_due_date: `${addDays(todayIso(), -62).slice(0, 7)}-01`,
     registration_doc_file_id: null,
     notes: null,
     created_at: '2025-01-01T00:00:00Z',
@@ -369,7 +370,7 @@ describe('clients et véhicules : écrans', () => {
     renderAs('reception', '/vehicules/v1', <VehiclePage />, '/vehicules/:id');
     expect(await screen.findByRole('heading', { name: /GH-512-RT/ })).toBeInTheDocument();
     expect(screen.getByText(/Dernier km : 184\s320 km/)).toBeInTheDocument();
-    expect(screen.getByText('Dépassé (8 j)')).toBeInTheDocument();
+    expect(screen.getByText(/^Dépassé \(\d+ j\)$/)).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /Kilométrage : de 150\s000 à 184\s320 km/ })).toBeInTheDocument();
     const history = screen.getByRole('region', { name: /Historique/ });
     expect(
@@ -379,15 +380,16 @@ describe('clients et véhicules : écrans', () => {
     ).toEqual(['/or/ro2', '/or/ro1']);
     expect(within(history).getByText('Vidange moteur · Filtre à huile')).toBeInTheDocument();
 
-    await userEvent.clear(screen.getByLabelText('Contrôle hayon'));
-    const nextYear = addDays(todayIso(), 365);
-    await userEvent.type(screen.getByLabelText('Contrôle hayon'), nextYear);
+    // Hayon : mois et année l'an prochain
+    const nextYear = String(new Date().getFullYear() + 1);
+    await userEvent.selectOptions(screen.getByLabelText('Contrôle hayon : mois'), '06');
+    await userEvent.selectOptions(screen.getByLabelText('Contrôle hayon : année'), nextYear);
     expect(screen.getByText('OK')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() =>
       expect(updateVehicle).toHaveBeenCalledWith(
         'v1',
-        expect.objectContaining({ tailgate_due_date: nextYear }),
+        expect.objectContaining({ tailgate_due_date: `${nextYear}-06-01` }),
       ),
     );
 
@@ -405,14 +407,15 @@ describe('clients et véhicules : écrans', () => {
         client_id: 'c1',
         client_name: 'Transports Martin',
         kind: 'tailgate',
-        due_date: '2020-09-20',
+        // Hayon : la vue donne la fin du mois d'échéance
+        due_date: '2020-09-30',
         days_left: -8,
       },
     ]);
     renderAs('reception', '/vehicules/echeances', <DeadlinesPage />, '/vehicules/echeances');
     const item = await screen.findByRole('row', { name: /GH-512-RT/ });
     expect(within(item).getByRole('link', { name: 'GH-512-RT' })).toHaveAttribute('href', '/vehicules/v1');
-    expect(item).toHaveTextContent('Contrôle hayon20/09/2020Transports Martin');
+    expect(item).toHaveTextContent('Contrôle hayon09/2020Transports Martin');
     expect(item).toHaveTextContent(/Dépassé/);
   });
 

@@ -102,9 +102,10 @@ export async function fetchLabelScanEnabled(): Promise<boolean> {
 }
 
 export interface TailgateLabelReading {
-  /** Prochaine échéance (lue, sinon dernier contrôle + 6 mois), ou null si rien de lisible. */
-  next_due_date: string | null;
-  last_control_date: string | null;
+  /** Mois de la prochaine échéance au format MMAAAA (lu, sinon dernier contrôle + 6 mois), ou null. */
+  due_month: string | null;
+  /** Mois du dernier contrôle (MMAAAA), ou null. */
+  last_control_month: string | null;
   label_text: string;
   confidence: 'haute' | 'moyenne' | 'faible';
 }

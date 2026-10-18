@@ -8,7 +8,7 @@ import { todayIso } from '@/features/repair-orders/schemas';
 import { usePagination } from '@/lib/use-pagination';
 import type { VehicleOverview } from './api';
 import { CustomersTabs } from './CustomersTabs';
-import { DEADLINE_BADGE_CLASS, deadlineStatus } from './domain';
+import { DEADLINE_BADGE_CLASS, deadlineStatus, tailgateDueEnd } from './domain';
 import { useVehicles } from './hooks';
 
 const PAGE_SIZE = 20;
@@ -29,7 +29,7 @@ const matches = (vehicle: VehicleOverview, search: string) => {
 function nextDeadline(vehicle: VehicleOverview, today: string) {
   const items = [
     { kind: 'CT', status: deadlineStatus(vehicle.ct_due_date, today) },
-    { kind: 'Hayon', status: deadlineStatus(vehicle.tailgate_due_date, today) },
+    { kind: 'Hayon', status: deadlineStatus(tailgateDueEnd(vehicle.tailgate_due_date), today) },
     { kind: 'Antipollution', status: deadlineStatus(vehicle.antipollution_due_date, today) },
   ].flatMap(({ kind, status }) => (status ? [{ kind, ...status }] : []));
   return items.sort((a, b) => a.days - b.days)[0] ?? null;

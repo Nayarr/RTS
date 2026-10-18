@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Link, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarDays, Download, ImageIcon, Plus } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { toast } from 'sonner';
+import { MonthYearField } from '@/components/MonthYearField';
 import { FormField } from '@/components/FormField';
 import { PdfPreviewDialog, type PdfFile } from '@/components/PdfPreviewDialog';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
   DEADLINE_LABELS,
   DEADLINE_BADGE_CLASS,
   deadlineStatus,
+  tailgateDueEnd,
   mileageHistory,
   vehicleFromForm,
   vehicleSchema,
@@ -284,8 +286,32 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                     : []),
                 ] as const
               ).map(([kind, field, value]) => {
-                const status = deadlineStatus(value, today);
-                return (
+                // Hayon : mois et année seulement, valable jusqu'à la fin du mois
+                const status = deadlineStatus(kind === 'tailgate' ? tailgateDueEnd(value) : value, today);
+                return kind === 'tailgate' ? (
+                  <div key={kind} className="row items-end gap-2">
+                    <Controller
+                      control={control}
+                      name="tailgate_due_date"
+                      render={({ field: month }) => (
+                        <MonthYearField
+                          id="vehicle-tailgate"
+                          className="grow"
+                          label={DEADLINE_LABELS.tailgate}
+                          value={month.value}
+                          onChange={month.onChange}
+                        />
+                      )}
+                    />
+                    {status ? (
+                      <span className={`badge mb-1.5 shrink-0 ${DEADLINE_BADGE_CLASS[status.tone]}`}>
+                        {status.label}
+                      </span>
+                    ) : (
+                      <span className="muted mb-2">-</span>
+                    )}
+                  </div>
+                ) : (
                   <div key={kind} className="field">
                     <Label htmlFor={`vehicle-${kind}`}>{DEADLINE_LABELS[kind]}</Label>
                     <div className="row gap-2">

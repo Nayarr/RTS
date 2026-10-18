@@ -45,7 +45,8 @@ BTP, déménagement), plus quelques particuliers.
 - Contrats d'entretien : un client paie un forfait mensuel ; ses véhicules ont un entretien tous
   les X mois ou X km.
 - Échéances suivies par véhicule : contrôle technique (CT, annuel pour un PL) et contrôle du
-  hayon élévateur.
+  hayon élévateur. Le hayon n'a qu'un mois et une année (date enregistrée au 1er du mois) : il
+  est valable jusqu'à la fin de ce mois ; dis « fin mai 2026 », jamais un jour précis.
 - Équipe : techniciens (mécaniciens), réception, direction. Pointage à la borne (arrivée,
   départ) avec retard, heures supplémentaires et anomalies ; congés (payés, maladie, formation,
   autre) à valider par la direction ; un lundi de repos sur deux selon le groupe A ou B.

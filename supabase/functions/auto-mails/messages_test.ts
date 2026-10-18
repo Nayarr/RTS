@@ -50,28 +50,44 @@ Deno.test('confirmation d’un rendez-vous demandé en ligne', () => {
   assertStringIncludes(mail!.text, '(contrôle technique)');
 });
 
-Deno.test('échéance : date, lien de prise de rendez-vous', () => {
+Deno.test('échéance : date, lien de prise de rendez-vous ; hayon au mois', () => {
   const mail = buildAutoMail(
     {
       key: 'k',
-      kind: 'tailgate',
+      kind: 'ct',
       to: 'client@exemple.fr',
       plate: 'AB-123-CD',
-      reason: 'Contrôle hayon',
+      reason: 'Contrôle technique',
       due_date: '2026-10-16',
       token: 'abc',
     },
     context,
   );
-  assertEquals(mail?.subject, 'Contrôle hayon de AB-123-CD : échéance le 16/10/2026');
+  assertEquals(mail?.subject, 'Contrôle technique de AB-123-CD : échéance le 16/10/2026');
   assertStringIncludes(
     mail!.text,
-    'Le contrôle hayon de votre véhicule AB-123-CD arrive à échéance le 16/10/2026',
+    'Le contrôle technique de votre véhicule AB-123-CD arrive à échéance le 16/10/2026',
   );
   assertEquals(mail?.link, {
     label: 'Prendre rendez-vous',
     url: 'https://atelier.exemple.fr/rdv/abc',
   });
+
+  // Hayon : seulement le mois et l'année (valable jusqu'à la fin du mois)
+  const tailgate = buildAutoMail(
+    {
+      key: 'k2',
+      kind: 'tailgate',
+      to: 'client@exemple.fr',
+      plate: 'AB-123-CD',
+      reason: 'Contrôle hayon',
+      due_date: '2026-05-01',
+      token: 'abc',
+    },
+    context,
+  );
+  assertEquals(tailgate?.subject, 'Contrôle hayon de AB-123-CD : échéance fin mai 2026');
+  assertStringIncludes(tailgate!.text, 'arrive à échéance fin mai 2026 : il doit être refait.');
 });
 
 Deno.test('fin de location : date, reconduction tacite annoncée', () => {

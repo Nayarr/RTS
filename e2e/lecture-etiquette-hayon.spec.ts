@@ -89,8 +89,9 @@ test('lecture activée : la photo de l’étiquette ouvre la lecture ; sans clé
     await expect(
       page.getByRole('button', { name: 'Photo de l’étiquette « Étiquette contrôle hayon » (déjà prise)' }),
     ).toBeVisible();
-    // La date se saisit dans les échéances du véhicule
-    await expect(page.getByLabel('Prochain contrôle hayon')).toBeEditable();
+    // Le mois et l'année se choisissent dans les échéances du véhicule
+    await expect(page.getByLabel('Prochain contrôle hayon : mois')).toBeEditable();
+    await expect(page.getByLabel('Prochain contrôle hayon : année')).toBeEditable();
   } finally {
     await setLabelScan(false);
   }

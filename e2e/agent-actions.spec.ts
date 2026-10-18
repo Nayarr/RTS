@@ -54,7 +54,7 @@ test('documentation technique : un PDF ajouté est découpé en passages, puis r
   await expect(row).toHaveCount(0);
 });
 
-test('fiche OR du mécanicien : aide au diagnostic proposée', async ({ page }, testInfo) => {
+test('fiche OR du mécanicien : aide au diagnostic masquée pour le moment', async ({ page }, testInfo) => {
   const plate = `DG${uid(testInfo.project.name)}`;
   const reception = client();
   await reception.auth.signInWithPassword({ email: 'reception@rts.local', password: PASSWORD });
@@ -74,9 +74,6 @@ test('fiche OR du mécanicien : aide au diagnostic proposée', async ({ page }, 
 
   await loginAs(page, 'alice@rts.local');
   await page.getByRole('link', { name: new RegExp(plate) }).click();
-  await page.getByRole('button', { name: 'Aide au diagnostic' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Aide au diagnostic' });
-  await expect(dialog.getByRole('button', { name: /Demander des pistes/ })).toBeDisabled();
-  await dialog.getByLabel('Symptômes').fill('Voyant de pression d’huile allumé au ralenti');
-  await expect(dialog.getByRole('button', { name: /Demander des pistes/ })).toBeEnabled();
+  await expect(page.getByRole('heading', { name: plate, level: 1 })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aide au diagnostic' })).toHaveCount(0);
 });
