@@ -64,9 +64,9 @@ select is((public.pre_quote_work('50000000-0000-0000-0000-000000000044') ->> 'fi
           '1 h d''expertise : pas de règle imposée');
 select is((public.pre_quote_work('50000000-0000-0000-0000-000000000044') -> 'lines' -> 0 ->> 'suggested_price')::numeric,
           90.00, 'Prix proposé : 1 h × 90 €/h');
-select ok((public.settle_pre_quote_work('50000000-0000-0000-0000-000000000044',
-  '[{"line_id": "51000000-0000-0000-0000-000000000441", "decision": "offered", "price": 90}]') ->> 'invoice_id') is null,
-  'Le bureau choisit d''offrir l''expertise : aucune facture');
+select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000044',
+  '[{"line_id": "51000000-0000-0000-0000-000000000441", "decision": "offered", "price": 90}]') as settled_44 \gset
+select is((select total_ttc from public.invoices where id = (:'settled_44'::jsonb ->> 'invoice_id')::uuid), 0.00::numeric, 'Le bureau choisit d''offrir l''expertise : facture à 0 € avec le geste commercial');
 
 select * from finish();
 rollback;

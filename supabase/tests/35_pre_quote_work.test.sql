@@ -79,13 +79,15 @@ select is(public.pre_quote_work('50000000-0000-0000-0000-000000000001'), null, '
 select throws_ok($$ select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000001', '[]') $$,
   'P0001', null, 'Pas de seconde décision');
 
--- ---------------------------------------------------------------- Tout offrir : pas de facture
+-- ---------------------------------------------------------------- Tout offrir : facture à 0 € quand même
 select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000002',
   '[{"line_id": "51000000-0000-0000-0000-000000000005", "decision": "offered", "price": 45}]') as offered \gset
-select ok((:'offered'::jsonb ->> 'invoice_id') is null
-          and (select pre_quote_work_settled_at is not null from public.repair_orders
-               where id = '50000000-0000-0000-0000-000000000002'),
-          'Tout offert : décision notée, aucune facture');
+select results_eq(
+  format($$ select i.status::text, i.total_ttc, l.unit_price, l.discount_percent
+            from public.invoices i join public.invoice_lines l on l.invoice_id = i.id where i.id = %L $$,
+         :'offered'::jsonb ->> 'invoice_id'),
+  $$ values ('issued'::text, 0.00::numeric, 45.00::numeric, 100.00::numeric) $$,
+  'Tout offert : facture émise à 0 €, le travail offert y figure avec son prix et 100 % de remise');
 
 -- ---------------------------------------------------------------- Droits
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');  -- technicien

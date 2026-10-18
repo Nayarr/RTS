@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Enums, Tables, TablesInsert, TablesUpdate } from '@/types/database';
+import type { SignatureRequest } from '@/features/signature/api';
 
 export type QuoteStatus = Enums<'quote_status'>;
 export type QuoteSection = Enums<'quote_section'>;
@@ -165,6 +166,27 @@ export async function shareQuote(id: string): Promise<string> {
   const { data, error } = await supabase.rpc('share_quote', { p_quote_id: id });
   if (error) throw error;
   return data;
+}
+
+/** Copie du devis en brouillon (mêmes client, véhicule, lignes et OR) ; renvoie son identifiant. */
+export async function duplicateQuote(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('duplicate_quote', { p_quote_id: id });
+  if (error) throw error;
+  return data;
+}
+
+/** Bureau : affiche le devis sur la borne pendant 1 minute pour la signature du client présent. */
+export async function requestQuoteKioskSignature(id: string) {
+  const { data, error } = await supabase.rpc('request_quote_signature', { p_quote_id: id });
+  if (error) throw error;
+  return data as unknown as SignatureRequest;
+}
+
+/** Dernière demande de signature du devis sur la borne, ou null. */
+export async function fetchQuoteSignatureRequest(id: string) {
+  const { data, error } = await supabase.rpc('quote_signature_request', { p_quote_id: id });
+  if (error) throw error;
+  return (data as unknown as SignatureRequest | null) ?? null;
 }
 
 export async function deleteQuote(id: string) {

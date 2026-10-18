@@ -103,9 +103,14 @@ export function invoiceShareMessage(
       `Vous pouvez la consulter ici : ${link}\n\n` +
       'Merci de bien vouloir procéder à son règlement dans les meilleurs délais. Si le paiement a été effectué ' +
       `entre-temps, merci de ne pas tenir compte de ce message.\n\nCordialement,\n${signature}`
-    : `Bonjour,\n\nVeuillez trouver ci-dessous le lien vers votre facture ${number} d'un montant de ` +
-      `${amount(invoice.total_ttc)} TTC (véhicule ${vehicle}), à régler avant le ${frDate(invoice.due_date)} :\n\n` +
-      `${link}\n\nCordialement,\n${signature}`;
+    : invoice.total_ttc <= 0
+      ? // Tout offert : facture à 0 €, le geste commercial est détaillé dans la facture
+        `Bonjour,\n\nVeuillez trouver ci-dessous le lien vers votre facture ${number} (véhicule ${vehicle}). ` +
+        `Les travaux indiqués vous sont offerts à titre commercial : il n'y a rien à régler.\n\n` +
+        `${link}\n\nCordialement,\n${signature}`
+      : `Bonjour,\n\nVeuillez trouver ci-dessous le lien vers votre facture ${number} d'un montant de ` +
+        `${amount(invoice.total_ttc)} TTC (véhicule ${vehicle}), à régler avant le ${frDate(invoice.due_date)} :\n\n` +
+        `${link}\n\nCordialement,\n${signature}`;
   return {
     subject: `${reminder ? 'Relance · ' : ''}Facture ${number} · ${company.legal_name}`,
     body,

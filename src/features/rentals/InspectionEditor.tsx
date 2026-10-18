@@ -224,15 +224,23 @@ export function InspectionEditor({
     setRentalPhoto(rental.id, phase, slot, fileId),
   );
   const removePhoto = useRentalMutation((id: string) => deleteRentalPhoto(id));
-  const save = useRentalMutation((patch: Parameters<typeof saveInspection>[2]) =>
-    saveInspection(rental.id, phase, {
+  // Saisie rapide (km puis carburant) : chaque envoi garde les valeurs déjà saisies
+  // et part après le précédent, pour qu'aucun n'efface l'autre.
+  const sent = useRef<Partial<Parameters<typeof saveInspection>[2]>>({});
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const save = useRentalMutation((patch: Parameters<typeof saveInspection>[2]) => {
+    sent.current = { ...sent.current, ...patch };
+    const values = {
       mileage: inspection?.mileage ?? null,
       fuel_eighths: inspection?.fuel_eighths ?? null,
       equipment: inspection?.equipment ?? (phase === 'departure' ? DEFAULT_EQUIPMENT : []),
       clean: inspection?.clean ?? null,
-      ...patch,
-    }),
-  );
+      ...sent.current,
+    };
+    const run = queue.current.catch(() => undefined).then(() => saveInspection(rental.id, phase, values));
+    queue.current = run;
+    return run;
+  });
   const damage = useRentalMutation(addDamage, 'Dommage noté');
   const removeDamage = useRentalMutation(deleteDamage);
 

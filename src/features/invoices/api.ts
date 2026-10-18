@@ -160,6 +160,13 @@ export async function buildInvoiceDraft(repairOrderIds: string[]): Promise<strin
   return data;
 }
 
+/** Copie de la facture en brouillon, rattachée aux mêmes OR ; renvoie son identifiant. */
+export async function duplicateInvoice(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('duplicate_invoice', { p_invoice_id: id });
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteInvoiceDraft(id: string) {
   const { data, error } = await supabase.from('invoices').delete().eq('id', id).select('id');
   if (error) throw error;

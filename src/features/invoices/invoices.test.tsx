@@ -217,6 +217,10 @@ describe('règles de facturation', () => {
     expect(share.body).toContain(
       "d'un montant de 720,00 € TTC (véhicule GH-512-RT), à régler avant le 22/09/2026 :",
     );
+    // Tout offert : facture à 0 €, rien à régler
+    const free = invoiceShareMessage({ ...sent, total_ttc: 0 }, 'https://app/d/x', company, false);
+    expect(free.body).toContain("vous sont offerts à titre commercial : il n'y a rien à régler.");
+    expect(free.body).not.toContain('à régler avant');
     const reminder = invoiceShareMessage(sent, 'https://app/d/x', company, true);
     expect(reminder.subject).toBe('Relance · Facture F11887 · RAPID TRUCK SERVICE');
     expect(reminder.body).toContain(

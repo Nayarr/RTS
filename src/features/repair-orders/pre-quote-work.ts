@@ -2,8 +2,8 @@ import { supabase } from '@/lib/supabase';
 
 /**
  * Travaux réalisés avant le devis (expertise : diagnostic, contrôle…) : une fois le devis
- * accepté, le bureau décide pour chaque ligne de la facturer (facture séparée émise tout de
- * suite) ou de l'offrir (geste commercial, visible sur la facture avec 100 % de remise).
+ * accepté, le bureau décide pour chaque ligne de la facturer ou de l'offrir (geste commercial,
+ * visible sur la facture avec 100 % de remise). La facture est émise et envoyée dans tous les cas.
  * Plus d'1 h d'expertise : facturée moins 1 h, la première heure est offerte d'office.
  */
 export type PreQuoteDecision = 'billed' | 'offered';
@@ -74,12 +74,11 @@ export async function settlePreQuoteWork(repairOrderId: string, choices: PreQuot
 /** Première ligne de la description (le reste est le détail du technicien). */
 export const lineTitle = (description: string) => description.split('\n')[0] ?? '';
 
-/** Message de confirmation après la décision. */
+/** Message de confirmation après la décision (la facture est émise dans tous les cas). */
 export function settlementMessage(result: PreQuoteResult) {
-  if (result.invoice_number) {
-    return result.offered > 0
-      ? `Facture ${result.invoice_number} émise (travaux offerts inclus avec 100 % de remise)`
-      : `Facture ${result.invoice_number} émise`;
-  }
-  return 'Travaux offerts enregistrés';
+  const number = result.invoice_number ?? '';
+  if (result.billed === 0) return `Facture ${number} émise à 0 € : tout est offert, mention sur la facture`;
+  return result.offered > 0
+    ? `Facture ${number} émise (travaux offerts inclus avec 100 % de remise)`
+    : `Facture ${number} émise`;
 }

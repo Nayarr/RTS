@@ -220,6 +220,13 @@ export async function updateRepairOrder(id: string, patch: TablesUpdate<'repair_
   if (!data.length) throw new Error('Modification non autorisée');
 }
 
+/** Copie de l'OR (mêmes véhicule, client et tâches à faire, non assigné) ; renvoie son identifiant. */
+export async function duplicateRepairOrder(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('duplicate_repair_order', { p_repair_order_id: id });
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteRepairOrder(id: string) {
   const { data, error } = await supabase.from('repair_orders').delete().eq('id', id).select('id');
   if (error) throw error;

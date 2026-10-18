@@ -4561,6 +4561,7 @@ export type Database = {
           expires_at: string;
           id: string;
           public_token: string | null;
+          quote_id: string | null;
           rental_id: string | null;
           repair_order_id: string | null;
           signature_file_id: string | null;
@@ -4576,6 +4577,7 @@ export type Database = {
           expires_at: string;
           id?: string;
           public_token?: string | null;
+          quote_id?: string | null;
           rental_id?: string | null;
           repair_order_id?: string | null;
           signature_file_id?: string | null;
@@ -4590,6 +4592,7 @@ export type Database = {
           expires_at?: string;
           id?: string;
           public_token?: string | null;
+          quote_id?: string | null;
           rental_id?: string | null;
           repair_order_id?: string | null;
           signature_file_id?: string | null;
@@ -4603,6 +4606,27 @@ export type Database = {
             columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_quote_id_fkey';
+            columns: ['quote_id'];
+            isOneToOne: false;
+            referencedRelation: 'quotes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_quote_id_fkey';
+            columns: ['quote_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_quote_totals';
+            referencedColumns: ['quote_id'];
+          },
+          {
+            foreignKeyName: 'signature_requests_quote_id_fkey';
+            columns: ['quote_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_quotes_overview';
             referencedColumns: ['id'];
           },
           {
@@ -6352,6 +6376,14 @@ export type Database = {
         Returns: string;
       };
       apply_package_keywords: { Args: { p_repair_order_id: string }; Returns: string[] };
+      apply_quote_kiosk_signature: {
+        Args: {
+          p_request: Database['public']['Tables']['signature_requests']['Row'];
+          p_signature_file_id: string;
+          p_signer_name: string;
+        };
+        Returns: undefined;
+      };
       apply_rental_signature: {
         Args: {
           p_request: Database['public']['Tables']['signature_requests']['Row'];
@@ -6550,7 +6582,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      create_repair_order_from_appointment: { Args: { p_appointment_id: string }; Returns: string };
+      create_repair_order_from_appointment: {
+        Args: { p_appointment_id: string; p_inspection_required?: boolean };
+        Returns: string;
+      };
       create_repair_order_from_quote: {
         Args: {
           p_inspection_required?: boolean;
@@ -6596,6 +6631,9 @@ export type Database = {
       };
       delete_leave_request: { Args: { p_id: string }; Returns: undefined };
       dispatch_push: { Args: Record<PropertyKey, never>; Returns: number };
+      duplicate_invoice: { Args: { p_invoice_id: string }; Returns: string };
+      duplicate_quote: { Args: { p_quote_id: string }; Returns: string };
+      duplicate_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
       ensure_client_and_vehicle: {
         Args: {
           p_client_name: string;
@@ -6869,6 +6907,7 @@ export type Database = {
         Args: { p_body?: string; p_link?: string; p_profile_ids: string[]; p_tag?: string; p_title: string };
         Returns: number;
       };
+      quote_signature_request: { Args: { p_quote_id: string }; Returns: Json };
       record_auto_mail: {
         Args: {
           p_appointment_id: string;
@@ -6941,6 +6980,7 @@ export type Database = {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };
         Returns: string;
       };
+      request_quote_signature: { Args: { p_quote_id: string }; Returns: Json };
       request_rental_signature: { Args: { p_rental_id: string }; Returns: Json };
       request_repair_order_signature: {
         Args: { p_channel: Database['public']['Enums']['signature_channel']; p_repair_order_id: string };

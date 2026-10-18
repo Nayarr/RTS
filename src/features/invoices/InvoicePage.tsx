@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ArrowLeft, FileDown, FileMinus, Info, Lock, RotateCcw, Send, Trash2, Wallet } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -36,6 +36,8 @@ import { balanceHt, issueBlockers, issueWarnings, mainVatRate, PAYMENT_METHODS }
 import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
+import { DuplicateButton } from '@/components/DuplicateButton';
+import { duplicateInvoice } from './api';
 
 type Dialog = 'issue' | 'payment' | 'credit' | 'rebuild' | 'delete' | null;
 
@@ -104,6 +106,9 @@ function IssuedPanel({
   onDialog: (d: Dialog) => void;
   pdf: ReturnType<typeof useInvoicePdf>;
 }) {
+  // « ?envoyer=1 » : facture qui vient d'être émise (travaux avant devis), envoyée au client tout de suite
+  const [params, setParams] = useSearchParams();
+  const autoSend = params.get('envoyer') === '1';
   const { invoice, payments, creditNotes } = detail;
   const balance = invoice.balance_due ?? 0;
   const credited = invoice.credited_ttc ?? 0;
@@ -131,7 +136,11 @@ function IssuedPanel({
           >
             <FileDown /> PDF de la facture
           </Button>
-          <ShareInvoiceButtons invoice={invoice} />
+          <ShareInvoiceButtons
+            invoice={invoice}
+            autoSend={autoSend}
+            onAutoSendDone={() => setParams({}, { replace: true })}
+          />
           {credited < invoice.total_ttc - 0.01 && (
             <Button variant="outline" className="w-full" onClick={() => onDialog('credit')}>
               <FileMinus /> Générer un avoir
@@ -299,13 +308,21 @@ export function InvoicePage() {
           </>
         }
         actions={
-          singleOrder && (
-            <Button variant="ghost" asChild>
-              <Link to={`/or/${singleOrder}`}>
-                <ArrowLeft /> Retour à l’OR {invoice.repair_order_numbers[0] ?? ''}
-              </Link>
-            </Button>
-          )
+          <>
+            {singleOrder && (
+              <Button variant="ghost" asChild>
+                <Link to={`/or/${singleOrder}`}>
+                  <ArrowLeft /> Retour à l’OR {invoice.repair_order_numbers[0] ?? ''}
+                </Link>
+              </Button>
+            )}
+            <DuplicateButton
+              label="Dupliquer la facture"
+              duplicate={() => duplicateInvoice(invoice.id)}
+              path={(copy) => `/factures/${copy}`}
+              success="Facture dupliquée en brouillon"
+            />
+          </>
         }
       />
 

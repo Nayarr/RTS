@@ -182,6 +182,23 @@ describe('signature : borne', () => {
     expect(await screen.findByText('Merci, votre signature est enregistrée.')).toBeInTheDocument();
   });
 
+  it('devis à signer : titre du devis, travaux et total TTC', async () => {
+    vi.mocked(fetchKioskPendingSignature).mockResolvedValue({
+      ...pending,
+      kind: 'quote',
+      number: 'DV00042',
+      total_ttc: 1234.5,
+      requested_work: 'Remplacement plaquettes',
+    });
+    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
+    const dialog = await screen.findByRole('dialog', { name: 'Signature du devis DV00042' });
+    expect(
+      within(dialog).getByText('En signant, vous acceptez ce devis et les travaux ci-dessous.'),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText('Remplacement plaquettes')).toBeInTheDocument();
+    expect(within(dialog).getByText(/1\s234,50\s€/)).toBeInTheDocument();
+  });
+
   it('rien à signer : pas de fenêtre', async () => {
     vi.mocked(fetchKioskPendingSignature).mockResolvedValue(null);
     renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);

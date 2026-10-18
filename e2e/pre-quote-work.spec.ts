@@ -89,12 +89,16 @@ test('devis accepté : le bureau facture le diagnostic et offre le contrôle', a
   await expect(dialog.getByLabel('Prix HT de « Diagnostic freinage »')).toHaveValue('45,00');
   await dialog.getByLabel('Prix HT de « Diagnostic freinage »').fill('80');
   await dialog.getByLabel('Décision pour « Contrôle géométrie »').selectOption('offered');
-  await dialog.getByRole('button', { name: 'Valider' }).click();
+  await dialog.getByRole('button', { name: 'Valider et envoyer la facture' }).click();
 
-  // Facture séparée émise et ouverte : ligne offerte visible avec 100 % de remise
+  // Facture émise et ouverte : ligne offerte visible avec 100 % de remise
   await expect(page.getByText(/Facture F\d+ émise \(travaux offerts inclus/)).toBeVisible();
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
   await expect(page.getByText('Contrôle géométrie · offert (geste commercial)')).toBeVisible();
+  // Envoi au client lancé tout seul (sans envoi par l'appli : message prêt, PDF de la facture)
+  const send = page.getByRole('dialog', { name: /^Envoyer la facture F\d+/ });
+  await expect(send).toBeVisible();
+  await send.getByRole('button', { name: 'Fermer' }).first().click();
 
   // L'OR de diagnostic est facturé, plus de bandeau
   await page.goto(`/or/${order.id}`);
@@ -102,7 +106,7 @@ test('devis accepté : le bureau facture le diagnostic et offre le contrôle', a
   await expect(page.getByRole('button', { name: 'Facturer / offrir ces travaux' })).toHaveCount(0);
 });
 
-test('« Plus tard » laisse le bandeau sur l’OR ; tout offrir ne crée pas de facture', async ({
+test('« Plus tard » laisse le bandeau sur l’OR ; tout offert : facture à 0 € envoyée quand même', async ({
   page,
 }, testInfo) => {
   const plate = `AO${String(Date.now()).slice(-6)}${testInfo.project.name.includes('mobile') ? 'M' : 'D'}`;
@@ -119,8 +123,13 @@ test('« Plus tard » laisse le bandeau sur l’OR ; tout offrir ne crée pas de
   await page.goto(`/or/${order.id}`);
   await page.getByRole('button', { name: 'Facturer / offrir ces travaux' }).click();
   await dialog.getByRole('button', { name: 'Tout offrir' }).click();
-  await dialog.getByRole('button', { name: 'Valider' }).click();
-  await expect(page.getByText('Travaux offerts enregistrés')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Valider et envoyer la facture' }).click();
+  await expect(page.getByText(/Facture F\d+ émise à 0 € : tout est offert/)).toBeVisible();
+  await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
+  await expect(page.getByText('Diagnostic freinage · offert (geste commercial)')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /^Envoyer la facture F\d+/ })).toBeVisible();
+
+  await page.goto(`/or/${order.id}`);
+  await expect(page.getByText('Facturé').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Facturer / offrir ces travaux' })).toHaveCount(0);
-  await expect(page).toHaveURL(new RegExp(`/or/${order.id}$`));
 });

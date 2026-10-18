@@ -96,7 +96,7 @@ export function QuotePage() {
     quote.sent_at && { tone: 's-blue', label: 'Envoyé au client', date: quote.sent_at },
     quote.accepted_at && {
       tone: 's-ok',
-      label: `Accepté${quote.accepted_by_name ? ` en ligne par ${quote.accepted_by_name}` : ''}`,
+      label: `Accepté${quote.accepted_by_name ? ` par ${quote.accepted_by_name}` : ''}`,
       date: quote.accepted_at,
     },
     quote.refused_at && { tone: 's-bad', label: 'Refusé', date: quote.refused_at },

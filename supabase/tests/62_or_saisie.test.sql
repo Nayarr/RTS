@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Saisie des OR : heures arrondies à l'heure supérieure au devis et à la facture, récapitulatif
--- des travaux sans « Fournitures et recyclage », contrôle hayon à 0,5 h par défaut
+-- des travaux sans « Fournitures et recyclage » ni pièces, contrôle hayon sans temps mis d'office
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -29,8 +29,8 @@ select ok((select count(*) from public.quote_lines where quote_id = :'quote' and
           'Le devis porte la ligne « Fournitures et recyclage »');
 select public.set_quote_response(:'quote', 'accepted');
 select public.create_repair_order_from_quote(:'quote', null) as ro \gset
-select is((select requested_work from public.repair_orders where id = :'ro'), 'Remplacement plaquettes
-Plaquettes', 'Travaux de l''OR : sans « Fournitures et recyclage »');
+select is((select requested_work from public.repair_orders where id = :'ro'), 'Remplacement plaquettes',
+          'Travaux de l''OR : ni « Fournitures et recyclage » ni pièces (elles restent dans les pièces de l''OR)');
 
 -- ---------------------------------------------------------------- Contrôle hayon
 insert into public.ro_lines (repair_order_id, kind, position, line_type, description)

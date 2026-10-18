@@ -23,6 +23,7 @@ import { fetchClientContact, updateClientContact } from '@/features/documents/cl
 import { formatPlate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useActiveTechnicians, useKnownVehicle } from '@/features/repair-orders/hooks';
 import { NewClientFields } from '@/features/repair-orders/NewClientFields';
+import { InspectionRequiredToggle } from '@/features/repair-orders/InspectionRequiredToggle';
 import { useClientEntry } from '@/features/repair-orders/use-client-entry';
 import { fetchSettings } from '@/features/settings/api';
 import type { NewClientValues } from '@/features/customers/domain';
@@ -103,8 +104,9 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
       ),
     'Rendez-vous enregistré',
   );
+  const [inspectionRequired, setInspectionRequired] = useState(false);
   const convert = usePlanningMutation(
-    (id: string) => convertAppointment(id),
+    (id: string) => convertAppointment(id, inspectionRequired),
     'OR créé depuis le rendez-vous',
   );
   const cancel = usePlanningMutation((id: string) => cancelAppointment(id), 'Rendez-vous annulé');
@@ -268,6 +270,11 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
 
         {appointment && (
           <div className="flex flex-col gap-2 border-t pt-4">
+            <InspectionRequiredToggle
+              id="appointment-inspection-required"
+              checked={inspectionRequired}
+              onCheckedChange={setInspectionRequired}
+            />
             <Button
               variant="outline"
               disabled={convert.isPending}
