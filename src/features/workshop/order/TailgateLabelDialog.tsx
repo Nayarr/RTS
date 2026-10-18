@@ -16,9 +16,10 @@ import { monthFromLabel, monthLabel } from '@/lib/month';
 import { cn } from '@/lib/utils';
 import { readTailgateLabel, updateDeadlines } from '../api';
 import { tailgateVerdict } from '../domain';
+import { READING_FAILED, readingFailedMessage } from '@/lib/reading';
 
 const errorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : 'Lecture impossible : choisis le mois à la main';
+  error instanceof Error ? error.message : 'Enregistrement impossible : réessaie';
 
 /**
  * Lecture automatique de l'étiquette du contrôle hayon qui vient d'être photographiée : date
@@ -80,7 +81,7 @@ export function TailgateLabelDialog({
         )}
         {reading.isError && (
           <p className="alert s-warn" role="alert">
-            {errorMessage(reading.error)}
+            {readingFailedMessage(reading.error)}
           </p>
         )}
         {reading.isSuccess && (
@@ -94,7 +95,9 @@ export function TailgateLabelDialog({
               </p>
             )}
             {!reading.data.due_month && (
-              <p className="err">Aucun mois trouvé sur la photo : choisis-le à la main.</p>
+              <p className="alert s-warn" role="alert">
+                {READING_FAILED}
+              </p>
             )}
             {reading.data.due_month && reading.data.confidence !== 'haute' && (
               <p className="alert s-warn">Lecture incertaine : vérifie le mois et l’année sur l’étiquette.</p>

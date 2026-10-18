@@ -11,6 +11,7 @@ import { fetchLabelScanEnabled } from '@/features/workshop/api';
 import { cn } from '@/lib/utils';
 import { readLicense, type LicenseReading } from './license-api';
 import { ALL_LICENSE_CATEGORIES, applyReading, type LicenseValues } from './license-domain';
+import { readingFailedMessage } from '@/lib/reading';
 
 type Side = 'recto' | 'verso';
 const SIDE_FIELD = { recto: 'recto_file_id', verso: 'verso_file_id' } as const;
@@ -159,7 +160,7 @@ export function LicenseEditor({
       {scanned && reading.isError && (
         <p className="alert s-warn" role="alert">
           <TriangleAlert className="i" />
-          <span>{reading.error instanceof Error ? reading.error.message : 'Lecture impossible'}</span>
+          <span>{readingFailedMessage(reading.error)}</span>
         </p>
       )}
       {scanned && readAutomatically && !reading.isFetching && (

@@ -74,9 +74,10 @@ describe('contrôle technique lu sur la photo', () => {
       confidence: 'faible',
     });
     renderDialog();
-    expect(
-      await screen.findByText('Date d’échéance non lue (vignette) : saisis-la à la main si besoin.'),
-    ).toBeInTheDocument();
+    // Rien de lu : « Lecture impossible », saisie à la main
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Lecture impossible : renseigne les informations à la main.',
+    );
     const vin = screen.getByLabelText('VIN · numéro de série (modifiable)');
     await userEvent.type(vin, 'vf6123');
     expect(screen.getByText('VIN : 17 caractères (lettres sauf I, O, Q, et chiffres)')).toBeInTheDocument();

@@ -16,9 +16,10 @@ import { Label } from '@/components/ui/label';
 import { formatDate, normalizeKey } from '@/features/repair-orders/constants';
 import { readTechnicalInspection, updateDeadlines } from '../api';
 import { isVin, normalizeVin } from '../domain';
+import { READING_FAILED, readingFailedMessage } from '@/lib/reading';
 
 const errorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : 'Lecture impossible : saisis la date à la main';
+  error instanceof Error ? error.message : 'Enregistrement impossible : réessaie';
 
 /**
  * Lecture automatique du contrôle technique qui vient d'être photographié : VIN proposé (et date du
@@ -83,7 +84,7 @@ export function TechnicalInspectionDialog({
         )}
         {reading.isError && (
           <p className="alert s-warn" role="alert">
-            {errorMessage(reading.error)}
+            {readingFailedMessage(reading.error)}
           </p>
         )}
         {reading.isSuccess && (
@@ -102,8 +103,14 @@ export function TechnicalInspectionDialog({
                 Contrôle du : <b>{formatDate(reading.data.last_control_date)}</b>
               </p>
             )}
-            {!reading.data.next_due_date && (
-              <p className="hint">Date d’échéance non lue (vignette) : saisis-la à la main si besoin.</p>
+            {!reading.data.next_due_date && !reading.data.vin ? (
+              <p className="alert s-warn" role="alert">
+                {READING_FAILED}
+              </p>
+            ) : (
+              !reading.data.next_due_date && (
+                <p className="hint">Date d’échéance non lue (vignette) : saisis-la à la main si besoin.</p>
+              )
             )}
             {(reading.data.next_due_date || reading.data.vin) && reading.data.confidence !== 'haute' && (
               <p className="alert s-warn">Lecture incertaine : vérifie sur le document.</p>
