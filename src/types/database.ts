@@ -3054,6 +3054,7 @@ export type Database = {
           created_at: string;
           id: string;
           link: string | null;
+          not_before: string | null;
           profile_id: string;
           sent_at: string | null;
           tag: string | null;
@@ -3065,6 +3066,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           link?: string | null;
+          not_before?: string | null;
           profile_id: string;
           sent_at?: string | null;
           tag?: string | null;
@@ -3076,6 +3078,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           link?: string | null;
+          not_before?: string | null;
           profile_id?: string;
           sent_at?: string | null;
           tag?: string | null;
@@ -6903,8 +6906,16 @@ export type Database = {
       purge_clock_photos: { Args: Record<PropertyKey, never>; Returns: number };
       purge_files: { Args: Record<PropertyKey, never>; Returns: number };
       purge_public_link_misses: { Args: Record<PropertyKey, never>; Returns: number };
+      push_quiet_until: { Args: { p_now?: string }; Returns: string };
       queue_push: {
-        Args: { p_body?: string; p_link?: string; p_profile_ids: string[]; p_tag?: string; p_title: string };
+        Args: {
+          p_body?: string;
+          p_link?: string;
+          p_not_before?: string;
+          p_profile_ids: string[];
+          p_tag?: string;
+          p_title: string;
+        };
         Returns: number;
       };
       quote_signature_request: { Args: { p_quote_id: string }; Returns: Json };

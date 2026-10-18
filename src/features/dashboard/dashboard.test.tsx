@@ -1,17 +1,20 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
 import type { Profile } from '@/features/auth/roles';
 import { fakeSession, renderRoutes } from '@/test/render';
-import { fetchOfficeDashboard, type OfficeDashboard } from './api';
+import { fetchOfficeDashboard, subscribeToDashboardChanges, type OfficeDashboard } from './api';
 import { OfficeDashboardPage } from './OfficeDashboardPage';
 
 vi.mock('@/features/auth/api', async (importOriginal) => ({
   ...(await importOriginal<typeof AuthApi>()),
   fetchProfile: vi.fn(),
 }));
-vi.mock('./api', () => ({ fetchOfficeDashboard: vi.fn() }));
+vi.mock('./api', () => ({
+  fetchOfficeDashboard: vi.fn(),
+  subscribeToDashboardChanges: vi.fn(() => () => {}),
+}));
 // Charge de travail : testée à part (WorkloadCard.test.tsx)
 vi.mock('./WorkloadCard', () => ({ WorkloadCard: () => null }));
 
@@ -53,6 +56,19 @@ const tile = (section: HTMLElement, label: string | RegExp) =>
 beforeEach(() => vi.mocked(fetchOfficeDashboard).mockResolvedValue(DASHBOARD));
 
 describe('tableau de bord du bureau', () => {
+  it('chiffres tenus à jour en direct, heure du dernier chargement affichée', async () => {
+    renderPage('reception');
+    expect(await screen.findByRole('status', { name: 'Fraîcheur des chiffres' })).toHaveTextContent(
+      /^À jour à \d{2}:\d{2}$/,
+    );
+    expect(subscribeToDashboardChanges).toHaveBeenCalled();
+    const calls = vi.mocked(fetchOfficeDashboard).mock.calls.length;
+    vi.mocked(subscribeToDashboardChanges).mock.calls[0]?.[0]();
+    await waitFor(() => expect(vi.mocked(fetchOfficeDashboard).mock.calls.length).toBeGreaterThan(calls), {
+      timeout: 3000,
+    });
+  });
+
   it('OR par statut et pièces à commander, avec liens vers la liste filtrée', async () => {
     renderPage('reception');
     const orders = await screen.findByRole('region', { name: 'Ordres de réparation' });

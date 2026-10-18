@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
 import {
   CalendarDays,
   ChevronRight,
@@ -21,7 +20,8 @@ import { useProfile } from '@/features/auth/useProfile';
 import { CATEGORY_META, CATEGORY_ORDER } from '@/features/repair-orders/constants';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
-import { fetchOfficeDashboard } from './api';
+import { freshnessLabel } from './freshness';
+import { useOfficeDashboard, useOnline } from './hooks';
 import { WorkloadCard } from './WorkloadCard';
 
 /** « Mercredi 30 septembre » */
@@ -92,12 +92,8 @@ function Todo({ to, icon, label, value, urgent, badge }: TodoProps) {
 /** Accueil du bureau : ce qui attend une action, charge de l'atelier, raccourcis. */
 export function OfficeDashboardPage() {
   const { data: profile } = useProfile();
-  const dashboard = useQuery({
-    queryKey: ['office-dashboard'],
-    queryFn: fetchOfficeDashboard,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true,
-  });
+  const dashboard = useOfficeDashboard({ live: true });
+  const online = useOnline();
   const data = dashboard.data;
   const isDirection = profile?.role === 'direction';
   const openCategories = CATEGORY_ORDER.filter((category) => category !== 'invoiced');
@@ -148,6 +144,15 @@ export function OfficeDashboardPage() {
         <p className="sub">
           Espace {profile ? ROLE_LABELS[profile.role] : ''} · voici ce qui attend une action aujourd’hui.
         </p>
+        {data && (
+          <p
+            className={cn('hint', !online && 'text-warning')}
+            role="status"
+            aria-label="Fraîcheur des chiffres"
+          >
+            {freshnessLabel(dashboard.dataUpdatedAt, online)}
+          </p>
+        )}
       </div>
 
       {dashboard.isPending && <p className="text-muted-foreground">Chargement…</p>}

@@ -85,7 +85,7 @@ test('le technicien active les notifications ; la déconnexion les coupe sur cet
 }) => {
   await loginAs(page, 'bruno@rts.local');
   const banner = page.getByRole('region', { name: 'Notifications de l’appareil' });
-  await expect(banner).toContainText('sois prévenu dès qu’un devis est accepté');
+  await expect(banner).toContainText('sois prévenu dès qu’une alerte demande une action');
 
   await banner.getByRole('button', { name: 'Activer les notifications' }).click();
   await expect(page.getByText('Notifications activées sur cet appareil')).toBeVisible({ timeout: 25_000 }); // 1re ouverture : installation du service worker
