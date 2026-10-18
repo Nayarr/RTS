@@ -4323,6 +4323,7 @@ export type Database = {
           supplier_id: string | null;
           unit_price: number | null;
           updated_at: string;
+          visibility: string;
         };
         Insert: {
           billed_hours?: number | null;
@@ -4352,6 +4353,7 @@ export type Database = {
           supplier_id?: string | null;
           unit_price?: number | null;
           updated_at?: string;
+          visibility?: string;
         };
         Update: {
           billed_hours?: number | null;
@@ -4381,6 +4383,7 @@ export type Database = {
           supplier_id?: string | null;
           unit_price?: number | null;
           updated_at?: string;
+          visibility?: string;
         };
         Relationships: [
           {
@@ -4522,6 +4525,7 @@ export type Database = {
           legacy_id: string | null;
           name: string;
           price: number | null;
+          quote_only: boolean;
           standard_hours: number;
           trigger_fields: string[];
           updated_at: string;
@@ -4536,6 +4540,7 @@ export type Database = {
           legacy_id?: string | null;
           name: string;
           price?: number | null;
+          quote_only?: boolean;
           standard_hours: number;
           trigger_fields?: string[];
           updated_at?: string;
@@ -4550,6 +4555,7 @@ export type Database = {
           legacy_id?: string | null;
           name?: string;
           price?: number | null;
+          quote_only?: boolean;
           standard_hours?: number;
           trigger_fields?: string[];
           updated_at?: string;
@@ -6831,6 +6837,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      package_is_quote_only: { Args: { p_package_id: string }; Returns: boolean };
       paris_date: { Args: { p_at: string }; Returns: string };
       part_sale_price: {
         Args: {

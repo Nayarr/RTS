@@ -40,6 +40,7 @@ export const packageSchema = z.object({
   keywords: z.string().max(500),
   trigger_fields: z.array(z.string()),
   details: z.string().max(4000),
+  quote_only: z.boolean(),
 });
 export type PackageValues = z.infer<typeof packageSchema>;
 
@@ -51,6 +52,7 @@ export const packageToForm = (pkg: ServicePackage | null): PackageValues => ({
   keywords: pkg?.keywords.join(', ') ?? '',
   trigger_fields: pkg?.trigger_fields ?? [],
   details: pkg?.details ?? '',
+  quote_only: pkg?.quote_only ?? false,
 });
 
 export const packageFromForm = (values: PackageValues): PackageInput => ({
@@ -61,4 +63,5 @@ export const packageFromForm = (values: PackageValues): PackageInput => ({
   keywords: parseKeywords(values.keywords),
   trigger_fields: values.trigger_fields,
   details: values.details.trim() || null,
+  quote_only: values.quote_only,
 });

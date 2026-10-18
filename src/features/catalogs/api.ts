@@ -165,7 +165,7 @@ export async function fetchPackages(): Promise<ServicePackage[]> {
 
 export type PackageInput = Pick<
   TablesInsert<'service_packages'>,
-  'name' | 'category' | 'standard_hours' | 'price' | 'details' | 'keywords' | 'trigger_fields'
+  'name' | 'category' | 'standard_hours' | 'price' | 'details' | 'keywords' | 'trigger_fields' | 'quote_only'
 >;
 
 export async function savePackage(id: string | null, input: PackageInput) {

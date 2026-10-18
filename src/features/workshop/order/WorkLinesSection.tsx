@@ -179,6 +179,9 @@ function LineGroup({
   );
 }
 
+/** Lignes du technicien : ni pièces, ni forfaits « devis et facture seulement » (pneus, recyclage…). */
+const forWorkshop = (line: RoLine) => line.line_type !== 'part' && line.visibility !== 'quote';
+
 /** Travaux effectués (avec le temps réel passé) et travaux / pièces à prévoir pour le devis. */
 export function WorkLinesSection({
   repairOrderId,
@@ -194,14 +197,14 @@ export function WorkLinesSection({
       <LineGroup
         title="Travaux effectués"
         kind="done"
-        lines={lines.filter((line) => line.kind === 'done' && line.line_type !== 'part')}
+        lines={lines.filter((line) => line.kind === 'done' && forWorkshop(line))}
         locked={locked}
         repairOrderId={repairOrderId}
       />
       <LineGroup
         title="Pièces / réparations à prévoir (devis)"
         kind="planned"
-        lines={lines.filter((line) => line.kind === 'planned' && line.line_type !== 'part')}
+        lines={lines.filter((line) => line.kind === 'planned' && forWorkshop(line))}
         locked={locked}
         repairOrderId={repairOrderId}
         compactAdd
