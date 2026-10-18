@@ -52,8 +52,8 @@ insert into public.ro_photos (repair_order_id, file_id, label)
 values (:ro, pg_temp.fake_file('ro_photo'), 'Étiquette contrôle hayon');
 select lives_ok($$ select public.complete_repair_order('50000000-0000-0000-0000-000000000041') $$,
   'Tout est complet : l''OR se termine');
-select is((select status from public.repair_orders where id = :ro), 'to_invoice'::public.repair_order_status,
-          'Travaux terminés sans devis : l''OR passe « Facture à faire »');
+select is((select status from public.repair_orders where id = :ro), 'work_done'::public.repair_order_status,
+          'L''OR passe « Terminé atelier »');
 
 -- Une autre photo (étiquette d'extincteur) ne remplace pas celle du hayon
 reset role;

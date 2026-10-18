@@ -3,7 +3,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(12);
 
 \ir helpers/fixtures.psql
 
@@ -28,10 +28,6 @@ select is((select status from public.repair_orders where id = '50000000-0000-000
 update public.repair_orders set status = 'work_done' where id = '50000000-0000-0000-0000-000000000071';
 select is((select status from public.repair_orders where id = '50000000-0000-0000-0000-000000000071'),
           'work_done'::public.repair_order_status, 'Statut choisi à la main : pas changé');
-update public.repair_orders set status = 'assigned' where id = '50000000-0000-0000-0000-000000000071';
-update public.repair_orders set status = 'work_done' where id = '50000000-0000-0000-0000-000000000071';
-select is((select status from public.repair_orders where id = '50000000-0000-0000-0000-000000000071'),
-          'work_done'::public.repair_order_status, 'Bureau : « Terminé atelier » choisi à la main, gardé');
 
 -- Rendez-vous arrivé : OR avec tous les contrôles obligatoires si demandé
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000d1');  -- direction (seule à l'exiger)

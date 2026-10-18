@@ -137,7 +137,7 @@ describe('travaux réalisés avant le devis', () => {
       within(dialog).getByLabelText('Décision pour « Contrôle sécurité »'),
       'offered',
     );
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' }));
 
     await waitFor(() =>
       expect(settlePreQuoteWork).toHaveBeenCalledWith('ro1', [
@@ -160,7 +160,7 @@ describe('travaux réalisés avant le devis', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Tout facturer' }));
     await userEvent.clear(within(dialog).getByLabelText('Prix HT de « Contrôle sécurité »'));
     expect(within(dialog).getByText('Indique un prix pour chaque ligne à facturer.')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Valider' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' })).toBeDisabled();
   });
 
   it('plus d’1 h d’expertise : facturée moins 1 h, la première heure offerte d’office', async () => {
@@ -195,7 +195,7 @@ describe('travaux réalisés avant le devis', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Tout offrir' }));
     expect(within(dialog).getByLabelText('Décision pour « Contrôle sécurité »')).toHaveValue('offered');
     expect(within(dialog).getByLabelText('Décision pour « Essai routier »')).toHaveValue('billed');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' }));
     await waitFor(() =>
       expect(settlePreQuoteWork).toHaveBeenCalledWith('ro1', [
         { line_id: 'e1', decision: 'offered', price: 45 },
@@ -210,8 +210,8 @@ describe('travaux réalisés avant le devis', () => {
     expect(settlementMessage({ invoice_id: 'i', invoice_number: 'F1', billed: 2, offered: 0 })).toBe(
       'Facture F1 émise',
     );
-    expect(settlementMessage({ invoice_id: null, invoice_number: null, billed: 0, offered: 2 })).toBe(
-      'Travaux offerts enregistrés',
+    expect(settlementMessage({ invoice_id: 'i', invoice_number: 'F2', billed: 0, offered: 2 })).toBe(
+      'Facture F2 émise à 0 € : tout est offert, mention sur la facture',
     );
   });
 });

@@ -71,8 +71,8 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
         queryClient.invalidateQueries({ queryKey: quotesKey }),
         queryClient.invalidateQueries({ queryKey: invoicesKey }),
       ]);
-      // Facture émise : on l'ouvre pour l'imprimer ou l'envoyer au client.
-      if (result.invoice_id) await navigate(`/factures/${result.invoice_id}`);
+      // Facture émise : ouverte et envoyée tout de suite au client.
+      if (result.invoice_id) await navigate(`/factures/${result.invoice_id}?envoyer=1`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -92,9 +92,9 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
           <DialogTitle>Travaux réalisés avant le devis</DialogTitle>
           <DialogDescription>
             Le devis {work.quote_number ?? ''} est accepté. Pour chaque travail déjà fait sur l’OR{' '}
-            {work.repair_order_number} (diagnostic, contrôle…), choisis de le <strong>facturer</strong>{' '}
-            (facture séparée, émise maintenant) ou de l’<strong>offrir</strong> à titre commercial. Le prix
-            proposé est modifiable.
+            {work.repair_order_number} (diagnostic, contrôle…), choisis de le <strong>facturer</strong> ou de
+            l’<strong>offrir</strong> à titre commercial. La facture part ensuite au client, avec les travaux
+            offerts. Le prix proposé est modifiable.
           </DialogDescription>
         </DialogHeader>
 
@@ -178,8 +178,8 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
           })}
         </ul>
         <p className="text-sm text-muted-foreground">
-          Les lignes offertes figurent sur la facture avec une remise de 100 %, pour que le client voie le
-          geste commercial. Si tout est offert, aucune facture n’est émise.
+          Les lignes offertes figurent sur la facture avec une remise de 100 % et la mention « Geste
+          commercial », pour que le client voie ce qui lui est offert. Tout offert : facture à 0 €.
         </p>
         {missingPrice && (
           <p className="text-sm text-destructive">Indique un prix pour chaque ligne à facturer.</p>
@@ -190,7 +190,7 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
             Plus tard
           </Button>
           <Button disabled={missingPrice || settle.isPending} onClick={() => settle.mutate()}>
-            Valider
+            Valider et envoyer la facture
           </Button>
         </DialogFooter>
       </DialogContent>

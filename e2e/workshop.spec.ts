@@ -118,7 +118,7 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   await expect(page.getByRole('heading', { name: 'Mes ordres de réparation' })).toBeVisible();
   await page.getByRole('button', { name: /Voir mes OR terminés/ }).click();
   await expect(
-    page.getByRole('link', { name: new RegExp(plate) }).getByText('Facture à faire'),
+    page.getByRole('link', { name: new RegExp(plate) }).getByText('Terminé atelier'),
   ).toBeVisible();
 
   // L'OR est verrouillé pour le technicien
@@ -128,10 +128,10 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
   await page.getByRole('link', { name: 'Retour à mes OR' }).click();
   await logout(page);
 
-  // Le bureau voit le résultat : directement « Facture à faire », photos, temps déclaré, fiche de contrôle
+  // Le bureau voit le résultat : statut, photos, temps déclaré, fiche de contrôle
   await loginAs(page, 'direction@rts.local');
   await page.goto(`/or/${order.id}`);
-  await expect(page.getByText('Facture à faire').first()).toBeVisible();
+  await expect(page.getByText('Terminé atelier').first()).toBeVisible();
   const declared = page.getByText('Déclaré', { exact: true }).locator('..');
   await expect(declared.getByText('2h', { exact: true })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Face avant', exact: true })).toBeVisible();
