@@ -12,6 +12,7 @@ delete from public.tire_movements;
 delete from public.tires;
 delete from public.tire_lines;
 delete from public.tire_brands;
+delete from public.notifications where link like '/stock/pneumatiques%';
 
 -- ---------------------------------------------------------------- Tailles
 select is(public.tire_size_label('31580225'), '315/80 R22.5', 'Taille tapée en chiffres');
