@@ -1,3 +1,4 @@
+import type { InspectionData } from '@/features/repair-orders/inspection';
 import { supabase } from '@/lib/supabase';
 import type { Tables } from '@/types/database';
 import type { TireCategory, TireCondition, TireProfile, TireStatus } from './domain';
@@ -420,4 +421,29 @@ export async function saveQuoteRequest(input: {
 }) {
   const { error } = await supabase.from('tire_quote_requests').insert(input);
   if (error) throw error;
+}
+
+// ---------------------------------------------------------------- Pneus du stock au devis
+
+/** Fiche de contrôle de l'OR : tailles relevées par le technicien. */
+export async function fetchInspection(repairOrderId: string): Promise<InspectionData | null> {
+  const { data, error } = await supabase
+    .from('inspections')
+    .select('data')
+    .eq('repair_order_id', repairOrderId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.data ?? null) as InspectionData | null;
+}
+
+/** Lots d'une taille (même clé que la fiche de contrôle), pour la catégorie du véhicule. */
+export async function fetchLotsForSize(sizeKey: string, category: TireCategory): Promise<TireLot[]> {
+  const { data, error } = await supabase
+    .from('v_tire_lots')
+    .select('*')
+    .eq('size_key', sizeKey)
+    .eq('category', category)
+    .eq('is_active', true);
+  if (error) throw error;
+  return data.map(toLot);
 }
