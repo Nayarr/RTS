@@ -27,7 +27,7 @@ test('pièce saisie sur le devis avec sa marge, gardée dans la base ; prestatio
   await expect(page.getByRole('heading', { name: 'DEVIS', exact: true, level: 2 })).toBeVisible();
   const totals = page.getByLabel('Totaux');
 
-  // Pièce saisie directement : prix de vente calculé depuis l'achat, le port et la marge
+  // Pièce saisie directement : prix de vente calculé depuis l'achat et la marge (port à part)
   await page.getByRole('button', { name: 'Ajouter une pièce' }).click();
   const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
   await dialog.getByLabel('Désignation').fill(part);
@@ -35,8 +35,8 @@ test('pièce saisie sur le devis avec sa marge, gardée dans la base ; prestatio
   await dialog.getByLabel('Référence pièce').fill(ref);
   await dialog.getByLabel('Prix d’achat HT (€)').fill('40');
   await dialog.getByLabel('Frais de port HT (€)').fill('10');
-  await dialog.getByLabel('Marge (%)').fill('20');
-  await expect(dialog.getByLabel('Prix de vente HT calculé')).toHaveText('60,00 €');
+  await dialog.getByLabel('Marge (%)').fill('50');
+  await expect(dialog.getByLabel('Prix de vente HT (€)')).toHaveValue('60');
   await dialog.getByRole('button', { name: 'Ajouter la pièce' }).click();
   await expect(dialog).toBeHidden();
   await expect(totals).toContainText('60,00 €');
@@ -73,7 +73,7 @@ test('pièce saisie sur le devis avec sa marge, gardée dans la base ; prestatio
   await page.getByRole('searchbox', { name: 'Rechercher une pièce' }).fill(ref);
   const row = page.getByRole('row', { name: part });
   await expect(row).toContainText('Volvo FH 500');
-  await expect(row).toContainText('20 %');
+  await expect(row).toContainText('50 %');
   await expect(row).toContainText('Sur 1 devis');
 });
 

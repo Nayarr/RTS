@@ -14,14 +14,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { savePart, type Part } from '@/features/catalogs/api';
-import { useParts } from '@/features/catalogs/hooks';
+import { saveCatalogPart, type Part } from '@/features/catalogs/api';
 import { PartFields } from '@/features/catalogs/PartFields';
 import { partFromForm, partSchema, partToForm, type PartValues } from '@/features/catalogs/schemas';
 import { decimalField, decimalValue, formatEuro } from '@/lib/numbers';
-import { useDebounced } from '@/lib/use-debounced';
 import { useServicePackages } from './hooks';
 import { packagesFor, type NewLine, type ServicePackage, type VehicleType } from './lines';
+import { PartSuggestions } from '@/features/catalogs/PartSuggestions';
+import { useQueryClient } from '@tanstack/react-query';
+import { partsKey } from '@/features/catalogs/hooks';
 
 type Dialogs = 'labor' | 'package' | 'part' | null;
 
@@ -153,10 +154,9 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
   });
   const [picked, setPicked] = useState<Part | null>(null);
   const designation = useWatch({ control: form.control, name: 'designation' });
-  const search = useDebounced(picked ? '' : designation, 250);
-  const parts = useParts(search.trim().length >= 2 ? search : '');
-  const suggestions = search.trim().length >= 2 ? (parts.data ?? []).slice(0, 5) : [];
+  const quantity = useWatch({ control: form.control, name: 'quantity' });
   const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
 
   const pick = (part: Part) => {
     setPicked(part);
@@ -173,7 +173,9 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
     const shipping = input.shipping_cost ?? null;
     setSaving(true);
     try {
-      const partId = await savePart(picked?.id ?? null, input);
+      // Même désignation, référence et marque : pièce du catalogue mise à jour ; sinon nouvelle pièce
+      const partId = await saveCatalogPart(input);
+      await queryClient.invalidateQueries({ queryKey: partsKey });
       await onAdd({
         line_type: 'part',
         description: input.designation,
@@ -199,13 +201,15 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
         <DialogHeader>
           <DialogTitle>Ajouter une pièce</DialogTitle>
           <DialogDescription>
-            La pièce est enregistrée dans la base et proposée la prochaine fois.
+            Choisis une pièce de la base pour repartir de ses informations. Si la désignation, la référence et
+            la marque restent les mêmes, ses prix sont mis à jour ; sinon une nouvelle pièce est créée.
           </DialogDescription>
         </DialogHeader>
         <form id="part-line-form" noValidate className="space-y-4" onSubmit={submit}>
           <PartFields
             form={form as unknown as UseFormReturn<PartValues>}
             idPrefix="part-line"
+            quantity={quantity}
             designation={
               <div className="space-y-2">
                 <FormField
@@ -218,7 +222,7 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
                 />
                 {picked ? (
                   <p className="hint flex flex-wrap items-center gap-2">
-                    Pièce de la base, mise à jour à l’ajout.
+                    Repris de la base : modifie ce qu’il faut avant d’ajouter.
                     <button
                       type="button"
                       className="link"
@@ -231,29 +235,7 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
                     </button>
                   </p>
                 ) : (
-                  suggestions.length > 0 && (
-                    <ul aria-label="Pièces de la base" className="divide-y rounded-md border bg-card">
-                      {suggestions.map((part) => (
-                        <li key={part.id}>
-                          <button
-                            type="button"
-                            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-muted"
-                            onClick={() => pick(part)}
-                          >
-                            <span>
-                              <span className="font-medium">{part.designation}</span>
-                              <span className="block text-xs text-muted-foreground">
-                                {[part.manufacturer_ref, part.vehicle_ref, part.brand]
-                                  .filter(Boolean)
-                                  .join(' · ')}
-                              </span>
-                            </span>
-                            <span className="shrink-0 tabular-nums">{formatEuro(part.sale_price)}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )
+                  <PartSuggestions text={designation} hidden={false} onPick={pick} />
                 )}
               </div>
             }

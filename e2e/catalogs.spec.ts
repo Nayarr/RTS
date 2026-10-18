@@ -76,8 +76,9 @@ test('base de pièces : ajout avec marge, recherche, modification, retrait', asy
   await create.getByLabel('Fournisseur').fill(`Fournisseur ${designation}`);
   await create.getByLabel('Prix d’achat HT (€)').fill('40');
   await create.getByLabel('Frais de port HT (€)').fill('10');
+  // Marge sur le prix d'achat seul : 40 × 1,2 = 48 € (le port est facturé à part)
   await create.getByLabel('Marge (%)').fill('20');
-  await expect(create.getByLabel('Prix de vente HT calculé')).toHaveText('60,00 €');
+  await expect(create.getByLabel('Prix de vente HT (€)')).toHaveValue('48');
   await create.getByRole('button', { name: 'Ajouter à la base' }).click();
   await expect(page.getByText('Pièce ajoutée à la base')).toBeVisible();
 
@@ -87,16 +88,17 @@ test('base de pièces : ajout avec marge, recherche, modification, retrait', asy
   const item = page.getByRole('row', { name: designation });
   await expect(item).toContainText('50,00 €'); // achat + port
   await expect(item).toContainText('20 %');
-  await expect(item).toContainText('60,00 €');
+  await expect(item).toContainText('48,00 €');
 
-  // Marge en euros : prix de vente recalculé, fournisseur gardé
+  // Prix de vente modifié : marge recalculée, fournisseur gardé
   await page.getByRole('button', { name: `Modifier ${designation}` }).click();
   const edit = page.getByRole('dialog', { name: 'Modifier la pièce' });
   await expect(edit.getByLabel('Fournisseur')).toHaveValue(`Fournisseur ${designation}`);
-  await edit.getByRole('button', { name: 'Marge en euros' }).click();
-  await edit.getByLabel('Marge (€)').fill('4');
+  await edit.getByLabel('Prix de vente HT (€)').fill('54');
+  await expect(edit.getByLabel('Marge (%)')).toHaveValue('35');
   await edit.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(item).toContainText('54,00 €');
+  await expect(item).toContainText('35 %');
 
   await page.getByRole('button', { name: `Supprimer ${designation}` }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Retirer' }).click();
