@@ -5123,6 +5123,47 @@ export type Database = {
           },
         ];
       };
+      tire_quote_requests: {
+        Row: {
+          body: string;
+          channel: string;
+          id: string;
+          lines: NonNullable<Json>;
+          recipients: string[];
+          sent_at: string;
+          sent_by: string | null;
+          subject: string;
+        };
+        Insert: {
+          body: string;
+          channel?: string;
+          id?: string;
+          lines: NonNullable<Json>;
+          recipients?: string[];
+          sent_at?: string;
+          sent_by?: string | null;
+          subject: string;
+        };
+        Update: {
+          body?: string;
+          channel?: string;
+          id?: string;
+          lines?: NonNullable<Json>;
+          recipients?: string[];
+          sent_at?: string;
+          sent_by?: string | null;
+          subject?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tire_quote_requests_sent_by_fkey';
+            columns: ['sent_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tires: {
         Row: {
           brand_id: string;
