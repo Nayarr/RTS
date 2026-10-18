@@ -246,6 +246,14 @@ export const routes: RouteObject[] = [
                     lazy: page(() => import('@/features/catalogs/PartsPage'), 'PartsPage'),
                   },
                   {
+                    path: '/stock/pneumatiques',
+                    lazy: page(() => import('@/features/tires/TiresPage'), 'TiresPage'),
+                  },
+                  {
+                    path: '/stock/pneumatiques/:id',
+                    lazy: page(() => import('@/features/tires/TirePage'), 'TirePage'),
+                  },
+                  {
                     path: '/stock/forfaits',
                     lazy: page(() => import('@/features/catalogs/PackagesPage'), 'PackagesPage'),
                   },

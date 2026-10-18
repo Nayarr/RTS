@@ -150,6 +150,7 @@ const catalogPart: Part = {
   purchase_price: 21.5,
   sale_price: 32,
   is_active: true,
+  is_tire: false,
   legacy_id: null,
   created_at: '2026-09-27T08:00:00Z',
   updated_at: '2026-09-27T08:00:00Z',

@@ -8,6 +8,7 @@ export function CatalogTabs() {
       links={[
         { to: '/stock/consommables', label: 'Consommables' },
         { to: '/stock/pieces', label: 'Pièces' },
+        { to: '/stock/pneumatiques', label: 'Pneumatiques' },
         { to: '/stock/forfaits', label: 'Forfaits' },
       ]}
     />

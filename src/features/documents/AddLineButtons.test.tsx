@@ -30,6 +30,7 @@ const basePart: Part = {
   margin_value: 25,
   sale_price: 137.5,
   is_active: true,
+  is_tire: false,
   legacy_id: null,
   created_at: '2026-10-01T08:00:00Z',
   updated_at: '2026-10-01T08:00:00Z',

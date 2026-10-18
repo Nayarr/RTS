@@ -2866,6 +2866,7 @@ export type Database = {
           designation: string;
           id: string;
           is_active: boolean;
+          is_tire: boolean;
           legacy_id: string | null;
           manufacturer_ref: string | null;
           margin_kind: Database['public']['Enums']['margin_kind'];
@@ -2884,6 +2885,7 @@ export type Database = {
           designation: string;
           id?: string;
           is_active?: boolean;
+          is_tire?: boolean;
           legacy_id?: string | null;
           manufacturer_ref?: string | null;
           margin_kind?: Database['public']['Enums']['margin_kind'];
@@ -2902,6 +2904,7 @@ export type Database = {
           designation?: string;
           id?: string;
           is_active?: boolean;
+          is_tire?: boolean;
           legacy_id?: string | null;
           manufacturer_ref?: string | null;
           margin_kind?: Database['public']['Enums']['margin_kind'];
@@ -4937,6 +4940,289 @@ export type Database = {
           },
         ];
       };
+      tire_brands: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          name_key: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          name_key?: never;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          name_key?: never;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      tire_lines: {
+        Row: {
+          category: Database['public']['Enums']['tire_category'];
+          created_at: string;
+          id: string;
+          min_qty: number;
+          profile: Database['public']['Enums']['tire_profile'];
+          size: string;
+          size_key: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          category: Database['public']['Enums']['tire_category'];
+          created_at?: string;
+          id?: string;
+          min_qty?: number;
+          profile: Database['public']['Enums']['tire_profile'];
+          size: string;
+          size_key?: never;
+          updated_at?: string;
+        };
+        Update: {
+          category?: Database['public']['Enums']['tire_category'];
+          created_at?: string;
+          id?: string;
+          min_qty?: number;
+          profile?: Database['public']['Enums']['tire_profile'];
+          size?: string;
+          size_key?: never;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      tire_movements: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          invoice_id: string | null;
+          note: string | null;
+          quantity: number;
+          reason: Database['public']['Enums']['tire_movement_reason'];
+          reference: string | null;
+          repair_order_id: string | null;
+          supplier_id: string | null;
+          tire_id: string;
+          unit_purchase_price: number | null;
+          unit_sale_price: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          invoice_id?: string | null;
+          note?: string | null;
+          quantity: number;
+          reason: Database['public']['Enums']['tire_movement_reason'];
+          reference?: string | null;
+          repair_order_id?: string | null;
+          supplier_id?: string | null;
+          tire_id: string;
+          unit_purchase_price?: number | null;
+          unit_sale_price?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          invoice_id?: string | null;
+          note?: string | null;
+          quantity?: number;
+          reason?: Database['public']['Enums']['tire_movement_reason'];
+          reference?: string | null;
+          repair_order_id?: string | null;
+          supplier_id?: string | null;
+          tire_id?: string;
+          unit_purchase_price?: number | null;
+          unit_sale_price?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tire_movements_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_supplier_id_fkey';
+            columns: ['supplier_id'];
+            isOneToOne: false;
+            referencedRelation: 'suppliers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_tire_id_fkey';
+            columns: ['tire_id'];
+            isOneToOne: false;
+            referencedRelation: 'tires';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tire_movements_tire_id_fkey';
+            columns: ['tire_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_tire_lots';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tires: {
+        Row: {
+          brand_id: string;
+          condition: Database['public']['Enums']['tire_condition'];
+          created_at: string;
+          dot: string | null;
+          id: string;
+          is_active: boolean;
+          line_id: string;
+          load_index: string | null;
+          location: string | null;
+          model: string;
+          part_id: string | null;
+          purchase_price: number | null;
+          sale_price: number | null;
+          stock_qty: number;
+          supplier_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          condition?: Database['public']['Enums']['tire_condition'];
+          created_at?: string;
+          dot?: string | null;
+          id?: string;
+          is_active?: boolean;
+          line_id: string;
+          load_index?: string | null;
+          location?: string | null;
+          model?: string;
+          part_id?: string | null;
+          purchase_price?: number | null;
+          sale_price?: number | null;
+          stock_qty?: number;
+          supplier_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          condition?: Database['public']['Enums']['tire_condition'];
+          created_at?: string;
+          dot?: string | null;
+          id?: string;
+          is_active?: boolean;
+          line_id?: string;
+          load_index?: string | null;
+          location?: string | null;
+          model?: string;
+          part_id?: string | null;
+          purchase_price?: number | null;
+          sale_price?: number | null;
+          stock_qty?: number;
+          supplier_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tires_brand_id_fkey';
+            columns: ['brand_id'];
+            isOneToOne: false;
+            referencedRelation: 'tire_brands';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_line_id_fkey';
+            columns: ['line_id'];
+            isOneToOne: false;
+            referencedRelation: 'tire_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_line_id_fkey';
+            columns: ['line_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_tire_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_part_id_fkey';
+            columns: ['part_id'];
+            isOneToOne: true;
+            referencedRelation: 'parts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_part_id_fkey';
+            columns: ['part_id'];
+            isOneToOne: true;
+            referencedRelation: 'v_part_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_supplier_id_fkey';
+            columns: ['supplier_id'];
+            isOneToOne: false;
+            referencedRelation: 'suppliers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       vehicles: {
         Row: {
           antipollution_due_date: string | null;
@@ -6160,6 +6446,108 @@ export type Database = {
           },
         ];
       };
+      v_tire_lines: {
+        Row: {
+          available_qty: number | null;
+          avg_purchase_price: number | null;
+          brands: string | null;
+          category: Database['public']['Enums']['tire_category'] | null;
+          id: string | null;
+          lots_count: number | null;
+          min_qty: number | null;
+          missing_qty: number | null;
+          profile: Database['public']['Enums']['tire_profile'] | null;
+          reserved_qty: number | null;
+          size: string | null;
+          size_key: string | null;
+          sold_30d: number | null;
+          status: string | null;
+          stock_qty: number | null;
+        };
+        Relationships: [];
+      };
+      v_tire_lots: {
+        Row: {
+          available_qty: number | null;
+          brand_id: string | null;
+          brand_name: string | null;
+          category: Database['public']['Enums']['tire_category'] | null;
+          condition: Database['public']['Enums']['tire_condition'] | null;
+          created_at: string | null;
+          dot: string | null;
+          id: string | null;
+          is_active: boolean | null;
+          line_id: string | null;
+          load_index: string | null;
+          location: string | null;
+          model: string | null;
+          part_id: string | null;
+          profile: Database['public']['Enums']['tire_profile'] | null;
+          purchase_price: number | null;
+          reserved_qty: number | null;
+          sale_price: number | null;
+          size: string | null;
+          size_key: string | null;
+          sold_90d: number | null;
+          stock_qty: number | null;
+          supplier_id: string | null;
+          supplier_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tires_brand_id_fkey';
+            columns: ['brand_id'];
+            isOneToOne: false;
+            referencedRelation: 'tire_brands';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_line_id_fkey';
+            columns: ['line_id'];
+            isOneToOne: false;
+            referencedRelation: 'tire_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_line_id_fkey';
+            columns: ['line_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_tire_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_part_id_fkey';
+            columns: ['part_id'];
+            isOneToOne: true;
+            referencedRelation: 'parts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_part_id_fkey';
+            columns: ['part_id'];
+            isOneToOne: true;
+            referencedRelation: 'v_part_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tires_supplier_id_fkey';
+            columns: ['supplier_id'];
+            isOneToOne: false;
+            referencedRelation: 'suppliers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      v_tire_reservations: {
+        Row: {
+          invoice_id: string | null;
+          quantity: number | null;
+          quote_id: string | null;
+          repair_order_id: string | null;
+          tire_id: string | null;
+        };
+        Relationships: [];
+      };
       v_vehicle_deadlines: {
         Row: {
           client_id: string | null;
@@ -6374,6 +6762,26 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      add_tires: {
+        Args: {
+          p_brand: string;
+          p_category: Database['public']['Enums']['tire_category'];
+          p_condition: Database['public']['Enums']['tire_condition'];
+          p_dot?: string;
+          p_load_index?: string;
+          p_location?: string;
+          p_min_qty?: number;
+          p_model: string;
+          p_profile: Database['public']['Enums']['tire_profile'];
+          p_purchase_price: number;
+          p_quantity: number;
+          p_reference?: string;
+          p_sale_price: number;
+          p_size: string;
+          p_supplier_id?: string;
+        };
+        Returns: string;
+      };
       admin_register_account: {
         Args: {
           p_email: string;
@@ -6501,6 +6909,7 @@ export type Database = {
         Args: { p_file_id: string; p_mime_type: string; p_size_bytes: number; p_user_id: string };
         Returns: undefined;
       };
+      correct_tire_stock: { Args: { p_counted: number; p_note: string; p_tire_id: string }; Returns: number };
       create_quote: {
         Args: {
           p_client_name: string;
@@ -6929,6 +7338,16 @@ export type Database = {
         Returns: number;
       };
       quote_signature_request: { Args: { p_quote_id: string }; Returns: Json };
+      receive_tires: {
+        Args: {
+          p_purchase_price?: number;
+          p_quantity: number;
+          p_reference?: string;
+          p_supplier_id?: string;
+          p_tire_id: string;
+        };
+        Returns: number;
+      };
       record_auto_mail: {
         Args: {
           p_appointment_id: string;
@@ -7284,6 +7703,10 @@ export type Database = {
           technician_id: string;
         }[];
       };
+      tire_line_alert: { Args: { p_line_id: string }; Returns: undefined };
+      tire_size_key: { Args: { p_size: string }; Returns: string };
+      tire_size_label: { Args: { p_size: string }; Returns: string };
+      tire_stock_kpis: { Args: Record<PropertyKey, never>; Returns: Json };
       treasury_overview: { Args: Record<PropertyKey, never>; Returns: Json };
       update_vehicle_deadlines: {
         Args: { p_patch: Json; p_repair_order_id: string };
@@ -7380,6 +7803,10 @@ export type Database = {
       signature_channel: 'kiosk' | 'email';
       signature_request_status: 'pending' | 'signed' | 'cancelled';
       subcontract_status: 'sent' | 'returned';
+      tire_category: 'pl' | 'vul';
+      tire_condition: 'neuf' | 'rechape' | 'occasion';
+      tire_movement_reason: 'entry' | 'sale' | 'correction';
+      tire_profile: 'avant' | 'arriere' | 'remorque' | 'toutes';
       vehicle_type: 'pl' | 'vul' | 'remorque';
       warranty_status: 'to_return' | 'sent' | 'accepted' | 'refused' | 'refunded';
     };
@@ -7558,6 +7985,10 @@ export const Constants = {
       signature_channel: ['kiosk', 'email'],
       signature_request_status: ['pending', 'signed', 'cancelled'],
       subcontract_status: ['sent', 'returned'],
+      tire_category: ['pl', 'vul'],
+      tire_condition: ['neuf', 'rechape', 'occasion'],
+      tire_movement_reason: ['entry', 'sale', 'correction'],
+      tire_profile: ['avant', 'arriere', 'remorque', 'toutes'],
       vehicle_type: ['pl', 'vul', 'remorque'],
       warranty_status: ['to_return', 'sent', 'accepted', 'refused', 'refunded'],
     },
