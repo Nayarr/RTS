@@ -6538,16 +6538,6 @@ export type Database = {
           },
         ];
       };
-      v_tire_reservations: {
-        Row: {
-          invoice_id: string | null;
-          quantity: number | null;
-          quote_id: string | null;
-          repair_order_id: string | null;
-          tire_id: string | null;
-        };
-        Relationships: [];
-      };
       v_vehicle_deadlines: {
         Row: {
           client_id: string | null;
@@ -7704,6 +7694,13 @@ export type Database = {
         }[];
       };
       tire_line_alert: { Args: { p_line_id: string }; Returns: undefined };
+      tire_reserved_quantities: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          reserved: number;
+          tire_id: string;
+        }[];
+      };
       tire_size_key: { Args: { p_size: string }; Returns: string };
       tire_size_label: { Args: { p_size: string }; Returns: string };
       tire_stock_kpis: { Args: Record<PropertyKey, never>; Returns: Json };

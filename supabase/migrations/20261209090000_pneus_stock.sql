@@ -184,36 +184,59 @@ create trigger tire_brands_sync_parts
 -- Réservations : pneus au devis, sur l'OR ou sur une facture à émettre
 -- ---------------------------------------------------------------------------
 
-create view public.v_tire_reservations
-with (security_invoker = on) as
--- Devis en cours (lignes ajoutées au devis, pas encore passées sur un OR)
-select t.id as tire_id, ql.quantity, q.repair_order_id, q.id as quote_id, null::uuid as invoice_id
-from public.quote_lines ql
-join public.quotes q on q.id = ql.quote_id
-join public.tires t on t.part_id = ql.part_id
-where q.status in ('draft', 'in_progress', 'sent', 'accepted')
-  and ql.source_ro_line_id is null
-  and coalesce(ql.done_line_decision, 'billed') = 'billed'
-  and not exists (select 1 from public.ro_lines rl where rl.source_quote_line_id = ql.id)
-  and not exists (select 1 from public.invoice_lines il where il.source_quote_line_id = ql.id)
-union all
--- OR pas encore facturé
-select t.id, rl.quantity, rl.repair_order_id, null, null
-from public.ro_lines rl
-join public.repair_orders r on r.id = rl.repair_order_id
-join public.tires t on t.part_id = rl.part_id
-where r.status <> 'invoiced'
-  and not exists (select 1 from public.invoice_lines il
-                  join public.invoices i on i.id = il.invoice_id
-                  where il.source_ro_line_id = rl.id and i.status = 'issued')
-union all
--- Facture à émettre, pneu ajouté directement sur la facture
-select t.id, il.quantity, il.repair_order_id, null, il.invoice_id
-from public.invoice_lines il
-join public.invoices i on i.id = il.invoice_id
-join public.tires t on t.part_id = il.part_id
-where i.status = 'draft' and il.source_ro_line_id is null and il.source_quote_line_id is null;
-comment on view public.v_tire_reservations is 'Pneus réservés : au devis, sur un OR pas encore facturé, sur une facture à émettre.';
+-- Une seule passe sur les devis, OR et factures, accès du bureau vérifié une fois (les règles
+-- d'accès ligne par ligne rendaient la vue du stock lente dès quelques centaines de lignes).
+create function public.tire_reserved_quantities(p_line_id uuid default null)
+returns table (tire_id uuid, reserved integer)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select r.tire_id, sum(r.quantity)::integer
+  from (
+    -- Devis en cours (lignes ajoutées au devis, pas encore passées sur un OR ni sur une facture)
+    select t.id as tire_id, ql.quantity
+    from public.quote_lines ql
+    join public.quotes q on q.id = ql.quote_id
+    join public.tires t on t.part_id = ql.part_id and (p_line_id is null or t.line_id = p_line_id)
+    where q.status in ('draft', 'in_progress', 'sent', 'accepted')
+      and ql.source_ro_line_id is null
+      and coalesce(ql.done_line_decision, 'billed') = 'billed'
+      and not exists (select 1 from public.ro_lines rl where rl.source_quote_line_id = ql.id)
+      and not exists (select 1 from public.invoice_lines il where il.source_quote_line_id = ql.id)
+    union all
+    -- OR pas encore facturé
+    select t.id, rl.quantity
+    from public.ro_lines rl
+    join public.repair_orders r on r.id = rl.repair_order_id
+    join public.tires t on t.part_id = rl.part_id and (p_line_id is null or t.line_id = p_line_id)
+    where r.status <> 'invoiced'
+      and not exists (select 1 from public.invoice_lines il
+                      join public.invoices i on i.id = il.invoice_id
+                      where il.source_ro_line_id = rl.id and i.status = 'issued')
+    union all
+    -- Facture à émettre, pneu ajouté directement sur la facture
+    select t.id, il.quantity
+    from public.invoice_lines il
+    join public.invoices i on i.id = il.invoice_id
+    join public.tires t on t.part_id = il.part_id and (p_line_id is null or t.line_id = p_line_id)
+    where i.status = 'draft' and il.source_ro_line_id is null and il.source_quote_line_id is null
+  ) r
+  where public.is_office() or public.is_system_context() or auth.uid() is null
+  group by r.tire_id;
+$$;
+comment on function public.tire_reserved_quantities(uuid) is
+  'Pneus réservés par lot : au devis, sur un OR pas encore facturé, sur une facture à émettre.';
+
+create index quote_lines_part_idx on public.quote_lines (part_id) where part_id is not null;
+create index ro_lines_part_idx on public.ro_lines (part_id) where part_id is not null;
+create index invoice_lines_part_idx on public.invoice_lines (part_id) where part_id is not null;
+create index ro_lines_source_quote_line_idx on public.ro_lines (source_quote_line_id) where source_quote_line_id is not null;
+create index invoice_lines_source_quote_line_idx on public.invoice_lines (source_quote_line_id)
+  where source_quote_line_id is not null;
+create index invoice_lines_source_ro_line_idx on public.invoice_lines (source_ro_line_id)
+  where source_ro_line_id is not null;
 
 -- ---------------------------------------------------------------------------
 -- Lots et lignes du stock
@@ -231,14 +254,18 @@ from public.tires t
 join public.tire_lines l on l.id = t.line_id
 join public.tire_brands b on b.id = t.brand_id
 left join public.suppliers sp on sp.id = t.supplier_id
-left join lateral (select sum(v.quantity) as reserved from public.v_tire_reservations v where v.tire_id = t.id) r on true
-left join lateral (
-  select -sum(m.quantity) as sold_90d from public.tire_movements m
-  where m.tire_id = t.id and m.reason = 'sale' and m.created_at >= now() - interval '90 days'
-) s on true;
+left join public.tire_reserved_quantities() r on r.tire_id = t.id
+left join (
+  select m.tire_id, -sum(m.quantity) as sold_90d from public.tire_movements m
+  where m.reason = 'sale' and m.created_at >= now() - interval '90 days'
+  group by m.tire_id
+) s on s.tire_id = t.id;
 
 create view public.v_tire_lines
 with (security_invoker = on) as
+with lots as materialized (
+  select * from public.v_tire_lots where is_active
+)
 select
   l.id, l.category, l.size, l.size_key, l.profile, l.min_qty,
   coalesce(a.stock, 0)::integer as stock_qty,
@@ -250,28 +277,32 @@ select
        when coalesce(a.stock, 0) - coalesce(a.reserved, 0) < l.min_qty then 'to_order'
        else 'ok' end as status,
   coalesce(a.lots, 0)::integer as lots_count,
-  a.brands,
+  br.brands,
   a.avg_purchase_price,
   coalesce(s.sold, 0)::integer as sold_30d
 from public.tire_lines l
-left join lateral (
-  select sum(t.stock_qty) as stock, sum(t.reserved_qty) as reserved,
+left join (
+  select t.line_id, sum(t.stock_qty) as stock, sum(t.reserved_qty) as reserved,
          count(*) filter (where t.stock_qty > 0) as lots,
-         -- « Michelin 8 · Hankook 4 » : marques en stock, la plus fournie d'abord
-         (select string_agg(x.brand_name || ' ' || x.qty, ' · ' order by x.qty desc, x.brand_name)
-            from (select v.brand_name, sum(v.stock_qty) as qty from public.v_tire_lots v
-                  where v.line_id = l.id and v.is_active and v.stock_qty > 0 group by v.brand_name) x) as brands,
          -- Prix d'achat moyen pondéré par le stock (sinon moyenne des lots)
          round(coalesce(sum(t.purchase_price * t.stock_qty) filter (where t.stock_qty > 0)
                           / nullif(sum(t.stock_qty) filter (where t.stock_qty > 0 and t.purchase_price is not null), 0),
                         avg(t.purchase_price)), 2) as avg_purchase_price
-  from public.v_tire_lots t where t.line_id = l.id and t.is_active
-) a on true
-left join lateral (
-  select -sum(m.quantity) as sold from public.tire_movements m
+  from lots t group by t.line_id
+) a on a.line_id = l.id
+-- « Michelin 8 · Hankook 4 » : marques en stock, la plus fournie d'abord
+left join (
+  select x.line_id, string_agg(x.brand_name || ' ' || x.qty, ' · ' order by x.qty desc, x.brand_name) as brands
+  from (select line_id, brand_name, sum(stock_qty) as qty from lots where stock_qty > 0
+        group by line_id, brand_name) x
+  group by x.line_id
+) br on br.line_id = l.id
+left join (
+  select t.line_id, -sum(m.quantity) as sold from public.tire_movements m
   join public.tires t on t.id = m.tire_id
-  where t.line_id = l.id and m.reason = 'sale' and m.created_at >= now() - interval '30 days'
-) s on true;
+  where m.reason = 'sale' and m.created_at >= now() - interval '30 days'
+  group by t.line_id
+) s on s.line_id = l.id;
 comment on view public.v_tire_lines is 'Stock des pneus par taille et profil : disponible, seuil, état (ok, à commander, rupture), ventes.';
 
 -- Indicateurs du stock : pneus en stock, lignes sous le seuil, ventes et marge sur 30 jours
@@ -282,7 +313,10 @@ stable
 security invoker
 set search_path = ''
 as $$
-  with sales as (
+  -- Lignes et ventes lues une seule fois (la vue répétée faisait des plans de plusieurs secondes)
+  with lines as materialized (
+    select stock_qty, lots_count, status from public.v_tire_lines
+  ), sales as materialized (
     select m.created_at >= now() - interval '30 days' as is_current, -m.quantity as qty,
            -m.quantity * coalesce(m.unit_sale_price, 0) as revenue,
            -m.quantity * (coalesce(m.unit_sale_price, 0) - coalesce(m.unit_purchase_price, 0)) as margin,
@@ -291,11 +325,11 @@ as $$
     where m.reason = 'sale' and m.created_at >= now() - interval '60 days'
   )
   select jsonb_build_object(
-    'stock_qty', (select coalesce(sum(stock_qty), 0) from public.v_tire_lines),
-    'sizes', (select count(*) from public.v_tire_lines where stock_qty > 0),
-    'lots', (select coalesce(sum(lots_count), 0) from public.v_tire_lines),
-    'to_order', (select count(*) from public.v_tire_lines where status = 'to_order'),
-    'out', (select count(*) from public.v_tire_lines where status = 'out'),
+    'stock_qty', (select coalesce(sum(stock_qty), 0) from lines),
+    'sizes', (select count(*) from lines where stock_qty > 0),
+    'lots', (select coalesce(sum(lots_count), 0) from lines),
+    'to_order', (select count(*) from lines where status = 'to_order'),
+    'out', (select count(*) from lines where status = 'out'),
     'sold_30d', (select coalesce(sum(qty), 0) from sales where is_current),
     'sold_prev_30d', (select coalesce(sum(qty), 0) from sales where not is_current),
     'revenue_30d', (select coalesce(sum(revenue), 0) from sales where is_current),
@@ -315,20 +349,30 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_line record;
+  v_line public.tire_lines;
+  v_available integer;
+  v_missing integer;
   v_label text;
 begin
-  select * into v_line from public.v_tire_lines where id = p_line_id;
-  if not found or v_line.status = 'ok' then
+  select * into v_line from public.tire_lines where id = p_line_id;
+  if not found or v_line.min_qty = 0 then
     return;
   end if;
+  -- Disponible de la seule ligne (en stock - réservé)
+  select coalesce(sum(t.stock_qty), 0) - coalesce((select sum(r.reserved) from public.tire_reserved_quantities(p_line_id) r), 0)
+    into v_available
+  from public.tires t where t.line_id = p_line_id and t.is_active;
+  if v_available >= v_line.min_qty then
+    return;
+  end if;
+  v_missing := v_line.min_qty - v_available;
   v_label := v_line.size || case v_line.profile when 'avant' then ' avant' when 'arriere' then ' arrière'
                                                  when 'remorque' then ' remorque' else '' end;
   insert into public.notifications (recipient_role, type, title, body, link, dedupe_key)
   select role, 'low_stock',
-         case when v_line.status = 'out' then 'Rupture de pneus : ' else 'Pneus à commander : ' end || v_label,
-         'Disponible ' || v_line.available_qty || ' (seuil ' || v_line.min_qty || ') : il manque '
-           || v_line.missing_qty || ' pneu' || case when v_line.missing_qty > 1 then 's' else '' end,
+         case when v_available <= 0 then 'Rupture de pneus : ' else 'Pneus à commander : ' end || v_label,
+         'Disponible ' || v_available || ' (seuil ' || v_line.min_qty || ') : il manque '
+           || v_missing || ' pneu' || case when v_missing > 1 then 's' else '' end,
          '/stock/pneumatiques?filtre=seuil',
          'tire-' || p_line_id || '-' || role || '-' || public.paris_date(now())
   from unnest(array['direction', 'reception']::public.app_role[]) as role
@@ -593,6 +637,7 @@ end;
 $$;
 
 revoke execute on function
+  public.tire_reserved_quantities(uuid),
   public.add_tires(public.tire_category, text, public.tire_profile, text, text, public.tire_condition, integer,
                    numeric, numeric, uuid, text, text, text, integer, text),
   public.receive_tires(uuid, integer, numeric, uuid, text),
@@ -602,6 +647,7 @@ revoke execute on function
   public.tire_size_key(text)
 from public, anon;
 grant execute on function
+  public.tire_reserved_quantities(uuid),
   public.add_tires(public.tire_category, text, public.tire_profile, text, text, public.tire_condition, integer,
                    numeric, numeric, uuid, text, text, text, integer, text),
   public.receive_tires(uuid, integer, numeric, uuid, text),
