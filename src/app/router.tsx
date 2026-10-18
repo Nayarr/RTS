@@ -55,6 +55,15 @@ export const routes: RouteObject[] = [
               {
                 element: <RequireRole roles={['direction', 'reception']} />,
                 children: [
+                  // Stock des pneus : aussi pour la réception (le reste du stock est à la direction)
+                  {
+                    path: '/stock/pneumatiques',
+                    lazy: page(() => import('@/features/tires/TiresPage'), 'TiresPage'),
+                  },
+                  {
+                    path: '/stock/pneumatiques/:id',
+                    lazy: page(() => import('@/features/tires/TirePage'), 'TirePage'),
+                  },
                   {
                     path: '/or',
                     lazy: page(() => import('@/features/repair-orders/RepairOrdersPage'), 'RepairOrdersPage'),
@@ -244,14 +253,6 @@ export const routes: RouteObject[] = [
                   {
                     path: '/stock/pieces',
                     lazy: page(() => import('@/features/catalogs/PartsPage'), 'PartsPage'),
-                  },
-                  {
-                    path: '/stock/pneumatiques',
-                    lazy: page(() => import('@/features/tires/TiresPage'), 'TiresPage'),
-                  },
-                  {
-                    path: '/stock/pneumatiques/:id',
-                    lazy: page(() => import('@/features/tires/TirePage'), 'TirePage'),
                   },
                   {
                     path: '/stock/forfaits',

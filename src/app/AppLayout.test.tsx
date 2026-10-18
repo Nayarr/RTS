@@ -60,12 +60,18 @@ describe('AppLayout', () => {
     expect(within(menu()).getByRole('link', { name: 'Comptes et rôles' })).toHaveAttribute('href', '/equipe');
   });
 
-  it('la réception ne voit pas la partie Gestion', async () => {
+  it('la réception ne voit de la partie Gestion que le stock des pneus', async () => {
     vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
     renderRoutes(routes, { auth: { session: fakeSession() } });
     expect((await screen.findAllByText('Réception')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Équipe' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Réglages' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Stock' }));
+    expect(within(menu()).getByRole('link', { name: 'Pneumatiques' })).toHaveAttribute(
+      'href',
+      '/stock/pneumatiques',
+    );
+    expect(within(menu()).queryByRole('link', { name: 'Pièces' })).not.toBeInTheDocument();
   });
 
   it('écran ouvert : son groupe est déplié et l’entrée marquée, avec le compteur en attente', async () => {
