@@ -6740,6 +6740,7 @@ export type Database = {
         Args: { p_client_id: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: number;
       };
+      last_working_day_of_month: { Args: { p_day: string }; Returns: string };
       license_block_reason: {
         Args: {
           p_license: Database['public']['Tables']['driving_licenses']['Row'];
@@ -6805,6 +6806,7 @@ export type Database = {
         Args: { p_quote_id: string; p_repair_order_id: string };
         Returns: undefined;
       };
+      month_end_unsigned_quotes: { Args: { p_now?: string }; Returns: number };
       monthly_report: { Args: { p_month: string }; Returns: Json };
       monthly_statistics: {
         Args: { p_months?: number };
