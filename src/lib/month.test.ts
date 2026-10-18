@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { monthEnd, monthFromLabel, monthLabel, monthStart } from './month';
+import { addMonths, monthEnd, monthFromLabel, monthLabel, monthStart } from './month';
 
 describe('échéance au mois (hayon)', () => {
   it('MMAAAA lu sur l’étiquette → 1er du mois', () => {
@@ -18,5 +18,10 @@ describe('échéance au mois (hayon)', () => {
     expect(monthEnd('2028-02-01')).toBe('2028-02-29');
     expect(monthEnd('2025-12-01')).toBe('2025-12-31');
     expect(monthStart('2025-05-17')).toBe('2025-05-01');
+  });
+
+  it('mois décalé, au 1er jour', () => {
+    expect(addMonths('2026-10-18', 6)).toBe('2027-04-01');
+    expect(addMonths('2026-12-01', 1)).toBe('2027-01-01');
   });
 });

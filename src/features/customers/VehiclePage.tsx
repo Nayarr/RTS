@@ -34,6 +34,7 @@ import {
 } from './domain';
 import { useCustomerMutation, useVehicle } from './hooks';
 import { buildMaintenanceBookPdf } from './maintenance-book-pdf';
+import { addMonths } from '@/lib/month';
 
 const selectClass = 'inp';
 
@@ -310,6 +311,19 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                     ) : (
                       <span className="muted mb-2">-</span>
                     )}
+                    {/* Contrôle refait ce mois-ci : prochain dans 6 mois (aussi automatique au devis) */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mb-0.5 shrink-0"
+                      title="Contrôle hayon refait ce mois-ci : prochain dans 6 mois"
+                      onClick={() =>
+                        setValue('tailgate_due_date', addMonths(today, 6), { shouldDirty: true })
+                      }
+                    >
+                      Renouvelé (+6 mois)
+                    </Button>
                   </div>
                 ) : (
                   <div key={kind} className="field">

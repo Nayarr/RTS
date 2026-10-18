@@ -23,3 +23,10 @@ export function monthEnd(iso: string): string {
 
 /** Même mois au 1er jour : « 2025-05-17 » → « 2025-05-01 ». */
 export const monthStart = (iso: string) => `${iso.slice(0, 7)}-01`;
+
+/** Mois décalé de `months`, au 1er jour : « 2026-10-18 » et 6 → « 2027-04-01 ». */
+export function addMonths(iso: string, months: number): string {
+  const [year, month] = iso.split('-').map(Number) as [number, number];
+  const date = new Date(Date.UTC(year, month - 1 + months, 1));
+  return date.toISOString().slice(0, 10);
+}
