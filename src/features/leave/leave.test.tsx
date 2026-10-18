@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchActiveTechnicians } from '@/features/repair-orders/api';
 import type * as RepairOrdersApi from '@/features/repair-orders/api';
 import { addDays } from '@/features/planning/domain';
@@ -65,6 +65,13 @@ describe('congés : règles', () => {
 });
 
 describe('congés : direction', () => {
+  // Demandes d'octobre 2026 encore à venir, quel que soit le jour où le test tourne
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-10T10:00:00+02:00'));
+  });
+  afterEach(() => vi.useRealTimers());
+
   const renderPage = () =>
     renderRoutes([{ path: '/pointages/conges', element: <LeavePage /> }], {
       initialPath: '/pointages/conges',
