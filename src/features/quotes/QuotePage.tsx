@@ -203,6 +203,11 @@ export function QuotePage() {
               <AddLineButtons
                 vehicleType={quote.vehicle_type}
                 laborRate={laborRate}
+                tires={{
+                  documentLabel: 'devis',
+                  repairOrderId: quote.repair_order_id,
+                  repairOrderNumber: quote.repair_order_number,
+                }}
                 onAdd={({ hours, ...line }) =>
                   addLine.mutateAsync({
                     section: 'planned',

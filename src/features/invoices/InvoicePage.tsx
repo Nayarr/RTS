@@ -410,6 +410,11 @@ export function InvoicePage() {
                 <AddLineButtons
                   vehicleType={data.vehicleType}
                   laborRate={data.laborRate}
+                  tires={{
+                    documentLabel: 'facture',
+                    repairOrderId: singleOrder ?? null,
+                    repairOrderNumber: null,
+                  }}
                   onAdd={({ hours, ...line }) =>
                     addLine.mutateAsync({
                       repair_order_id: singleOrder ?? null,

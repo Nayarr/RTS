@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Clock, Package, Plus, Type, Wrench } from 'lucide-react';
+import { CircleDot, Clock, Package, Plus, Type, Wrench } from 'lucide-react';
 import { z } from 'zod';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,9 @@ import { packagesFor, type NewLine, type ServicePackage, type VehicleType } from
 import { PartSuggestions } from '@/features/catalogs/PartSuggestions';
 import { useQueryClient } from '@tanstack/react-query';
 import { partsKey } from '@/features/catalogs/hooks';
+import { TirePickDialog } from '@/features/tires/TirePickDialog';
 
-type Dialogs = 'labor' | 'package' | 'part' | null;
+type Dialogs = 'labor' | 'package' | 'part' | 'tires' | null;
 
 const laborSchema = z.object({
   description: z.string().trim().min(1, 'Indique la prestation').max(500),
@@ -270,10 +271,17 @@ export function AddLineButtons({
   vehicleType,
   laborRate,
   onAdd,
+  tires,
 }: {
   vehicleType: VehicleType;
   laborRate: number;
   onAdd: (line: NewLine) => Promise<unknown>;
+  /** Pneus du stock (taille relevée sur la fiche de contrôle de l'OR). */
+  tires?: {
+    documentLabel: 'devis' | 'facture';
+    repairOrderId: string | null;
+    repairOrderNumber: string | null;
+  };
 }) {
   const [open, setOpen] = useState<Dialogs>(null);
   const [pending, setPending] = useState(false);
@@ -302,6 +310,11 @@ export function AddLineButtons({
       <Button variant="outline" size="sm" onClick={() => setOpen('part')}>
         <Wrench /> Ajouter une pièce
       </Button>
+      {tires && (
+        <Button variant="outline" size="sm" onClick={() => setOpen('tires')}>
+          <CircleDot /> Pneus du stock
+        </Button>
+      )}
       <Button variant="outline" size="sm" onClick={() => setOpen('labor')}>
         <Clock /> Ajouter de la main d’œuvre
       </Button>
@@ -345,6 +358,9 @@ export function AddLineButtons({
             })
           }
         />
+      )}
+      {open === 'tires' && tires && (
+        <TirePickDialog vehicleType={vehicleType} {...tires} onClose={() => setOpen(null)} onAdd={onAdd} />
       )}
       {open === 'part' && (
         <PartDialog
