@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import {
   BellRing,
+  Mail,
   ChevronDown,
   ChevronRight,
   CircleDot,
@@ -9,6 +10,7 @@ import {
   Plus,
   Tags,
   TrendingUp,
+  Truck,
   TriangleAlert,
 } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
@@ -33,6 +35,8 @@ import {
   type TireProfile,
 } from './domain';
 import { useTireKpis, useTireLines, useTireLots, useTireMutation } from './hooks';
+import { QuoteRequestDialog } from './QuoteRequestDialog';
+import { SuppliersDialog } from './SuppliersDialog';
 import { Seg } from './Seg';
 import { TireDialog } from './TireDialog';
 
@@ -84,8 +88,8 @@ function MinQtyInput({ line }: { line: TireLine }) {
   };
   return (
     <label className="row inline-flex h-8 w-[92px] items-center gap-1 rounded-md border bg-card px-2">
-      <span className="sr-only">Seuil mini {lineLabel(line)}</span>
       <input
+        aria-label={`Seuil mini ${lineLabel(line)}`}
         className="num w-8 bg-transparent text-[13.5px] font-semibold outline-none"
         inputMode="numeric"
         value={draft ?? String(line.min_qty)}
@@ -166,6 +170,8 @@ export function TiresPage() {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [brands, setBrands] = useState(false);
+  const [suppliers, setSuppliers] = useState(false);
+  const [request, setRequest] = useState(false);
 
   const setStockFilter = (value: StockFilter) =>
     setParams(
@@ -213,8 +219,11 @@ export function TiresPage() {
         title="Pneumatiques"
         actions={
           <>
-            <Button variant="outline" onClick={() => setBrands(true)}>
-              <Tags /> Marques et dimensions
+            <Button variant="outline" onClick={() => setSuppliers(true)}>
+              <Truck /> Fournisseurs
+            </Button>
+            <Button variant="outline" disabled={!lines.data?.length} onClick={() => setRequest(true)}>
+              <Mail /> Demander un chiffrage{low.length > 0 ? ` (${low.length})` : ''}
             </Button>
             <Button onClick={() => setAdding(true)}>
               <Plus /> Entrée de pneus
@@ -226,6 +235,9 @@ export function TiresPage() {
       <div className="col gap-4">
         <div className="toolbar flex-wrap">
           <CatalogTabs />
+          <Button variant="ghost" size="sm" className="sm:ml-auto" onClick={() => setBrands(true)}>
+            <Tags /> Marques et dimensions
+          </Button>
         </div>
 
         {k && (
@@ -265,6 +277,9 @@ export function TiresPage() {
               {low.length} taille{low.length > 1 ? 's' : ''} sous le seuil : {low.map(lineLabel).join(', ')}.
               Alerte envoyée à la direction et à la réception (cloche et push).
             </span>
+            <Button variant="outline" size="sm" className="bg-card" onClick={() => setRequest(true)}>
+              <Mail /> Préparer la demande de chiffrage
+            </Button>
           </div>
         )}
 
@@ -405,6 +420,8 @@ export function TiresPage() {
 
       {adding && <TireDialog onClose={() => setAdding(false)} />}
       {brands && <BrandsDialog onClose={() => setBrands(false)} />}
+      {suppliers && <SuppliersDialog onClose={() => setSuppliers(false)} />}
+      {request && <QuoteRequestDialog onClose={() => setRequest(false)} />}
     </>
   );
 }

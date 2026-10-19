@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
+  fetchCompany,
+  fetchLastQuoteRequest,
   fetchSuppliers,
   fetchTireBrands,
   fetchTireKpis,
@@ -24,6 +26,9 @@ export const useTireKpis = () =>
   useQuery({ queryKey: [...tiresKey, 'kpis'], queryFn: fetchTireKpis, ...fresh });
 export const useTireBrands = () => useQuery({ queryKey: [...tiresKey, 'brands'], queryFn: fetchTireBrands });
 export const useSuppliers = () => useQuery({ queryKey: suppliersKey, queryFn: fetchSuppliers });
+export const useCompany = () => useQuery({ queryKey: ['company', 'signature'], queryFn: fetchCompany });
+export const useLastQuoteRequest = () =>
+  useQuery({ queryKey: [...tiresKey, 'last-request'], queryFn: fetchLastQuoteRequest });
 
 export const useTireLot = (id: string) =>
   useQuery({ queryKey: [...tiresKey, 'lot', id], queryFn: () => fetchTireLot(id) });

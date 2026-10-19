@@ -359,3 +359,65 @@ export async function deleteTireLine(id: string) {
   }
   if (!data.length) throw new Error('Suppression réservée à la direction');
 }
+
+// ---------------------------------------------------------------- Fournisseurs et demandes de chiffrage
+
+export async function saveSupplier(
+  id: string | null,
+  input: { name: string; email: string | null; phone: string | null },
+) {
+  const row = {
+    name: input.name.trim(),
+    email: input.email?.trim() || null,
+    phone: input.phone?.trim() || null,
+  };
+  const { error } = id
+    ? await supabase.from('suppliers').update(row).eq('id', id)
+    : await supabase.from('suppliers').insert(row);
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) throw new Error('Ce fournisseur existe déjà');
+    throw error;
+  }
+}
+
+/** Nom et adresse de l'atelier : signature du mail. */
+export async function fetchCompany() {
+  const { data, error } = await supabase
+    .from('company_settings')
+    .select('legal_name, address_line, postal_code, city')
+    .maybeSingle();
+  if (error) throw error;
+  return {
+    name: data?.legal_name ?? '',
+    address: data
+      ? [data.address_line, [data.postal_code, data.city].filter(Boolean).join(' ')]
+          .filter(Boolean)
+          .join(', ')
+      : '',
+  };
+}
+
+export type TireQuoteRequest = Tables<'tire_quote_requests'>;
+
+export async function fetchLastQuoteRequest(): Promise<TireQuoteRequest | null> {
+  const { data, error } = await supabase
+    .from('tire_quote_requests')
+    .select('*')
+    .order('sent_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** Demande gardée dans l'historique du stock (envoyée par l'appli ou copiée). */
+export async function saveQuoteRequest(input: {
+  lines: { size: string; profile: TireProfile; quantity: number }[];
+  recipients: string[];
+  channel: 'email' | 'copy';
+  subject: string;
+  body: string;
+}) {
+  const { error } = await supabase.from('tire_quote_requests').insert(input);
+  if (error) throw error;
+}
