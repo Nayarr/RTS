@@ -68,6 +68,38 @@ insert into public.parts (designation, brand, manufacturer_ref, oem_ref, supplie
   ('Filtre à huile', 'Mann-Filter', 'HU 12 140 x', '51055040108', '41000000-0000-0000-0000-000000000001', 21.50, 32.00),
   ('Disque de frein arrière', 'SBP', '02-MA010', '81508030037', '41000000-0000-0000-0000-000000000001', 118.00, 165.00);
 
+-- Stock des pneus : lignes par taille et profil, lots par marque, arrivages passés par les mouvements
+insert into public.suppliers (id, name, email) values
+  ('41000000-0000-0000-0000-000000000003', 'Euromaster', 'commandes@euromaster.test'),
+  ('41000000-0000-0000-0000-000000000004', 'Vulco', 'pneus@vulco.test');
+
+insert into public.tire_brands (id, name) values
+  ('92000000-0000-0000-0000-000000000001', 'Michelin'),
+  ('92000000-0000-0000-0000-000000000002', 'Continental'),
+  ('92000000-0000-0000-0000-000000000003', 'Bridgestone');
+
+insert into public.tire_lines (id, category, size, profile, min_qty) values
+  ('93000000-0000-0000-0000-000000000001', 'pl', '315/80 R22.5', 'avant', 6),
+  ('93000000-0000-0000-0000-000000000002', 'pl', '315/80 R22.5', 'arriere', 6),
+  ('93000000-0000-0000-0000-000000000003', 'pl', '385/65 R22.5', 'remorque', 4),
+  ('93000000-0000-0000-0000-000000000004', 'vul', '235/65 R16C', 'toutes', 4);
+
+insert into public.tires (id, line_id, brand_id, model, load_index, location, supplier_id, purchase_price, sale_price) values
+  ('94000000-0000-0000-0000-000000000001', '93000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001',
+   'X Multi Z', '156/150 L', 'Rack A1', '41000000-0000-0000-0000-000000000003', 312.00, 415.00),
+  ('94000000-0000-0000-0000-000000000002', '93000000-0000-0000-0000-000000000002', '92000000-0000-0000-0000-000000000001',
+   'X Multi D', '156/150 L', 'Rack A2', '41000000-0000-0000-0000-000000000003', 328.00, 436.00),
+  ('94000000-0000-0000-0000-000000000003', '93000000-0000-0000-0000-000000000003', '92000000-0000-0000-0000-000000000003',
+   'R168', '160 K', 'Rack B1', '41000000-0000-0000-0000-000000000004', 289.00, 385.00),
+  ('94000000-0000-0000-0000-000000000004', '93000000-0000-0000-0000-000000000004', '92000000-0000-0000-0000-000000000002',
+   'VanContact Eco', '115/113 R', 'Rack C1', '41000000-0000-0000-0000-000000000004', 108.00, 145.00);
+
+insert into public.tire_movements (tire_id, quantity, reason, supplier_id, unit_purchase_price, note) values
+  ('94000000-0000-0000-0000-000000000001', 12, 'entry', '41000000-0000-0000-0000-000000000003', 312.00, 'Stock de départ'),
+  ('94000000-0000-0000-0000-000000000002', 3, 'entry', '41000000-0000-0000-0000-000000000003', 328.00, 'Stock de départ'),
+  ('94000000-0000-0000-0000-000000000003', 10, 'entry', '41000000-0000-0000-0000-000000000004', 289.00, 'Stock de départ'),
+  ('94000000-0000-0000-0000-000000000004', 8, 'entry', '41000000-0000-0000-0000-000000000004', 108.00, 'Stock de départ');
+
 -- Tâches planifiées → Edge Functions (purge des fichiers, notifications) : adresse de l'API
 -- vue depuis la base (réseau Docker local) et secret partagé avec les fonctions
 -- (CRON_SECRET dans config.toml). En production, ces deux secrets sont créés à la main.

@@ -16,6 +16,8 @@ export interface NavLeaf {
 export interface NavGroup {
   id: string;
   section: 'ops' | 'mgmt';
+  /** Rôles qui voient le groupe (sinon ceux de sa partie du menu). */
+  roles?: AppRole[];
   label: string;
   icon: LucideIcon;
   items: NavLeaf[];
@@ -100,12 +102,15 @@ export const GROUPS: NavGroup[] = [
   {
     id: 'stock',
     section: 'mgmt',
+    // La réception gère le stock des pneus (arrivages, alertes du seuil mini)
+    roles: ['direction', 'reception'],
     label: 'Stock',
     icon: Package,
     items: [
-      { to: '/stock/consommables', label: 'Consommables' },
-      { to: '/stock/pieces', label: 'Pièces' },
-      { to: '/stock/forfaits', label: 'Forfaits' },
+      { to: '/stock/consommables', label: 'Consommables', roles: ['direction'] },
+      { to: '/stock/pieces', label: 'Pièces', roles: ['direction'] },
+      { to: '/stock/pneumatiques', label: 'Pneumatiques' },
+      { to: '/stock/forfaits', label: 'Forfaits', roles: ['direction'] },
     ],
   },
   {

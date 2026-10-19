@@ -54,8 +54,16 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
     if (activeGroup && !open[activeGroup]) setOpen({ ...open, [activeGroup]: true });
   }
 
+  // Groupes et entrées du rôle connecté
   const groups = (section: NavGroup['section']) =>
-    role && SECTION_ROLES[section].includes(role) ? GROUPS.filter((group) => group.section === section) : [];
+    role
+      ? GROUPS.filter(
+          (group) => group.section === section && (group.roles ?? SECTION_ROLES[section]).includes(role),
+        ).map((group) => ({
+          ...group,
+          items: group.items.filter((item) => !item.roles || item.roles.includes(role)),
+        }))
+      : [];
 
   const renderGroup = (group: NavGroup) => {
     const isOpen = Boolean(open[group.id]);

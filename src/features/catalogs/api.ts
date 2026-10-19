@@ -77,6 +77,7 @@ export async function fetchParts(search: string): Promise<Part[]> {
     .from('parts')
     .select('*, supplier:suppliers(name)')
     .eq('is_active', true)
+    .eq('is_tire', false)
     .order('designation')
     .limit(200);
   const term = searchTerm(search);

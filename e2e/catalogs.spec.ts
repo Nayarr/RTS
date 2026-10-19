@@ -15,9 +15,12 @@ async function loginAs(page: Page, email: string) {
 const unique = (label: string, project: string) =>
   `${label} ${project.includes('mobile') ? 'M' : 'D'}${String(Date.now()).slice(-6)}`;
 
-test('seule la direction gère le stock', async ({ page }) => {
+test('la réception n’a du stock que les pneumatiques', async ({ page }) => {
   await loginAs(page, 'reception@rts.local');
-  await expect((await sideNav(page)).getByRole('button', { name: 'Stock' })).toHaveCount(0);
+  const side = await sideNav(page);
+  await side.getByRole('button', { name: 'Stock', exact: true }).click();
+  await expect(side.getByRole('link', { name: 'Pneumatiques' })).toBeVisible();
+  await expect(side.getByRole('link', { name: 'Consommables' })).toHaveCount(0);
   await page.goto('/stock/consommables');
   await expect(page.getByRole('heading', { name: 'Accès refusé' })).toBeVisible();
 });
