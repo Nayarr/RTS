@@ -7695,7 +7695,7 @@ export type Database = {
       };
       tire_line_alert: { Args: { p_line_id: string }; Returns: undefined };
       tire_reserved_quantities: {
-        Args: Record<PropertyKey, never>;
+        Args: { p_line_id?: string };
         Returns: {
           reserved: number;
           tire_id: string;
