@@ -74,32 +74,35 @@ test('pneus avant HS et arrière à 50 % : « Remplacement Pneus » pour le tech
   // Bureau : sur l'OR, les forfaits sont marqués « devis et facture seulement »
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
-  await expect(page.getByText('DÉPOSE/REPOSE ROUE X4 (arrière)')).toBeVisible();
+  await expect(page.getByText('DÉPOSE/REPOSE ROUE (arrière)')).toBeVisible();
   await expect(page.getByText('Devis et facture seulement').first()).toBeVisible();
 
-  // Devis préparé depuis l'OR : forfaits au barème PL, sans les lignes du technicien
+  // Devis préparé depuis l'OR : une ligne par prestation en quantité (2 à l'avant, 4 à l'arrière) au
+  // prix unitaire du barème PL, sans les lignes du technicien
   const { data: quoteId, error: quoteError } = await reception.rpc('build_quote_from_repair_order', {
     p_repair_order_id: order.id,
   });
   if (quoteError) throw quoteError;
   const { data: lines } = await reception
     .from('quote_lines')
-    .select('description, unit_price')
+    .select('description, quantity, unit_price')
     .eq('quote_id', quoteId)
     .neq('line_type', 'text');
   expect(
-    (lines ?? []).map((line) => [line.description.split('\n')[0], Number(line.unit_price)]).sort(),
+    (lines ?? [])
+      .map((line) => [line.description.split('\n')[0], Number(line.quantity), Number(line.unit_price)])
+      .sort(),
   ).toEqual([
-    ['DÉPOSE/REPOSE PNEUMATIQUE X2 (avant)', 36],
-    ['DÉPOSE/REPOSE PNEUMATIQUE X4 (arrière)', 72],
-    ['DÉPOSE/REPOSE ROUE X2 (avant)', 36],
-    ['DÉPOSE/REPOSE ROUE X4 (arrière)', 72],
-    ['RECYCLAGE PNEUMATIQUE X2 (avant)', 16],
-    ['RECYCLAGE PNEUMATIQUE X4 (arrière)', 32],
-    ['ÉQUILIBRAGE X2 (avant)', 70],
+    ['DÉPOSE/REPOSE PNEUMATIQUE (arrière)', 4, 18],
+    ['DÉPOSE/REPOSE PNEUMATIQUE (avant)', 2, 18],
+    ['DÉPOSE/REPOSE ROUE (arrière)', 4, 18],
+    ['DÉPOSE/REPOSE ROUE (avant)', 2, 18],
+    ['RECYCLAGE PNEUMATIQUE (arrière)', 4, 8],
+    ['RECYCLAGE PNEUMATIQUE (avant)', 2, 8],
+    ['ÉQUILIBRAGE (avant)', 2, 35],
   ]);
   await page.goto(`/devis/${quoteId}`);
-  await expect(page.getByText('RECYCLAGE PNEUMATIQUE X4 (arrière)').first()).toBeVisible();
+  await expect(page.getByText('RECYCLAGE PNEUMATIQUE (arrière)').first()).toBeVisible();
   await expect(page.getByText('Remplacement Pneus avant')).toHaveCount(0);
 });
 
@@ -109,14 +112,15 @@ test('forfaits des pneus dans Stock › Forfaits : prix, barème et « devis et 
   await loginAs(page, 'direction@rts.local');
   await page.goto('/stock/forfaits');
   await page.getByRole('group', { name: 'Type de véhicule' }).getByRole('button', { name: 'PL' }).click();
-  const card = page.getByRole('article', { name: 'DÉPOSE/REPOSE ROUE X4' });
+  const card = page.getByRole('article', { name: 'DÉPOSE/REPOSE ROUE' });
   await expect(card).toBeVisible();
-  await card.getByRole('button', { name: 'Modifier DÉPOSE/REPOSE ROUE X4' }).click();
+  await card.getByRole('button', { name: 'Modifier DÉPOSE/REPOSE ROUE' }).click();
   const dialog = page.getByRole('dialog');
-  // Barème de l'arrière d'un poids lourd : 1 h (30 min à l'avant), modifiable
-  await expect(dialog.getByLabel('Temps barème (heures)')).toHaveValue(/^1([,.]0+)?$/);
+  // Prix à l'unité (18 € par roue, la fiche met la quantité), barème de 30 min modifiable
+  await expect(dialog.getByLabel('Temps barème (heures)')).toHaveValue(/^0[,.]50?$/);
   await expect(dialog.getByLabel('Temps barème (heures)')).toBeEditable();
-  await expect(dialog.getByLabel('Prix forfaitaire HT (€)')).toHaveValue(/^72([,.]00?)?$/);
+  await expect(dialog.getByLabel('Prix forfaitaire HT (€)')).toHaveValue(/^18([,.]00?)?$/);
+  await expect(dialog.getByLabel('Pneus avant')).toBeChecked();
   await expect(dialog.getByLabel('Pneus arrière')).toBeChecked();
   await expect(dialog.getByLabel('Devis et facture seulement')).toBeChecked();
   await page.keyboard.press('Escape');
