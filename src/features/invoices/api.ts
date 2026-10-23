@@ -1,3 +1,4 @@
+import { fetchAllRows } from '@/lib/all-rows';
 import { supabase } from '@/lib/supabase';
 import type { Enums, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
@@ -54,13 +55,17 @@ export type CreditNoteOverview = CreditNote & {
 // ---------------------------------------------------------------- Lecture
 
 export async function fetchInvoices(): Promise<InvoiceOverview[]> {
-  const { data, error } = await supabase
-    .from('v_invoices_overview')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(2000);
-  if (error) throw error;
-  return data as InvoiceOverview[];
+  const rows = await fetchAllRows(
+    (from, to) =>
+      supabase
+        .from('v_invoices_overview')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .order('id')
+        .range(from, to),
+    5000,
+  );
+  return rows as InvoiceOverview[];
 }
 
 export async function fetchRepairOrderInvoices(repairOrderId: string): Promise<InvoiceOverview[]> {
