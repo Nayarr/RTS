@@ -7330,6 +7330,7 @@ export type Database = {
       is_valid_siret: { Args: { p_siret: string }; Returns: boolean };
       issue_invoice: { Args: { p_invoice_id: string }; Returns: string };
       keeps_standard_time: { Args: { p_description: string }; Returns: boolean };
+      kiosk_change_pin: { Args: { p_current: string; p_new: string }; Returns: Json };
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
       kiosk_exit_code_is_set: { Args: Record<PropertyKey, never>; Returns: boolean };
       kiosk_pending_signature: { Args: Record<PropertyKey, never>; Returns: Json };
@@ -7870,6 +7871,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      technician_by_pin: { Args: { p_pin: string }; Returns: string };
       technician_performance: {
         Args: { p_from?: string; p_to?: string };
         Returns: {

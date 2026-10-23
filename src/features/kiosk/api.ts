@@ -39,3 +39,12 @@ export async function kioskPing() {
   const { error } = await supabase.rpc('kiosk_ping');
   if (error) throw error;
 }
+
+export type KioskChangePinResult = { ok: false; message: string } | { ok: true; technician_name: string };
+
+/** Le technicien remplace son code PIN (code actuel vérifié par la base, tentatives comptées). */
+export async function kioskChangePin(current: string, next: string): Promise<KioskChangePinResult> {
+  const { data, error } = await supabase.rpc('kiosk_change_pin', { p_current: current, p_new: next });
+  if (error) throw error;
+  return data as unknown as KioskChangePinResult;
+}
