@@ -11,11 +11,16 @@
 // email_deliveries.
 // Réponse préparée par l'Agent Direction (inbox_email_id) : réservée à la direction, envoyée dans
 // le fil du mail reçu, qui est ensuite marqué répondu et traité.
+// Mail préparé par l'Agent Direction (agent_action_id) : réservé à la direction qui l'a validé ; le
+// contenu est relu dans l'action (jamais pris dans la requête), l'action est marquée faite et, pour
+// une relance, la relance est notée sur chaque facture.
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import {
+  agentMailRequest,
+  agentMailRequestSchema,
   attachmentsBytes,
   DAILY_LIMIT,
   MAX_ATTACHMENTS_BYTES,
@@ -52,15 +57,46 @@ export default {
       .maybeSingle();
     if (!settings?.mail_send_enabled) return fail(409, 'Envoi par l’appli désactivé dans les réglages');
 
-    const parsed = requestSchema.safeParse(await req.json().catch(() => null));
+    const body = await req.json().catch(() => null);
+    const admin = ctx.supabaseAdmin;
+
+    // Mail préparé par l'agent : contenu lu dans l'action, avec les droits de la personne connectée
+    const agentMail = agentMailRequestSchema.safeParse(body);
+    let agentAction: { id: string; invoice_ids: string[] } | null = null;
+    let parsed = requestSchema.safeParse(body);
+    if (agentMail.success) {
+      const { data: action } = await ctx.supabase
+        .from('agent_actions')
+        .select('id, kind, status, payload, created_at')
+        .eq('id', agentMail.data.agent_action_id)
+        .maybeSingle();
+      if (!action || action.kind !== 'send_mail') return fail(404, 'Mail préparé introuvable');
+      if (action.status !== 'proposed') return fail(409, 'Mail déjà envoyé ou annulé');
+      if (Date.parse(action.created_at) < Date.now() - 30 * 60_000) {
+        await admin.from('agent_actions').update({
+          status: 'cancelled',
+          decided_at: new Date().toISOString(),
+          error: 'Expirée',
+        }).eq('id', action.id).eq('status', 'proposed');
+        return fail(410, 'Mail préparé il y a plus de 30 minutes : redemande-le à l’agent');
+      }
+      const prepared = agentMailRequest(action.payload, agentMail.data.idempotency_key);
+      if (!prepared) return fail(400, 'Mail préparé illisible');
+      parsed = requestSchema.safeParse(prepared);
+      const ids = (action.payload as { invoice_ids?: unknown }).invoice_ids;
+      agentAction = { id: action.id, invoice_ids: Array.isArray(ids) ? ids.map(String) : [] };
+    }
     if (!parsed.success) return fail(400, 'Adresse e-mail ou message invalide');
     const request = parsed.data;
     if (attachmentsBytes(request.attachments) > MAX_ATTACHMENTS_BYTES) {
       return fail(413, 'Pièces jointes trop lourdes (10 Mo maximum) : envoie le lien seul');
     }
 
-    const admin = ctx.supabaseAdmin;
     let inReplyTo: string | null = null;
+    if (agentAction) {
+      const { data: isDirection } = await ctx.supabase.rpc('is_direction');
+      if (isDirection !== true) return fail(403, 'Mails de l’Agent Direction réservés à la direction');
+    }
     if (request.inbox_email_id) {
       const { data: isDirection } = await ctx.supabase.rpc('is_direction');
       if (isDirection !== true) return fail(403, 'Réponse aux mails reçus réservée à la direction');
@@ -137,6 +173,28 @@ export default {
         .update({ handled_at: now, handled_by: userId })
         .eq('id', request.inbox_email_id)
         .is('handled_at', null);
+    }
+    if (agentAction) {
+      const userId = ctx.userClaims?.id ?? null;
+      const { error: actionError } = await admin
+        .from('agent_actions')
+        .update({
+          status: 'done',
+          decided_at: new Date().toISOString(),
+          result: {
+            provider_message_id: result.id,
+            link: agentAction.invoice_ids.length ? '/factures' : null,
+          },
+        })
+        .eq('id', agentAction.id)
+        .eq('status', 'proposed');
+      if (actionError) console.error(actionError);
+      if (agentAction.invoice_ids.length) {
+        const { error: reminderError } = await admin
+          .from('invoice_reminders')
+          .insert(agentAction.invoice_ids.map((invoice_id) => ({ invoice_id, sent_by: userId })));
+        if (reminderError) console.error(reminderError);
+      }
     }
     return json(200, { id: result.id });
   }),

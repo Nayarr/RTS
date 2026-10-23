@@ -1,5 +1,7 @@
 import { assertEquals, assertStringIncludes } from '@std/assert';
 import {
+  agentMailRequest,
+  agentMailRequestSchema,
   attachmentsBytes,
   base64Bytes,
   mailHtml,
@@ -198,4 +200,38 @@ Deno.test('réponse à un mail reçu : même fil chez le client, en-tête vérif
   assertEquals(threadHeader(' <abc@x.fr> '), '<abc@x.fr>');
   assertEquals(threadHeader('<abc@x.fr>\r\nBcc: pirate@x.fr'), null);
   assertEquals(threadHeader(null), null);
+});
+
+Deno.test('mail préparé par l’agent : contenu relu dans l’action, adresse de facturation pour une relance', () => {
+  const key = '3f6c2f47-6c2b-4b8e-9d0e-2a3c7b1d5e90';
+  assertEquals(
+    agentMailRequestSchema.safeParse({ agent_action_id: key, idempotency_key: key }).success,
+    true,
+  );
+  assertEquals(
+    agentMailRequest(
+      {
+        to: 'compta@martin.fr',
+        subject: 'Facture F11887',
+        text: 'Madame, Monsieur,',
+        category: 'billing',
+        invoice_ids: ['8d1b9a52-3c8e-4b3a-9f2a-6e7d1c2b3a4f'],
+        client_name: 'Transports Martin',
+      },
+      key,
+    ),
+    {
+      category: 'billing',
+      to: 'compta@martin.fr',
+      subject: 'Facture F11887',
+      text: 'Madame, Monsieur,',
+      attachments: [],
+      idempotency_key: key,
+    },
+  );
+  assertEquals(
+    agentMailRequest({ to: 'pas-une-adresse', subject: 'x', text: 'y', category: 'billing' }, key),
+    null,
+  );
+  assertEquals(agentMailRequest({ to: 'a@b.fr', subject: 'x', text: 'y', category: 'signature' }, key), null);
 });

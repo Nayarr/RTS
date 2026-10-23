@@ -1,5 +1,6 @@
 // Actions que l'assistant de la direction peut PRÉPARER : rendez-vous, travail à ajouter sur un OR,
-// technicien à assigner. Un outil ne fait que lire (vérifier l'OR, le véhicule, le technicien)
+// technicien à assigner, mail (relance d'un retard de paiement, mail libre ; envoyé par mail-send
+// après validation). Un outil ne fait que lire (vérifier l'OR, le véhicule, le technicien)
 // puis noter l'action proposée dans agent_actions ; elle s'exécute seulement quand la direction la
 // valide dans l'appli (execute_agent_action). Rien d'autre n'est écrit.
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -21,7 +22,7 @@ const schema = (properties: Record<string, unknown>, required: string[] = []) =>
 
 export interface ProposedAction {
   id: string;
-  kind: 'appointment' | 'ro_work' | 'assign_technician';
+  kind: 'appointment' | 'ro_work' | 'assign_technician' | 'send_mail';
   summary: string;
 }
 
@@ -264,6 +265,116 @@ export const ACTION_TOOLS: ActionTool[] = [
     },
   }),
 ];
+
+/** Client de l'atelier reconnu par son nom (exact, sinon début unique du nom). */
+async function findClient(db: Db, name: string): Promise<{ id: string; name: string; email: string | null }> {
+  const key = plateKey(name);
+  const { data, error } = await db
+    .from('clients')
+    .select('id, name, email, name_key')
+    .like('name_key', `${key}%`)
+    .limit(20);
+  if (error) throw new Error(error.message);
+  const list = (data ?? []) as { id: string; name: string; email: string | null; name_key: string }[];
+  const exact = list.filter((client) => client.name_key === key);
+  const match = exact.length ? exact : list;
+  if (match.length !== 1) {
+    throw new Error(
+      match.length
+        ? `plusieurs clients « ${name} » (${match.slice(0, 5).map((client) => client.name).join(', ')})`
+        : `client « ${name} » introuvable`,
+    );
+  }
+  return match[0]!;
+}
+
+const EMAIL = /^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/;
+
+ACTION_TOOLS.push(
+  action({
+    name: 'preparer_mail',
+    description:
+      'Prépare un mail : à un client de l’atelier (e-mail de sa fiche) ou à une adresse dite. Pour une relance de paiement, donne les numéros des factures en retard relancées. Ne l’envoie pas : la direction relit le mail puis valide.',
+    input_schema: schema(
+      {
+        client: string('Nom du client de l’atelier'),
+        email: string('Adresse e-mail, si elle est dite ou si ce n’est pas un client'),
+        objet: string('Objet du mail'),
+        texte: string('Texte complet du mail, avec la formule de politesse et la signature'),
+        factures: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Numéros des factures relancées (ex. F11887), pour une relance de paiement',
+        },
+      },
+      ['objet', 'texte'],
+    ),
+    input: z
+      .object({
+        client: z.string().trim().max(120).optional(),
+        email: z.string().trim().max(254).optional(),
+        objet: text(200),
+        texte: text(5000),
+        factures: z.array(z.string().trim().min(1).max(20)).max(20).optional(),
+      })
+      .refine((value) => value.client || value.email, { message: 'indique le client ou l’adresse e-mail' }),
+    run: async (db, input, conversationId) => {
+      const client = input.client ? await findClient(db, input.client) : null;
+      const to = (input.email || client?.email || '').trim().toLowerCase();
+      if (!to) {
+        throw new Error(`pas d’e-mail sur la fiche de ${client?.name ?? 'ce client'} : demande l’adresse`);
+      }
+      if (!EMAIL.test(to)) throw new Error(`adresse e-mail invalide : ${to}`);
+
+      // Factures relancées : émises, encore dues, au client du mail
+      const numbers = [...new Set((input.factures ?? []).map((value) => `F${value.replace(/\D/g, '')}`))];
+      const invoices: { id: string; number: string }[] = [];
+      if (numbers.length) {
+        const { data, error } = await db
+          .from('v_invoices_overview')
+          .select('id, number, client_id, balance_due, status')
+          .in('number', numbers);
+        if (error) throw new Error(error.message);
+        const found = (data ?? []) as {
+          id: string;
+          number: string;
+          client_id: string;
+          balance_due: number | null;
+          status: string;
+        }[];
+        for (const number of numbers) {
+          const invoice = found.find((item) => item.number === number);
+          if (!invoice || invoice.status !== 'issued') throw new Error(`facture ${number} introuvable`);
+          if (client && invoice.client_id !== client.id) {
+            throw new Error(`la facture ${number} n’est pas à ${client.name}`);
+          }
+          if ((invoice.balance_due ?? 0) <= 0.01) throw new Error(`la facture ${number} est déjà réglée`);
+          invoices.push({ id: invoice.id, number });
+        }
+      }
+      const reminder = invoices.length > 0;
+      const who = client ? `${client.name} (${to})` : to;
+      return propose(
+        db,
+        conversationId,
+        'send_mail',
+        {
+          to,
+          client_id: client?.id ?? null,
+          client_name: client?.name ?? null,
+          subject: input.objet,
+          text: input.texte,
+          category: reminder ? 'billing' : 'workshop',
+          invoice_ids: invoices.map((invoice) => invoice.id),
+          invoice_numbers: invoices.map((invoice) => invoice.number),
+        },
+        `${reminder ? 'Relance' : 'Mail'} à ${who} : « ${input.objet} »${
+          reminder ? `, factures ${invoices.map((invoice) => invoice.number).join(', ')}` : ''
+        }`.slice(0, 500),
+      );
+    },
+  }),
+);
 
 export const ACTION_DEFINITIONS = ACTION_TOOLS.map(({ name, description, input_schema }) => ({
   name,
