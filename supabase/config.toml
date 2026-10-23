@@ -466,6 +466,14 @@ verify_jwt = false
 import_map = "./functions/mail-send/deno.json"
 entrypoint = "./functions/mail-send/index.ts"
 
+[functions.tts]
+enabled = true
+# Voix naturelle d'Azure pour l'Agent Direction (secrets AZURE_SPEECH_KEY et AZURE_SPEECH_REGION).
+# Le jeton de l'appelant est vérifié dans la fonction elle-même (withSupabase({ auth: "user" })).
+verify_jwt = false
+import_map = "./functions/tts/deno.json"
+entrypoint = "./functions/tts/index.ts"
+
 [functions.agent]
 enabled = true
 # Assistant de la direction (Claude Sonnet, secret ANTHROPIC_AGENT_API_KEY) : lectures seules.

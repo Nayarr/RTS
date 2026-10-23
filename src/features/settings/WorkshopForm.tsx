@@ -10,6 +10,7 @@ import { updateAppSettings, type AppSettings } from './api';
 import { useSaveSettings } from './hooks';
 import { workshopSchema, workshopToForm, type WorkshopValues } from './schemas';
 import { SectionCard } from '@/components/SectionCard';
+import { VoiceSettings } from './VoiceSettings';
 
 const HOUR_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
   { name: 'workday_start', label: 'Ouverture' },
@@ -51,6 +52,10 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
     formState: { errors, isDirty, dirtyFields },
   } = useForm<WorkshopValues>({ resolver: zodResolver(workshopSchema), values: workshopToForm(app) });
   const mailDomain = useWatch({ control, name: 'mail_domain' });
+  const [ttsProvider, ttsVoice, ttsLimit] = useWatch({
+    control,
+    name: ['tts_provider', 'tts_voice', 'tts_monthly_limit'],
+  });
 
   const save = useSaveSettings((values: WorkshopValues) => {
     const { mail_domain, ...patch } = pickDirty(values, dirtyFields);
@@ -195,6 +200,14 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
           </span>
           {errors.agent_memo && <p className="err">{errors.agent_memo.message}</p>}
         </div>
+        <VoiceSettings
+          control={control}
+          register={register}
+          provider={ttsProvider}
+          voice={ttsVoice}
+          limit={ttsLimit}
+          error={errors.tts_monthly_limit?.message}
+        />
       </fieldset>
 
       <fieldset className="col gap-3">

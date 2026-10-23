@@ -1,4 +1,8 @@
-/** Lecture à voix haute des réponses de l'assistant (voix du navigateur, gratuite, sur l'appareil). */
+/**
+ * Lecture à voix haute des réponses de l'assistant : voix Azure si la direction l'a choisie, sinon
+ * (ou en secours) voix du navigateur, gratuite, sur l'appareil.
+ */
+import { azureAudio } from './azure-voice';
 import { oralText } from './oral';
 
 export const speechSupported = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -102,12 +106,58 @@ function frenchVoice(): SpeechSynthesisVoice | undefined {
 /** Lecture en cours : une lecture demandée puis coupée avant le chargement des voix ne part pas. */
 let reading = 0;
 
+export type VoiceProvider = 'browser' | 'azure';
+
+/** Voix réglée par la direction (Réglages › Atelier) : navigateur ou Azure. */
+let provider: VoiceProvider = 'browser';
+let player: HTMLAudioElement | null = null;
+
+export function setVoiceProvider(value: VoiceProvider): void {
+  provider = value;
+}
+
+/** Point du jour : la phrase suivante est demandée à Azure pendant la lecture de celle-ci. */
+export function prefetchSpeech(text: string): void {
+  if (provider === 'azure') azureAudio(speakableText(text)).catch(() => undefined);
+}
+
 /** Lit le texte ; `onEnd` est appelé à la fin (ou si la lecture est coupée). */
 export function speak(text: string, onEnd?: () => void): void {
-  if (!speechSupported()) return;
-  const synth = window.speechSynthesis;
-  synth.cancel();
+  stopAudio();
+  if (speechSupported()) window.speechSynthesis.cancel();
   const current = ++reading;
+  if (provider !== 'azure') {
+    browserSpeak(text, current, onEnd);
+    return;
+  }
+  // Voix Azure ; sinon (clé absente, plafond du mois, réseau, lecture bloquée) voix du navigateur
+  const fallback = () => {
+    if (current === reading) browserSpeak(text, current, onEnd);
+  };
+  azureAudio(speakableText(text)).then((url) => {
+    if (current !== reading) {
+      onEnd?.();
+      return;
+    }
+    const audio = new Audio(url);
+    player = audio;
+    audio.onended = () => onEnd?.();
+    audio.onerror = fallback;
+    audio.play().catch(fallback);
+  }, fallback);
+}
+
+function stopAudio(): void {
+  player?.pause();
+  player = null;
+}
+
+function browserSpeak(text: string, current: number, onEnd?: () => void): void {
+  if (!speechSupported()) {
+    onEnd?.();
+    return;
+  }
+  const synth = window.speechSynthesis;
   void voicesReady().then(() => {
     if (current !== reading) {
       onEnd?.();
@@ -127,6 +177,7 @@ export function speak(text: string, onEnd?: () => void): void {
 
 export function stopSpeaking(): void {
   reading++;
+  stopAudio();
   if (speechSupported()) window.speechSynthesis.cancel();
 }
 
