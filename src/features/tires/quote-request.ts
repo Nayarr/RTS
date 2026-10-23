@@ -15,6 +15,7 @@ const PROFILE_TEXT: Record<TireProfile, string> = {
   avant: 'profil avant',
   arriere: 'profil arrière',
   remorque: 'profil remorque',
+  multi: 'multi-positions',
   toutes: '',
 };
 

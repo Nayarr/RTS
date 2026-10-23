@@ -83,11 +83,14 @@ export function inspectionPositions(inspection: InspectionData | null, vehicle: 
   });
 }
 
-/** Lots proposés : le profil de la position d'abord, puis le plus de pneus disponibles. */
+/** Rang d'un lot pour la position : son profil d'abord, puis multi-positions (va partout). */
+const profileRank = (lot: TireLot, profile: TireProfile) =>
+  lot.profile === profile ? 2 : lot.profile === 'multi' ? 1 : 0;
+
+/** Lots proposés : le profil de la position d'abord, puis multi-positions, puis le plus de pneus disponibles. */
 export const sortLots = (lots: TireLot[], profile: TireProfile) =>
   [...lots].sort(
-    (a, b) =>
-      Number(b.profile === profile) - Number(a.profile === profile) || b.available_qty - a.available_qty,
+    (a, b) => profileRank(b, profile) - profileRank(a, profile) || b.available_qty - a.available_qty,
   );
 
 /** Désignation de la ligne : celle de la pièce du lot (« Pneu Michelin X Multi Z 315/80 R22.5 »). */

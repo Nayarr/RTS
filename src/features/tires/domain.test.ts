@@ -20,9 +20,10 @@ describe('taille des pneus', () => {
   });
 
   it('profils selon la catégorie et libellé de ligne', () => {
-    expect(profilesFor('pl')).toEqual(['avant', 'arriere', 'remorque']);
+    expect(profilesFor('pl')).toEqual(['avant', 'arriere', 'remorque', 'multi']);
     expect(profilesFor('vul')).toEqual(['toutes']);
     expect(lineLabel({ size: '315/80 R22.5', profile: 'arriere' })).toBe('315/80 R22.5 arrière');
+    expect(lineLabel({ size: '315/80 R22.5', profile: 'multi' })).toBe('315/80 R22.5 multi-positions');
     expect(lineLabel({ size: '235/65 R16C', profile: 'toutes' })).toBe('235/65 R16C');
   });
 
