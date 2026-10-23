@@ -190,7 +190,7 @@ test('point du jour lu à l’ouverture, réponse dictée, « envoie » à la vo
   expect(spoken.slice(0, 3)).toEqual([
     'Paul Fontaine signale un porteur en panne.',
     'Sept OR en cours.',
-    'Mail de Paul Fontaine. Son porteur HB-376-CP ne démarre plus, il veut une intervention aujourd’hui. Voici la réponse préparée.',
+    'Mail de Paul Fontaine. Son porteur H B, 376, C P ne démarre plus, il veut une intervention aujourd’hui. Voici la réponse préparée.',
   ]);
   expect(spoken.at(-1)).toBe('Je l’envoie à Paul Fontaine ?');
 
