@@ -35,12 +35,13 @@ function spokenAmount(units: string, cents: string | undefined): string {
   return cents && Number(cents) > 0 ? `${euros} ${cents.padEnd(2, '0')}` : euros;
 }
 
-// Le mot devant le numéro n'est pas répété : « le devis DV07701 » → « le devis 7701 »
+// Le mot devant le numéro n'est pas répété (« le devis DV07701 » → « le devis 7701 ») et garde
+// sa casse (« Facture F11887 » → « Facture 11887 »)
 const DOCUMENTS: [RegExp, string][] = [
-  [/\b(?:devis\s+)?DV0*(\d+)\b/gi, 'devis '],
-  [/\bOR0*(\d+)\b/g, 'O R '],
-  [/\b(?:avoir\s+)?AV0*(\d+)\b/gi, 'avoir '],
-  [/\b(?:facture\s+)?F(\d{3,})\b/gi, 'facture '],
+  [/\b(?:(devis)\s+)?DV0*(\d+)\b/gi, 'devis'],
+  [/\b()OR0*(\d+)\b/g, 'O R'],
+  [/\b(?:(avoir)\s+)?AV0*(\d+)\b/gi, 'avoir'],
+  [/\b(?:(facture)\s+)?F(\d{3,})\b/gi, 'facture'],
 ];
 
 const SIGLES: [RegExp, string][] = [
@@ -85,7 +86,10 @@ export function oralText(text: string): string {
       `${start.split('').join(' ')}, ${digits}, ${end.split('').join(' ')}`,
   );
   for (const [pattern, word] of DOCUMENTS) {
-    out = out.replace(pattern, (_, digits: string) => `${word}${plain(digits)}`);
+    out = out.replace(
+      pattern,
+      (_, written: string | undefined, digits: string) => `${written || word} ${plain(digits)}`,
+    );
   }
   for (const [pattern, word] of SIGLES) out = out.replace(pattern, word);
   return out.replace(/\s{2,}/g, ' ').trim();

@@ -37,7 +37,7 @@ describe('texte écrit pour l’oreille', () => {
 
   it('lecture : mise en forme retirée puis texte réécrit', () => {
     expect(speakableText('**Facture F11887** : 320,00 € TTC\n- échue le 27/10')).toBe(
-      'facture 11887 : 320 euros T T C. échue le 27 octobre',
+      'Facture 11887 : 320 euros T T C. échue le 27 octobre',
     );
   });
 });
