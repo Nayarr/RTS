@@ -45,7 +45,8 @@ const portal: PublicPortal = {
       status_label: 'Pas à l’atelier',
       since: null,
       ct_due_date: addDays(todayIso(), 200),
-      tailgate_due_date: addDays(todayIso(), 10),
+      // Hayon : valable jusqu'à la fin du mois, le mois en cours tombe toujours dans les 30 jours
+      tailgate_due_date: `${todayIso().slice(0, 7)}-01`,
     },
   ],
   quotes: [{ number: 'DV00012', vehicle_plate: 'AB-123-CD', token: QUOTE_TOKEN }],
