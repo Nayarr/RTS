@@ -161,9 +161,10 @@ test('location complète : permis scanné, clés refusées tant qu’il manque p
   await expect(keys).toBeEnabled();
   await keys.click();
 
-  // Fiche : location en cours
+  // Fiche : location en cours, facture de la location préparée dès la remise des clés
   await expect(page.getByRole('heading', { level: 1 })).toContainText('En cours');
   expect(page.url()).toBe(contractUrl);
+  await expect(page.getByRole('link', { name: 'Émettre la facture de départ' })).toBeVisible();
 
   // Retour : photos obligatoires, puis frais et facture
   await page.getByRole('link', { name: 'Enregistrer le retour' }).click();
@@ -172,15 +173,15 @@ test('location complète : permis scanné, clés refusées tant qu’il manque p
   await inspect(page, '48500', '5/8 (5/8)');
   await expect(back).toBeEnabled();
   await back.click();
+  // La période prévue est déjà sur la facture de départ : seuls les suppléments sont proposés
   const lines = page.getByRole('region', { name: 'Lignes de la facture' });
-  await expect(lines.getByRole('textbox', { name: 'Désignation' }).first()).toHaveValue(
-    new RegExp(`Location Renault Master ${id}`),
-  );
-  await expect(lines.getByRole('textbox', { name: 'Désignation' }).nth(1)).toHaveValue('Carburant manquant');
-  await expect(page.getByRole('region', { name: 'Total' })).toContainText(/351,00/);
+  await expect(lines.getByRole('textbox', { name: 'Désignation' }).first()).toHaveValue('Carburant manquant');
   await page.getByRole('button', { name: 'Créer la facture' }).click();
   await expect(page).toHaveURL(/\/factures\//);
+  // Facture de départ encore en brouillon : location et carburant sur la même facture
   await expect(page.getByText('Carburant manquant').first()).toBeVisible();
+  await expect(page.getByText(new RegExp(`Location Renault Master ${id}`)).first()).toBeVisible();
+  await expect(page.getByText(/351,00/).first()).toBeVisible();
 });
 
 test('prêt pendant un OR : clés remises sans permis ni photos, clôturé sans facture', async ({

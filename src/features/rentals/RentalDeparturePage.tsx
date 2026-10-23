@@ -25,7 +25,7 @@ import { uploadFile } from '@/features/files/api';
 import { StoredImage } from '@/features/files/StoredImage';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
-import { vehicleTitle } from './fleet-domain';
+import { hasEngine, vehicleTitle } from './fleet-domain';
 import { licenseBlockReason, licenseState } from './license-domain';
 import { LicenseDialog } from './LicenseDialog';
 import { InspectionEditor } from './InspectionEditor';
@@ -78,7 +78,12 @@ function Departure({ detail }: { detail: RentalDetail }) {
   const missing = useMissing(rental.id, 'departure');
   const [confirmCancel, setConfirmCancel] = useState(false);
 
-  const start = useRentalMutation(() => startRental(rental.id), 'Clés remises : bonne route !');
+  const start = useRentalMutation(
+    () => startRental(rental.id),
+    rental.kind === 'rental' || rental.billable
+      ? 'Clés remises : la facture de la location est prête à émettre'
+      : 'Clés remises : bonne route !',
+  );
   const cancel = useRentalMutation(() => cancelRental(rental.id), 'Contrat annulé');
   const missingList = missing.data ?? [];
 
@@ -98,13 +103,18 @@ function Departure({ detail }: { detail: RentalDetail }) {
             detail: 'avant, arrière, côtés',
             ok: !missingList.some((item) => item.startsWith('Photo ') && item !== 'Photo du tableau de bord'),
           },
-          {
-            label: 'Photo du tableau de bord',
-            detail: 'km et jauge relevés',
-            ok: !missingList.some((item) =>
-              ['Photo du tableau de bord', 'Kilométrage', 'Niveau de carburant'].includes(item),
-            ),
-          },
+          // Remorque : pas de tableau de bord
+          ...(hasEngine(vehicle.category)
+            ? [
+                {
+                  label: 'Photo du tableau de bord',
+                  detail: 'km et jauge relevés',
+                  ok: !missingList.some((item) =>
+                    ['Photo du tableau de bord', 'Kilométrage', 'Niveau de carburant'].includes(item),
+                  ),
+                },
+              ]
+            : []),
         ]),
   ];
   const vehicleBlocked = missingList.find(

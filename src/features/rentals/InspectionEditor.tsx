@@ -321,53 +321,53 @@ export function InspectionEditor({
       </section>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <section data-slot="card" className="card" aria-labelledby={`dashboard-${phase}`}>
-          <div className="card-h">
-            <h2 className="h2" id={`dashboard-${phase}`}>
-              <Gauge className="i s text-muted-foreground" /> Tableau de bord
-            </h2>
-            <span className="badge s-grey">{required ? 'Obligatoire' : 'Conseillé'}</span>
-          </div>
-          <div className="card-b col gap-3">
-            <div className="max-w-[260px]">
-              <PhotoTile
-                label="Tableau de bord"
-                fileId={photoOf('dashboard')?.file_id ?? null}
-                required={required}
-                disabled={!editable}
-                onUploaded={(fileId) => photo.mutate({ slot: 'dashboard', fileId })}
-              />
+        {engine && (
+          <section data-slot="card" className="card" aria-labelledby={`dashboard-${phase}`}>
+            <div className="card-h">
+              <h2 className="h2" id={`dashboard-${phase}`}>
+                <Gauge className="i s text-muted-foreground" /> Tableau de bord
+              </h2>
+              <span className="badge s-grey">{required ? 'Obligatoire' : 'Conseillé'}</span>
             </div>
-            {engine ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="field">
-                  <Label htmlFor={`mileage-${phase}`}>Kilométrage{required && ' *'}</Label>
-                  <Input
-                    id={`mileage-${phase}`}
-                    inputMode="numeric"
-                    className="num"
-                    disabled={!editable}
-                    value={mileage}
-                    onChange={(event) => setMileage(event.target.value)}
-                    onBlur={commitMileage}
-                    onKeyDown={(event) => event.key === 'Enter' && commitMileage()}
-                  />
-                  <span className="hint">Relevé sur le compteur</span>
-                </div>
-                <div className="field">
-                  <span className="lbl">Carburant{required && ' *'}</span>
-                  <FuelGauge
-                    value={inspection?.fuel_eighths ?? null}
-                    disabled={!editable}
-                    onChange={(fuel_eighths) => save.mutate({ fuel_eighths })}
-                  />
-                </div>
+            <div className="card-b col gap-3">
+              <div className="max-w-[260px]">
+                <PhotoTile
+                  label="Tableau de bord"
+                  fileId={photoOf('dashboard')?.file_id ?? null}
+                  required={required}
+                  disabled={!editable}
+                  onUploaded={(fileId) => photo.mutate({ slot: 'dashboard', fileId })}
+                />
               </div>
-            ) : (
-              <p className="hint">Remorque : pas de compteur ni de carburant.</p>
-            )}
-          </div>
-        </section>
+              {engine && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="field">
+                    <Label htmlFor={`mileage-${phase}`}>Kilométrage{required && ' *'}</Label>
+                    <Input
+                      id={`mileage-${phase}`}
+                      inputMode="numeric"
+                      className="num"
+                      disabled={!editable}
+                      value={mileage}
+                      onChange={(event) => setMileage(event.target.value)}
+                      onBlur={commitMileage}
+                      onKeyDown={(event) => event.key === 'Enter' && commitMileage()}
+                    />
+                    <span className="hint">Relevé sur le compteur</span>
+                  </div>
+                  <div className="field">
+                    <span className="lbl">Carburant{required && ' *'}</span>
+                    <FuelGauge
+                      value={inspection?.fuel_eighths ?? null}
+                      disabled={!editable}
+                      onChange={(fuel_eighths) => save.mutate({ fuel_eighths })}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section data-slot="card" className="card" aria-labelledby={`damages-${phase}`}>
           <div className="card-h">

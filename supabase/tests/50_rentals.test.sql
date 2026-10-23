@@ -105,15 +105,16 @@ select is((select mileage from public.fleet_vehicles where id = '60000000-0000-0
           'Compteur du véhicule mis à jour');
 
 -- ---------------------------------------------------------------- Clôture et facture
+-- Facture de départ (préparée à la remise des clés, encore en brouillon) : les suppléments s'y ajoutent
 select public.close_rental('a0000000-0000-0000-0000-000000000050', $$[
-  {"description": "Location Renault Master · GE-781-UV", "quantity": 2, "unit_price": 95},
   {"description": "Kilomètres supplémentaires", "quantity": 202, "unit_price": 0.35}
 ]$$::jsonb) as invoice \gset
 select results_eq(
-  format($$ select line_type::text, description, net_ht from public.invoice_lines where invoice_id = %L order by position $$, :'invoice'),
+  format($$ select line_type::text, split_part(description, ' du ', 1), net_ht from public.invoice_lines
+            where invoice_id = %L order by position $$, :'invoice'),
   $$ values ('rental', 'Location Renault Master · GE-781-UV', 190.00::numeric),
             ('rental', 'Kilomètres supplémentaires', 70.70::numeric) $$,
-  'Facture brouillon : lignes de location, sans « Fournitures et recyclage »');
+  'Facture brouillon : location du départ et suppléments, sans « Fournitures et recyclage »');
 select is((select (status, invoice_id)::text from public.rentals where id = 'a0000000-0000-0000-0000-000000000050'),
           format('(closed,%s)', :'invoice'), 'Contrat clôturé, facture rattachée');
 select is((select rental_id from public.invoices where id = :'invoice'),
