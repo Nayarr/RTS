@@ -7,7 +7,7 @@ import { uploadFile } from '@/features/files/api';
 import type * as FilesApi from '@/features/files/api';
 import { isTvMode, setTvMode } from '@/features/workshop-board/domain';
 import { renderRoutes } from '@/test/render';
-import { fetchCompanyName, kioskClock, verifyExitCode } from './api';
+import { fetchCompanyName, kioskChangePin, kioskClock, verifyExitCode } from './api';
 import type * as KioskApi from './api';
 import { kioskMessage } from './domain';
 import { KioskPage } from './KioskPage';
@@ -17,6 +17,7 @@ const camera = vi.hoisted(() => ({ photo: true }));
 vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof KioskApi>()),
   kioskClock: vi.fn(),
+  kioskChangePin: vi.fn(),
   verifyExitCode: vi.fn(),
   fetchCompanyName: vi.fn(),
 }));
@@ -168,6 +169,31 @@ describe('borne : écran', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Quitter' }));
     await waitFor(() => expect(signOut).toHaveBeenCalled());
     expect(verifyExitCode).toHaveBeenLastCalledWith('9753');
+  });
+
+  it('le technicien change son code : code actuel vérifié, nouveau code saisi deux fois', async () => {
+    vi.mocked(kioskChangePin)
+      .mockResolvedValueOnce({ ok: false, message: 'Code actuel incorrect' })
+      .mockResolvedValueOnce({ ok: true, technician_name: 'Alice' });
+    renderKiosk();
+    await userEvent.click(await screen.findByRole('button', { name: /Changer mon code/ }));
+    await userEvent.type(screen.getByLabelText('Code actuel'), '1111');
+    await userEvent.type(screen.getByLabelText('Nouveau code'), '2468');
+    await userEvent.type(screen.getByLabelText('Nouveau code, encore une fois'), '2469');
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Les deux nouveaux codes sont différents')).toBeInTheDocument();
+    expect(kioskChangePin).not.toHaveBeenCalled();
+
+    await userEvent.clear(screen.getByLabelText('Nouveau code, encore une fois'));
+    await userEvent.type(screen.getByLabelText('Nouveau code, encore une fois'), '2468');
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Code actuel incorrect')).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByLabelText('Code actuel'));
+    await userEvent.type(screen.getByLabelText('Code actuel'), '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText(/C’est fait, Alice/)).toBeInTheDocument();
+    expect(kioskChangePin).toHaveBeenLastCalledWith('1234', '2468');
   });
 
   it('la borne devient l’écran atelier (télé) avec le même code', async () => {

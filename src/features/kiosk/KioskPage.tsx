@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Settings } from 'lucide-react';
+import { KeyRound, Settings } from 'lucide-react';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +17,7 @@ import { uploadFile } from '@/features/files/api';
 import { KioskSignatureDialog } from '@/features/signature/KioskSignatureDialog';
 import { setTvMode } from '@/features/workshop-board/domain';
 import { cn } from '@/lib/utils';
-import { fetchCompanyName, kioskClock, verifyExitCode } from './api';
+import { fetchCompanyName, kioskChangePin, kioskClock, verifyExitCode } from './api';
 import {
   CAMERA_MESSAGE,
   IDLE_MESSAGE,
@@ -62,6 +62,7 @@ export function KioskPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<KioskMessage>(IDLE_MESSAGE);
   const [exitOpen, setExitOpen] = useState(false);
+  const [changeOpen, setChangeOpen] = useState(false);
   const resetTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(resetTimer.current), []);
@@ -187,6 +188,9 @@ export function KioskPage() {
             </button>
           ))}
         </div>
+        <Button variant="ghost" className="self-center" onClick={() => setChangeOpen(true)}>
+          <KeyRound /> Changer mon code
+        </Button>
       </div>
 
       <div
@@ -217,9 +221,96 @@ export function KioskPage() {
         <Settings className="size-[18px]" />
       </button>
       {exitOpen && <ExitDialog onClose={() => setExitOpen(false)} />}
+      {changeOpen && <ChangePinDialog onClose={() => setChangeOpen(false)} />}
       {/* Signature demandée par l'accueil (client sur place) */}
       <KioskSignatureDialog />
     </div>
+  );
+}
+
+const digits = (value: string) => value.replace(/\D/g, '').slice(0, MAX_PIN);
+
+/** Changement du code PIN par le technicien : code actuel, puis nouveau code saisi deux fois. */
+function ChangePinDialog({ onClose }: { onClose: () => void }) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [error, setError] = useState<string | undefined>();
+  const [done, setDone] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (next.length < 4) return setError('Le nouveau code doit contenir 4 à 6 chiffres');
+    if (next !== confirmation) return setError('Les deux nouveaux codes sont différents');
+    setPending(true);
+    setError(undefined);
+    try {
+      const result = await kioskChangePin(current, next);
+      if (result.ok) setDone(result.technician_name);
+      else setError(result.message);
+    } catch {
+      setError('Changement impossible : vérifie la connexion');
+    }
+    setPending(false);
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Changer mon code</DialogTitle>
+          <DialogDescription>
+            {done
+              ? `C’est fait, ${done} : ton nouveau code sert dès maintenant pour pointer.`
+              : 'Tape ton code actuel, puis ton nouveau code (4 à 6 chiffres) deux fois.'}
+          </DialogDescription>
+        </DialogHeader>
+        {!done && (
+          <form id="kiosk-change-pin" className="col gap-3" onSubmit={(event) => void submit(event)}>
+            <FormField
+              id="kiosk-pin-current"
+              label="Code actuel"
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              autoFocus
+              value={current}
+              onChange={(event) => setCurrent(digits(event.target.value))}
+            />
+            <FormField
+              id="kiosk-pin-new"
+              label="Nouveau code"
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              value={next}
+              onChange={(event) => setNext(digits(event.target.value))}
+            />
+            <FormField
+              id="kiosk-pin-confirmation"
+              label="Nouveau code, encore une fois"
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              value={confirmation}
+              error={error}
+              onChange={(event) => setConfirmation(digits(event.target.value))}
+            />
+          </form>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {done ? 'Fermer' : 'Annuler'}
+          </Button>
+          {!done && (
+            <Button type="submit" form="kiosk-change-pin" disabled={pending || current.length < 4}>
+              Enregistrer
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
