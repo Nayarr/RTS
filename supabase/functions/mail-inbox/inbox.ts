@@ -32,6 +32,7 @@ export type ReceivedEvent = NonNullable<z.infer<typeof webhookSchema>['data']>;
 export const receivedEmailSchema = z.object({
   text: z.string().nullish(),
   html: z.string().nullish(),
+  headers: z.unknown().optional(),
 });
 
 /**
@@ -82,12 +83,46 @@ export function parseAddress(value: string): { name: string; address: string } {
  */
 export function atelierMailbox(recipients: readonly string[], domain: string | null): string | null {
   if (!domain) return null;
-  const suffix = `@${domain.toLowerCase()}`;
+  const sending = domain.toLowerCase();
   for (const recipient of recipients) {
-    const { address } = parseAddress(recipient);
-    if (address.endsWith(suffix)) return address;
+    for (const part of recipient.split(',')) {
+      const { address } = parseAddress(part);
+      const host = address.split('@')[1] ?? '';
+      // Domaine d'envoi, ou domaine des boîtes quand l'envoi passe par un sous-domaine (send.…)
+      if (host && (host === sending || sending.endsWith(`.${host}`))) return address;
+    }
   }
   return null;
+}
+
+/**
+ * Domaine des boîtes de l'atelier : celui réglé dans Réglages › Atelier, sinon celui de l'adresse
+ * d'envoi du serveur (secret MAIL_FROM, « RTS <atelier@rapidtruckservice.fr> »).
+ */
+export function atelierDomain(mailDomain: string | null, mailFrom: string | null | undefined): string | null {
+  if (mailDomain) return mailDomain;
+  const host = parseAddress(mailFrom ?? '').address.split('@')[1];
+  return host || null;
+}
+
+/**
+ * En-têtes de remise du mail : la boîte de l'atelier y figure même quand elle n'est ni en « À » ni
+ * en « Cc » (copie cachée, liste de diffusion, redirecteur o2switch).
+ */
+export function deliveryRecipients(headers: unknown): string[] {
+  // Objet { nom: valeur } ou liste [{ name, value }] selon la version de l'API
+  const entries: [string, unknown][] = Array.isArray(headers)
+    ? headers.map((
+      header: { name?: unknown; value?: unknown },
+    ) => [String(header?.name ?? ''), header?.value])
+    : headers && typeof headers === 'object'
+    ? Object.entries(headers)
+    : [];
+  const wanted = ['delivered-to', 'x-original-to', 'x-forwarded-to', 'envelope-to', 'to', 'cc'];
+  return entries
+    .filter(([name]) => wanted.includes(name.toLowerCase()))
+    .flatMap(([, value]) => (Array.isArray(value) ? value : [value]))
+    .filter((value): value is string => typeof value === 'string');
 }
 
 const ENTITIES: Record<string, string> = {

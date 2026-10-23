@@ -135,6 +135,13 @@ export async function fetchInboxEmails(): Promise<InboxEmail[]> {
   return data;
 }
 
+/** Dernier appel de Resend et son résultat (null : aucun mail encore arrivé). */
+export async function fetchInboxWebhookStatus() {
+  const { data, error } = await supabase.from('inbox_webhook_status').select('*').maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 /** Marque des mails traités (ou les remet à traiter). */
 export async function setMailsHandled(ids: string[], handled: boolean): Promise<void> {
   const { error } = await supabase.rpc('set_inbox_emails_handled', { p_ids: ids, p_handled: handled });
