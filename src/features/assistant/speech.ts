@@ -1,10 +1,11 @@
 /** Lecture à voix haute des réponses de l'assistant (voix du navigateur, gratuite, sur l'appareil). */
+import { oralText } from './oral';
 
 export const speechSupported = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
 
-/** Texte lisible à l'oral : sans mise en forme (gras, titres, puces) ni lien. */
+/** Texte lisible à l'oral : sans mise en forme (gras, titres, puces) ni lien, écrit pour l'oreille. */
 export function speakableText(text: string): string {
-  return text
+  const plain = text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/[*_#`>]+/g, '')
     .replace(/^\s*[-•]\s+/gm, '')
@@ -12,6 +13,7 @@ export function speakableText(text: string): string {
     .replace(/\.(\s*\.)+/g, '.')
     .replace(/\s{2,}/g, ' ')
     .trim();
+  return oralText(plain);
 }
 
 /**
