@@ -71,8 +71,13 @@ describe('positions relevées sur la fiche', () => {
   });
 
   it('profil de la position d’abord, désignation de la pièce du lot', () => {
-    const lots = [lot({ id: 'a', profile: 'arriere', available_qty: 20 }), lot({ id: 'b' })];
-    expect(sortLots(lots, 'avant').map((item) => item.id)).toEqual(['b', 'a']);
+    const lots = [
+      lot({ id: 'a', profile: 'arriere', available_qty: 20 }),
+      lot({ id: 'm', profile: 'multi', available_qty: 2 }),
+      lot({ id: 'b' }),
+    ];
+    // Profil de la position, puis multi-positions (va partout), puis le reste
+    expect(sortLots(lots, 'avant').map((item) => item.id)).toEqual(['b', 'm', 'a']);
     expect(lotDesignation(lot({ condition: 'rechape' }))).toBe(
       'Pneu Michelin X Multi Z 315/80 R22.5 rechapé',
     );

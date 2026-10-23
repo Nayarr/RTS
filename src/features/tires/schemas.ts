@@ -17,7 +17,7 @@ export const countField = (required: boolean) =>
 export const tireSchema = z.object({
   category: z.enum(['pl', 'vul']),
   condition: z.enum(['neuf', 'rechape', 'occasion']),
-  profile: z.enum(['avant', 'arriere', 'remorque', 'toutes']),
+  profile: z.enum(['avant', 'arriere', 'remorque', 'multi', 'toutes']),
   size: z.string().refine(isTireSize, 'Dimension incomplète : tape par exemple 31580225'),
   brand: z.string().trim().min(1, 'Indique la marque').max(60),
   model: text,
