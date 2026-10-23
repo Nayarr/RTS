@@ -38,6 +38,26 @@ export const requestSchema = z.object({
 });
 export type MailRequest = z.infer<typeof requestSchema>;
 
+/** Mail préparé par l'Agent Direction et validé : seul l'identifiant de l'action est envoyé. */
+export const agentMailRequestSchema = z.object({ agent_action_id: z.guid(), idempotency_key: z.guid() });
+
+/** Contenu noté par l'agent dans l'action (relu par la direction avant de valider). */
+export const agentMailPayloadSchema = z.object({
+  to: z.email().max(254),
+  subject: z.string().trim().min(1).max(200),
+  text: z.string().trim().min(1).max(20_000),
+  category: z.enum(['billing', 'workshop']),
+  invoice_ids: z.array(z.guid()).max(20).default([]),
+});
+
+/** Requête d'envoi tirée d'un mail préparé par l'agent (sans pièce jointe ni lien). */
+export function agentMailRequest(payload: unknown, idempotencyKey: string): MailRequest | null {
+  const parsed = agentMailPayloadSchema.safeParse(payload);
+  if (!parsed.success) return null;
+  const { to, subject, text, category } = parsed.data;
+  return { category, to, subject, text, attachments: [], idempotency_key: idempotencyKey };
+}
+
 /** Taille réelle (octets) d'un contenu en base64. */
 export function base64Bytes(base64: string): number {
   const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;

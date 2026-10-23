@@ -1,12 +1,17 @@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CalendarPlus, Check, UserCheck, Wrench, X } from 'lucide-react';
+import { CalendarPlus, Check, Mail, UserCheck, Wrench, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { UNDO_SECONDS } from './agent-actions';
-import { cancelAgentAction, executeAgentAction, type AgentAction } from './api';
+import { cancelAgentAction, executeAgentAction, sendAgentMail, type AgentAction } from './api';
 
-const ICONS = { appointment: CalendarPlus, ro_work: Wrench, assign_technician: UserCheck } as const;
+const ICONS = {
+  appointment: CalendarPlus,
+  ro_work: Wrench,
+  assign_technician: UserCheck,
+  send_mail: Mail,
+} as const;
 
 /**
  * Actions préparées par l'Agent Direction : rien ne s'exécute avant « Valider » (ou « vas-y » à
@@ -32,7 +37,9 @@ export function AgentActions({
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['agent', 'actions'] });
   const execute = useMutation({
-    mutationFn: executeAgentAction,
+    // Un mail part par la fonction d'envoi ; les autres actions par la base
+    mutationFn: (action: AgentAction) =>
+      action.kind === 'send_mail' ? sendAgentMail(action) : executeAgentAction(action.id),
     onSuccess: (action) => {
       if (action.status === 'done') toast.success(`Fait : ${action.summary}`);
       else toast.error(action.error ? `Non fait : ${action.error}` : 'Action non faite');
@@ -59,7 +66,8 @@ export function AgentActions({
         if (current.left <= 1) {
           if (timer.current !== null) window.clearInterval(timer.current);
           timer.current = null;
-          execute.mutate(current.id);
+          const target = actions.find((item) => item.id === current.id);
+          if (target) execute.mutate(target);
           return null;
         }
         return { ...current, left: current.left - 1 };
@@ -86,10 +94,21 @@ export function AgentActions({
             <Icon className="i shrink-0" />
             <span className="col grow gap-0.5">
               <b className="text-sm">{action.summary}</b>
+              {action.kind === 'send_mail' && action.payload && (
+                <details className="text-sm">
+                  <summary className="hint cursor-pointer">Lire le mail</summary>
+                  <p className="hint mt-1">
+                    À : {action.payload.to} · Objet : {action.payload.subject}
+                  </p>
+                  <p className="mt-1 whitespace-pre-line">{action.payload.text}</p>
+                </details>
+              )}
               <span className="hint">
                 {isCounting
-                  ? `Exécution dans ${counting.left} s`
-                  : 'Préparée par l’agent : rien n’est fait avant ta validation.'}
+                  ? `${action.kind === 'send_mail' ? 'Envoi' : 'Exécution'} dans ${counting.left} s`
+                  : action.kind === 'send_mail'
+                    ? 'Préparé par l’agent : rien ne part avant ta validation.'
+                    : 'Préparée par l’agent : rien n’est fait avant ta validation.'}
               </span>
             </span>
             {isCounting ? (

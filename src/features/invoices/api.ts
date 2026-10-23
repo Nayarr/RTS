@@ -307,3 +307,11 @@ export async function recordInvoiceReminder(id: string) {
   const { error } = await supabase.rpc('record_invoice_reminder', { p_invoice_id: id });
   if (error) throw error;
 }
+
+/** E-mails des clients (relance groupée des retards). */
+export async function fetchClientEmails(clientIds: string[]): Promise<Record<string, string | null>> {
+  if (clientIds.length === 0) return {};
+  const { data, error } = await supabase.from('clients').select('id, email').in('id', clientIds);
+  if (error) throw error;
+  return Object.fromEntries(data.map((client) => [client.id, client.email]));
+}
