@@ -5,7 +5,16 @@ import type { Enums, Tables, TablesInsert, TablesUpdate } from '@/types/database
 export type PaymentMethod = Enums<'payment_method'>;
 export type VehicleType = Enums<'vehicle_type'>;
 export type InvoiceLine = Tables<'invoice_lines'>;
-export type Payment = Tables<'payments'>;
+/** Paiement avec la personne qui l'a enregistré (horodatage : created_at). */
+export type Payment = Tables<'payments'> & { recorder: { full_name: string } | null };
+export type DueDateChange = Pick<
+  Tables<'invoice_due_date_changes'>,
+  'id' | 'old_date' | 'new_date' | 'changed_at'
+> & {
+  changer: { full_name: string } | null;
+};
+/** Type de compte du client : comptant ou prélèvement. */
+export type AccountType = 'comptant' | 'prelevement';
 export type CreditNote = Tables<'credit_notes'>;
 export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'overdue';
 
@@ -39,6 +48,9 @@ export interface InvoiceDetail {
   lines: InvoiceLine[];
   payments: Payment[];
   creditNotes: CreditNote[];
+  /** Échéances déplacées après l'émission, de la plus ancienne à la plus récente. */
+  dueDateChanges: DueDateChange[];
+  accountType: AccountType;
   /** Fiche client actuelle (brouillon : coordonnées reprises à l'émission). */
   client: ClientBilling;
   vehicleType: VehicleType;
@@ -79,20 +91,33 @@ export async function fetchRepairOrderInvoices(repairOrderId: string): Promise<I
 }
 
 export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
-  const [invoice, lines, payments, creditNotes] = await Promise.all([
+  const [invoice, lines, payments, creditNotes, dueDates] = await Promise.all([
     supabase.from('v_invoices_overview').select('*').eq('id', id).maybeSingle(),
     supabase.from('invoice_lines').select('*').eq('invoice_id', id).order('position'),
-    supabase.from('payments').select('*').eq('invoice_id', id).order('paid_on'),
+    supabase
+      .from('payments')
+      .select('*, recorder:profiles!payments_recorded_by_fkey(full_name)')
+      .eq('invoice_id', id)
+      .order('paid_on')
+      .order('created_at'),
     supabase.from('credit_notes').select('*').eq('invoice_id', id).order('issued_at'),
+    supabase
+      .from('invoice_due_date_changes')
+      .select(
+        'id, old_date, new_date, changed_at, changer:profiles!invoice_due_date_changes_changed_by_fkey(full_name)',
+      )
+      .eq('invoice_id', id)
+      .order('changed_at'),
   ]);
-  for (const result of [invoice, lines, payments, creditNotes]) if (result.error) throw result.error;
+  for (const result of [invoice, lines, payments, creditNotes, dueDates])
+    if (result.error) throw result.error;
   if (!invoice.data) return null;
   const overview = invoice.data as InvoiceOverview;
 
   const [client, order] = await Promise.all([
     supabase
       .from('clients')
-      .select('name, billing_address, siret, email, discount_percent')
+      .select('name, billing_address, siret, email, discount_percent, account_type')
       .eq('id', overview.client_id)
       .single(),
     overview.repair_order_ids[0]
@@ -107,12 +132,14 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
   });
   if (rate.error) throw rate.error;
 
-  const { discount_percent, ...billing } = client.data;
+  const { discount_percent, account_type, ...billing } = client.data;
   return {
     invoice: overview,
     lines: lines.data ?? [],
     payments: payments.data ?? [],
     creditNotes: creditNotes.data ?? [],
+    dueDateChanges: dueDates.data ?? [],
+    accountType: account_type === 'prelevement' ? 'prelevement' : 'comptant',
     client: billing,
     vehicleType: order.data.vehicle_type,
     laborRate: rate.data,
@@ -236,6 +263,15 @@ export interface PaymentInput {
 
 export async function addPayment(invoiceId: string, input: PaymentInput) {
   const { error } = await supabase.from('payments').insert({ ...input, invoice_id: invoiceId });
+  if (error) throw error;
+}
+
+/** Déplace l'échéance de la facture (même émise : le changement est gardé). */
+export async function setInvoiceDueDate(invoiceId: string, dueDate: string) {
+  const { error } = await supabase.rpc('set_invoice_due_date', {
+    p_invoice_id: invoiceId,
+    p_due_date: dueDate,
+  });
   if (error) throw error;
 }
 
