@@ -25,10 +25,12 @@ import { uploadFile } from '@/features/files/api';
 import { StoredImage } from '@/features/files/StoredImage';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@/features/settings/hooks';
 import { hasEngine, vehicleTitle } from './fleet-domain';
 import { licenseBlockReason, licenseState } from './license-domain';
 import { LicenseDialog } from './LicenseDialog';
 import { InspectionEditor } from './InspectionEditor';
+import { RentalTerms } from './RentalTerms';
 import { cancelRental, startRental, updateRental, type RentalDetail } from './rental-api';
 import {
   present,
@@ -567,6 +569,8 @@ function RatesStep({ detail }: { detail: RentalDetail }) {
 
 function ContractStep({ detail }: { detail: RentalDetail }) {
   const { rental } = detail;
+  const settings = useSettings();
+  const vatRate = settings.data?.company.default_vat_rate ?? 20;
   const pad = useSignaturePad();
   const [terms, setTerms] = useState(rental.terms_accepted);
   const [pdf, setPdf] = useState<PdfFile | null>(null);
@@ -627,6 +631,16 @@ function ContractStep({ detail }: { detail: RentalDetail }) {
             </div>
           ) : (
             <>
+              {rental.kind === 'rental' && (
+                <details className="rounded-xl border px-3.5 py-2.5">
+                  <summary className="cursor-pointer text-[13.5px] font-semibold">
+                    Lire les conditions générales de location
+                  </summary>
+                  <div className="mt-3 max-h-[50vh] overflow-y-auto">
+                    <RentalTerms input={{ ...rental, vat_rate: vatRate }} />
+                  </div>
+                </details>
+              )}
               <label className="row cursor-pointer gap-2.5 text-[13.5px]">
                 <input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} />
                 Le client a lu les conditions générales de location
