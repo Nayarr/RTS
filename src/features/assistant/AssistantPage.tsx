@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/app/PageHeader';
+import { useSettings } from '@/features/settings/hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDictation } from '@/lib/use-dictation';
@@ -41,6 +42,7 @@ import {
   chosenVoiceName,
   saveVoiceName,
   saveVoicePreference,
+  setVoiceProvider,
   speak,
   speechSupported,
   stopSpeaking,
@@ -69,6 +71,10 @@ export function AssistantPage() {
   const [briefingShown, setBriefingShown] = useState(true);
   const voices = useFrenchVoices();
   const [voiceName, setVoiceName] = useState(chosenVoiceName);
+  // Voix réglée par la direction : Azure (voix naturelle) ou celle du navigateur
+  const settings = useSettings();
+  const azure = settings.data?.app.tts_provider === 'azure';
+  useEffect(() => setVoiceProvider(azure ? 'azure' : 'browser'), [azure]);
 
   const conversations = useQuery({ queryKey: ['agent', 'conversations'], queryFn: fetchConversations });
   const turns = useQuery({
@@ -250,7 +256,7 @@ export function AssistantPage() {
                 Réponses lues
               </button>
             )}
-            {voiceOn && voices.length > 1 && (
+            {voiceOn && !azure && voices.length > 1 && (
               <select
                 className="inp h-9! w-auto!"
                 aria-label="Voix de lecture"
