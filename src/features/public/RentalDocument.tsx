@@ -10,6 +10,7 @@ import {
   round2,
   shortDateTime,
 } from '@/features/rentals/rental-domain';
+import { RentalTerms } from '@/features/rentals/RentalTerms';
 import { formatEuro } from '@/lib/numbers';
 import { companyAddress, type PublicRental, type PublicRentalSignature } from './api';
 import { DocumentHead, Notice, OnlineSignatureForm, PublicHeader } from './document-ui';
@@ -142,6 +143,15 @@ export function RentalDocument({
             </p>
           )}
         </article>
+
+        {!loan && (
+          <article className="card col gap-3 px-5 py-4 sm:px-7" aria-labelledby="rental-terms">
+            <h2 className="h2" id="rental-terms">
+              Conditions générales de location
+            </h2>
+            <RentalTerms input={conditions} />
+          </article>
+        )}
 
         {toSign && contract.status === 'pending' && !contract.signed_at && (
           <>

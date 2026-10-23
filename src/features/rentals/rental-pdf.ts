@@ -12,6 +12,7 @@ import {
   pdfMoney,
   pdfText,
 } from '@/lib/pdf';
+import { ensureSpace } from '@/lib/pdf-document';
 import { CATEGORY_META, hasEngine, vehicleTitle } from './fleet-domain';
 import type { RentalDetail } from './rental-api';
 import {
@@ -23,6 +24,7 @@ import {
   round2,
   SIDE_SLOTS,
 } from './rental-domain';
+import { rentalTerms, type RentalTermsInput } from './rental-terms';
 
 const paris = (iso: string, withTime = true) =>
   new Intl.DateTimeFormat('fr-FR', {
@@ -274,8 +276,40 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
     }
   }
 
+  if (!loan) drawTerms(doc, { ...rental, vat_rate: settings.company.default_vat_rate });
+
   return {
     blob: doc.output('blob'),
     fileName: pdfFileName(loan ? 'Pret' : 'Contrat_location', rental.number, vehicle.plate),
   };
+}
+
+/** Conditions générales de location, sur une page à part (et les suivantes si besoin). */
+function drawTerms(doc: Awaited<ReturnType<typeof createPdf>>['doc'], input: RentalTermsInput) {
+  doc.addPage();
+  let y = 20;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...GREEN);
+  doc.text('CONDITIONS GÉNÉRALES DE LOCATION', MARGIN, y);
+  doc.setTextColor(0, 0, 0);
+  y += 8;
+  rentalTerms(input).forEach((article, index) => {
+    y = ensureSpace(doc, y, 12);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(pdfText(`Article ${index + 1} : ${article.title}`), MARGIN, y);
+    y += 4.5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    for (const paragraph of article.paragraphs) {
+      const bullet = paragraph.startsWith('• ');
+      const indent = bullet ? 4 : 0;
+      const lines = doc.splitTextToSize(pdfText(paragraph), PAGE_W - 2 * MARGIN - indent) as string[];
+      y = ensureSpace(doc, y, lines.length * 3.8);
+      doc.text(lines, MARGIN + indent, y);
+      y += lines.length * 3.8 + (bullet ? 0.4 : 1.2);
+    }
+    y += 2.5;
+  });
 }
