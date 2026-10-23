@@ -27,6 +27,7 @@ const rental = {
   km_included: 500,
   kind: 'rental' as const,
   billable: true,
+  departure_invoiced_periods: null as number | null,
 };
 const vehicle = {
   plate: 'GE-781-UV',
@@ -116,6 +117,24 @@ describe('location : frais du retour et facture', () => {
     ]);
     expect(lines.map(lineTotal)).toEqual([190, 70.7, 66, 60, 45]);
     expect(proposedLines(rental, vehicle, fees, '2026-10-07T18:30:00Z', false).at(-1)?.checked).toBe(true);
+  });
+
+  it('période prévue facturée à la remise des clés : seulement la prolongation et les suppléments', () => {
+    const fees = returnFees(rental, vehicle, departure, back, '2026-10-07T18:30:00Z');
+    const invoiced = { ...rental, departure_invoiced_periods: 2 };
+    expect(
+      proposedLines(invoiced, vehicle, fees, '2026-10-07T18:30:00Z', null).map((line) => line.key),
+    ).toEqual(['km', 'fuel', 'late', 'cleaning']);
+    const renewed = proposedLines(
+      { ...invoiced, periods: 3 },
+      vehicle,
+      fees,
+      '2026-10-07T18:30:00Z',
+      null,
+    )[0];
+    expect(renewed).toMatchObject({ key: 'base', quantity: 1, unit_price: 95 });
+    expect(renewed?.description).toMatch(/^Prolongation de la location/);
+    expect(renewed?.detail).toBe('1 jour après les 2 facturés au départ');
   });
 
   it('remise appliquée au prix ; prêt gratuit : rien à facturer', () => {

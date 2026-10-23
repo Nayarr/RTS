@@ -166,8 +166,26 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                 </Link>
               </Button>
             )}
+            {rental.departure_invoice_id && rental.departure_invoice_id !== rental.invoice_id && (
+              <Button variant={rental.departure_invoice_status === 'draft' ? 'default' : 'outline'} asChild>
+                <Link to={`/factures/${rental.departure_invoice_id}`}>
+                  <Receipt />{' '}
+                  {rental.departure_invoice_status === 'draft'
+                    ? 'Émettre la facture de départ'
+                    : `Facture de départ ${rental.departure_invoice_number ?? ''}`}
+                </Link>
+              </Button>
+            )}
             {rental.invoice_id && (
-              <Button variant="outline" asChild>
+              <Button
+                variant={
+                  rental.invoice_id === rental.departure_invoice_id &&
+                  rental.departure_invoice_status === 'draft'
+                    ? 'default'
+                    : 'outline'
+                }
+                asChild
+              >
                 <Link to={`/factures/${rental.invoice_id}`}>
                   <Receipt /> Facture
                 </Link>
@@ -299,7 +317,9 @@ function RentalView({ detail }: { detail: RentalDetail }) {
                 label,
                 photo: phasePhotos.find((p) => p.slot === slot),
               })),
-              { label: 'Tableau de bord', photo: phasePhotos.find((p) => p.slot === 'dashboard') },
+              ...(rental.category === 'trailer'
+                ? []
+                : [{ label: 'Tableau de bord', photo: phasePhotos.find((p) => p.slot === 'dashboard') }]),
               ...phasePhotos
                 .filter((p) => p.slot === 'closeup')
                 .map((photo, index) => ({ label: `Gros plan ${index + 1}`, photo })),

@@ -27,6 +27,9 @@ export type RentalOverview = Rental & {
   category: Enums['fleet_category'];
   repair_order_number: string | null;
   invoice_number: string | null;
+  /** Facture préparée à la remise des clés (période prévue). */
+  departure_invoice_number: string | null;
+  departure_invoice_status: Enums['invoice_status'] | null;
   /** Véhicule sorti au-delà du retour prévu. */
   is_late: boolean;
   estimated_ht: number;
