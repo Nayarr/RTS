@@ -38,4 +38,7 @@ supabase/functions/**/deno.lock
 
 # Reprise des forfaits de l’ancienne appli (données du client, généré par npm run import:forfaits)
 forfaits-legacy.sql
+
+# Reprise des clients et véhicules de GTA PRO (données du client, scripts/reprise/import-gta.py)
+reprise-gta/
 agent-eval-resultats.json
