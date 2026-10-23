@@ -1,5 +1,6 @@
 import type { InvoiceOverview } from '@/features/invoices/api';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
+import { fetchAllRows } from '@/lib/all-rows';
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
@@ -35,9 +36,10 @@ export type ClientQuote = Pick<
 // ---------------------------------------------------------------- Clients
 
 export async function fetchClients(): Promise<ClientOverview[]> {
-  const { data, error } = await supabase.from('v_clients_overview').select('*').order('name').limit(2000);
-  if (error) throw error;
-  return data as ClientOverview[];
+  const rows = await fetchAllRows((from, to) =>
+    supabase.from('v_clients_overview').select('*').order('name').order('id').range(from, to),
+  );
+  return rows as ClientOverview[];
 }
 
 export interface ClientDetail {
@@ -115,9 +117,10 @@ export async function deleteClient(id: string) {
 // ---------------------------------------------------------------- Véhicules
 
 export async function fetchVehicles(): Promise<VehicleOverview[]> {
-  const { data, error } = await supabase.from('v_vehicles_overview').select('*').order('plate').limit(3000);
-  if (error) throw error;
-  return data as VehicleOverview[];
+  const rows = await fetchAllRows((from, to) =>
+    supabase.from('v_vehicles_overview').select('*').order('plate').order('id').range(from, to),
+  );
+  return rows as VehicleOverview[];
 }
 
 export type VehicleOrderLine = Pick<
