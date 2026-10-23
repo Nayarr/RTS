@@ -1,6 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { ArrowLeft, FileDown, FileMinus, Info, Lock, RotateCcw, Send, Trash2, Wallet } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarClock,
+  FileDown,
+  FileMinus,
+  Info,
+  Lock,
+  RotateCcw,
+  Send,
+  Trash2,
+  Wallet,
+} from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { PdfPreviewDialog } from '@/components/PdfPreviewDialog';
@@ -22,6 +33,7 @@ import {
   deleteInvoiceLine,
   issueInvoice,
   rebuildInvoiceDraft,
+  setInvoiceDueDate,
   updateInvoiceDraft,
   updateInvoiceLine,
   type CreditNoteInput,
@@ -31,15 +43,24 @@ import {
   type PaymentInput,
 } from './api';
 import { ClientBillingCard } from './ClientBillingCard';
-import { CreditNoteDialog, IssueDialog, PaymentDialog } from './dialogs';
-import { balanceHt, issueBlockers, issueWarnings, mainVatRate, PAYMENT_METHODS } from './domain';
+import { CreditNoteDialog, DueDateDialog, IssueDialog, PaymentDialog } from './dialogs';
+import {
+  ACCOUNT_TYPES,
+  balanceHt,
+  defaultPaymentMethod,
+  issueBlockers,
+  issueWarnings,
+  mainVatRate,
+  PAYMENT_METHODS,
+  recordedLabel,
+} from './domain';
 import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
 import { DuplicateButton } from '@/components/DuplicateButton';
 import { duplicateInvoice } from './api';
 
-type Dialog = 'issue' | 'payment' | 'credit' | 'rebuild' | 'delete' | null;
+type Dialog = 'issue' | 'payment' | 'credit' | 'due_date' | 'rebuild' | 'delete' | null;
 
 function InvoiceLineItem({ line, locked }: { line: InvoiceLine; locked: boolean }) {
   const update = useInvoiceMutation((patch: LinePatch) => updateInvoiceLine(line.id, patch), null);
@@ -109,7 +130,7 @@ function IssuedPanel({
   // « ?envoyer=1 » : facture qui vient d'être émise (travaux avant devis), envoyée au client tout de suite
   const [params, setParams] = useSearchParams();
   const autoSend = params.get('envoyer') === '1';
-  const { invoice, payments, creditNotes } = detail;
+  const { invoice, payments, creditNotes, dueDateChanges, accountType } = detail;
   const balance = invoice.balance_due ?? 0;
   const credited = invoice.credited_ttc ?? 0;
   const paid = invoice.paid_ttc ?? 0;
@@ -177,6 +198,29 @@ function IssuedPanel({
           <div className="bar s-ok" aria-hidden>
             <i style={{ width: `${settled}%` }} />
           </div>
+          <div className="row between gap-2">
+            <span className="col gap-0">
+              <span>
+                Échéance <b className="num">{formatDate(invoice.due_date)}</b>
+              </span>
+              <span className="hint">Client {ACCOUNT_TYPES[accountType].toLowerCase()}</span>
+            </span>
+            {balance > 0.01 && (
+              <Button variant="outline" size="sm" onClick={() => onDialog('due_date')}>
+                <CalendarClock /> Modifier l’échéance
+              </Button>
+            )}
+          </div>
+          {dueDateChanges.length > 0 && (
+            <ul aria-label="Échéances déplacées" className="hint">
+              {dueDateChanges.map((change) => (
+                <li key={change.id}>
+                  Échéance du {formatDate(change.old_date)} reportée au {formatDate(change.new_date)} ·{' '}
+                  {recordedLabel(change.changed_at, change.changer?.full_name)}
+                </li>
+              ))}
+            </ul>
+          )}
           {invoice.reminders_count > 0 && (
             <p className="hint">
               {invoice.reminders_count} relance{invoice.reminders_count > 1 ? 's' : ''}, la dernière le{' '}
@@ -190,8 +234,11 @@ function IssuedPanel({
                   <span className="col gap-0">
                     <b>{PAYMENT_METHODS[payment.method]}</b>
                     <span className="hint">
-                      {formatDate(payment.paid_on)}
+                      Payé le {formatDate(payment.paid_on)}
                       {payment.note && ` · ${payment.note}`}
+                    </span>
+                    <span className="hint">
+                      {recordedLabel(payment.created_at, payment.recorder?.full_name)}
                     </span>
                   </span>
                   <b className="num">{formatEuro(payment.amount_ttc)}</b>
@@ -261,6 +308,10 @@ export function InvoicePage() {
     (number) => `Facture ${number} émise`,
   );
   const pay = useInvoiceMutation((input: PaymentInput) => addPayment(id, input), 'Paiement enregistré');
+  const dueDate = useInvoiceMutation(async (date: string) => {
+    await setInvoiceDueDate(id, date);
+    close();
+  }, 'Échéance modifiée');
   const credit = useInvoiceMutation(
     (input: CreditNoteInput) => addCreditNote(id, input),
     (note) => `Avoir ${note.number} généré`,
@@ -471,8 +522,19 @@ export function InvoicePage() {
           number={invoice.number ?? ''}
           totalTtc={invoice.total_ttc}
           balance={invoice.balance_due ?? 0}
+          defaultMethod={defaultPaymentMethod(data.accountType)}
           pending={pay.isPending}
           onSubmit={(input) => pay.mutate(input, { onSuccess: close })}
+          onClose={close}
+        />
+      )}
+      {dialog === 'due_date' && (
+        <DueDateDialog
+          number={invoice.number ?? ''}
+          dueDate={invoice.due_date}
+          issuedOn={invoice.issued_at?.slice(0, 10) ?? null}
+          pending={dueDate.isPending}
+          onSubmit={(date) => dueDate.mutate(date)}
           onClose={close}
         />
       )}

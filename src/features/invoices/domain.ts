@@ -1,6 +1,13 @@
 import { lineNet } from '@/features/documents/lines';
 import { todayIso } from '@/features/repair-orders/schemas';
-import type { ClientBilling, InvoiceLine, InvoiceOverview, PaymentMethod, PaymentStatus } from './api';
+import type {
+  AccountType,
+  ClientBilling,
+  InvoiceLine,
+  InvoiceOverview,
+  PaymentMethod,
+  PaymentStatus,
+} from './api';
 
 /** Libellés et couleurs de l'ancienne appli. */
 export const PAYMENT_STATUS_META: Record<PaymentStatus, { label: string; color: string }> = {
@@ -162,3 +169,31 @@ export function invoicesCsvRows(invoices: InvoiceOverview[]) {
   ]);
   return { headers, rows };
 }
+
+export const ACCOUNT_TYPES: Record<AccountType, string> = {
+  comptant: 'Comptant',
+  prelevement: 'Prélèvement',
+};
+
+/** Mode proposé pour un paiement : prélèvement pour un client en prélèvement, sinon carte. */
+export const defaultPaymentMethod = (accountType: AccountType): PaymentMethod =>
+  accountType === 'prelevement' ? 'direct_debit' : 'card';
+
+const STAMP = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Europe/Paris',
+});
+
+/** « Enregistré le 23/10/2026 à 14:32 par Réception ». */
+export function recordedLabel(at: string, by: string | null | undefined): string {
+  const [date, time] = STAMP.format(new Date(at)).split(' ');
+  return `Enregistré le ${date} à ${time}${by ? ` par ${by}` : ''}`;
+}
+
+/** Facture émise payée en partie : un ou plusieurs paiements, reste encore dû. */
+export const isPartiallyPaid = (invoice: Pick<InvoiceOverview, 'status' | 'paid_ttc' | 'balance_due'>) =>
+  invoice.status === 'issued' && (invoice.paid_ttc ?? 0) > 0 && (invoice.balance_due ?? 0) > 0.01;

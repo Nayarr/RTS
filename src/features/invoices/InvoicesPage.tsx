@@ -14,18 +14,19 @@ import { formatEuro } from '@/lib/numbers';
 import { useIsDesktop } from '@/lib/use-media-query';
 import { usePagination } from '@/lib/use-pagination';
 import type { InvoiceOverview } from './api';
-import { invoicesCsvRows } from './domain';
+import { invoicesCsvRows, isPartiallyPaid } from './domain';
 import { GroupedInvoiceDialog } from './GroupedInvoiceDialog';
 import { useCreditNotes, useInvoices } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 
-type Filter = 'to_collect' | 'overdue' | 'paid' | 'draft' | 'no_order' | 'all';
+type Filter = 'to_collect' | 'partial' | 'overdue' | 'paid' | 'draft' | 'no_order' | 'all';
 type Sort = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
 
 const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'all', label: 'Toutes' },
   { value: 'draft', label: 'Brouillons', color: '#6B7280' },
   { value: 'to_collect', label: 'À encaisser', color: '#C98A00' },
+  { value: 'partial', label: 'Partiel', color: '#4750B5' },
   { value: 'overdue', label: 'En retard', color: '#B5453A' },
   { value: 'paid', label: 'Payées', color: '#2A6B52' },
   { value: 'no_order', label: 'Sans OR' },
@@ -39,6 +40,8 @@ function matchesFilter(invoice: InvoiceOverview, filter: Filter) {
   if (filter === 'draft') return invoice.status === 'draft';
   if (invoice.status === 'draft') return false;
   if (filter === 'paid') return invoice.payment_status === 'paid';
+  // Payées en partie (un ou plusieurs paiements), en retard ou non
+  if (filter === 'partial') return isPartiallyPaid(invoice);
   if (filter === 'overdue') return invoice.payment_status === 'overdue';
   return invoice.payment_status !== 'paid';
 }

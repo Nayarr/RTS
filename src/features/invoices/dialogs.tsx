@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TriangleAlert } from 'lucide-react';
 import { z } from 'zod';
@@ -16,7 +16,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { decimalField, decimalText, decimalValue, formatEuro } from '@/lib/numbers';
-import type { CreditNoteInput, PaymentInput } from './api';
+import type { CreditNoteInput, PaymentInput, PaymentMethod } from './api';
 import { PAYMENT_METHODS } from './domain';
 
 /** Confirmation de l'émission définitive, avec les points à vérifier. */
@@ -88,6 +88,7 @@ export function PaymentDialog({
   number,
   totalTtc,
   balance,
+  defaultMethod = 'bank_transfer',
   pending,
   onSubmit,
   onClose,
@@ -95,18 +96,24 @@ export function PaymentDialog({
   number: string;
   totalTtc: number;
   balance: number;
+  /** Mode proposé (prélèvement pour un client en prélèvement). */
+  defaultMethod?: PaymentMethod;
   pending: boolean;
   onSubmit: (input: PaymentInput) => void;
   onClose: () => void;
 }) {
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<PaymentValues>({
     resolver: zodResolver(paymentSchema(balance)),
-    defaultValues: { amount: decimalText(balance), method: 'bank_transfer', paid_on: todayIso(), note: '' },
+    defaultValues: { amount: decimalText(balance), method: defaultMethod, paid_on: todayIso(), note: '' },
   });
+  // Paiement en plusieurs fois : ce qu'il restera à payer après celui-ci
+  const amount = decimalValue(useWatch({ control, name: 'amount' })) ?? 0;
+  const left = Math.round((balance - amount) * 100) / 100;
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -162,6 +169,12 @@ export function PaymentDialog({
             placeholder="N° de chèque, référence du virement…"
             {...register('note')}
           />
+          {amount > 0 && left > 0.001 && left < balance && (
+            <p className="hint" role="status">
+              Paiement partiel : il restera {formatEuro(left)} à payer. Enregistre les autres paiements
+              (carte, espèces…) au fur et à mesure.
+            </p>
+          )}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
@@ -169,6 +182,72 @@ export function PaymentDialog({
           </Button>
           <Button type="submit" form="payment-form" disabled={pending}>
             Enregistrer le paiement
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------- Échéance
+
+/** Nouvelle échéance d'une facture : jamais avant la date d'émission. */
+export function DueDateDialog({
+  number,
+  dueDate,
+  issuedOn,
+  pending,
+  onSubmit,
+  onClose,
+}: {
+  number: string;
+  dueDate: string | null;
+  issuedOn: string | null;
+  pending: boolean;
+  onSubmit: (date: string) => void;
+  onClose: () => void;
+}) {
+  const schema = z.object({
+    due_date: z
+      .string()
+      .min(1, 'Indique la nouvelle échéance')
+      .refine((value) => !issuedOn || value >= issuedOn, 'Pas avant la date d’émission de la facture'),
+  });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { due_date: dueDate ?? todayIso() },
+  });
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Échéance</DialogTitle>
+          <DialogDescription>
+            Facture {number} : la nouvelle date est gardée dans l’historique de la facture, les relances
+            suivent la nouvelle échéance.
+          </DialogDescription>
+        </DialogHeader>
+        <form id="due-date-form" noValidate onSubmit={handleSubmit((values) => onSubmit(values.due_date))}>
+          <FormField
+            id="due-date"
+            label="Nouvelle échéance"
+            type="date"
+            min={issuedOn ?? undefined}
+            error={errors.due_date?.message}
+            {...register('due_date')}
+          />
+        </form>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" form="due-date-form" disabled={pending}>
+            Enregistrer
           </Button>
         </DialogFooter>
       </DialogContent>
