@@ -25,8 +25,11 @@ update public.service_packages
    set name = 'ÉQUILIBRAGE', price = round(price / 2, 2), legacy_id = 'pneus:pl:equilibrage'
  where legacy_id = 'pneus:pl:equilibrage-x2';
 
--- Lignes déjà faites ou facturées : elles gardent leur désignation et leur prix
+-- Lignes déjà faites ou facturées : elles gardent leur désignation et leur prix. Le lien vers le
+-- forfait est vidé (on delete set null) : contexte système pour les gardes des lignes d'OR et de devis.
+select set_config('rts.system', 'on', true);
 delete from public.service_packages where legacy_id like 'pneus:%:%-x4';
+select set_config('rts.system', '', true);
 
 create or replace function public.sync_inspection_work(p_repair_order_id uuid, p_old jsonb, p_new jsonb)
 returns void
