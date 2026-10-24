@@ -22,7 +22,9 @@ import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import { isCronRequest } from '../_shared/cron.ts';
 import {
+  atelierDomain,
   atelierMailbox,
+  deliveryRecipients,
   exactLike,
   mailBody,
   parseAddress,
@@ -68,6 +70,7 @@ const webhookSecret = Deno.env.get('RESEND_WEBHOOK_SECRET') ?? '';
 // Clé Resend avec accès complet (la lecture des mails reçus n'est pas permise aux clés d'envoi)
 const resendKey = Deno.env.get('RESEND_RECEIVING_API_KEY') ?? Deno.env.get('RESEND_API_KEY');
 const resendUrl = Deno.env.get('RESEND_API_URL') ?? 'https://api.resend.com';
+const mailFrom = Deno.env.get('MAIL_FROM');
 const anthropicKey = Deno.env.get('ANTHROPIC_AGENT_API_KEY');
 const anthropicUrl = Deno.env.get('ANTHROPIC_AGENT_API_URL');
 const claude = anthropicKey
@@ -270,6 +273,33 @@ async function prepareReply(admin: SupabaseClient, mailId: string): Promise<bool
   }
 }
 
+type WebhookResult =
+  | 'stored'
+  | 'duplicate'
+  | 'agent_disabled'
+  | 'not_atelier'
+  | 'bad_signature'
+  | 'bad_event'
+  | 'resend_key_missing'
+  | 'resend_error'
+  | 'error';
+
+/** Dernier appel de Resend et son résultat, affichés dans Mails reçus (une seule ligne gardée). */
+async function noteWebhook(
+  admin: SupabaseClient,
+  result: WebhookResult,
+  details: { recipients?: string[]; domain?: string | null } = {},
+) {
+  const { error } = await admin.from('inbox_webhook_status').upsert({
+    id: true,
+    received_at: new Date().toISOString(),
+    result,
+    recipients: (details.recipients ?? []).slice(0, 10).map((value) => value.slice(0, 320)),
+    domain: details.domain ?? null,
+  });
+  if (error) console.error('mail-inbox suivi', error);
+}
+
 /** Lance un travail après la réponse au webhook (Resend n'attend pas la réponse préparée). */
 function inBackground(work: Promise<unknown>) {
   const runtime = (globalThis as { EdgeRuntime?: { waitUntil: (promise: Promise<unknown>) => void } })
@@ -324,7 +354,10 @@ export default {
       },
       raw,
     );
-    if (!signed) return json(401, { error: 'Signature invalide' });
+    if (!signed) {
+      await noteWebhook(admin, 'bad_signature');
+      return json(401, { error: 'Signature invalide' });
+    }
 
     let payload: unknown = null;
     try {
@@ -333,15 +366,20 @@ export default {
       // corps illisible : refusé ci-dessous
     }
     const event = webhookSchema.safeParse(payload);
-    if (!event.success) return json(400, { error: 'Événement illisible' });
+    if (!event.success) {
+      await noteWebhook(admin, 'bad_event');
+      return json(400, { error: 'Événement illisible' });
+    }
     if (event.data.type !== 'email.received' || !event.data.data) return json(200, { ignored: 'événement' });
     const received = event.data.data;
 
     const { data: settings } = await admin.from('app_settings').select('agent_enabled, mail_domain')
       .maybeSingle();
-    if (!settings?.agent_enabled) return json(200, { ignored: 'agent désactivé' });
-    const mailbox = atelierMailbox([...received.to, ...(received.cc ?? [])], settings.mail_domain);
-    if (!mailbox) return json(200, { ignored: 'hors des boîtes de l’atelier' });
+    if (!settings?.agent_enabled) {
+      await noteWebhook(admin, 'agent_disabled');
+      return json(200, { ignored: 'agent désactivé' });
+    }
+    const domain = atelierDomain(settings.mail_domain, mailFrom);
 
     // Webhook rejoué, ou même mail reçu par deux boîtes de l'atelier : gardé une seule fois
     const known = await Promise.all([
@@ -350,7 +388,10 @@ export default {
         ? admin.from('inbox_emails').select('id').eq('message_id', received.message_id).limit(1)
         : Promise.resolve({ data: [] }),
     ]);
-    if (known.some((result) => result.data?.length)) return json(200, { ignored: 'déjà reçu' });
+    if (known.some((result) => result.data?.length)) {
+      await noteWebhook(admin, 'duplicate', { domain });
+      return json(200, { ignored: 'déjà reçu' });
+    }
 
     const { count } = await admin
       .from('inbox_emails')
@@ -358,16 +399,29 @@ export default {
       .gte('created_at', new Date(Date.now() - 24 * 3_600_000).toISOString());
     const overLimit = (count ?? 0) >= DAILY_LIMIT;
 
-    if (!resendKey) return json(503, { error: 'Clé Resend absente' });
+    if (!resendKey) {
+      await noteWebhook(admin, 'resend_key_missing', { domain });
+      return json(503, { error: 'Clé Resend absente' });
+    }
     const response = await fetch(`${resendUrl}/emails/receiving/${encodeURIComponent(received.email_id)}`, {
       headers: { Authorization: `Bearer ${resendKey}` },
     });
     if (!response.ok) {
       console.error('Resend réception', response.status);
+      await noteWebhook(admin, 'resend_error', { domain });
       // Resend rejoue le webhook plus tard
       return json(502, { error: 'Contenu du mail indisponible' });
     }
     const content = receivedEmailSchema.safeParse(await response.json().catch(() => null));
+
+    // Boîte de l'atelier : « À » et « Cc », sinon en-têtes de remise (copie cachée, redirecteur)
+    const listed = [...received.to, ...(received.cc ?? [])];
+    const delivered = content.success ? deliveryRecipients(content.data.headers) : [];
+    const mailbox = atelierMailbox(listed, domain) ?? atelierMailbox(delivered, domain);
+    if (!mailbox) {
+      await noteWebhook(admin, 'not_atelier', { recipients: [...listed, ...delivered], domain });
+      return json(200, { ignored: 'hors des boîtes de l’atelier' });
+    }
 
     const from = parseAddress(received.from);
     const { data: client } = await admin
@@ -403,8 +457,10 @@ export default {
       // Même mail reçu en même temps par deux boîtes : déjà gardé
       if (error?.code === '23505') return json(200, { ignored: 'déjà reçu' });
       console.error(error);
+      await noteWebhook(admin, 'error', { domain });
       return json(500, { error: 'Mail non enregistré' });
     }
+    await noteWebhook(admin, 'stored', { domain });
     if (overLimit) return json(200, { stored: true, sorted: false });
 
     const result = await triage(admin, saved as unknown as PendingMail);

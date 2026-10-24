@@ -1850,6 +1850,30 @@ export type Database = {
           },
         ];
       };
+      inbox_webhook_status: {
+        Row: {
+          domain: string | null;
+          id: boolean;
+          received_at: string;
+          recipients: string[];
+          result: string;
+        };
+        Insert: {
+          domain?: string | null;
+          id?: boolean;
+          received_at?: string;
+          recipients?: string[];
+          result: string;
+        };
+        Update: {
+          domain?: string | null;
+          id?: boolean;
+          received_at?: string;
+          recipients?: string[];
+          result?: string;
+        };
+        Relationships: [];
+      };
       inspections: {
         Row: {
           data: NonNullable<Json>;

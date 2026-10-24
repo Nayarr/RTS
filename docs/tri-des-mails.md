@@ -98,7 +98,13 @@ Pour arrêter le suivi d'une boîte, supprime son redirecteur.
 2. Depuis une messagerie personnelle, envoie un mail à `atelier@rapidtruckservice.fr`.
 3. Moins d'une minute après, il apparaît trié dans Agent Direction › Mails reçus.
 
-En cas de souci : Resend › Webhooks › l'endpoint montre chaque appel et la réponse de l'appli
+En cas de souci, la page **Mails reçus** affiche le dernier appel de Resend et ce qui s'est passé :
+aucun appel (redirecteur cPanel ou webhook Resend à régler), Agent désactivé, mail adressé à aucune
+boîte du domaine (avec les destinataires lus), signature invalide, clé Resend absente ou refusée.
+Sans domaine dans Réglages › Atelier, le tri prend celui de l'adresse d'envoi du serveur
+(`MAIL_FROM`). Une boîte en copie cachée est reconnue par les en-têtes de remise du mail.
+
+Resend › Webhooks › l'endpoint montre chaque appel et la réponse de l'appli
 (`Signature invalide` : secret de l'étape 2 mal copié ; `Clé Resend absente` ou erreur 502 :
 clé de l'étape 3). Un mail que le tri n'a pas pu classer est retrié automatiquement toutes les
 10 minutes (3 essais), et reste lisible dans la liste dans tous les cas.

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/app/PageHeader';
 import { FilterChips } from '@/components/ListControls';
 import { cn } from '@/lib/utils';
-import { fetchInboxEmails, setMailsHandled } from './api';
+import { fetchInboxEmails, fetchInboxWebhookStatus, setMailsHandled } from './api';
 import {
   attachmentNames,
   CATEGORY_META,
@@ -13,6 +13,7 @@ import {
   matchesMailFilter,
   sortMails,
   URGENCY_META,
+  webhookStatusText,
   type InboxEmail,
   type MailFilter,
 } from './mails';
@@ -36,6 +37,12 @@ export function MailsPage() {
     queryFn: fetchInboxEmails,
     refetchInterval: 2 * 60_000,
   });
+  const webhook = useQuery({
+    queryKey: ['agent', 'mails', 'webhook'],
+    queryFn: fetchInboxWebhookStatus,
+    refetchInterval: 2 * 60_000,
+  });
+  const reception = webhook.isSuccess ? webhookStatusText(webhook.data) : null;
 
   const handle = useMutation({
     mutationFn: ({ ids, handled }: { ids: string[]; handled: boolean }) => setMailsHandled(ids, handled),
@@ -89,6 +96,12 @@ export function MailsPage() {
         <p className="empty">
           Aucun mail reçu pour l’instant. Les copies arrivent dès que les boîtes de l’atelier les renvoient à
           l’appli.
+        </p>
+      )}
+      {reception && (reception.problem || all.length === 0) && (
+        <p role="status" className={cn('hint', reception.problem && 'text-destructive')}>
+          {webhook.data && <span className="num">{receivedLabel(webhook.data.received_at)} · </span>}
+          {reception.text}
         </p>
       )}
       {mails.isSuccess && all.length > 0 && list.length === 0 && (

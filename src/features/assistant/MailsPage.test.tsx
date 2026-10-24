@@ -2,11 +2,15 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
-import { fetchInboxEmails, setMailsHandled } from './api';
+import { fetchInboxEmails, fetchInboxWebhookStatus, setMailsHandled } from './api';
 import { matchesMailFilter, sortMails, type InboxEmail } from './mails';
 import { MailsPage } from './MailsPage';
 
-vi.mock('./api', () => ({ fetchInboxEmails: vi.fn(), setMailsHandled: vi.fn() }));
+vi.mock('./api', () => ({
+  fetchInboxEmails: vi.fn(),
+  fetchInboxWebhookStatus: vi.fn(),
+  setMailsHandled: vi.fn(),
+}));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const mail = (overrides: Partial<InboxEmail> = {}): InboxEmail => ({
@@ -53,6 +57,35 @@ describe('Mails reçus', () => {
   beforeEach(() => {
     vi.mocked(fetchInboxEmails).mockResolvedValue(MAILS);
     vi.mocked(setMailsHandled).mockResolvedValue();
+    vi.mocked(fetchInboxWebhookStatus).mockResolvedValue({
+      id: true,
+      received_at: '2026-10-08T08:12:00Z',
+      result: 'stored',
+      recipients: [],
+      domain: 'rapidtruckservice.fr',
+    });
+  });
+
+  it('liste vide : la raison du dernier mail ignoré est affichée', async () => {
+    vi.mocked(fetchInboxEmails).mockResolvedValue([]);
+    vi.mocked(fetchInboxWebhookStatus).mockResolvedValue({
+      id: true,
+      received_at: '2026-10-08T08:12:00Z',
+      result: 'not_atelier',
+      recipients: ['tri-7f3k@abc.resend.app'],
+      domain: 'rapidtruckservice.fr',
+    });
+    setup();
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Dernier mail ignoré : il n’est adressé à aucune boîte @rapidtruckservice.fr (destinataires : tri-7f3k@abc.resend.app)',
+    );
+  });
+
+  it('aucun appel de Resend : redirecteur et webhook à vérifier', async () => {
+    vi.mocked(fetchInboxEmails).mockResolvedValue([]);
+    vi.mocked(fetchInboxWebhookStatus).mockResolvedValue(null);
+    setup();
+    expect(await screen.findByRole('status')).toHaveTextContent(/Aucun mail n’est encore arrivé de Resend/);
   });
 
   it('filtres : à traiter sans publicité ni mails traités, urgents en premier', () => {

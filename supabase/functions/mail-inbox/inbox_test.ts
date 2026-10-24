@@ -1,7 +1,9 @@
 import { assert, assertEquals, assertFalse, assertStringIncludes } from '@std/assert';
 import { encodeBase64 } from '@std/encoding';
 import {
+  atelierDomain,
   atelierMailbox,
+  deliveryRecipients,
   exactLike,
   htmlToText,
   mailBody,
@@ -158,4 +160,31 @@ Deno.test('tri : réponse vérifiée, tiret cadratin retiré, réponse invalide 
     ),
     null,
   );
+});
+
+Deno.test('boîte de l’atelier : domaine de repli, sous-domaine d’envoi, en-têtes de remise', () => {
+  // Domaine vide dans les réglages : celui de l'adresse d'envoi du serveur
+  assertEquals(atelierDomain(null, 'RTS <atelier@rapidtruckservice.fr>'), 'rapidtruckservice.fr');
+  assertEquals(atelierDomain('rapidtruckservice.fr', 'x@autre.fr'), 'rapidtruckservice.fr');
+  assertEquals(atelierDomain(null, undefined), null);
+  // Envoi par send.rapidtruckservice.fr : les boîtes restent en @rapidtruckservice.fr
+  assertEquals(
+    atelierMailbox(['atelier@rapidtruckservice.fr'], 'send.rapidtruckservice.fr'),
+    'atelier@rapidtruckservice.fr',
+  );
+  assertEquals(atelierMailbox(['moi@pirate-rapidtruckservice.fr'], 'rapidtruckservice.fr'), null);
+  // Plusieurs adresses dans un même en-tête
+  assertEquals(
+    atelierMailbox(['client@exemple.fr, RTS <direction@rapidtruckservice.fr>'], 'rapidtruckservice.fr'),
+    'direction@rapidtruckservice.fr',
+  );
+  // Copie cachée ou redirecteur : la boîte n'est que dans les en-têtes de remise
+  assertEquals(
+    deliveryRecipients({ 'Delivered-To': 'atelier@rapidtruckservice.fr', Subject: 'Devis', To: ['a@b.fr'] }),
+    ['atelier@rapidtruckservice.fr', 'a@b.fr'],
+  );
+  assertEquals(deliveryRecipients([{ name: 'X-Original-To', value: 'facturation@rapidtruckservice.fr' }]), [
+    'facturation@rapidtruckservice.fr',
+  ]);
+  assertEquals(deliveryRecipients(null), []);
 });
