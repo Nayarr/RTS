@@ -195,6 +195,7 @@ export function proposedLines(
     | 'km_included'
     | 'kind'
     | 'billable'
+    | 'departure_invoiced_periods'
   >,
   vehicle: Pick<FleetVehicle, 'plate' | 'brand' | 'model'>,
   fees: ReturnFees,
@@ -204,8 +205,11 @@ export function proposedLines(
   if (rental.kind === 'loan' && !rental.billable) return [];
   const period = RATE_PERIODS.find((entry) => entry.value === rental.rate_period) ?? RATE_PERIODS[0];
   const unitPrice = round2(rental.unit_price * (1 - rental.discount_percent / 100));
-  const lines: ProposedLine[] = [
-    {
+  const invoiced = rental.departure_invoiced_periods ?? 0;
+  const extra = rental.periods - invoiced;
+  const lines: ProposedLine[] = [];
+  if (invoiced === 0) {
+    lines.push({
       key: 'base',
       description: `${rental.kind === 'loan' ? 'Prêt' : 'Location'} ${vehicleTitle(vehicle)} · ${vehicle.plate}`,
       detail: `du ${frDateTime(rental.departure_at)} au ${frDateTime(returnedAt)} · ${rental.periods} ${
@@ -214,8 +218,20 @@ export function proposedLines(
       quantity: rental.periods,
       unit_price: unitPrice,
       checked: true,
-    },
-  ];
+    });
+  } else if (extra > 0) {
+    // Période prévue facturée à la remise des clés : reste la prolongation (reconduction)
+    lines.push({
+      key: 'base',
+      description: `Prolongation ${rental.kind === 'loan' ? 'du prêt' : 'de la location'} ${vehicleTitle(vehicle)} · ${vehicle.plate}`,
+      detail: `${extra} ${extra > 1 ? period.units : period.unit} après les ${invoiced} facturé${
+        invoiced > 1 ? 's' : ''
+      } au départ`,
+      quantity: extra,
+      unit_price: unitPrice,
+      checked: true,
+    });
+  }
   if (fees.extraKm > 0 && rental.extra_km_price) {
     lines.push({
       key: 'km',

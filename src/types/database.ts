@@ -3782,6 +3782,8 @@ export type Database = {
           created_by: string | null;
           departed_at: string | null;
           departure_at: string;
+          departure_invoice_id: string | null;
+          departure_invoiced_periods: number | null;
           deposit: number;
           deposit_mode: string | null;
           discount_percent: number;
@@ -3822,6 +3824,8 @@ export type Database = {
           created_by?: string | null;
           departed_at?: string | null;
           departure_at: string;
+          departure_invoice_id?: string | null;
+          departure_invoiced_periods?: number | null;
           deposit?: number;
           deposit_mode?: string | null;
           discount_percent?: number;
@@ -3861,6 +3865,8 @@ export type Database = {
           created_by?: string | null;
           departed_at?: string | null;
           departure_at?: string;
+          departure_invoice_id?: string | null;
+          departure_invoiced_periods?: number | null;
           deposit?: number;
           deposit_mode?: string | null;
           discount_percent?: number;
@@ -3911,6 +3917,34 @@ export type Database = {
             columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
             referencedColumns: ['id'];
           },
           {
@@ -6261,6 +6295,10 @@ export type Database = {
           created_by: string | null;
           departed_at: string | null;
           departure_at: string | null;
+          departure_invoice_id: string | null;
+          departure_invoice_number: string | null;
+          departure_invoice_status: Database['public']['Enums']['invoice_status'] | null;
+          departure_invoiced_periods: number | null;
           deposit: number | null;
           deposit_mode: string | null;
           discount_percent: number | null;
@@ -6317,6 +6355,34 @@ export type Database = {
             columns: ['created_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'rentals_departure_invoice_id_fkey';
+            columns: ['departure_invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
             referencedColumns: ['id'];
           },
           {
