@@ -19,20 +19,22 @@ export interface AgentAnswer {
   actions?: Pick<AgentAction, 'id' | 'kind' | 'summary'>[];
 }
 
-/** Action préparée par l'agent (rendez-vous, travail sur un OR, technicien assigné). */
+/** Action préparée par l'agent (rendez-vous, travail sur un OR, technicien assigné, mail). */
 export type AgentAction = Pick<
   Tables['agent_actions']['Row'],
   'id' | 'conversation_id' | 'summary' | 'status' | 'error' | 'created_at'
 > & {
-  kind: 'appointment' | 'ro_work' | 'assign_technician';
+  kind: 'appointment' | 'ro_work' | 'assign_technician' | 'send_mail';
   result: { link?: string } | null;
+  /** Mail préparé : destinataire, objet et texte relus par la direction avant l'envoi. */
+  payload: { to?: string; subject?: string; text?: string } | null;
 };
 
 /** Actions encore à valider d'une conversation (30 minutes au plus). */
 export async function fetchPendingActions(conversationId: string): Promise<AgentAction[]> {
   const { data, error } = await supabase
     .from('agent_actions')
-    .select('id, conversation_id, kind, summary, status, result, error, created_at')
+    .select('id, conversation_id, kind, summary, status, result, error, created_at, payload')
     .eq('conversation_id', conversationId)
     .eq('status', 'proposed')
     .gte('created_at', new Date(Date.now() - 30 * 60_000).toISOString())
@@ -46,6 +48,19 @@ export async function executeAgentAction(id: string): Promise<AgentAction> {
   const { data, error } = await supabase.rpc('execute_agent_action', { p_action_id: id });
   if (error) throw error;
   return data as unknown as AgentAction;
+}
+
+/**
+ * Envoie un mail préparé par l'agent : la fonction d'envoi relit le mail dans l'action (rien
+ * d'autre n'est transmis), le fait partir et marque l'action faite. L'identifiant de l'action sert
+ * de clé d'envoi : un nouvel essai n'envoie pas deux fois le mail.
+ */
+export async function sendAgentMail(action: AgentAction): Promise<AgentAction> {
+  await invokeFunction<{ id: string }>('mail-send', {
+    agent_action_id: action.id,
+    idempotency_key: action.id,
+  });
+  return { ...action, status: 'done' };
 }
 
 export async function cancelAgentAction(id: string) {

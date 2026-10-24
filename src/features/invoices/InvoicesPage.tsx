@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
-import { ChevronRight, Download, Info, Layers } from 'lucide-react';
+import { BellRing, ChevronRight, Download, Info, Layers } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { FilterChips, Pager, SearchField, TableFooterBar } from '@/components/ListControls';
 import { SectionNav } from '@/components/SectionNav';
@@ -16,6 +16,7 @@ import { usePagination } from '@/lib/use-pagination';
 import type { InvoiceOverview } from './api';
 import { invoicesCsvRows, isPartiallyPaid } from './domain';
 import { GroupedInvoiceDialog } from './GroupedInvoiceDialog';
+import { OverdueRemindersDialog } from './OverdueRemindersDialog';
 import { useCreditNotes, useInvoices } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 
@@ -99,6 +100,7 @@ function InvoiceList() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [sort, setSort] = useState<Sort>('date_desc');
+  const [reminding, setReminding] = useState(false);
 
   const list = useMemo(() => {
     const filtered = (invoices.data ?? []).filter(
@@ -149,6 +151,11 @@ function InvoiceList() {
                 }}
               >
                 <Download /> Export CSV
+              </Button>
+            )}
+            {(counts.overdue ?? 0) > 0 && (
+              <Button variant="outline" onClick={() => setReminding(true)}>
+                <BellRing /> Relancer les retards
               </Button>
             )}
             <GroupedInvoiceButton />
@@ -324,6 +331,9 @@ function InvoiceList() {
             </>
           ))}
       </div>
+      {reminding && (
+        <OverdueRemindersDialog invoices={invoices.data ?? []} onClose={() => setReminding(false)} />
+      )}
     </>
   );
 }

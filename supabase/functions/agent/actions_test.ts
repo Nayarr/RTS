@@ -57,7 +57,7 @@ Deno.test('outils d’action : noms « preparer_… », schémas fermés', () =>
     assert(tool.name.startsWith('preparer_'), tool.name);
     assertEquals(tool.input_schema.additionalProperties, false, tool.name);
   }
-  assertEquals(ACTION_TOOLS.length, 3);
+  assertEquals(ACTION_TOOLS.length, 4);
 });
 
 Deno.test('rendez-vous préparé, pas créé : résumé lisible, technicien reconnu', async () => {
@@ -187,4 +187,78 @@ Deno.test('OR terminé ou technicien inconnu : action non préparée', async () 
   assert(result.is_error);
   assertStringIncludes(result.content, 'Alice, Bruno');
   assertEquals([...done.inserts, ...unknown.inserts], []);
+});
+
+Deno.test('relance préparée, pas envoyée : e-mail du client, factures dues vérifiées, adresse de facturation', async () => {
+  const { db, inserts, writes } = fakeDb({
+    clients: [{
+      id: 'c1',
+      name: 'Transports Martin',
+      email: 'Compta@Martin.fr',
+      name_key: 'TRANSPORTSMARTIN',
+    }],
+    v_invoices_overview: [
+      { id: 'i1', number: 'F11887', client_id: 'c1', balance_due: 320, status: 'issued' },
+      { id: 'i2', number: 'F11890', client_id: 'c1', balance_due: 0, status: 'issued' },
+    ],
+  });
+  const result = await runAction(
+    db,
+    'preparer_mail',
+    {
+      client: 'Transports Martin',
+      objet: 'Facture F11887 en attente de règlement',
+      texte: 'Madame, Monsieur,\nSauf erreur de notre part, la facture F11887…',
+      factures: ['11887'],
+    },
+    'conv1',
+  );
+  assertEquals(result.is_error, false);
+  assertEquals(writes, []);
+  assertEquals(inserts[0]?.row.kind, 'send_mail');
+  assertEquals(inserts[0]?.row.payload, {
+    to: 'compta@martin.fr',
+    client_id: 'c1',
+    client_name: 'Transports Martin',
+    subject: 'Facture F11887 en attente de règlement',
+    text: 'Madame, Monsieur,\nSauf erreur de notre part, la facture F11887…',
+    category: 'billing',
+    invoice_ids: ['i1'],
+    invoice_numbers: ['F11887'],
+  });
+  assertStringIncludes(
+    String(inserts[0]?.row.summary),
+    'Relance à Transports Martin (compta@martin.fr) : « Facture F11887 en attente de règlement », factures F11887',
+  );
+
+  const paid = await runAction(
+    db,
+    'preparer_mail',
+    { client: 'Transports Martin', objet: 'Relance', texte: 'Bonjour', factures: ['F11890'] },
+    null,
+  );
+  assertEquals(paid.is_error, true);
+  assertStringIncludes(paid.content, 'déjà réglée');
+});
+
+Deno.test('mail libre : adresse dite, sinon client sans e-mail signalé', async () => {
+  const { db, inserts } = fakeDb({
+    clients: [{ id: 'c2', name: 'Dupont', email: null, name_key: 'DUPONT' }],
+  });
+  const free = await runAction(
+    db,
+    'preparer_mail',
+    { email: 'contact@pl-pieces.fr', objet: 'Commande', texte: 'Bonjour' },
+    null,
+  );
+  assertEquals(free.is_error, false);
+  assertEquals((inserts[0]?.row.payload as Record<string, unknown>).category, 'workshop');
+  const noEmail = await runAction(
+    db,
+    'preparer_mail',
+    { client: 'Dupont', objet: 'Info', texte: 'Bonjour' },
+    null,
+  );
+  assertEquals(noEmail.is_error, true);
+  assertStringIncludes(noEmail.content, 'demande l’adresse');
 });

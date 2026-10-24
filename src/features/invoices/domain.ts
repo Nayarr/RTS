@@ -73,7 +73,7 @@ export function mainVatRate(lines: InvoiceLine[], fallback: number) {
 export const isInvoiceEditable = (invoice: { status: InvoiceOverview['status'] }) =>
   invoice.status === 'draft';
 
-interface ShareCompany {
+export interface ShareCompany {
   legal_name: string;
   address_line: string;
   postal_code: string;
@@ -197,3 +197,68 @@ export function recordedLabel(at: string, by: string | null | undefined): string
 /** Facture émise payée en partie : un ou plusieurs paiements, reste encore dû. */
 export const isPartiallyPaid = (invoice: Pick<InvoiceOverview, 'status' | 'paid_ttc' | 'balance_due'>) =>
   invoice.status === 'issued' && (invoice.paid_ttc ?? 0) > 0 && (invoice.balance_due ?? 0) > 0.01;
+
+export interface OverdueClient {
+  clientId: string;
+  clientName: string;
+  invoices: InvoiceOverview[];
+  balance: number;
+}
+
+/** Factures en retard regroupées par client, le plus gros reste dû d'abord. */
+export function overdueByClient(invoices: InvoiceOverview[], today = todayIso()): OverdueClient[] {
+  const groups = new Map<string, OverdueClient>();
+  for (const invoice of invoices) {
+    if (invoice.status !== 'issued' || !isOverdue(invoice, today)) continue;
+    const group = groups.get(invoice.client_id) ?? {
+      clientId: invoice.client_id,
+      clientName: invoice.client_name ?? '',
+      invoices: [],
+      balance: 0,
+    };
+    group.invoices.push(invoice);
+    group.balance += invoice.balance_due ?? 0;
+    groups.set(invoice.client_id, group);
+  }
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      invoices: group.invoices.sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? '')),
+      balance: Math.round(group.balance * 100) / 100,
+    }))
+    .sort((a, b) => b.balance - a.balance);
+}
+
+/** Relance d'un client pour toutes ses factures en retard : une ligne par facture, avec son lien. */
+export function overdueReminderMessage(
+  group: Pick<OverdueClient, 'invoices' | 'balance'>,
+  links: Record<string, string>,
+  company: ShareCompany,
+) {
+  const signature = [
+    company.legal_name,
+    `${company.address_line}, ${company.postal_code} ${company.city}`,
+    company.email,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const several = group.invoices.length > 1;
+  const lines = group.invoices
+    .map(
+      (invoice) =>
+        `- Facture ${invoice.number ?? ''} du ${frDate(invoice.issued_at)}` +
+        `${invoice.vehicle_label ? ` (véhicule ${invoice.vehicle_label})` : ''}, échue le ${frDate(invoice.due_date)} : ` +
+        `${amount(invoice.balance_due)} TTC${links[invoice.id] ? `\n  ${links[invoice.id]}` : ''}`,
+    )
+    .join('\n');
+  return {
+    subject: several
+      ? `Relance · Factures en attente de règlement · ${company.legal_name}`
+      : `Relance · Facture ${group.invoices[0]?.number ?? ''} · ${company.legal_name}`,
+    body:
+      `Bonjour,\n\nSauf erreur de notre part, ${several ? 'les factures suivantes restent impayées après leur échéance' : 'la facture suivante reste impayée après son échéance'} ` +
+      `:\n\n${lines}\n\nTotal restant dû : ${amount(group.balance)} TTC.\n\n` +
+      'Merci de bien vouloir procéder au règlement dans les meilleurs délais. Si le paiement a été effectué ' +
+      `entre-temps, merci de ne pas tenir compte de ce message.\n\nCordialement,\n${signature}`,
+  };
+}
