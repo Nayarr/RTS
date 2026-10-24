@@ -33,6 +33,7 @@ import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { deleteClient, updateClient, type ClientDetail } from './api';
 import {
+  ACCOUNT_TYPE_LABELS,
   CLIENT_KIND_LABELS,
   clientFromForm,
   clientSchema,
@@ -106,6 +107,9 @@ function ClientView({ detail }: { detail: ClientDetail }) {
           <span className="row flex-wrap gap-x-3 gap-y-1">
             {client.name}
             <span className="tag text-[12.5px]">{CLIENT_KIND_LABELS[client.kind ?? 'pro']}</span>
+            <span className="tag text-[12.5px]">
+              {ACCOUNT_TYPE_LABELS[client.account_type === 'prelevement' ? 'prelevement' : 'comptant']}
+            </span>
           </span>
         }
         actions={
@@ -322,6 +326,16 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                 placeholder="N°, rue, code postal, ville"
                 {...register('billing_address')}
               />
+              <div className="field">
+                <Label htmlFor="client-account-type">Type de compte</Label>
+                <select id="client-account-type" className="inp" {...register('account_type')}>
+                  {Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               {isDirection && (
                 <div className="grid gap-3.5 sm:grid-cols-2">
                   <FormField

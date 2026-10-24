@@ -825,6 +825,7 @@ export type Database = {
       };
       clients: {
         Row: {
+          account_type: string;
           billing_address: string | null;
           birth_date: string | null;
           birth_place: string | null;
@@ -849,6 +850,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          account_type?: string;
           billing_address?: string | null;
           birth_date?: string | null;
           birth_place?: string | null;
@@ -873,6 +875,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          account_type?: string;
           billing_address?: string | null;
           birth_date?: string | null;
           birth_place?: string | null;
@@ -1920,6 +1923,69 @@ export type Database = {
             columns: ['updated_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      invoice_due_date_changes: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          id: string;
+          invoice_id: string;
+          new_date: string;
+          old_date: string | null;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          id?: string;
+          invoice_id: string;
+          new_date: string;
+          old_date?: string | null;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          id?: string;
+          invoice_id?: string;
+          new_date?: string;
+          old_date?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_due_date_changes_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_due_date_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_due_date_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'invoice_due_date_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'invoice_due_date_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
             referencedColumns: ['id'];
           },
         ];
@@ -5628,6 +5694,7 @@ export type Database = {
       };
       v_clients_overview: {
         Row: {
+          account_type: string | null;
           balance_due: number | null;
           billing_address: string | null;
           birth_date: string | null;
@@ -7610,6 +7677,7 @@ export type Database = {
         Returns: number;
       };
       set_inbox_emails_handled: { Args: { p_handled: boolean; p_ids: string[] }; Returns: number };
+      set_invoice_due_date: { Args: { p_due_date: string; p_invoice_id: string }; Returns: undefined };
       set_kiosk_exit_code: { Args: { p_code: string }; Returns: undefined };
       set_quote_response: {
         Args: { p_quote_id: string; p_status: Database['public']['Enums']['quote_status'] };

@@ -88,6 +88,8 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       '« Aperçu pro forma » produit une facture pro forma sans numéro.',
       'Une facture émise ne se modifie plus : pour la corriger, « Générer un avoir », puis une nouvelle facture si besoin.',
       'Sur la facture : « Enregistrer un paiement » (même partiel), « Envoyer au client » pour le lien en ligne, « Relancer » quand elle est en retard.',
+      'Paiement en plusieurs fois : enregistre chaque paiement à part (50 € en carte, puis 20 € en espèces…) avec son mode et sa date ; la facture garde qui l’a saisi et à quelle heure, et reste dans « Partiel » de la liste des factures jusqu’au dernier euro. Le mode proposé suit le type de compte du client (comptant ou prélèvement, sur sa fiche).',
+      '« Modifier l’échéance » sur une facture émise déplace sa date d’échéance (jamais avant l’émission) : l’ancienne date et la nouvelle restent affichées sur la facture.',
       'Plusieurs OR d’un même client ? Fiche client, puis « Facture groupée ».',
     ],
   },

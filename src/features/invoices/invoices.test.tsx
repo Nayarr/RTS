@@ -17,6 +17,7 @@ import {
   fetchRepairOrderInvoices,
   issueInvoice,
   recordInvoiceReminder,
+  setInvoiceDueDate,
   shareInvoice,
   updateInvoiceLine,
   type InvoiceDetail,
@@ -29,6 +30,8 @@ import {
   invoiceShareMessage,
   invoicesCsvRows,
   isOverdue,
+  isPartiallyPaid,
+  recordedLabel,
   issueBlockers,
   issueWarnings,
   mainVatRate,
@@ -58,6 +61,7 @@ vi.mock('./api', async (importOriginal) => ({
   addCreditNote: vi.fn(),
   shareInvoice: vi.fn(),
   recordInvoiceReminder: vi.fn(),
+  setInvoiceDueDate: vi.fn(),
 }));
 vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -160,6 +164,8 @@ function setupInvoice(detail: Partial<InvoiceDetail> = {}) {
     ],
     payments: [],
     creditNotes: [],
+    dueDateChanges: [],
+    accountType: 'comptant',
     client: { name: 'Transports Martin', billing_address: null, siret: null, email: null },
     vehicleType: 'pl',
     laborRate: 90,
@@ -266,6 +272,27 @@ describe('règles de facturation', () => {
 });
 
 describe('liste des factures', () => {
+  it('« Partiel » : factures émises payées en partie, en retard ou non', async () => {
+    expect(isPartiallyPaid(issued({ paid_ttc: 50, balance_due: 670 }))).toBe(true);
+    expect(isPartiallyPaid(issued({ paid_ttc: 50, balance_due: 670, payment_status: 'overdue' }))).toBe(true);
+    expect(isPartiallyPaid(issued())).toBe(false);
+    expect(isPartiallyPaid(issued({ paid_ttc: 720, balance_due: 0 }))).toBe(false);
+    expect(recordedLabel('2026-10-23T12:32:00Z', null)).toBe('Enregistré le 23/10/2026 à 14:32');
+
+    mockCommon();
+    vi.mocked(fetchInvoices).mockResolvedValue([
+      issued(),
+      issued({ id: 'i2', number: 'F11888', paid_ttc: 50, balance_due: 670, client_name: 'Dupont' }),
+    ]);
+    renderRoutes([{ path: '/factures', element: <InvoicesPage /> }], {
+      initialPath: '/factures',
+      auth: { session: fakeSession() },
+    });
+    await userEvent.click(await screen.findByRole('button', { name: /^Partiel/ }));
+    expect(screen.getByText(/Dupont/)).toBeInTheDocument();
+    expect(screen.queryByText(/Transports Martin/)).toBeNull();
+  });
+
   it('toutes par défaut, filtres, recherche et reste à encaisser', async () => {
     mockCommon();
     vi.mocked(fetchInvoices).mockResolvedValue([
@@ -389,6 +416,84 @@ describe('facture émise', () => {
         note: null,
       }),
     );
+  });
+
+  it('paiements en plusieurs fois : mode, date et horodatage ; mode du client en prélèvement', async () => {
+    vi.mocked(addPayment).mockResolvedValue();
+    setupInvoice({
+      invoice: issued({ balance_due: 650, paid_ttc: 70, payment_status: 'partial' }),
+      accountType: 'prelevement',
+      payments: [
+        {
+          id: 'p1',
+          invoice_id: 'i1',
+          amount_ttc: 50,
+          method: 'card',
+          paid_on: '2026-10-01',
+          note: null,
+          recorded_by: 'u1',
+          created_at: '2026-10-01T12:32:00Z',
+          recorder: { full_name: 'Réception' },
+        },
+        {
+          id: 'p2',
+          invoice_id: 'i1',
+          amount_ttc: 20,
+          method: 'cash',
+          paid_on: '2026-10-02',
+          note: null,
+          recorded_by: null,
+          created_at: '2026-10-02T08:05:00Z',
+          recorder: null,
+        },
+      ],
+    });
+    const list = await screen.findByRole('list', { name: 'Paiements' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent(
+      /Carte bancaire.*Payé le 01\/10\/2026.*Enregistré le 01\/10\/2026 à 14:32 par Réception.*50,00/,
+    );
+    expect(rows[1]).toHaveTextContent(/Espèces.*Enregistré le 02\/10\/2026 à 10:05.*20,00/);
+    expect(screen.getByLabelText('Solde')).toHaveTextContent('Client prélèvement');
+
+    await userEvent.click(screen.getByRole('button', { name: /Enregistrer un paiement/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Paiement' });
+    expect(within(dialog).getByLabelText('Mode')).toHaveValue('direct_debit');
+    const amount = within(dialog).getByLabelText('Montant TTC (€)');
+    await userEvent.clear(amount);
+    await userEvent.type(amount, '600');
+    expect(within(dialog).getByRole('status')).toHaveTextContent('il restera 50,00 € à payer');
+  });
+
+  it('échéance déplacée : jamais avant l’émission, changement gardé', async () => {
+    vi.mocked(setInvoiceDueDate).mockResolvedValue();
+    setupInvoice({
+      invoice: issued(),
+      dueDateChanges: [
+        {
+          id: 'd1',
+          old_date: '2026-10-12',
+          new_date: '2026-10-27',
+          changed_at: '2026-10-05T09:00:00Z',
+          changer: { full_name: 'Direction' },
+        },
+      ],
+    });
+    expect(await screen.findByRole('list', { name: 'Échéances déplacées' })).toHaveTextContent(
+      'Échéance du 12/10/2026 reportée au 27/10/2026 · Enregistré le 05/10/2026 à 11:00 par Direction',
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Modifier l’échéance/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Échéance' });
+    const date = within(dialog).getByLabelText('Nouvelle échéance');
+    expect(date).toHaveValue('2026-10-27');
+    await userEvent.clear(date);
+    await userEvent.type(date, '2026-09-01');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    expect(await within(dialog).findByText('Pas avant la date d’émission de la facture')).toBeInTheDocument();
+    await userEvent.clear(date);
+    await userEvent.type(date, '2026-11-30');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(setInvoiceDueDate).toHaveBeenCalledWith('i1', '2026-11-30'));
   });
 
   it('avoir : motif obligatoire, montant et TVA proposés', async () => {
