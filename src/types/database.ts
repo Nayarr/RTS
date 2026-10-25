@@ -7935,6 +7935,11 @@ export type Database = {
       treasury_overview: { Args: Record<PropertyKey, never>; Returns: Json };
       tts_release: { Args: { p_characters: number }; Returns: undefined };
       tts_reserve: { Args: { p_characters: number }; Returns: number };
+      tyre_package_for: {
+        Args: { p_description: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
+        Returns: string;
+      };
+      tyre_package_kind: { Args: { p_description: string }; Returns: string };
       update_vehicle_deadlines: {
         Args: { p_patch: Json; p_repair_order_id: string };
         Returns: {
