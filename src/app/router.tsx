@@ -100,6 +100,10 @@ export const routes: RouteObject[] = [
                     lazy: page(() => import('@/features/customers/ClientPage'), 'ClientPage'),
                   },
                   {
+                    path: '/clients/:id/extrait',
+                    lazy: page(() => import('@/features/invoices/StatementPage'), 'StatementPage'),
+                  },
+                  {
                     path: '/vehicules',
                     lazy: page(() => import('@/features/customers/VehiclesPage'), 'VehiclesPage'),
                   },

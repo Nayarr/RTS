@@ -93,6 +93,8 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       '« Relancer les retards » (liste des factures) : un mail par client avec toutes ses factures en retard et leurs liens, envoyé depuis l’adresse de facturation (ou ouvert dans ta messagerie si l’envoi par l’appli est coupé) ; chaque facture garde la relance.',
       '« Modifier l’échéance » sur une facture émise déplace sa date d’échéance (jamais avant l’émission) : l’ancienne date et la nouvelle restent affichées sur la facture.',
       'Plusieurs OR d’un même client ? Fiche client, puis « Facture groupée ».',
+      'Fiche client, carte Factures, « Extrait de compte » : relevé des factures émises sur la période choisie (date, n° de facture, immatriculation, marque, modèle, HT, TVA, TTC, réglé, reste dû, état). Coche les états voulus (impayées, partielles, payées, avoirs) : les totaux suivent ; clique sur un titre de colonne pour trier.',
+      'Depuis l’extrait : « PDF de l’extrait », « Factures en un PDF » (l’extrait puis chaque facture du tableau à la suite, pour un client qui doit plusieurs factures) ou « Factures en ZIP » (un PDF par facture).',
     ],
   },
   {

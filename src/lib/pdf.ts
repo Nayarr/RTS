@@ -66,7 +66,7 @@ export function companyLines(company: CompanySettings): string[] {
 export function drawLetterhead(doc: jsPDF, company: CompanySettings, logo: string | null, title: string) {
   if (logo) {
     try {
-      doc.addImage(logo, 'PNG', MARGIN, 10, 20, 20);
+      doc.addImage(logo, 'PNG', MARGIN, 10, 20, 20, 'logo', 'FAST');
     } catch {
       // Logo illisible : le document reste utilisable sans.
     }

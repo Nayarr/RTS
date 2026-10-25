@@ -57,7 +57,8 @@ export function drawDocumentHeader(
   // Logo RTS (réglages, sinon celui de l'appli), sans fond ajouté
   if (logo) {
     try {
-      doc.addImage(logo, 'PNG', MARGIN - 4, 5, 26, 26);
+      // Compressé sans perte : le PDF reste léger (lot de factures, pièce jointe)
+      doc.addImage(logo, 'PNG', MARGIN - 4, 5, 26, 26, 'logo', 'FAST');
     } catch {
       // Logo illisible : l'en-tête reste lisible sans.
     }
