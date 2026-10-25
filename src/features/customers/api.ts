@@ -37,7 +37,14 @@ export type ClientQuote = Pick<
 
 export async function fetchClients(): Promise<ClientOverview[]> {
   const rows = await fetchAllRows((from, to) =>
-    supabase.from('v_clients_overview').select('*').order('name').order('id').range(from, to),
+    // Fiches archivées : hors de la liste (Réglages › Archives)
+    supabase
+      .from('v_clients_overview')
+      .select('*')
+      .is('archived_at', null)
+      .order('name')
+      .order('id')
+      .range(from, to),
   );
   return rows as ClientOverview[];
 }
@@ -118,9 +125,61 @@ export async function deleteClient(id: string) {
 
 export async function fetchVehicles(): Promise<VehicleOverview[]> {
   const rows = await fetchAllRows((from, to) =>
-    supabase.from('v_vehicles_overview').select('*').order('plate').order('id').range(from, to),
+    supabase
+      .from('v_vehicles_overview')
+      .select('*')
+      .is('archived_at', null)
+      .order('plate')
+      .order('id')
+      .range(from, to),
   );
   return rows as VehicleOverview[];
+}
+
+// ---------------------------------------------------------------- Archives
+
+export async function setClientArchived(id: string, archived: boolean) {
+  const { error } = await supabase.rpc('set_client_archived', { p_client_id: id, p_archived: archived });
+  if (error) throw error;
+}
+
+export async function setVehicleArchived(id: string, archived: boolean) {
+  const { error } = await supabase.rpc('set_vehicle_archived', { p_vehicle_id: id, p_archived: archived });
+  if (error) throw error;
+}
+
+export async function deleteVehicle(id: string) {
+  const result = await supabase.from('vehicles').delete().eq('id', id).select('id');
+  if (result.error?.code === '23503') {
+    throw new Error('Ce véhicule a des OR, devis ou rendez-vous : archive-le plutôt');
+  }
+  assertChanged(result, 'Suppression réservée à la direction');
+}
+
+export interface Archives {
+  clients: Pick<ClientOverview, 'id' | 'name' | 'archived_at' | 'vehicles_count'>[];
+  vehicles: Pick<VehicleOverview, 'id' | 'plate' | 'brand' | 'model' | 'client_name' | 'archived_at'>[];
+}
+
+/** Fiches archivées, les plus récentes d'abord. */
+export async function fetchArchives(): Promise<Archives> {
+  const [clients, vehicles] = await Promise.all([
+    supabase
+      .from('v_clients_overview')
+      .select('id, name, archived_at, vehicles_count')
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false })
+      .limit(500),
+    supabase
+      .from('v_vehicles_overview')
+      .select('id, plate, brand, model, client_name, archived_at')
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false })
+      .limit(500),
+  ]);
+  if (clients.error) throw clients.error;
+  if (vehicles.error) throw vehicles.error;
+  return { clients: clients.data as Archives['clients'], vehicles: vehicles.data as Archives['vehicles'] };
 }
 
 export type VehicleOrderLine = Pick<

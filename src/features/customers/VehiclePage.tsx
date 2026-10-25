@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarDays, Download, ImageIcon, Plus } from 'lucide-react';
+import { CalendarDays, Download, ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { MonthYearField } from '@/components/MonthYearField';
 import { FormField } from '@/components/FormField';
 import { PdfPreviewDialog, type PdfFile } from '@/components/PdfPreviewDialog';
@@ -20,7 +21,9 @@ import { formatDate, formatPlate, VEHICLE_TYPES } from '@/features/repair-orders
 import { todayIso } from '@/features/repair-orders/schemas';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { taskSummary } from '@/features/repair-orders/tasks';
-import { updateVehicle, type VehicleDetail } from './api';
+import { useProfile } from '@/features/auth/useProfile';
+import { deleteVehicle, updateVehicle, type VehicleDetail } from './api';
+import { ArchiveButton, ArchivedBanner } from './ArchiveControls';
 import {
   DEADLINE_LABELS,
   DEADLINE_BADGE_CLASS,
@@ -55,6 +58,11 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
   const [appointment, setAppointment] = useState(false);
   const [book, setBook] = useState<PdfFile | null>(null);
   const [bookPending, setBookPending] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const { data: profile } = useProfile();
+  const isDirection = profile?.role === 'direction';
+  const navigate = useNavigate();
+  const remove = useCustomerMutation((vehicleId: string) => deleteVehicle(vehicleId), 'Véhicule supprimé');
   const {
     control,
     register,
@@ -110,6 +118,14 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
         }
         actions={
           <>
+            {isDirection && orders.length === 0 && (
+              <Button variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
+                <Trash2 /> Supprimer
+              </Button>
+            )}
+            {isDirection && !vehicle.archived_at && (
+              <ArchiveButton kind="vehicle" id={vehicle.id} name={vehicle.plate} />
+            )}
             <Button
               variant="outline"
               disabled={bookPending || orders.length === 0}
@@ -129,6 +145,29 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
         }
       />
 
+      {vehicle.archived_at && (
+        <ArchivedBanner
+          kind="vehicle"
+          id={vehicle.id}
+          archivedAt={vehicle.archived_at}
+          canRestore={isDirection}
+        />
+      )}
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Supprimer ${vehicle.plate} ?`}
+        description="Possible seulement pour un véhicule sans OR, devis ni rendez-vous. Sinon, archive-le."
+        confirmLabel="Supprimer"
+        destructive
+        pending={remove.isPending}
+        onConfirm={() =>
+          remove.mutate(vehicle.id, {
+            onSuccess: () =>
+              void navigate(vehicle.client_id ? `/clients/${vehicle.client_id}` : '/vehicules'),
+          })
+        }
+      />
       <form
         noValidate
         className="split grid-cols-1! lg:grid-cols-[minmax(0,1fr)_420px]!"

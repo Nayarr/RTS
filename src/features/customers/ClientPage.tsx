@@ -26,6 +26,7 @@ import { GroupedInvoiceDialog } from '@/features/invoices/GroupedInvoiceDialog';
 import { ClientLicensesCard } from '@/features/rentals/ClientLicensesCard';
 import { ClientPortalButtons } from './ClientPortalButtons';
 import { ClientVatCard } from './ClientVatCard';
+import { ArchiveButton, ArchivedBanner } from './ArchiveControls';
 import { InvoiceStatusBadge } from '@/features/invoices/PaymentStatusBadge';
 import { QuoteStatusBadge } from '@/features/quotes/QuoteStatusBadge';
 import { AppointmentDialog } from '@/features/planning/AppointmentDialog';
@@ -121,6 +122,9 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                 <Trash2 /> Supprimer
               </Button>
             )}
+            {isDirection && !client.archived_at && (
+              <ArchiveButton kind="client" id={client.id} name={client.name} />
+            )}
             {billable.length > 1 && (
               <Button variant="outline" onClick={() => setGrouping(true)}>
                 <Receipt /> Facture groupée ({billable.length} OR)
@@ -138,6 +142,14 @@ function ClientView({ detail }: { detail: ClientDetail }) {
         }
       />
 
+      {client.archived_at && (
+        <ArchivedBanner
+          kind="client"
+          id={client.id}
+          archivedAt={client.archived_at}
+          canRestore={isDirection}
+        />
+      )}
       <ul className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         {kpis.map((kpi) => (
           <li key={kpi.label} className="card kpi">

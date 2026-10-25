@@ -835,6 +835,7 @@ export type Database = {
       clients: {
         Row: {
           account_type: string;
+          archived_at: string | null;
           billing_address: string | null;
           birth_date: string | null;
           birth_place: string | null;
@@ -864,6 +865,7 @@ export type Database = {
         };
         Insert: {
           account_type?: string;
+          archived_at?: string | null;
           billing_address?: string | null;
           birth_date?: string | null;
           birth_place?: string | null;
@@ -893,6 +895,7 @@ export type Database = {
         };
         Update: {
           account_type?: string;
+          archived_at?: string | null;
           billing_address?: string | null;
           birth_date?: string | null;
           birth_place?: string | null;
@@ -5580,6 +5583,7 @@ export type Database = {
       vehicles: {
         Row: {
           antipollution_due_date: string | null;
+          archived_at: string | null;
           brand: string | null;
           client_id: string | null;
           created_at: string;
@@ -5598,6 +5602,7 @@ export type Database = {
         };
         Insert: {
           antipollution_due_date?: string | null;
+          archived_at?: string | null;
           brand?: string | null;
           client_id?: string | null;
           created_at?: string;
@@ -5616,6 +5621,7 @@ export type Database = {
         };
         Update: {
           antipollution_due_date?: string | null;
+          archived_at?: string | null;
           brand?: string | null;
           client_id?: string | null;
           created_at?: string;
@@ -5918,6 +5924,7 @@ export type Database = {
       v_clients_overview: {
         Row: {
           account_type: string | null;
+          archived_at: string | null;
           balance_due: number | null;
           billing_address: string | null;
           birth_date: string | null;
@@ -6958,6 +6965,7 @@ export type Database = {
       v_vehicles_overview: {
         Row: {
           antipollution_due_date: string | null;
+          archived_at: string | null;
           brand: string | null;
           client_id: string | null;
           client_name: string | null;
@@ -7934,6 +7942,7 @@ export type Database = {
         }[];
       };
       send_test_push: { Args: Record<PropertyKey, never>; Returns: undefined };
+      set_client_archived: { Args: { p_archived: boolean; p_client_id: string }; Returns: undefined };
       set_consumable_stock: {
         Args: { p_consumable_id: string; p_note?: string; p_quantity: number };
         Returns: number;
@@ -7981,6 +7990,7 @@ export type Database = {
         };
       };
       set_technician_pin: { Args: { p_pin: string; p_technician_id: string }; Returns: undefined };
+      set_vehicle_archived: { Args: { p_archived: boolean; p_vehicle_id: string }; Returns: undefined };
       settle_pre_quote_work: { Args: { p_decisions: Json; p_repair_order_id: string }; Returns: Json };
       share_client_portal: { Args: { p_client_id: string }; Returns: string };
       share_invoice: { Args: { p_invoice_id: string }; Returns: string };
@@ -8117,6 +8127,7 @@ export type Database = {
         Args: { p_patch: Json; p_repair_order_id: string };
         Returns: {
           antipollution_due_date: string | null;
+          archived_at: string | null;
           brand: string | null;
           client_id: string | null;
           created_at: string;
