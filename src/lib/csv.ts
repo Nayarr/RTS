@@ -16,8 +16,8 @@ export const toCsv = (headers: string[], rows: CsvCell[][]) =>
   `${BOM}${[headers, ...rows].map((row) => row.map(cell).join(';')).join('\r\n')}\r\n`;
 
 /** Téléchargement d'un fichier généré dans le navigateur. */
-export function downloadFile(content: string, fileName: string, type = 'text/csv;charset=utf-8') {
-  const url = URL.createObjectURL(new Blob([content], { type }));
+export function downloadFile(content: string | Blob, fileName: string, type = 'text/csv;charset=utf-8') {
+  const url = URL.createObjectURL(content instanceof Blob ? content : new Blob([content], { type }));
   const link = document.createElement('a');
   link.href = url;
   link.download = fileName;

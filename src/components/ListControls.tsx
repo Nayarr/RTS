@@ -58,6 +58,49 @@ export function FilterChips<T extends string>({
   );
 }
 
+/** Pastilles à choix multiple (chaque pastille se coche ou se décoche). */
+export function ToggleChips<T extends string>({
+  label,
+  options,
+  values,
+  onChange,
+  className,
+}: {
+  label: string;
+  options: ChipOption<T>[];
+  values: T[];
+  onChange: (values: T[]) => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn('chips', className)} role="group" aria-label={label}>
+      {options.map((option) => {
+        const on = values.includes(option.value);
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={cn('chip', on && 'on')}
+            aria-pressed={on}
+            onClick={() =>
+              onChange(on ? values.filter((value) => value !== option.value) : [...values, option.value])
+            }
+          >
+            {option.color && <span className="sw" style={{ '--c': option.color } as CSSProperties} />}
+            {option.label}
+            {option.count !== undefined && (
+              <>
+                {' '}
+                <span className="n">{option.count}</span>
+              </>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Numéros de page, avec « … » quand il y en a beaucoup. */
 function pageNumbers(page: number, count: number): (number | null)[] {
   if (count <= 7) return Array.from({ length: count }, (_, index) => index);

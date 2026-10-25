@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   CalendarDays,
+  FileSpreadsheet,
   Link2,
   Plus,
   Receipt,
@@ -489,6 +490,13 @@ function ClientView({ detail }: { detail: ClientDetail }) {
               Factures
             </h2>
             <span className="cnt">{invoices.length}</span>
+            {invoices.some((invoice) => invoice.status === 'issued') && (
+              <Button asChild variant="outline" size="sm" className="ml-auto">
+                <Link to={`/clients/${client.id}/extrait`}>
+                  <FileSpreadsheet /> Extrait de compte
+                </Link>
+              </Button>
+            )}
           </div>
           {invoices.length === 0 ? (
             <p className="card-b hint">Aucune facture.</p>
