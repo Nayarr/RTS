@@ -141,6 +141,9 @@ export function AssistantPage() {
         queryClient.invalidateQueries({ queryKey: ['agent', 'conversations'] }),
         queryClient.invalidateQueries({ queryKey: ['agent', 'actions', result.conversation_id] }),
       ]);
+      // Réponse affichée tant que la conversation se charge : le point du jour ne revient pas
+      // (en se fermant, il couperait la lecture de la réponse, Azure en particulier)
+      setBriefingShown(false);
       setPending(null);
       if (voiceOn) read(result.turn_id ?? 'derniere', result.answer);
     },
