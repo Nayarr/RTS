@@ -103,9 +103,12 @@ test('la direction exporte la liste des factures en CSV', async ({ page }, testI
 
   await loginAs(page, 'direction@rts.local');
   await page.goto('/factures');
-  await page.getByRole('searchbox', { name: 'Rechercher une facture' }).fill(invoice.number);
+  await page.getByRole('button', { name: 'Exporter' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Exporter des factures' });
+  await dialog.getByLabel('Client').selectOption({ label: `Client export ${id}` });
+  await expect(dialog.getByRole('status')).toContainText('1 facture');
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export CSV' }).click();
+  await dialog.getByRole('button', { name: 'Exporter' }).click();
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/^factures-\d{4}-\d{2}-\d{2}\.csv$/);
   const content = await readFile((await file.path()) ?? '', 'utf8');
@@ -115,9 +118,9 @@ test('la direction exporte la liste des factures en CSV', async ({ page }, testI
   expect(content).toContain('270,00;54,00;324,00');
 });
 
-test('la réception n’a pas l’export CSV', async ({ page }) => {
+test('la réception n’a pas l’export des factures', async ({ page }) => {
   await loginAs(page, 'reception@rts.local');
   await page.goto('/factures');
   await page.getByRole('button', { name: /^Toutes/ }).click();
-  await expect(page.getByRole('button', { name: 'Export CSV' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Exporter' })).toHaveCount(0);
 });
