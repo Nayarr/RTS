@@ -2005,6 +2005,125 @@ export type Database = {
           },
         ];
       };
+      invoice_line_employee_changes: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          id: string;
+          invoice_id: string;
+          invoice_line_id: string | null;
+          line_description: string;
+          new_name: string | null;
+          old_name: string | null;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          id?: string;
+          invoice_id: string;
+          invoice_line_id?: string | null;
+          line_description: string;
+          new_name?: string | null;
+          old_name?: string | null;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          id?: string;
+          invoice_id?: string;
+          invoice_line_id?: string | null;
+          line_description?: string;
+          new_name?: string | null;
+          old_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_line_employee_changes_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_line_employee_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_line_employee_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'invoice_line_employee_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'invoice_line_employee_changes_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_line_employee_changes_invoice_line_id_fkey';
+            columns: ['invoice_line_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoice_lines';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      invoice_line_employees: {
+        Row: {
+          invoice_line_id: string;
+          profile_id: string | null;
+          technician_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          invoice_line_id: string;
+          profile_id?: string | null;
+          technician_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          invoice_line_id?: string;
+          profile_id?: string | null;
+          technician_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_line_employees_invoice_line_id_fkey';
+            columns: ['invoice_line_id'];
+            isOneToOne: true;
+            referencedRelation: 'invoice_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_line_employees_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_line_employees_technician_id_fkey';
+            columns: ['technician_id'];
+            isOneToOne: false;
+            referencedRelation: 'technicians';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       invoice_lines: {
         Row: {
           billed_hours: number | null;
@@ -4463,6 +4582,7 @@ export type Database = {
           source_quote_line_id: string | null;
           standard_hours: number | null;
           supplier_id: string | null;
+          technician_id: string | null;
           unit_price: number | null;
           updated_at: string;
           visibility: string;
@@ -4493,6 +4613,7 @@ export type Database = {
           source_quote_line_id?: string | null;
           standard_hours?: number | null;
           supplier_id?: string | null;
+          technician_id?: string | null;
           unit_price?: number | null;
           updated_at?: string;
           visibility?: string;
@@ -4523,6 +4644,7 @@ export type Database = {
           source_quote_line_id?: string | null;
           standard_hours?: number | null;
           supplier_id?: string | null;
+          technician_id?: string | null;
           unit_price?: number | null;
           updated_at?: string;
           visibility?: string;
@@ -4589,6 +4711,13 @@ export type Database = {
             columns: ['supplier_id'];
             isOneToOne: false;
             referencedRelation: 'suppliers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ro_lines_technician_id_fkey';
+            columns: ['technician_id'];
+            isOneToOne: false;
+            referencedRelation: 'technicians';
             referencedColumns: ['id'];
           },
         ];
@@ -7273,6 +7402,7 @@ export type Database = {
       duplicate_invoice: { Args: { p_invoice_id: string }; Returns: string };
       duplicate_quote: { Args: { p_quote_id: string }; Returns: string };
       duplicate_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
+      employee_name: { Args: { p_profile_id: string; p_technician_id: string }; Returns: string };
       ensure_client_and_vehicle: {
         Args: {
           p_client_name: string;
@@ -7778,6 +7908,10 @@ export type Database = {
       };
       set_inbox_emails_handled: { Args: { p_handled: boolean; p_ids: string[] }; Returns: number };
       set_invoice_due_date: { Args: { p_due_date: string; p_invoice_id: string }; Returns: undefined };
+      set_invoice_line_employee: {
+        Args: { p_line_id: string; p_profile_id?: string; p_technician_id?: string };
+        Returns: undefined;
+      };
       set_kiosk_exit_code: { Args: { p_code: string }; Returns: undefined };
       set_quote_response: {
         Args: { p_quote_id: string; p_status: Database['public']['Enums']['quote_status'] };

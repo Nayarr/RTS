@@ -57,6 +57,8 @@ import {
 import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
+import { InvoiceEmployeesCard } from './InvoiceEmployeesCard';
+import { useProfile } from '@/features/auth/useProfile';
 import { DuplicateButton } from '@/components/DuplicateButton';
 import { duplicateInvoice } from './api';
 
@@ -290,6 +292,8 @@ export function InvoicePage() {
   const navigate = useNavigate();
   const detail = useInvoice(id);
   const settings = useSettings();
+  const { data: profile } = useProfile();
+  const isDirection = profile?.role === 'direction';
   const pdf = useInvoicePdf();
   const [dialog, setDialog] = useState<Dialog>(null);
   const close = () => setDialog(null);
@@ -486,6 +490,7 @@ export function InvoicePage() {
               />
             </div>
           </section>
+          {isDirection && <InvoiceEmployeesCard invoiceId={invoice.id} lines={lines} />}
           {draft && <ClientBillingCard clientId={invoice.client_id} client={client} />}
         </div>
 
