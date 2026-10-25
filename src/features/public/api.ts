@@ -66,6 +66,9 @@ export interface PublicInvoice {
   totals: { total_ht: number; total_vat: number; total_ttc: number };
   balance_due: number | null;
   legal_mentions: string[] | null;
+  /** RIB de l'atelier (règlement par virement), vide s'il n'est pas réglé. */
+  iban?: string | null;
+  bic?: string | null;
 }
 
 export interface PublicPortal {

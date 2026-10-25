@@ -983,9 +983,11 @@ export type Database = {
       company_settings: {
         Row: {
           address_line: string;
+          bic: string | null;
           city: string;
           default_vat_rate: number;
           email: string | null;
+          iban: string | null;
           id: boolean;
           invoice_legal_mentions: string[];
           legal_form: string | null;
@@ -1004,9 +1006,11 @@ export type Database = {
         };
         Insert: {
           address_line: string;
+          bic?: string | null;
           city: string;
           default_vat_rate?: number;
           email?: string | null;
+          iban?: string | null;
           id?: boolean;
           invoice_legal_mentions?: string[];
           legal_form?: string | null;
@@ -1025,9 +1029,11 @@ export type Database = {
         };
         Update: {
           address_line?: string;
+          bic?: string | null;
           city?: string;
           default_vat_rate?: number;
           email?: string | null;
+          iban?: string | null;
           id?: boolean;
           invoice_legal_mentions?: string[];
           legal_form?: string | null;

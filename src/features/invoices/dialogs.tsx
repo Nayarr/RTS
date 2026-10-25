@@ -16,8 +16,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { decimalField, decimalText, decimalValue, formatEuro } from '@/lib/numbers';
-import type { CreditNoteInput, PaymentInput, PaymentMethod } from './api';
-import { PAYMENT_METHODS } from './domain';
+import type { CreditNoteInput, PaymentInput } from './api';
+import { PAYMENT_METHOD_CHOICES, PAYMENT_METHODS, type PaymentChoice } from './domain';
 
 /** Confirmation de l'émission définitive, avec les points à vérifier. */
 export function IssueDialog({
@@ -78,7 +78,7 @@ const paymentSchema = (balance: number) =>
       (value) => (decimalValue(value) ?? 0) <= balance + 0.001,
       `Au plus le reste dû (${formatEuro(balance)})`,
     ),
-    method: z.enum(['bank_transfer', 'check', 'card', 'cash', 'bill_of_exchange', 'direct_debit']),
+    method: z.enum(PAYMENT_METHOD_CHOICES),
     paid_on: z.string().min(1, 'Indique la date'),
     note: z.string().trim().max(200),
   });
@@ -97,7 +97,7 @@ export function PaymentDialog({
   totalTtc: number;
   balance: number;
   /** Mode proposé (prélèvement pour un client en prélèvement). */
-  defaultMethod?: PaymentMethod;
+  defaultMethod?: PaymentChoice;
   pending: boolean;
   onSubmit: (input: PaymentInput) => void;
   onClose: () => void;
@@ -156,9 +156,9 @@ export function PaymentDialog({
           <div className="space-y-2">
             <Label htmlFor="payment-method">Mode</Label>
             <select id="payment-method" className="inp" {...register('method')}>
-              {Object.entries(PAYMENT_METHODS).map(([value, label]) => (
+              {PAYMENT_METHOD_CHOICES.map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {PAYMENT_METHODS[value]}
                 </option>
               ))}
             </select>

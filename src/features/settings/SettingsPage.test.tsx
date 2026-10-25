@@ -33,6 +33,8 @@ const settings: Settings = {
     siret: '98498913700018',
     vat_number: 'FR66984989137',
     rcs: 'RCS Pontoise',
+    iban: null,
+    bic: null,
     default_vat_rate: 20,
     payment_terms_days: 30,
     quote_validity_days: 30,

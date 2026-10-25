@@ -26,6 +26,10 @@ export const PAYMENT_METHODS: Record<PaymentMethod, string> = {
   direct_debit: 'Prélèvement',
 };
 
+/** Moyens proposés pour un nouveau paiement (plus de LCR : les anciens paiements gardent leur libellé). */
+export const PAYMENT_METHOD_CHOICES = ['bank_transfer', 'check', 'card', 'cash', 'direct_debit'] as const;
+export type PaymentChoice = (typeof PAYMENT_METHOD_CHOICES)[number];
+
 /** Points à vérifier avant l'émission (comme l'ancienne appli) : l'émission reste possible. */
 export function issueWarnings(lines: InvoiceLine[], client: ClientBilling): string[] {
   const unpriced = lines.filter(
@@ -176,7 +180,7 @@ export const ACCOUNT_TYPES: Record<AccountType, string> = {
 };
 
 /** Mode proposé pour un paiement : prélèvement pour un client en prélèvement, sinon carte. */
-export const defaultPaymentMethod = (accountType: AccountType): PaymentMethod =>
+export const defaultPaymentMethod = (accountType: AccountType): PaymentChoice =>
   accountType === 'prelevement' ? 'direct_debit' : 'card';
 
 const STAMP = new Intl.DateTimeFormat('fr-FR', {

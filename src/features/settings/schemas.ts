@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { AppSettings, CompanySettings, LaborRate } from './api';
+import { bankValue, bicField, formatIban, ibanField } from '@/lib/iban';
 import { formatSiret, siretField, siretValue } from '@/lib/siret';
 
 const digits = (value: string) => value.replace(/\s/g, '');
@@ -32,6 +33,9 @@ export const companySchema = z.object({
       'N° de TVA invalide',
     ),
   rcs: optionalText,
+  /** RIB imprimé sur les factures (règlement par virement). */
+  iban: ibanField,
+  bic: bicField,
 });
 export type CompanyValues = z.infer<typeof companySchema>;
 
@@ -47,6 +51,8 @@ export const companyToForm = (c: CompanySettings): CompanyValues => ({
   siret: formatSiret(c.siret),
   vat_number: c.vat_number ?? '',
   rcs: c.rcs ?? '',
+  iban: formatIban(c.iban),
+  bic: c.bic ?? '',
 });
 
 export const companyFromForm = (v: CompanyValues) => ({
@@ -58,6 +64,8 @@ export const companyFromForm = (v: CompanyValues) => ({
   siret: siretValue(v.siret),
   vat_number: toNull(digits(v.vat_number).toUpperCase()),
   rcs: toNull(v.rcs),
+  iban: bankValue(v.iban),
+  bic: bankValue(v.bic),
 });
 
 // ---------------------------------------------------------------- Facturation
