@@ -75,14 +75,19 @@ test('relance groupée des retards : message prêt par client, relance notée su
   const list = dialog.getByRole('list', { name: 'Clients à relancer' });
   await expect(list.getByText(clientName)).toBeVisible();
 
-  // Seul ce client : les autres retards de la base locale restent décochés
+  // Seul ce client : les autres retards de la base locale restent décochés (y compris ceux créés
+  // par un autre test pendant que la fenêtre est ouverte)
   const boxes = list.getByRole('checkbox');
-  for (let index = 0; index < (await boxes.count()); index++) {
-    const box = boxes.nth(index);
-    if ((await box.getAttribute('aria-label')) === `Relancer ${clientName}`) continue;
-    if ((await box.isEnabled()) && (await box.isChecked())) await box.uncheck();
-  }
-  await dialog.getByRole('button', { name: /^(Préparer|Envoyer) 1 relance$/ }).click();
+  const single = dialog.getByRole('button', { name: /^(Préparer|Envoyer) 1 relance$/ });
+  await expect(async () => {
+    for (let index = 0; index < (await boxes.count()); index++) {
+      const box = boxes.nth(index);
+      if ((await box.getAttribute('aria-label')) === `Relancer ${clientName}`) continue;
+      if ((await box.isEnabled()) && (await box.isChecked())) await box.uncheck();
+    }
+    await expect(single).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await single.click();
   // Envoi par l'appli coupé en local : le message s'ouvre dans la messagerie
   const link = dialog.getByRole('link', { name: /Ouvrir dans la messagerie/ });
   await expect(link).toHaveAttribute(
