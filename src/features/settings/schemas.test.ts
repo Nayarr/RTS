@@ -25,6 +25,8 @@ const company: CompanyValues = {
   siret: '984 989 137 00018',
   vat_number: 'fr 66 984989137',
   rcs: 'RCS Pontoise',
+  iban: 'fr14 2004 1010 0505 0001 3m02 606',
+  bic: 'bnpafrpp',
 };
 
 describe('pickDirty', () => {

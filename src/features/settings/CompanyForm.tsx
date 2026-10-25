@@ -104,6 +104,17 @@ export function CompanyForm({ company }: { company: CompanySettings }) {
           {...register('vat_number')}
         />
       </div>
+      <div className="grid gap-3.5 sm:grid-cols-[2fr_1fr]">
+        <FormField
+          id="iban"
+          label="IBAN (imprimé sur les factures)"
+          className="num"
+          placeholder="FR76 …"
+          error={errors.iban?.message}
+          {...register('iban')}
+        />
+        <FormField id="bic" label="BIC" className="num" error={errors.bic?.message} {...register('bic')} />
+      </div>
     </SectionCard>
   );
 }

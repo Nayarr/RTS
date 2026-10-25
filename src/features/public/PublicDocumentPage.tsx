@@ -21,6 +21,7 @@ import { formatDate, formatDateTime } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { TaskList } from '@/features/repair-orders/TaskList';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
+import { formatIban } from '@/lib/iban';
 import { cn } from '@/lib/utils';
 import {
   companyAddress,
@@ -349,6 +350,17 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
             Facture à régler avant le {formatDate(invoice.due_date)}
             {balance < invoice.totals.total_ttc - 0.01 && `, reste dû : ${formatEuro(balance)}`}. Merci de
             votre confiance.
+            {invoice.iban && (
+              <span className="mt-1 block">
+                Règlement par virement : IBAN <b className="num">{formatIban(invoice.iban)}</b>
+                {invoice.bic && (
+                  <>
+                    {' '}
+                    · BIC <b className="num">{invoice.bic}</b>
+                  </>
+                )}
+              </span>
+            )}
           </Notice>
         ) : (
           <Notice tone="s-ok">Facture réglée. Merci de votre confiance.</Notice>

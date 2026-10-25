@@ -1,5 +1,6 @@
 import { computeTotals, lineNet } from '@/features/documents/lines';
 import type { CompanySettings } from '@/features/settings/api';
+import { formatIban } from '@/lib/iban';
 import {
   createPdf,
   drawLetterhead,
@@ -108,10 +109,21 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   doc.text(`Paiement à ${company.payment_terms_days} jours, avant le ${pdfDate(dueDate)}.`, MARGIN, y + 4, {
     maxWidth: 98,
   });
+  let below = y + 10;
+  if (company.iban) {
+    // RIB de l'atelier : règlement par virement
+    doc.text(
+      `Règlement par virement : IBAN ${formatIban(company.iban)}${company.bic ? ` · BIC ${company.bic}` : ''}`,
+      MARGIN,
+      below,
+      { maxWidth: 98 },
+    );
+    below += 6;
+  }
   const gesture = offeredSentence(documentLines);
   if (gesture) {
     doc.setTextColor(...BRAND);
-    doc.text(gesture, MARGIN, y + 10, { maxWidth: 98 });
+    doc.text(gesture, MARGIN, below, { maxWidth: 98 });
   }
 
   drawMentions(doc, company.invoice_legal_mentions, totalsEnd + 10);
