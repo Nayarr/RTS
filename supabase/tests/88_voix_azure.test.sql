@@ -8,7 +8,7 @@ select plan(8);
 \ir helpers/fixtures.psql
 
 select is((select tts_provider || ' ' || tts_voice || ' ' || tts_monthly_limit from public.app_settings),
-          'browser fr-FR-DeniseNeural 480000', 'Voix du navigateur par défaut, Denise, 480 000 caractères');
+          'browser es-ES-XimenaMultilingualNeural 480000', 'Voix du navigateur par défaut, Ximena, 480 000 caractères');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000d1');
 select lives_ok($$ update public.app_settings set tts_provider = 'azure', tts_voice = 'fr-FR-HenriNeural', tts_monthly_limit = 100 $$,

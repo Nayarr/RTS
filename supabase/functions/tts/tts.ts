@@ -4,8 +4,9 @@ import { z } from 'zod';
 /** Texte lu en une fois au plus (une réponse de l'agent ou une phrase du point du jour). */
 export const MAX_CHARACTERS = 2_000;
 
-/** Voix françaises neuronales proposées dans Réglages › Atelier. */
+/** Voix neuronales lues en français proposées dans Réglages › Atelier (Ximena par défaut). */
 export const VOICES = [
+  'es-ES-XimenaMultilingualNeural',
   'fr-FR-DeniseNeural',
   'fr-FR-HenriNeural',
   'fr-FR-VivienneMultilingualNeural',
@@ -29,10 +30,14 @@ const XML_ESCAPES: Record<string, string> = {
 
 export const escapeXml = (text: string) => text.replace(/[&<>"']/g, (char) => XML_ESCAPES[char] ?? char);
 
-/** Corps SSML de la lecture : voix, langue française, texte échappé. */
+/** Corps SSML de la lecture : voix, langue française, texte échappé. Une voix multilingue (Ximena,
+ *  Vivienne, Rémy) lit en français de France quelle que soit sa langue d'origine. */
 export function ssml(text: string, voice: string): string {
+  const body = voice.includes('Multilingual')
+    ? `<lang xml:lang="fr-FR">${escapeXml(text)}</lang>`
+    : escapeXml(text);
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="fr-FR">` +
-    `<voice name="${escapeXml(voice)}">${escapeXml(text)}</voice></speak>`;
+    `<voice name="${escapeXml(voice)}">${body}</voice></speak>`;
 }
 
 /** Adresse de la synthèse vocale de la région Azure (francecentral, westeurope…). */

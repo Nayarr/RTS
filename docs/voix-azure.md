@@ -53,8 +53,8 @@ npx supabase functions deploy tts --project-ref liwvhqihlrupmtymfjtk
 
 ### 3. Réglages
 
-Réglages › Atelier › **Voix de l'Agent** : « Voix naturelle Azure », choix de la voix (Denise par
-défaut), « Écouter un essai ». Le compteur du mois s'affiche à côté.
+Réglages › Atelier › **Voix de l'Agent** : « Voix naturelle Azure », choix de la voix (Ximena par
+défaut, voix multilingue lue en français de France), « Écouter un essai ». Le compteur du mois s'affiche à côté.
 
 ## RGPD
 

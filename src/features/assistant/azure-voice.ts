@@ -3,8 +3,9 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
-/** Voix françaises proposées (mêmes que la fonction « tts »). */
+/** Voix lues en français proposées (mêmes que la fonction « tts »), Ximena par défaut. */
 export const AZURE_VOICES = [
+  { value: 'es-ES-XimenaMultilingualNeural', label: 'Ximena (femme, multilingue)' },
   { value: 'fr-FR-DeniseNeural', label: 'Denise (femme, posée)' },
   { value: 'fr-FR-HenriNeural', label: 'Henri (homme)' },
   { value: 'fr-FR-VivienneMultilingualNeural', label: 'Vivienne (femme, expressive)' },
