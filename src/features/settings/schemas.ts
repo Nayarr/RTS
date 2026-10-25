@@ -86,6 +86,9 @@ export const billingSchema = z.object({
   supplies_fee_ht: z
     .string()
     .regex(/^\s*(\d{1,6}([.,]\d{1,2})?)?\s*$/, 'Montant en euros (ex : 15 ou 12,50)'),
+  /** Mentions d'une facture sans TVA : autoliquidation (Union européenne), exonération (hors Union). */
+  vat_exempt_mention_eu: z.string().trim().min(1, 'Indique la mention').max(500),
+  vat_exempt_mention_other: z.string().trim().min(1, 'Indique la mention').max(500),
 });
 export type BillingValues = z.infer<typeof billingSchema>;
 
@@ -95,6 +98,8 @@ export const billingToForm = (c: CompanySettings): BillingValues => ({
   quote_validity_days: c.quote_validity_days,
   invoice_legal_mentions: c.invoice_legal_mentions.join('\n'),
   supplies_fee_ht: c.supplies_fee_ht === null ? '' : String(c.supplies_fee_ht).replace('.', ','),
+  vat_exempt_mention_eu: c.vat_exempt_mention_eu,
+  vat_exempt_mention_other: c.vat_exempt_mention_other,
 });
 
 export const billingFromForm = (v: BillingValues) => ({

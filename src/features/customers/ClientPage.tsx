@@ -25,6 +25,7 @@ import { useProfile } from '@/features/auth/useProfile';
 import { GroupedInvoiceDialog } from '@/features/invoices/GroupedInvoiceDialog';
 import { ClientLicensesCard } from '@/features/rentals/ClientLicensesCard';
 import { ClientPortalButtons } from './ClientPortalButtons';
+import { ClientVatCard } from './ClientVatCard';
 import { InvoiceStatusBadge } from '@/features/invoices/PaymentStatusBadge';
 import { QuoteStatusBadge } from '@/features/quotes/QuoteStatusBadge';
 import { AppointmentDialog } from '@/features/planning/AppointmentDialog';
@@ -368,6 +369,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
         </section>
 
         <div className="col gap-5">
+          {client.kind !== 'individual' && <ClientVatCard clientId={client.id} />}
           <ClientLicensesCard
             client={{
               id: client.id,

@@ -41,6 +41,8 @@ const settings: Settings = {
     invoice_legal_mentions: ['TVA sur les encaissements.'],
     logo_file_id: null,
     supplies_fee_ht: 15,
+    vat_exempt_mention_eu: 'Autoliquidation',
+    vat_exempt_mention_other: 'Exonération de TVA',
     updated_at: '2026-09-28T00:00:00Z',
   },
   laborRates: [
