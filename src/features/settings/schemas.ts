@@ -134,8 +134,9 @@ const mailLocal = z
   .toLowerCase()
   .regex(/^[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/, 'Début d’adresse seul, ex. facturation');
 
-/** Voix Azure proposées (mêmes que la fonction « tts »). */
+/** Voix Azure proposées (mêmes que la fonction « tts »), Ximena par défaut. */
 const TTS_VOICES = [
+  'es-ES-XimenaMultilingualNeural',
   'fr-FR-DeniseNeural',
   'fr-FR-HenriNeural',
   'fr-FR-VivienneMultilingualNeural',
@@ -220,7 +221,7 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
   tts_provider: a.tts_provider === 'azure' ? 'azure' : 'browser',
   tts_voice: (VOICE_VALUES.includes(a.tts_voice)
     ? a.tts_voice
-    : 'fr-FR-DeniseNeural') as WorkshopValues['tts_voice'],
+    : 'es-ES-XimenaMultilingualNeural') as WorkshopValues['tts_voice'],
   tts_monthly_limit: a.tts_monthly_limit,
   mail_send_enabled: a.mail_send_enabled,
   auto_mails_enabled: a.auto_mails_enabled,
