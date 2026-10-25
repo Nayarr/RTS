@@ -77,7 +77,10 @@ async function askAndListen(page: Page, answer: string) {
     await route.fulfill({ json: { conversation_id: conversation, turn_id: null, answer } });
   });
   await loginAs(page, 'direction@rts.local');
+  // Voix réglée connue avant la question (sinon la réponse part avec la voix du navigateur)
+  const settings = page.waitForResponse((response) => response.url().includes('/rest/v1/app_settings'));
   await page.goto('/agent-direction');
+  await settings;
   await page.getByRole('button', { name: 'Écrire la question' }).click();
   await page.getByLabel('Question à l’agent').fill('Reste dû ?');
   await page.getByRole('button', { name: 'Envoyer la question' }).click();
@@ -90,6 +93,8 @@ test('voix Azure : le texte écrit pour l’oreille est lu par Azure', async ({ 
   const asked: unknown[] = [];
   await page.route('**/functions/v1/tts', async (route) => {
     asked.push(route.request().postDataJSON());
+    // Réseau réel : le MP3 arrive après l'affichage de la réponse
+    await new Promise((resolve) => setTimeout(resolve, 800));
     await route.fulfill({
       status: 200,
       headers: { 'content-type': 'application/octet-stream', 'access-control-allow-origin': '*' },
@@ -105,13 +110,14 @@ test('voix Azure : le texte écrit pour l’oreille est lu par Azure', async ({ 
 test('voix Azure indisponible (plafond du mois) : voix du navigateur', async ({ page }) => {
   await fakeAudio(page);
   await azureChosen(page);
-  await page.route('**/functions/v1/tts', (route) =>
-    route.fulfill({
+  await page.route('**/functions/v1/tts', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    await route.fulfill({
       status: 429,
       headers: { 'access-control-allow-origin': '*' },
       json: { error: 'Plafond du mois atteint : voix du navigateur jusqu’au mois prochain' },
-    }),
-  );
+    });
+  });
   await askAndListen(page, 'Deux factures en retard.');
   await expect.poll(async () => (await voiceLog(page)).browser).toContain('Deux factures en retard.');
 });
