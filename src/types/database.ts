@@ -236,6 +236,9 @@ export type Database = {
           roadside_flat_fee: number;
           roadside_price_per_km: number;
           roadside_travel_hourly_rate: number;
+          tts_monthly_limit: number;
+          tts_provider: string;
+          tts_voice: string;
           updated_at: string;
           workday_end: string;
           workday_start: string;
@@ -264,6 +267,9 @@ export type Database = {
           roadside_flat_fee?: number;
           roadside_price_per_km?: number;
           roadside_travel_hourly_rate?: number;
+          tts_monthly_limit?: number;
+          tts_provider?: string;
+          tts_voice?: string;
           updated_at?: string;
           workday_end?: string;
           workday_start?: string;
@@ -292,6 +298,9 @@ export type Database = {
           roadside_flat_fee?: number;
           roadside_price_per_km?: number;
           roadside_travel_hourly_rate?: number;
+          tts_monthly_limit?: number;
+          tts_provider?: string;
+          tts_voice?: string;
           updated_at?: string;
           workday_end?: string;
           workday_start?: string;
@@ -5388,6 +5397,24 @@ export type Database = {
           },
         ];
       };
+      tts_usage: {
+        Row: {
+          characters: number;
+          month: string;
+          updated_at: string;
+        };
+        Insert: {
+          characters?: number;
+          month: string;
+          updated_at?: string;
+        };
+        Update: {
+          characters?: number;
+          month?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       vehicles: {
         Row: {
           antipollution_due_date: string | null;
@@ -7906,6 +7933,8 @@ export type Database = {
       tire_size_label: { Args: { p_size: string }; Returns: string };
       tire_stock_kpis: { Args: Record<PropertyKey, never>; Returns: Json };
       treasury_overview: { Args: Record<PropertyKey, never>; Returns: Json };
+      tts_release: { Args: { p_characters: number }; Returns: undefined };
+      tts_reserve: { Args: { p_characters: number }; Returns: number };
       update_vehicle_deadlines: {
         Args: { p_patch: Json; p_repair_order_id: string };
         Returns: {

@@ -76,6 +76,9 @@ const settings: Settings = {
     mail_billing_local: 'facturation',
     mail_workshop_local: 'atelier',
     mail_signature_local: 'signature',
+    tts_provider: 'browser',
+    tts_voice: 'fr-FR-DeniseNeural',
+    tts_monthly_limit: 480000,
     updated_at: '2026-09-28T00:00:00Z',
   },
 };

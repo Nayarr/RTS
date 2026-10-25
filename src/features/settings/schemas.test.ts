@@ -128,6 +128,9 @@ describe('workshopSchema', () => {
     mail_billing_local: 'facturation',
     mail_workshop_local: 'atelier',
     mail_signature_local: 'signature',
+    tts_provider: 'browser' as const,
+    tts_voice: 'fr-FR-DeniseNeural' as const,
+    tts_monthly_limit: 480000,
   };
 
   it('accepte les horaires actuels de l’atelier', () => {

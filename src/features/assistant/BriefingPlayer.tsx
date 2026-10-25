@@ -36,7 +36,7 @@ import {
   type VoiceCommand,
 } from './briefing-player';
 import { CATEGORY_META } from './mails';
-import { speak, speechSupported, stopSpeaking } from './speech';
+import { prefetchSpeech, speak, speechSupported, stopSpeaking } from './speech';
 import { sourcesLabel } from './suggestions';
 import { VoiceOrb } from './VoiceOrb';
 
@@ -127,6 +127,9 @@ export function BriefingPlayer({
     const step = steps[index];
     if (!step) return;
     const mine = ++token.current;
+    // Voix Azure : la phrase suivante est prête quand celle-ci se termine (pas de blanc)
+    const next = steps[index + 1];
+    if (next) prefetchSpeech(next.text);
     speak(step.text, () => {
       if (mine !== token.current) return;
       if (step.kind === 'mail-ask') {

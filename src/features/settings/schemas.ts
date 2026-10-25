@@ -134,6 +134,15 @@ const mailLocal = z
   .toLowerCase()
   .regex(/^[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/, 'Début d’adresse seul, ex. facturation');
 
+/** Voix Azure proposées (mêmes que la fonction « tts »). */
+const TTS_VOICES = [
+  'fr-FR-DeniseNeural',
+  'fr-FR-HenriNeural',
+  'fr-FR-VivienneMultilingualNeural',
+  'fr-FR-RemyMultilingualNeural',
+  'fr-FR-EloiseNeural',
+] as const;
+
 export const workshopSchema = z
   .object({
     workday_start: time,
@@ -153,6 +162,13 @@ export const workshopSchema = z
     label_scan_enabled: z.boolean(),
     agent_enabled: z.boolean(),
     agent_memo: z.string().max(4000, '4 000 caractères au plus'),
+    tts_provider: z.enum(['browser', 'azure']),
+    tts_voice: z.enum(TTS_VOICES),
+    tts_monthly_limit: z
+      .number('Nombre de caractères attendu')
+      .int('Nombre entier')
+      .min(0, 'Au moins 0')
+      .max(500000, '500 000 au plus (niveau gratuit)'),
     mail_send_enabled: z.boolean(),
     auto_mails_enabled: z.boolean(),
     mail_domain: z
@@ -180,6 +196,7 @@ export const workshopSchema = z
 export type WorkshopValues = z.infer<typeof workshopSchema>;
 
 const hhmm = (t: string) => t.slice(0, 5);
+const VOICE_VALUES: readonly string[] = TTS_VOICES;
 
 export const workshopToForm = (a: AppSettings): WorkshopValues => ({
   workday_start: hhmm(a.workday_start),
@@ -200,6 +217,11 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
   label_scan_enabled: a.label_scan_enabled,
   agent_enabled: a.agent_enabled,
   agent_memo: a.agent_memo,
+  tts_provider: a.tts_provider === 'azure' ? 'azure' : 'browser',
+  tts_voice: (VOICE_VALUES.includes(a.tts_voice)
+    ? a.tts_voice
+    : 'fr-FR-DeniseNeural') as WorkshopValues['tts_voice'],
+  tts_monthly_limit: a.tts_monthly_limit,
   mail_send_enabled: a.mail_send_enabled,
   auto_mails_enabled: a.auto_mails_enabled,
   mail_domain: a.mail_domain ?? '',
