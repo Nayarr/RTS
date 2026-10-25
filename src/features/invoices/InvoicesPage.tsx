@@ -8,14 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useProfile } from '@/features/auth/useProfile';
 import { formatDate, normalizeKey } from '@/features/repair-orders/constants';
-import { todayIso } from '@/features/repair-orders/schemas';
-import { downloadFile, toCsv } from '@/lib/csv';
 import { formatEuro } from '@/lib/numbers';
 import { useIsDesktop } from '@/lib/use-media-query';
 import { usePagination } from '@/lib/use-pagination';
 import type { InvoiceOverview } from './api';
-import { invoicesCsvRows, isPartiallyPaid } from './domain';
+import { isPartiallyPaid } from './domain';
 import { GroupedInvoiceDialog } from './GroupedInvoiceDialog';
+import { InvoiceExportDialog } from './InvoiceExportDialog';
 import { OverdueRemindersDialog } from './OverdueRemindersDialog';
 import { useCreditNotes, useInvoices } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
@@ -101,6 +100,7 @@ function InvoiceList() {
   const [to, setTo] = useState('');
   const [sort, setSort] = useState<Sort>('date_desc');
   const [reminding, setReminding] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const list = useMemo(() => {
     const filtered = (invoices.data ?? []).filter(
@@ -142,15 +142,8 @@ function InvoiceList() {
               Les factures se préparent depuis l’OR (« Facturer ») ou en regroupant plusieurs OR.
             </span>
             {isDirection && (
-              <Button
-                variant="outline"
-                disabled={list.length === 0}
-                onClick={() => {
-                  const { headers, rows } = invoicesCsvRows(list);
-                  downloadFile(toCsv(headers, rows), `factures-${todayIso()}.csv`);
-                }}
-              >
-                <Download /> Export CSV
+              <Button variant="outline" onClick={() => setExporting(true)}>
+                <Download /> Exporter
               </Button>
             )}
             {(counts.overdue ?? 0) > 0 && (
@@ -333,6 +326,14 @@ function InvoiceList() {
       </div>
       {reminding && (
         <OverdueRemindersDialog invoices={invoices.data ?? []} onClose={() => setReminding(false)} />
+      )}
+      {exporting && (
+        <InvoiceExportDialog
+          invoices={invoices.data ?? []}
+          initialFrom={from}
+          initialTo={to}
+          onClose={() => setExporting(false)}
+        />
       )}
     </>
   );

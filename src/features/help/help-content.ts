@@ -95,6 +95,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Plusieurs OR d’un même client ? Fiche client, puis « Facture groupée ».',
       'Fiche client, carte Factures, « Extrait de compte » : relevé des factures émises sur la période choisie (date, n° de facture, immatriculation, marque, modèle, HT, TVA, TTC, réglé, reste dû, état). Coche les états voulus (impayées, partielles, payées, avoirs) : les totaux suivent ; clique sur un titre de colonne pour trier.',
       'Depuis l’extrait : « PDF de l’extrait », « Factures en un PDF » (l’extrait puis chaque facture du tableau à la suite, pour un client qui doit plusieurs factures) ou « Factures en ZIP » (un PDF par facture).',
+      'Direction, liste des factures, « Exporter » : factures émises sur une période (date de facture), pour un client ou tous, avec les états voulus (impayées, partielles, payées), en CSV pour la comptabilité, en un seul PDF ou en ZIP (un PDF par facture).',
     ],
   },
   {
