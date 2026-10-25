@@ -18,6 +18,7 @@ import { OfficeInfoForm } from './detail/OfficeInfoForm';
 import { OrderHeader } from './detail/OrderHeader';
 import { PartsCard } from './detail/PartsCard';
 import { PhotosCard } from './detail/PhotosCard';
+import { RoadsideCard } from './detail/RoadsideCard';
 import { SubcontractsCard } from './detail/SubcontractsCard';
 import { TimeCard } from './detail/TimeCard';
 import { useRepairOrder, useRepairOrderMutation, useRepairOrderSupplies } from './hooks';
@@ -159,6 +160,7 @@ export function RepairOrderPage() {
         </div>
         <div className="col gap-5">
           <TimeCard order={order} loadedAt={detail.dataUpdatedAt} showComparison={isDirection} />
+          <RoadsideCard repairOrderId={order.id} editable={editable} />
           <RepairOrderInvoiceCard order={order} />
           <RepairOrderLoanCard repairOrderId={order.id} clientId={order.client_id} editable={editable} />
           <RepairOrderQuotesCard order={order} />

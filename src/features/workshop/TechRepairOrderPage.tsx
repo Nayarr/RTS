@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { ArrowLeft, Lock } from 'lucide-react';
+import { ArrowLeft, Lock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { OPEN_STATUSES, VEHICLE_TYPES } from '@/features/repair-orders/constants';
@@ -103,6 +103,22 @@ export function TechRepairOrderPage() {
 
       <section data-slot="card" className="card sec" aria-label="Travaux demandés">
         <TaskList text={order.requested_work} className="text-[14.5px] leading-[1.45]" />
+        {order.intervention_type === 'roadside' && order.roadside_address && (
+          // Dépannage extérieur : lieu d'intervention, itinéraire dans l'application de cartes du téléphone
+          <p className="row wrap mt-3 gap-x-3 gap-y-1 border-t pt-3 text-[14px]">
+            <span className="row gap-1.5">
+              <MapPin className="i s" /> Dépannage : <b>{order.roadside_address}</b>
+            </span>
+            <a
+              className="ul"
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.roadside_address)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Itinéraire
+            </a>
+          </p>
+        )}
       </section>
 
       <TimerSection order={order} loadedAt={detail.dataUpdatedAt} locked={locked} />

@@ -36,10 +36,31 @@ const MAIL_FIELDS: {
   { name: 'mail_signature_local', label: 'Adresse signature', hint: 'Liens de signature' },
 ];
 
-const MONEY_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
-  { name: 'roadside_flat_fee', label: 'Forfait déplacement (€ HT)' },
-  { name: 'roadside_price_per_km', label: 'Prix au km (€ HT)' },
-  { name: 'roadside_travel_hourly_rate', label: 'Taux horaire du trajet (€ HT/h)' },
+/** Dépannage : distance aller-retour de chaque zone, forfait, temps de trajet compris. */
+const ZONE_FIELDS: {
+  label: string;
+  km: keyof WorkshopValues;
+  price: keyof WorkshopValues;
+  minutes: keyof WorkshopValues;
+}[] = [
+  {
+    label: 'Zone 1 (proximité)',
+    km: 'roadside_zone1_max_km',
+    price: 'roadside_flat_fee',
+    minutes: 'roadside_zone1_max_minutes',
+  },
+  {
+    label: 'Zone 2',
+    km: 'roadside_zone2_max_km',
+    price: 'roadside_zone2_price',
+    minutes: 'roadside_zone2_max_minutes',
+  },
+  {
+    label: 'Zone 3',
+    km: 'roadside_zone3_max_km',
+    price: 'roadside_zone3_price',
+    minutes: 'roadside_zone3_max_minutes',
+  },
 ];
 
 /** Horaires de l'atelier, pointage et dépannage. */
@@ -275,20 +296,67 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
 
       <fieldset className="col gap-3">
         <legend className="mb-3 overline">Dépannage</legend>
-        <div className="grid gap-3.5 sm:grid-cols-3">
-          {MONEY_FIELDS.map(({ name, label }) => (
+        <p className="hint">
+          Distance aller-retour depuis l’atelier. Au-delà de la zone 3, le prix du déplacement se saisit à la
+          main. Au-delà du temps de trajet de la zone (zone 1 sans tolérance), le temps de trajet est facturé
+          : 1 h au moins, puis à la minute.
+        </p>
+        {ZONE_FIELDS.map((zone) => (
+          <div key={zone.label} className="grid items-end gap-3.5 sm:grid-cols-[110px_1fr_1fr_1fr]">
+            <span className="lbl pb-2.5">{zone.label}</span>
             <FormField
-              key={name}
-              id={name}
-              label={label}
+              id={zone.km}
+              label="Jusqu’à (km, exclu sauf zone 3)"
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              className="num"
+              error={errors[zone.km]?.message}
+              {...register(zone.km, { valueAsNumber: true })}
+            />
+            <FormField
+              id={zone.price}
+              label="Forfait (€ HT)"
               type="number"
               step="0.01"
               inputMode="decimal"
               className="num"
-              error={errors[name]?.message}
-              {...register(name, { valueAsNumber: true })}
+              error={errors[zone.price]?.message}
+              {...register(zone.price, { valueAsNumber: true })}
             />
-          ))}
+            <FormField
+              id={zone.minutes}
+              label="Trajet compris (min)"
+              type="number"
+              step="1"
+              inputMode="numeric"
+              className="num"
+              error={errors[zone.minutes]?.message}
+              {...register(zone.minutes, { valueAsNumber: true })}
+            />
+          </div>
+        ))}
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          <FormField
+            id="roadside_travel_hourly_rate"
+            label="Taux horaire du trajet (€ HT/h)"
+            type="number"
+            step="0.01"
+            inputMode="decimal"
+            className="num"
+            error={errors.roadside_travel_hourly_rate?.message}
+            {...register('roadside_travel_hourly_rate', { valueAsNumber: true })}
+          />
+          <FormField
+            id="roadside_tolerance_minutes"
+            label="Tolérance des zones 2 et 3 (min)"
+            type="number"
+            step="1"
+            inputMode="numeric"
+            className="num"
+            error={errors.roadside_tolerance_minutes?.message}
+            {...register('roadside_tolerance_minutes', { valueAsNumber: true })}
+          />
         </div>
       </fieldset>
     </SectionCard>

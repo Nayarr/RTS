@@ -235,7 +235,16 @@ export type Database = {
           rest_reference_monday: string | null;
           roadside_flat_fee: number;
           roadside_price_per_km: number;
+          roadside_tolerance_minutes: number;
           roadside_travel_hourly_rate: number;
+          roadside_zone1_max_km: number;
+          roadside_zone1_max_minutes: number;
+          roadside_zone2_max_km: number;
+          roadside_zone2_max_minutes: number;
+          roadside_zone2_price: number;
+          roadside_zone3_max_km: number;
+          roadside_zone3_max_minutes: number;
+          roadside_zone3_price: number;
           tts_monthly_limit: number;
           tts_provider: string;
           tts_voice: string;
@@ -266,7 +275,16 @@ export type Database = {
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
           roadside_price_per_km?: number;
+          roadside_tolerance_minutes?: number;
           roadside_travel_hourly_rate?: number;
+          roadside_zone1_max_km?: number;
+          roadside_zone1_max_minutes?: number;
+          roadside_zone2_max_km?: number;
+          roadside_zone2_max_minutes?: number;
+          roadside_zone2_price?: number;
+          roadside_zone3_max_km?: number;
+          roadside_zone3_max_minutes?: number;
+          roadside_zone3_price?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;
@@ -297,7 +315,16 @@ export type Database = {
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
           roadside_price_per_km?: number;
+          roadside_tolerance_minutes?: number;
           roadside_travel_hourly_rate?: number;
+          roadside_zone1_max_km?: number;
+          roadside_zone1_max_minutes?: number;
+          roadside_zone2_max_km?: number;
+          roadside_zone2_max_minutes?: number;
+          roadside_zone2_price?: number;
+          roadside_zone3_max_km?: number;
+          roadside_zone3_max_minutes?: number;
+          roadside_zone3_price?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;
@@ -4255,6 +4282,8 @@ export type Database = {
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
@@ -4286,6 +4315,8 @@ export type Database = {
           requested_work?: string;
           roadside_address?: string | null;
           roadside_km?: number | null;
+          roadside_minutes?: number | null;
+          roadside_price_ht?: number | null;
           roadside_travel_hours?: number | null;
           status?: Database['public']['Enums']['repair_order_status'];
           technician_id?: string | null;
@@ -4317,6 +4348,8 @@ export type Database = {
           requested_work?: string;
           roadside_address?: string | null;
           roadside_km?: number | null;
+          roadside_minutes?: number | null;
+          roadside_price_ht?: number | null;
           roadside_travel_hours?: number | null;
           status?: Database['public']['Enums']['repair_order_status'];
           technician_id?: string | null;
@@ -7279,6 +7312,8 @@ export type Database = {
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
@@ -7375,6 +7410,8 @@ export type Database = {
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
@@ -7441,6 +7478,7 @@ export type Database = {
       duplicate_invoice: { Args: { p_invoice_id: string }; Returns: string };
       duplicate_quote: { Args: { p_quote_id: string }; Returns: string };
       duplicate_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
+      duration_label: { Args: { p_minutes: number }; Returns: string };
       employee_name: { Args: { p_profile_id: string; p_technician_id: string }; Returns: string };
       ensure_client_and_vehicle: {
         Args: {
@@ -7593,6 +7631,8 @@ export type Database = {
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
@@ -7825,6 +7865,14 @@ export type Database = {
       reset_client_portal: { Args: { p_client_id: string }; Returns: string };
       retry_inbox_triage: { Args: Record<PropertyKey, never>; Returns: number };
       return_rental: { Args: { p_rental_id: string; p_returned_at: string }; Returns: undefined };
+      roadside_travel: {
+        Args: { p_km: number; p_manual_price: number; p_minutes: number };
+        Returns: {
+          label: string;
+          price: number;
+          zone: number;
+        }[];
+      };
       run_auto_mails: { Args: Record<PropertyKey, never>; Returns: number };
       save_appointment: {
         Args: {
@@ -8067,6 +8115,8 @@ export type Database = {
           requested_work: string;
           roadside_address: string | null;
           roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;

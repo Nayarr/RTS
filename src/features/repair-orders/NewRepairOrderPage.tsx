@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Info,
+  MapPin,
   PenLine,
   Truck,
 } from 'lucide-react';
@@ -24,7 +25,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import type { NewClientValues } from '@/features/customers/domain';
 import { uploadFile } from '@/features/files/api';
-import { createRepairOrder } from './api';
+import { useSettings } from '@/features/settings/hooks';
+import { createRepairOrder, updateRepairOrder } from './api';
+import { NO_ROADSIDE, roadsidePatch, roadsideProblem, type RoadsideValue } from './roadside';
+import { RoadsideFields } from './RoadsideFields';
 import { formatPlate, STATUS_META, VEHICLE_TYPES } from './constants';
 import {
   useActiveTechnicians,
@@ -79,6 +83,8 @@ export function NewRepairOrderPage() {
   const signature = useSignaturePad();
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('screen');
   const [inspectionRequired, setInspectionRequired] = useState(false);
+  const [roadside, setRoadside] = useState<RoadsideValue>(NO_ROADSIDE);
+  const settings = useSettings();
   const technicians = useActiveTechnicians();
   const [pending, setPending] = useState<Submission | null>(null);
 
@@ -97,6 +103,10 @@ export function NewRepairOrderPage() {
   const plate = useWatch({ control, name: 'plate' });
   const clientName = useWatch({ control, name: 'client_name' });
   const plannedStart = useWatch({ control, name: 'planned_start' });
+  const plannedDate = useWatch({ control, name: 'planned_date' });
+  // Départ prévu (date et heure du planning) : trafic de ce moment pour le trajet du dépannage
+  const departAt =
+    plannedDate && plannedStart ? new Date(`${plannedDate}T${plannedStart}`).toISOString() : null;
   const knownVehicle = useKnownVehicle(plate).data ?? null;
   const vehicleSuggestions = useVehicleSuggestions(plate).data ?? [];
   const clientEntry = useClientEntry(clientName, { label: 'créer l’OR' });
@@ -120,10 +130,13 @@ export function NewRepairOrderPage() {
       const signatureFileId = blob
         ? await uploadFile(blob, { category: 'signature', name: 'signature-client.png' })
         : null;
-      return createRepairOrder({
+      const order = await createRepairOrder({
         ...toNewRepairOrderInput({ ...values, client_name: clientName }, signatureFileId),
         inspection_required: inspectionRequired,
       });
+      // Dépannage extérieur : lieu, trajet et prix du déplacement posés sur l'OR créé
+      if (roadside.enabled) await updateRepairOrder(order.id, roadsidePatch(roadside));
+      return order;
     },
     null, // notification avec le numéro d'OR ci-dessous
   );
@@ -146,6 +159,11 @@ export function NewRepairOrderPage() {
   };
   const onSubmit = handleSubmit(
     async (values) => {
+      const problem = roadsideProblem(roadside, settings.data?.app);
+      if (problem) {
+        toast.error(problem);
+        return;
+      }
       const result = await clientEntry.check(values.client_name);
       if (result.ok) confirmOrSubmit({ values, client: result.client });
     },
@@ -349,6 +367,17 @@ export function NewRepairOrderPage() {
                   </div>
                 )}
               />
+            </div>
+          </section>
+
+          <section data-slot="card" className="card" aria-labelledby="new-ro-roadside">
+            <div className="card-h">
+              <h2 className="h2" id="new-ro-roadside">
+                <MapPin className="i" /> Lieu d’intervention
+              </h2>
+            </div>
+            <div className="card-b">
+              <RoadsideFields value={roadside} onChange={setRoadside} departAt={departAt} />
             </div>
           </section>
 
