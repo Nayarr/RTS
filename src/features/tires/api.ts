@@ -116,7 +116,7 @@ const toLot = (row: Tables<'v_tire_lots'>): TireLot => ({
   part_id: row.part_id,
 });
 
-const PROFILE_ORDER: Record<TireProfile, number> = { avant: 0, arriere: 1, remorque: 2, toutes: 3 };
+const PROFILE_ORDER: Record<TireProfile, number> = { avant: 0, arriere: 1, remorque: 2, multi: 3, toutes: 4 };
 
 /** Lignes du stock : poids lourds d'abord, puis par taille et profil. */
 export async function fetchTireLines(): Promise<TireLine[]> {

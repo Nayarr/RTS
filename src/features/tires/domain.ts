@@ -11,6 +11,7 @@ export const PROFILE_LABELS: Record<TireProfile, string> = {
   avant: 'Avant',
   arriere: 'Arrière',
   remorque: 'Remorque',
+  multi: 'Multi-positions',
   toutes: 'Toutes positions',
 };
 
@@ -24,9 +25,12 @@ export const CONDITION_LABELS: Record<TireCondition, string> = {
   occasion: 'Occasion',
 };
 
-/** Profils d'une catégorie : avant, arrière ou remorque pour un poids lourd ; toutes positions pour un utilitaire. */
+/**
+ * Profils d'une catégorie : avant, arrière, remorque ou multi-positions pour un poids lourd ; toutes
+ * positions pour un utilitaire.
+ */
 export const profilesFor = (category: TireCategory): TireProfile[] =>
-  category === 'vul' ? ['toutes'] : ['avant', 'arriere', 'remorque'];
+  category === 'vul' ? ['toutes'] : ['avant', 'arriere', 'remorque', 'multi'];
 
 /**
  * Taille mise en forme pendant la saisie : « 31580225 » → « 315/80 R22.5 », « 2356516C » → « 235/65 R16C »

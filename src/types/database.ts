@@ -8004,7 +8004,7 @@ export type Database = {
       tire_category: 'pl' | 'vul';
       tire_condition: 'neuf' | 'rechape' | 'occasion';
       tire_movement_reason: 'entry' | 'sale' | 'correction';
-      tire_profile: 'avant' | 'arriere' | 'remorque' | 'toutes';
+      tire_profile: 'avant' | 'arriere' | 'remorque' | 'multi' | 'toutes';
       vehicle_type: 'pl' | 'vul' | 'remorque';
       warranty_status: 'to_return' | 'sent' | 'accepted' | 'refused' | 'refunded';
     };
@@ -8186,7 +8186,7 @@ export const Constants = {
       tire_category: ['pl', 'vul'],
       tire_condition: ['neuf', 'rechape', 'occasion'],
       tire_movement_reason: ['entry', 'sale', 'correction'],
-      tire_profile: ['avant', 'arriere', 'remorque', 'toutes'],
+      tire_profile: ['avant', 'arriere', 'remorque', 'multi', 'toutes'],
       vehicle_type: ['pl', 'vul', 'remorque'],
       warranty_status: ['to_return', 'sent', 'accepted', 'refused', 'refunded'],
     },

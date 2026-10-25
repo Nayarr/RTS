@@ -260,6 +260,7 @@ export function TireDialog({
                 label="Indices charge / vitesse"
                 className="num"
                 placeholder="156/150 L"
+                hint="Facultatif"
                 {...register('load_index')}
               />
             </div>

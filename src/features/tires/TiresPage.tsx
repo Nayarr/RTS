@@ -310,6 +310,7 @@ export function TiresPage() {
               { value: 'avant', label: 'Avant' },
               { value: 'arriere', label: 'Arrière' },
               { value: 'remorque', label: 'Remorque' },
+              { value: 'multi', label: 'Multi-positions' },
             ]}
             onChange={setProfile}
           />
