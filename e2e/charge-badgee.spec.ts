@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { parisDay } from './support/dates';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 // Comptes de développement créés par supabase/seed.sql (base locale uniquement).
@@ -25,15 +26,12 @@ async function api(email: string) {
   return client;
 }
 
-/** Jour d'hier (heure de Paris), au format AAAA-MM-JJ. */
-const yesterday = () =>
-  new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Paris' }).format(new Date(Date.now() - 86_400_000));
-
 test('réception : présence badgée de l’atelier, écart et détail des heures d’un technicien', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Tableau de bord du bureau');
-  const day = yesterday();
+  // Veille par le calendrier de Paris (24 h avant ne suffit pas le jour du changement d'heure)
+  const day = parisDay(-1);
   // Hier, Bruno a badgé 08:00 → 09:00 (correction de la direction)
   const direction = await api('direction@rts.local');
   const { data: bruno } = await direction
