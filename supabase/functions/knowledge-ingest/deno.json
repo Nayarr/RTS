@@ -5,6 +5,6 @@
     "@supabase/server": "npm:@supabase/server@1.8.0",
     "aws4fetch": "npm:aws4fetch@1.0.20",
     "pdfjs-dist": "npm:pdfjs-dist@4.10.38",
-    "zod": "npm:zod@4.6.5"
+    "zod": "npm:zod@4.6.7"
   }
 }

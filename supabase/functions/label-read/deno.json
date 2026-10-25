@@ -5,6 +5,6 @@
     "@supabase/functions-js": "jsr:@supabase/functions-js@^2",
     "@supabase/server": "npm:@supabase/server@1.8.0",
     "aws4fetch": "npm:aws4fetch@1.0.20",
-    "zod": "npm:zod@4.6.5"
+    "zod": "npm:zod@4.6.7"
   }
 }
