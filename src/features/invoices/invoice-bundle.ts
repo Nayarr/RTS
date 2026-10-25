@@ -56,5 +56,5 @@ export async function zipFiles(files: BundleFile[]): Promise<Blob> {
     entries[name] = file.bytes;
   }
   const bytes = zipSync(entries, { level: 0 });
-  return new Blob([bytes as BlobPart], { type: 'application/zip' });
+  return new Blob([bytes], { type: 'application/zip' });
 }
