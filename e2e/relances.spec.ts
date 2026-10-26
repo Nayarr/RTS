@@ -98,7 +98,7 @@ test('relance groupée des retards : message prêt par client, relance notée su
   expect(sql(`select count(*) from public.invoice_reminders where invoice_id = '${invoice.id}'`)).toBe('1');
 });
 
-test('mail préparé par l’Agent Direction : lu en entier, envoyé après validation', async ({
+test('mail préparé par l’Agent Direction : relu en entier, envoyé après « Envoyer »', async ({
   page,
 }, testInfo) => {
   test.slow();
@@ -146,11 +146,14 @@ test('mail préparé par l’Agent Direction : lu en entier, envoyé après vali
   await page.getByLabel('Question à l’agent').fill(`Relance ${clientName}`);
   await page.getByRole('button', { name: 'Envoyer la question' }).click();
 
-  const card = page.getByRole('list', { name: 'Actions préparées' }).getByRole('listitem');
-  await expect(card).toContainText(`Relance à ${clientName}`);
-  await card.getByText('Lire le mail').click();
-  await expect(card).toContainText(`Sauf erreur de notre part, la facture ${invoice.number} reste impayée.`);
-  await card.getByRole('button', { name: 'Valider' }).click();
+  // Mail relu en entier, modifiable, envoyé seulement après « Envoyer »
+  const card = page.getByRole('region', { name: 'Mails préparés' });
+  await expect(card.getByLabel('À')).toHaveValue(`agent.${id.toLowerCase()}@exemple.fr`);
+  await expect(card.getByLabel('Objet')).toHaveValue(`Facture ${invoice.number} en attente`);
+  await expect(card.getByLabel('Texte')).toHaveValue(
+    new RegExp(`Sauf erreur de notre part, la facture ${invoice.number} reste impayée.`),
+  );
+  await card.getByRole('button', { name: 'Envoyer', exact: true }).click();
   await expect(card).toContainText(/Envoi dans \d s/);
   await expect.poll(() => sent.length, { timeout: 10_000 }).toBe(1);
   expect(sent[0]).toEqual({ agent_action_id: action, idempotency_key: action });
