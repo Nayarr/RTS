@@ -482,6 +482,14 @@ verify_jwt = false
 import_map = "./functions/vat-check/deno.json"
 entrypoint = "./functions/vat-check/index.ts"
 
+[functions.trajet]
+enabled = true
+# Trajet aller-retour d'un dépannage (TomTom, trafic compris ; secret TOMTOM_API_KEY).
+# Le jeton de l'appelant est vérifié dans la fonction elle-même (withSupabase({ auth: "user" })).
+verify_jwt = false
+import_map = "./functions/trajet/deno.json"
+entrypoint = "./functions/trajet/index.ts"
+
 [functions.agent]
 enabled = true
 # Assistant de la direction (Claude Sonnet, secret ANTHROPIC_AGENT_API_KEY) : lectures seules.

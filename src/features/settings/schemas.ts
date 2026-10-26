@@ -139,6 +139,8 @@ export const laborRatesToForm = (rates: LaborRate[]): LaborRatesValues => ({
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide');
 const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const hours = number('Nombre d’heures attendu').min(0).max(24, '24 h maximum');
+const km = number('Distance attendue').min(0.1, 'Distance positive attendue').max(1000);
+const wholeMinutes = number('Minutes attendues').int('Nombre entier de minutes').min(0);
 
 /** Début d'adresse e-mail (avant le @, le domaine est commun). */
 const mailLocal = z
@@ -170,7 +172,15 @@ export const workshopSchema = z
     daily_hours: hours,
     friday_hours: hours,
     roadside_flat_fee: money,
-    roadside_price_per_km: money,
+    roadside_zone2_price: money,
+    roadside_zone3_price: money,
+    roadside_zone1_max_km: km,
+    roadside_zone2_max_km: km,
+    roadside_zone3_max_km: km,
+    roadside_zone1_max_minutes: wholeMinutes,
+    roadside_zone2_max_minutes: wholeMinutes,
+    roadside_zone3_max_minutes: wholeMinutes,
+    roadside_tolerance_minutes: wholeMinutes.max(60, '60 min au plus'),
     roadside_travel_hourly_rate: money,
     clock_photo_retention_months: z.union([z.literal(1), z.literal(3), z.literal(6), z.literal(12)]),
     label_scan_enabled: z.boolean(),
@@ -206,6 +216,11 @@ export const workshopSchema = z
       if (minutes(String(v[after])) < minutes(String(v[before])))
         ctx.addIssue({ code: 'custom', path: [after], message });
     }
+    // Dépannage : zones de plus en plus loin
+    if (v.roadside_zone2_max_km <= v.roadside_zone1_max_km)
+      ctx.addIssue({ code: 'custom', path: ['roadside_zone2_max_km'], message: 'Au-delà de la zone 1' });
+    if (v.roadside_zone3_max_km <= v.roadside_zone2_max_km)
+      ctx.addIssue({ code: 'custom', path: ['roadside_zone3_max_km'], message: 'Au-delà de la zone 2' });
   });
 export type WorkshopValues = z.infer<typeof workshopSchema>;
 
@@ -224,7 +239,15 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
   daily_hours: a.daily_hours,
   friday_hours: a.friday_hours,
   roadside_flat_fee: a.roadside_flat_fee,
-  roadside_price_per_km: a.roadside_price_per_km,
+  roadside_zone2_price: a.roadside_zone2_price,
+  roadside_zone3_price: a.roadside_zone3_price,
+  roadside_zone1_max_km: a.roadside_zone1_max_km,
+  roadside_zone2_max_km: a.roadside_zone2_max_km,
+  roadside_zone3_max_km: a.roadside_zone3_max_km,
+  roadside_zone1_max_minutes: a.roadside_zone1_max_minutes,
+  roadside_zone2_max_minutes: a.roadside_zone2_max_minutes,
+  roadside_zone3_max_minutes: a.roadside_zone3_max_minutes,
+  roadside_tolerance_minutes: a.roadside_tolerance_minutes,
   roadside_travel_hourly_rate: a.roadside_travel_hourly_rate,
   clock_photo_retention_months:
     a.clock_photo_retention_months as WorkshopValues['clock_photo_retention_months'],
