@@ -57,12 +57,14 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   const dueDate = proforma
     ? new Date(now.getTime() + proforma.paymentTermsDays * 86_400_000)
     : isoDate(invoice.due_date ?? invoice.created_at);
+  const vatNumber = invoice.vat_exempt ? invoice.client_vat_number : null;
   const client = proforma
-    ? proforma.client
+    ? { ...proforma.client, vat_number: vatNumber }
     : {
         name: invoice.client_name ?? '',
         billing_address: invoice.client_address,
         siret: invoice.client_siret,
+        vat_number: vatNumber,
       };
 
   const meta: [string, string][] = [
@@ -126,7 +128,9 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
     doc.text(gesture, MARGIN, below, { maxWidth: 98 });
   }
 
-  drawMentions(doc, company.invoice_legal_mentions, totalsEnd + 10);
+  // Facture sans TVA : la mention d'exonération en premier
+  const exemption = invoice.vat_exempt && invoice.vat_exempt_mention ? [invoice.vat_exempt_mention] : [];
+  drawMentions(doc, [...exemption, ...company.invoice_legal_mentions], totalsEnd + 10);
   drawFooter(doc, proforma ? ['Facture pro forma : document sans valeur comptable.'] : []);
 
   const fileName = proforma

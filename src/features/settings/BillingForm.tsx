@@ -82,6 +82,26 @@ export function BillingForm({ company }: { company: CompanySettings }) {
           {...register('invoice_legal_mentions')}
         />
       </div>
+      <div className="field">
+        <Label htmlFor="vat_exempt_mention_eu">
+          Facture sans TVA, client de l’Union européenne (n° vérifié) : mention
+        </Label>
+        <Textarea
+          id="vat_exempt_mention_eu"
+          rows={2}
+          aria-invalid={errors.vat_exempt_mention_eu ? true : undefined}
+          {...register('vat_exempt_mention_eu')}
+        />
+      </div>
+      <div className="field">
+        <Label htmlFor="vat_exempt_mention_other">Facture sans TVA, autres cas : mention</Label>
+        <Textarea
+          id="vat_exempt_mention_other"
+          rows={2}
+          aria-invalid={errors.vat_exempt_mention_other ? true : undefined}
+          {...register('vat_exempt_mention_other')}
+        />
+      </div>
     </SectionCard>
   );
 }

@@ -118,7 +118,12 @@ export function drawMeta(doc: jsPDF, rows: [string, string][], top = 41) {
 export function drawClientBox(
   doc: jsPDF,
   title: string,
-  client: { name: string; billing_address?: string | null; siret?: string | null },
+  client: {
+    name: string;
+    billing_address?: string | null;
+    siret?: string | null;
+    vat_number?: string | null;
+  },
   top = 37,
 ) {
   const x = 115;
@@ -132,7 +137,7 @@ export function drawClientBox(
     .flatMap((part) => doc.splitTextToSize(pdfText(part).trim(), width - 10) as string[])
     .filter(Boolean)
     .slice(0, 3);
-  const height = 21 + address.length * 3.8 + (client.siret ? 4.5 : 0);
+  const height = 21 + address.length * 3.8 + (client.siret ? 4.5 : 0) + (client.vat_number ? 4.5 : 0);
 
   doc.setFillColor(...PANEL);
   doc.roundedRect(x, top, width, height, 3, 3, 'F');
@@ -154,6 +159,13 @@ export function drawClientBox(
     doc.setFontSize(7.3);
     color(doc, MUTED);
     doc.text(`SIRET ${formatSiret(client.siret)}`, inner, y + 0.7);
+    y += 4.5;
+  }
+  if (client.vat_number) {
+    // Facture sans TVA (autoliquidation, exonération) : n° de TVA du client
+    doc.setFontSize(7.3);
+    color(doc, MUTED);
+    doc.text(`N° TVA ${client.vat_number}`, inner, y + 0.7);
   }
   return top + height;
 }

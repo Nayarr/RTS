@@ -319,6 +319,11 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
                     {invoice.client_address}
                   </span>
                 )}
+                {invoice.client_vat_number && (
+                  <span className="text-[13px] text-muted-foreground">
+                    N° TVA {invoice.client_vat_number}
+                  </span>
+                )}
               </>
             }
           />
@@ -336,9 +341,10 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
           </div>
           <LinesTable lines={invoice.lines} title="" />
           <DocumentTotals totals={invoice.totals} />
-          {invoice.legal_mentions && invoice.legal_mentions.length > 0 && (
+          {(invoice.vat_exempt_mention || (invoice.legal_mentions?.length ?? 0) > 0) && (
             <div className="col gap-1 border-t px-5 py-3.5 text-xs text-muted-foreground sm:px-7">
-              {invoice.legal_mentions.map((mention) => (
+              {invoice.vat_exempt_mention && <p>{invoice.vat_exempt_mention}</p>}
+              {invoice.legal_mentions?.map((mention) => (
                 <p key={mention}>{mention}</p>
               ))}
             </div>

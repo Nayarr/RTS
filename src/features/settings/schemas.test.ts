@@ -78,6 +78,8 @@ describe('billingSchema', () => {
       quote_validity_days: 30,
       invoice_legal_mentions: ' Pas d’escompte. \n\nTVA sur les encaissements.\n',
       supplies_fee_ht: '',
+      vat_exempt_mention_eu: 'Autoliquidation',
+      vat_exempt_mention_other: 'Exonération de TVA',
     };
     expect(billingSchema.safeParse(values).success).toBe(true);
     expect(billingFromForm(values).supplies_fee_ht).toBeNull();

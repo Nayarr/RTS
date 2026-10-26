@@ -857,6 +857,10 @@ export type Database = {
           portal_token: string | null;
           siret: string | null;
           updated_at: string;
+          vat_checked_at: string | null;
+          vat_number: string | null;
+          vat_registered_name: string | null;
+          vat_status: string;
         };
         Insert: {
           account_type?: string;
@@ -882,6 +886,10 @@ export type Database = {
           portal_token?: string | null;
           siret?: string | null;
           updated_at?: string;
+          vat_checked_at?: string | null;
+          vat_number?: string | null;
+          vat_registered_name?: string | null;
+          vat_status?: string;
         };
         Update: {
           account_type?: string;
@@ -907,6 +915,10 @@ export type Database = {
           portal_token?: string | null;
           siret?: string | null;
           updated_at?: string;
+          vat_checked_at?: string | null;
+          vat_number?: string | null;
+          vat_registered_name?: string | null;
+          vat_status?: string;
         };
         Relationships: [];
       };
@@ -1002,6 +1014,8 @@ export type Database = {
           siret: string | null;
           supplies_fee_ht: number | null;
           updated_at: string;
+          vat_exempt_mention_eu: string;
+          vat_exempt_mention_other: string;
           vat_number: string | null;
         };
         Insert: {
@@ -1025,6 +1039,8 @@ export type Database = {
           siret?: string | null;
           supplies_fee_ht?: number | null;
           updated_at?: string;
+          vat_exempt_mention_eu?: string;
+          vat_exempt_mention_other?: string;
           vat_number?: string | null;
         };
         Update: {
@@ -1048,6 +1064,8 @@ export type Database = {
           siret?: string | null;
           supplies_fee_ht?: number | null;
           updated_at?: string;
+          vat_exempt_mention_eu?: string;
+          vat_exempt_mention_other?: string;
           vat_number?: string | null;
         };
         Relationships: [
@@ -2452,6 +2470,7 @@ export type Database = {
           client_id: string;
           client_name: string | null;
           client_siret: string | null;
+          client_vat_number: string | null;
           created_at: string;
           created_by: string | null;
           due_date: string | null;
@@ -2472,6 +2491,8 @@ export type Database = {
           total_ttc: number | null;
           total_vat: number | null;
           updated_at: string;
+          vat_exempt: boolean;
+          vat_exempt_mention: string | null;
           vehicle_label: string | null;
         };
         Insert: {
@@ -2480,6 +2501,7 @@ export type Database = {
           client_id: string;
           client_name?: string | null;
           client_siret?: string | null;
+          client_vat_number?: string | null;
           created_at?: string;
           created_by?: string | null;
           due_date?: string | null;
@@ -2500,6 +2522,8 @@ export type Database = {
           total_ttc?: number | null;
           total_vat?: number | null;
           updated_at?: string;
+          vat_exempt?: boolean;
+          vat_exempt_mention?: string | null;
           vehicle_label?: string | null;
         };
         Update: {
@@ -2508,6 +2532,7 @@ export type Database = {
           client_id?: string;
           client_name?: string | null;
           client_siret?: string | null;
+          client_vat_number?: string | null;
           created_at?: string;
           created_by?: string | null;
           due_date?: string | null;
@@ -2528,6 +2553,8 @@ export type Database = {
           total_ttc?: number | null;
           total_vat?: number | null;
           updated_at?: string;
+          vat_exempt?: boolean;
+          vat_exempt_mention?: string | null;
           vehicle_label?: string | null;
         };
         Relationships: [
@@ -6158,6 +6185,7 @@ export type Database = {
           client_id: string | null;
           client_name: string | null;
           client_siret: string | null;
+          client_vat_number: string | null;
           created_at: string | null;
           credited_ttc: number | null;
           due_date: string | null;
@@ -6178,6 +6206,8 @@ export type Database = {
           total_ht: number | null;
           total_ttc: number | null;
           total_vat: number | null;
+          vat_exempt: boolean | null;
+          vat_exempt_mention: string | null;
           vehicle_label: string | null;
         };
         Relationships: [
@@ -7213,6 +7243,7 @@ export type Database = {
         Args: { p_type: Database['public']['Enums']['client_message_type'] };
         Returns: string;
       };
+      client_vat_exemption: { Args: { p_client_id: string }; Returns: string };
       close_rental: { Args: { p_lines: Json; p_rental_id: string }; Returns: string };
       complete_repair_order: {
         Args: { p_quote_needed?: boolean; p_repair_order_id: string };
@@ -7485,6 +7516,7 @@ export type Database = {
       };
       invoke_edge_function: { Args: { p_body?: Json; p_name: string }; Returns: number };
       is_direction: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_eu_vat_prefix: { Args: { p_prefix: string }; Returns: boolean };
       is_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_migration_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_office: { Args: Record<PropertyKey, never>; Returns: boolean };
@@ -7912,6 +7944,7 @@ export type Database = {
         Args: { p_line_id: string; p_profile_id?: string; p_technician_id?: string };
         Returns: undefined;
       };
+      set_invoice_vat_exempt: { Args: { p_exempt: boolean; p_invoice_id: string }; Returns: undefined };
       set_kiosk_exit_code: { Args: { p_code: string }; Returns: undefined };
       set_quote_response: {
         Args: { p_quote_id: string; p_status: Database['public']['Enums']['quote_status'] };

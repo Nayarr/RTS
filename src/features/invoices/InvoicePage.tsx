@@ -58,6 +58,7 @@ import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
 import { InvoiceEmployeesCard } from './InvoiceEmployeesCard';
+import { InvoiceVatCard } from './InvoiceVatCard';
 import { useProfile } from '@/features/auth/useProfile';
 import { DuplicateButton } from '@/components/DuplicateButton';
 import { duplicateInvoice } from './api';
@@ -498,6 +499,7 @@ export function InvoicePage() {
           {draft ? (
             <>
               <DraftActions detail={data} onDialog={setDialog} pdf={pdf} />
+              <InvoiceVatCard invoice={invoice} />
               <div className="alert s-blue">
                 <Info className="i" />
                 <span>
@@ -507,7 +509,10 @@ export function InvoicePage() {
               </div>
             </>
           ) : (
-            <IssuedPanel detail={data} onDialog={setDialog} pdf={pdf} />
+            <>
+              <IssuedPanel detail={data} onDialog={setDialog} pdf={pdf} />
+              <InvoiceVatCard invoice={invoice} />
+            </>
           )}
         </div>
       </div>
