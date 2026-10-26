@@ -37,7 +37,7 @@ import {
 import { AgentActions, type AgentActionsHandle } from './AgentActions';
 import { isGoAhead } from './agent-actions';
 import { BriefingPlayer } from './BriefingPlayer';
-import type { OrbState } from './orb-mesh';
+import type { OrbState } from './VoiceOrb';
 import {
   chosenVoiceName,
   saveVoiceName,
