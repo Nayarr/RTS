@@ -1,4 +1,14 @@
-import { ChartColumn, Clock, KeyRound, Package, Receipt, Users, Wrench, type LucideIcon } from 'lucide-react';
+import {
+  ChartColumn,
+  CircleDot,
+  Clock,
+  KeyRound,
+  Package,
+  Receipt,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import type { AppRole } from '@/features/auth/roles';
 import type { OfficeDashboard } from '@/features/dashboard/api';
 import { DIAGNOSTIC_HELP_ENABLED } from '@/features/knowledge/flags';
@@ -20,6 +30,8 @@ export interface NavGroup {
   roles?: AppRole[];
   label: string;
   icon: LucideIcon;
+  /** Une seule entrée, affichée comme un lien du menu (sans sous-menu à déplier). */
+  direct?: boolean;
   items: NavLeaf[];
 }
 
@@ -102,16 +114,23 @@ export const GROUPS: NavGroup[] = [
   {
     id: 'stock',
     section: 'mgmt',
-    // La réception gère le stock des pneus (arrivages, alertes du seuil mini)
-    roles: ['direction', 'reception'],
     label: 'Stock',
     icon: Package,
     items: [
-      { to: '/stock/consommables', label: 'Consommables', roles: ['direction'] },
-      { to: '/stock/pieces', label: 'Pièces', roles: ['direction'] },
-      { to: '/stock/pneumatiques', label: 'Pneumatiques' },
-      { to: '/stock/forfaits', label: 'Forfaits', roles: ['direction'] },
+      { to: '/stock/consommables', label: 'Consommables' },
+      { to: '/stock/pieces', label: 'Pièces' },
+      { to: '/stock/forfaits', label: 'Forfaits' },
     ],
+  },
+  {
+    id: 'pneumatiques',
+    section: 'mgmt',
+    // La réception gère le stock des pneus (arrivages, alertes du seuil mini)
+    roles: ['direction', 'reception'],
+    label: 'Pneumatiques',
+    icon: CircleDot,
+    direct: true,
+    items: [{ to: '/stock/pneumatiques', label: 'Pneumatiques' }],
   },
   {
     id: 'pilotage',

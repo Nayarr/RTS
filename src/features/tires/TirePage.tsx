@@ -127,11 +127,7 @@ export function TirePage() {
     <>
       <PageHeader
         back={{ to: '/stock/pneumatiques', label: 'Retour au stock des pneus' }}
-        crumbs={[
-          { label: 'Stock', to: '/stock/pneumatiques' },
-          { label: 'Pneumatiques', to: '/stock/pneumatiques' },
-          { label: t.size },
-        ]}
+        crumbs={[{ label: 'Pneumatiques', to: '/stock/pneumatiques' }, { label: t.size }]}
         title={
           <span className="row flex-wrap items-center gap-x-2.5 gap-y-1">
             {name} · {t.size}

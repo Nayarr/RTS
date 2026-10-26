@@ -16,7 +16,6 @@ import {
 import { PageHeader } from '@/app/PageHeader';
 import { SearchField } from '@/components/ListControls';
 import { Button } from '@/components/ui/button';
-import { CatalogTabs } from '@/features/catalogs/CatalogTabs';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { setTireMinQty, type TireLine, type TireLot } from './api';
@@ -215,7 +214,7 @@ export function TiresPage() {
   return (
     <>
       <PageHeader
-        crumbs={[{ label: 'Stock et catalogues' }, { label: 'Pneumatiques' }]}
+        crumbs={[{ label: 'Pneumatiques' }]}
         title="Pneumatiques"
         actions={
           <>
@@ -234,7 +233,6 @@ export function TiresPage() {
 
       <div className="col gap-4">
         <div className="toolbar flex-wrap">
-          <CatalogTabs />
           <Button variant="ghost" size="sm" className="sm:ml-auto" onClick={() => setBrands(true)}>
             <Tags /> Marques et dimensions
           </Button>

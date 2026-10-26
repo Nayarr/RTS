@@ -22,7 +22,7 @@ test('pneus multi-positions entrés sans indice de charge, ligne au profil multi
   const label = `${size} multi-positions`;
 
   await loginAs(page, 'reception@rts.local');
-  await goTo(page, 'Stock', 'Pneumatiques');
+  await goTo(page, null, 'Pneumatiques');
   await page.getByRole('button', { name: 'Entrée de pneus' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Dimension').fill(`${width}${ratio}225`);
