@@ -94,7 +94,9 @@ test('devis accepté : le bureau facture le diagnostic et offre le contrôle', a
   // Facture émise et ouverte : ligne offerte visible avec 100 % de remise
   await expect(page.getByText(/Facture F\d+ émise \(travaux offerts inclus/)).toBeVisible();
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
-  await expect(page.getByText('Contrôle géométrie · offert (geste commercial)')).toBeVisible();
+  await expect(
+    page.getByLabel('Lignes de la facture').getByText('Contrôle géométrie · offert (geste commercial)'),
+  ).toBeVisible();
   // Envoi au client lancé tout seul (sans envoi par l'appli : message prêt, PDF de la facture)
   const send = page.getByRole('dialog', { name: /^Envoyer la facture F\d+/ });
   await expect(send).toBeVisible();
@@ -126,7 +128,9 @@ test('« Plus tard » laisse le bandeau sur l’OR ; tout offert : facture à 0 
   await dialog.getByRole('button', { name: 'Valider et envoyer la facture' }).click();
   await expect(page.getByText(/Facture F\d+ émise à 0 € : tout est offert/)).toBeVisible();
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
-  await expect(page.getByText('Diagnostic freinage · offert (geste commercial)')).toBeVisible();
+  await expect(
+    page.getByLabel('Lignes de la facture').getByText('Diagnostic freinage · offert (geste commercial)'),
+  ).toBeVisible();
   await expect(page.getByRole('dialog', { name: /^Envoyer la facture F\d+/ })).toBeVisible();
 
   await page.goto(`/or/${order.id}`);
