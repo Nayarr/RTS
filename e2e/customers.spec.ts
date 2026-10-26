@@ -84,6 +84,8 @@ test('fiche client : coordonnées, véhicules et OR ; fiche véhicule : carte gr
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page.getByText('Fiche véhicule enregistrée')).toBeVisible();
   await expect(page.getByText('Dépassé (3 j)')).toBeVisible();
+  // Le toast (en haut au centre) recouvre les boutons d'en-tête et ne se ferme pas tant que la souris le survole.
+  await expect(page.getByText('Fiche véhicule enregistrée')).toBeHidden({ timeout: 15_000 });
 
   await page.getByRole('button', { name: 'Carnet d’entretien (PDF)' }).click();
   const preview = page.getByRole('dialog', { name: 'Aperçu' });
