@@ -7183,6 +7183,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      add_mission_lines: { Args: { p_repair_order_id: string }; Returns: undefined };
       add_tires: {
         Args: {
           p_brand: string;
@@ -7653,6 +7654,13 @@ export type Database = {
       merge_quote_into_repair_order: {
         Args: { p_quote_id: string; p_repair_order_id: string };
         Returns: undefined;
+      };
+      mission_lines: {
+        Args: { p_requested_work: string };
+        Returns: {
+          description: string;
+          ord: number;
+        }[];
       };
       month_end_unsigned_quotes: { Args: { p_now?: string }; Returns: number };
       monthly_report: { Args: { p_month: string }; Returns: Json };

@@ -88,14 +88,14 @@ test('dictée : le technicien dit une tâche, elle s’ajoute aux travaux effect
   await expect(done.getByRole('button', { name: 'Stop, arrêter la dictée' })).toBeVisible();
   await expect(done.getByRole('status')).toContainText('« remplacement du »');
 
-  await expect(done.getByRole('textbox', { name: 'Description de la tâche' })).toHaveValue(
+  await expect(done.getByRole('textbox', { name: 'Description de la tâche' }).last()).toHaveValue(
     'Remplacement du filtre à air',
   );
   await expect(done.getByRole('button', { name: 'Parler, dicter une tâche' })).toBeVisible();
 
   // Enregistrée : toujours là après rechargement
   await page.reload();
-  await expect(done.getByRole('textbox', { name: 'Description de la tâche' })).toHaveValue(
+  await expect(done.getByRole('textbox', { name: 'Description de la tâche' }).last()).toHaveValue(
     'Remplacement du filtre à air',
   );
 });

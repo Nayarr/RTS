@@ -29,6 +29,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
     title: 'Travaux effectués / à prévoir',
     items: [
       '« Travaux effectués » : ce que tu as réellement fait. C’est ce qui sera facturé.',
+      'La mission donnée par le bureau y est déjà (une tâche par ligne) : donne ton temps, ajoute ce que tu as fait en plus, retire ce qui n’a pas été fait.',
       '« Pièces / réparations à prévoir (devis) » : ce qu’il faudra faire plus tard. Cela sert au devis.',
       'Indique ton temps estimé pour chaque ligne : chaque temps part de « Estimation », à toi de choisir.',
     ],
@@ -55,6 +56,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     title: 'Créer un OR',
     items: [
       'Onglet « Ordres de réparation », puis « Nouvel OR » : immatriculation, client, travaux demandés, type de véhicule, technicien. Les plaques et les clients déjà connus sont proposés pendant la saisie.',
+      'Chaque ligne des travaux demandés devient une tâche des travaux effectués du technicien, qui n’a plus qu’à donner son temps.',
       'Client pas encore en base : sa fiche s’affiche dans l’OR et se remplit entièrement (téléphone, e-mail, adresse…). Le client est créé avec l’OR, et son e-mail sert aux envois (signature, devis, facture).',
       'Tu peux laisser l’OR sans technicien (badge « Non assigné ») et l’assigner plus tard, depuis l’OR ou le planning. Les informations de l’OR s’enregistrent toutes seules.',
       'Pour un dépannage, choisis le type d’intervention « Dépannage » : déplacement, kilomètres et temps de trajet sont ajoutés à la facture.',

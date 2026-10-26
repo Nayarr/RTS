@@ -65,14 +65,12 @@ test('clôture du mécano : temps estimés, taille des pneus HS, photo de l’é
   await choose(page, 'Étiquette contrôle hayon', 'HS');
   await expect(page.getByText('Étiquette HS : photo obligatoire avant de terminer l’OR.')).toBeVisible();
 
-  // Travaux effectués : 0,5 h proposé
-  await page.getByRole('button', { name: 'Ajouter une tâche' }).first().click();
-  const doneTask = page.getByRole('textbox', { name: 'Description de la tâche' }).first();
-  await expect(doneTask).toHaveValue('');
-  await doneTask.fill('Contrôle étiquettes');
-  await doneTask.blur();
+  // Travaux effectués : la mission de l'OR y est déjà, 0,5 h proposé
   const card = (title: string) =>
     page.locator('[data-slot="card"]').filter({ has: page.getByRole('heading', { name: title }) });
+  await expect(
+    card('Travaux effectués').getByRole('textbox', { name: 'Description de la tâche' }),
+  ).toHaveValue('Contrôle complet');
   const realTime = card('Travaux effectués').getByRole('combobox', { name: 'Temps estimé' });
   await expect(realTime.first().getByRole('option', { name: '0,5 h', exact: true })).toHaveCount(1);
   await expect(realTime.first().getByRole('option', { name: '0 h', exact: true })).toHaveCount(0);
