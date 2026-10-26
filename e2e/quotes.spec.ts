@@ -36,6 +36,8 @@ async function createOrderWithPlannedWork(plate: string) {
     p_requested_work: 'Bruit au freinage',
   });
   if (error) throw error;
+  // Mission de l'OR (déjà dans les travaux effectués) remplacée par les travaux du test
+  await client.from('ro_lines').delete().eq('repair_order_id', order.id).eq('kind', 'done');
   const inserted = await client.from('ro_lines').insert({
     repair_order_id: order.id,
     kind: 'planned',
