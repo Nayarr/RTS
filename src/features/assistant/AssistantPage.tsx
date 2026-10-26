@@ -35,6 +35,7 @@ import {
   type AgentTurn,
 } from './api';
 import { AgentActions, type AgentActionsHandle } from './AgentActions';
+import { AgentTable } from './AgentTable';
 import { isGoAhead } from './agent-actions';
 import { BriefingPlayer } from './BriefingPlayer';
 import type { OrbState } from './VoiceOrb';
@@ -246,7 +247,7 @@ export function AssistantPage() {
         actions={
           <>
             <span className="sub hidden 2xl:inline">
-              Pose ta question à la voix : il lit les chiffres de l’atelier, il ne modifie rien.
+              Pose ta question à la voix : il lit les chiffres de l’atelier et prépare ce que tu valides.
             </span>
             {speechSupported() && (
               <button
@@ -369,6 +370,9 @@ export function AssistantPage() {
                   ))}
                 {lastTurn.tools.length > 0 && <span>{sourcesLabel(lastTurn.tools)}</span>}
               </p>
+              {lastTurn.tables.map((table, index) => (
+                <AgentTable key={index} table={table} />
+              ))}
               <AgentActions actions={pendingActions} ref={actionsRef} />
             </div>
           ) : null}
@@ -570,6 +574,9 @@ function EarlierTurn({ turn }: { turn: AgentTurn }) {
     <li className="col gap-1">
       <Question text={turn.question} spoken={turn.spoken} />
       <p className="whitespace-pre-line">{turn.answer}</p>
+      {turn.tables.map((table, index) => (
+        <AgentTable key={index} table={table} />
+      ))}
     </li>
   );
 }

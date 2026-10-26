@@ -1,8 +1,10 @@
-// Actions que l'assistant de la direction peut PRÉPARER : rendez-vous, travail à ajouter sur un OR,
-// technicien à assigner, mail (relance d'un retard de paiement, mail libre ; envoyé par mail-send
-// après validation). Un outil ne fait que lire (vérifier l'OR, le véhicule, le technicien)
-// puis noter l'action proposée dans agent_actions ; elle s'exécute seulement quand la direction la
-// valide dans l'appli (execute_agent_action). Rien d'autre n'est écrit.
+// Actions que l'assistant de la direction peut PRÉPARER : rendez-vous (pris, déplacé ou annulé),
+// travail à ajouter sur un OR, technicien à assigner, date prévue d'un OR, OR passé « Facture à
+// faire », brouillon de facture, échéance d'un véhicule, mails (un seul, ou un par client à partir
+// d'un modèle ; envoyés par mail-send après validation, modifiables avant). Un outil ne fait que lire
+// (vérifier l'OR, le véhicule, le technicien) puis noter l'action proposée dans agent_actions ; elle
+// s'exécute seulement quand la direction la valide dans l'appli (execute_agent_action). Rien
+// d'autre n'est écrit.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { docNumber, plateKey } from './tools.ts';
@@ -22,22 +24,34 @@ const schema = (properties: Record<string, unknown>, required: string[] = []) =>
 
 export interface ProposedAction {
   id: string;
-  kind: 'appointment' | 'ro_work' | 'assign_technician' | 'send_mail';
+  kind:
+    | 'appointment'
+    | 'ro_work'
+    | 'assign_technician'
+    | 'send_mail'
+    | 'vehicle_deadline'
+    | 'schedule_order'
+    | 'appointment_change'
+    | 'order_to_invoice'
+    | 'invoice_draft';
   summary: string;
 }
+
+/** Une action préparée, ou plusieurs (mails groupés) avec ce qui n'a pas pu l'être. */
+type Prepared = ProposedAction | { actions: ProposedAction[]; skipped: string[] };
 
 interface ActionTool {
   name: string;
   description: string;
   input_schema: Record<string, unknown>;
   input: z.ZodType;
-  run: (db: Db, input: never, conversationId: string | null) => Promise<ProposedAction>;
+  run: (db: Db, input: never, conversationId: string | null) => Promise<Prepared>;
 }
 
 const action = <S extends z.ZodType>(
   spec: Omit<ActionTool, 'input' | 'run'> & {
     input: S;
-    run: (db: Db, input: z.infer<S>, conversationId: string | null) => Promise<ProposedAction>;
+    run: (db: Db, input: z.infer<S>, conversationId: string | null) => Promise<Prepared>;
   },
 ): ActionTool => spec as ActionTool;
 
@@ -376,6 +390,361 @@ ACTION_TOOLS.push(
   }),
 );
 
+/** Véhicule de l'atelier par sa plaque. */
+async function findVehicle(
+  db: Db,
+  plate: string,
+): Promise<{ id: string; plate: string; client_name: string | null }> {
+  const { data, error } = await db
+    .from('v_vehicles_overview')
+    .select('id, plate, client_name')
+    .eq('plate_key', plateKey(plate))
+    .limit(1);
+  if (error) throw new Error(error.message);
+  const vehicle = (data ?? [])[0] as { id: string; plate: string; client_name: string | null } | undefined;
+  if (!vehicle) throw new Error(`véhicule ${plate} introuvable`);
+  return vehicle;
+}
+
+/** « 2027-03-14 » → « mars 2027 » (contrôle hayon, au mois). */
+const monthYear = (iso: string) =>
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+const DEADLINES = {
+  ct: { field: 'ct_due_date', label: 'Contrôle technique' },
+  hayon: { field: 'tailgate_due_date', label: 'Contrôle hayon' },
+  antipollution: { field: 'antipollution_due_date', label: 'Antipollution' },
+} as const;
+const ORDER_PROPERTIES = {
+  numero_or: string('Numéro de l’OR (ex. 488 ou OR00488)'),
+  immatriculation: string('Immatriculation, si le numéro n’est pas donné'),
+};
+
+interface Appointment {
+  id: string;
+  scheduled_date: string;
+  start_time: string;
+  plate: string | null;
+  client_name: string | null;
+}
+
+ACTION_TOOLS.push(
+  action({
+    name: 'preparer_mails',
+    description:
+      'Prépare un mail par client à partir d’un modèle (contrôles à venir, relance commerciale…) : objet et texte avec {client} (nom du client) et {details} (ce qui le concerne : plaques, dates), puis la liste des clients avec leurs détails. Chaque mail part à l’e-mail de la fiche du client. Rien n’est envoyé : la direction les relit un par un, les modifie, les envoie ou les écarte.',
+    input_schema: schema(
+      {
+        objet: string('Objet du mail, {client} possible'),
+        texte: string('Texte complet avec {client} et {details}, formule de politesse et signature'),
+        destinataires: {
+          type: 'array',
+          maxItems: 40,
+          items: {
+            type: 'object',
+            properties: {
+              client: string('Nom du client de l’atelier'),
+              details: string(
+                'Ce qui concerne ce client, ex. « AB-123-CD : contrôle technique le 12 novembre »',
+              ),
+            },
+            required: ['client'],
+            additionalProperties: false,
+          },
+        },
+      },
+      ['objet', 'texte', 'destinataires'],
+    ),
+    input: z.object({
+      objet: text(200),
+      texte: text(5000),
+      destinataires: z
+        .array(z.object({ client: text(120), details: z.string().trim().max(1000).optional() }))
+        .min(1)
+        .max(40),
+    }),
+    run: async (db, input, conversationId) => {
+      const actions: ProposedAction[] = [];
+      const skipped: string[] = [];
+      const seen = new Set<string>();
+      for (const recipient of input.destinataires) {
+        try {
+          const client = await findClient(db, recipient.client);
+          if (seen.has(client.id)) continue;
+          seen.add(client.id);
+          const to = (client.email ?? '').trim().toLowerCase();
+          if (!EMAIL.test(to)) throw new Error(`pas d’e-mail valable sur la fiche de ${client.name}`);
+          const fill = (value: string) =>
+            value.replaceAll('{client}', client.name).replaceAll('{details}', recipient.details ?? '').trim();
+          const subject = fill(input.objet).slice(0, 200);
+          actions.push(
+            await propose(
+              db,
+              conversationId,
+              'send_mail',
+              {
+                to,
+                client_id: client.id,
+                client_name: client.name,
+                subject,
+                text: fill(input.texte).slice(0, 5000),
+                category: 'workshop',
+                invoice_ids: [],
+                invoice_numbers: [],
+              },
+              `Mail à ${client.name} (${to}) : « ${subject} »`.slice(0, 500),
+            ),
+          );
+        } catch (error) {
+          skipped.push(`${recipient.client} : ${error instanceof Error ? error.message : 'erreur'}`);
+        }
+      }
+      if (actions.length === 0) throw new Error(`aucun mail préparé (${skipped.join(' ; ')})`);
+      return { actions, skipped };
+    },
+  }),
+  action({
+    name: 'preparer_echeance',
+    description:
+      'Prépare la nouvelle date d’une échéance d’un véhicule : contrôle technique, contrôle hayon (au mois), antipollution. Ne la change pas : la direction valide ensuite.',
+    input_schema: schema(
+      {
+        immatriculation: string('Immatriculation du véhicule'),
+        echeance: { type: 'string', enum: ['ct', 'hayon', 'antipollution'] },
+        date: string('Nouvelle date au format AAAA-MM-JJ (hayon : un jour du mois)'),
+      },
+      ['immatriculation', 'echeance', 'date'],
+    ),
+    input: z.object({
+      immatriculation: text(20),
+      echeance: z.enum(['ct', 'hayon', 'antipollution']),
+      date: day,
+    }),
+    run: async (db, input, conversationId) => {
+      const vehicle = await findVehicle(db, input.immatriculation);
+      const deadline = DEADLINES[input.echeance];
+      const when = input.echeance === 'hayon' ? monthYear(input.date) : `le ${frenchDay(input.date)}`;
+      return propose(
+        db,
+        conversationId,
+        'vehicle_deadline',
+        { vehicle_id: vehicle.id, plate: vehicle.plate, field: deadline.field, date: input.date },
+        `${deadline.label} de ${vehicle.plate}${
+          vehicle.client_name ? ` (${vehicle.client_name})` : ''
+        } : ${when}`,
+      );
+    },
+  }),
+  action({
+    name: 'preparer_planification_or',
+    description:
+      'Prépare la date prévue d’un OR pas encore terminé (heures de début et de fin facultatives). Ne la change pas : la direction valide ensuite.',
+    input_schema: schema(
+      {
+        ...ORDER_PROPERTIES,
+        date: string('Jour prévu au format AAAA-MM-JJ'),
+        heure_debut: string('Heure de début au format HH:MM, facultative'),
+        heure_fin: string('Heure de fin au format HH:MM, facultative'),
+      },
+      ['date'],
+    ),
+    input: z
+      .object({
+        numero_or: z.string().trim().max(20).optional(),
+        immatriculation: z.string().trim().max(20).optional(),
+        date: day,
+        heure_debut: time.optional(),
+        heure_fin: time.optional(),
+      })
+      .refine((value) => !value.heure_fin || (value.heure_debut && value.heure_fin > value.heure_debut), {
+        message: 'l’heure de fin suit l’heure de début',
+      }),
+    run: async (db, input, conversationId) => {
+      if (input.date < parisToday()) throw new Error('date passée');
+      const order = await findOrder(db, input);
+      const hours = input.heure_debut
+        ? ` à ${hour(input.heure_debut)}${input.heure_fin ? `, fin à ${hour(input.heure_fin)}` : ''}`
+        : '';
+      return propose(
+        db,
+        conversationId,
+        'schedule_order',
+        {
+          repair_order_id: order.id,
+          date: input.date,
+          start_time: input.heure_debut ?? null,
+          end_time: input.heure_fin ?? null,
+        },
+        `OR ${order.number}${order.plate ? ` (${order.plate})` : ''} prévu le ${
+          frenchDay(input.date)
+        }${hours}`,
+      );
+    },
+  }),
+  action({
+    name: 'preparer_changement_rendez_vous',
+    description:
+      'Prépare le déplacement ou l’annulation d’un rendez-vous à venir, trouvé par la plaque ou le client (et sa date s’il y en a plusieurs). Ne le change pas : la direction valide ensuite.',
+    input_schema: schema({
+      immatriculation: string('Immatriculation du véhicule du rendez-vous'),
+      client: string('Nom du client, si la plaque n’est pas donnée'),
+      date_actuelle: string('Date actuelle du rendez-vous (AAAA-MM-JJ), s’il y en a plusieurs'),
+      annuler: { type: 'boolean', description: 'Annuler le rendez-vous au lieu de le déplacer' },
+      nouvelle_date: string('Nouvelle date au format AAAA-MM-JJ'),
+      nouvelle_heure: string('Nouvelle heure de début au format HH:MM'),
+      nouvelle_heure_fin: string('Nouvelle heure de fin au format HH:MM, facultative'),
+    }),
+    input: z
+      .object({
+        immatriculation: z.string().trim().max(20).optional(),
+        client: z.string().trim().max(120).optional(),
+        date_actuelle: day.optional(),
+        annuler: z.boolean().default(false),
+        nouvelle_date: day.optional(),
+        nouvelle_heure: time.optional(),
+        nouvelle_heure_fin: time.optional(),
+      })
+      .refine((value) => value.immatriculation || value.client, {
+        message: 'indique l’immatriculation ou le client',
+      })
+      .refine((value) => value.annuler || value.nouvelle_date || value.nouvelle_heure, {
+        message: 'indique la nouvelle date ou la nouvelle heure, ou annuler',
+      }),
+    run: async (db, input, conversationId) => {
+      if (input.nouvelle_date && input.nouvelle_date < parisToday()) throw new Error('nouvelle date passée');
+      let query = db
+        .from('v_appointments_overview')
+        .select('id, scheduled_date, start_time, plate, client_name')
+        .in('status', ['planned', 'requested'])
+        .gte('scheduled_date', input.date_actuelle ?? parisToday());
+      if (input.date_actuelle) query = query.eq('scheduled_date', input.date_actuelle);
+      if (input.immatriculation) {
+        query = query.eq('vehicle_id', (await findVehicle(db, input.immatriculation)).id);
+      } else if (input.client) {
+        query = query.eq('client_id', (await findClient(db, input.client)).id);
+      }
+      const { data, error } = await query.order('scheduled_date').order('start_time').limit(5);
+      if (error) throw new Error(error.message);
+      const found = (data ?? []) as Appointment[];
+      const appt = found[0];
+      if (!appt) throw new Error('aucun rendez-vous à venir trouvé');
+      if (found.length > 1 && !input.date_actuelle) {
+        throw new Error(
+          `plusieurs rendez-vous (${
+            found.map((item) => `${frenchDay(item.scheduled_date)} à ${hour(item.start_time)}`).join(', ')
+          }) : précise la date`,
+        );
+      }
+      const who = [appt.plate, appt.client_name].filter(Boolean).join(', ');
+      const current = `${frenchDay(appt.scheduled_date)} à ${hour(appt.start_time)}`;
+      if (input.annuler) {
+        return propose(
+          db,
+          conversationId,
+          'appointment_change',
+          { appointment_id: appt.id, cancel: true },
+          `Annuler le rendez-vous du ${current} (${who})`,
+        );
+      }
+      const date = input.nouvelle_date ?? appt.scheduled_date;
+      const start = input.nouvelle_heure ?? appt.start_time.slice(0, 5);
+      return propose(
+        db,
+        conversationId,
+        'appointment_change',
+        {
+          appointment_id: appt.id,
+          date,
+          start_time: start,
+          ...(input.nouvelle_heure ? { end_time: input.nouvelle_heure_fin ?? null } : {}),
+        },
+        `Déplacer le rendez-vous du ${current} (${who}) au ${frenchDay(date)} à ${hour(start)}`,
+      );
+    },
+  }),
+  action({
+    name: 'preparer_or_facture_a_faire',
+    description:
+      'Prépare le passage d’un OR « Terminé atelier » en « Facture à faire » (OR validé par le bureau). Ne le change pas : la direction valide ensuite.',
+    input_schema: schema(ORDER_PROPERTIES),
+    input: z.object({
+      numero_or: z.string().trim().max(20).optional(),
+      immatriculation: z.string().trim().max(20).optional(),
+    }),
+    run: async (db, input, conversationId) => {
+      const order = await findOrder(db, input);
+      if (order.status !== 'work_done') throw new Error(`l’OR ${order.number} n’est pas « Terminé atelier »`);
+      return propose(
+        db,
+        conversationId,
+        'order_to_invoice',
+        { repair_order_id: order.id },
+        `Passer l’OR ${order.number}${order.plate ? ` (${order.plate})` : ''} en « Facture à faire »`,
+      );
+    },
+  }),
+  action({
+    name: 'preparer_brouillon_facture',
+    description:
+      'Prépare le brouillon de facture d’un OR terminé, ou d’une facture groupée de plusieurs OR du même client. Le brouillon n’est jamais émis par toi : la direction le vérifie et l’émet dans l’appli.',
+    input_schema: schema(
+      {
+        numeros_or: {
+          type: 'array',
+          items: { type: 'string' },
+          maxItems: 10,
+          description: 'Numéros des OR (ex. 488 ou OR00488)',
+        },
+      },
+      ['numeros_or'],
+    ),
+    input: z.object({ numeros_or: z.array(z.string().trim().min(1).max(20)).min(1).max(10) }),
+    run: async (db, input, conversationId) => {
+      const numbers = [...new Set(input.numeros_or.map((value) => docNumber('OR', value)))];
+      const { data, error } = await db
+        .from('v_repair_orders_overview')
+        .select('id, number, plate, status, client_id, client_name')
+        .in('number', numbers);
+      if (error) throw new Error(error.message);
+      const found = (data ?? []) as {
+        id: string;
+        number: string;
+        plate: string | null;
+        status: string;
+        client_id: string | null;
+        client_name: string | null;
+      }[];
+      const orders = numbers.map((number) => {
+        const order = found.find((item) => item.number === number);
+        if (!order) throw new Error(`OR ${number} introuvable`);
+        if (order.status === 'invoiced') throw new Error(`l’OR ${number} est déjà facturé`);
+        if (!['work_done', 'to_invoice'].includes(order.status)) {
+          throw new Error(`l’OR ${number} n’est pas terminé`);
+        }
+        return order;
+      });
+      if (new Set(orders.map((order) => order.client_id)).size > 1) {
+        throw new Error('les OR d’une facture groupée doivent être au même client');
+      }
+      const list = orders.map((order) => `${order.number}${order.plate ? ` (${order.plate})` : ''}`).join(
+        ', ',
+      );
+      return propose(
+        db,
+        conversationId,
+        'invoice_draft',
+        { repair_order_ids: orders.map((order) => order.id) },
+        `Brouillon de facture${orders.length > 1 ? ' groupée' : ''} pour ${list}${
+          orders[0]?.client_name ? `, ${orders[0].client_name}` : ''
+        }`.slice(0, 500),
+      );
+    },
+  }),
+);
+
 export const ACTION_DEFINITIONS = ACTION_TOOLS.map(({ name, description, input_schema }) => ({
   name,
   description,
@@ -390,28 +759,45 @@ export async function runAction(
   name: string,
   input: unknown,
   conversationId: string | null,
-): Promise<{ content: string; is_error: boolean; action?: ProposedAction }> {
+): Promise<{ content: string; is_error: boolean; actions: ProposedAction[] }> {
   const found = ACTION_TOOLS.find((item) => item.name === name);
-  if (!found) return { content: `Outil inconnu : ${name}`, is_error: true };
+  if (!found) return { content: `Outil inconnu : ${name}`, is_error: true, actions: [] };
   const parsed = found.input.safeParse(input);
   if (!parsed.success) {
-    return { content: `Paramètres invalides : ${parsed.error.issues[0]?.message ?? ''}`, is_error: true };
+    return {
+      content: `Paramètres invalides : ${parsed.error.issues[0]?.message ?? ''}`,
+      is_error: true,
+      actions: [],
+    };
   }
   try {
-    const proposed = await found.run(db, parsed.data as never, conversationId);
+    const prepared = await found.run(db, parsed.data as never, conversationId);
+    if ('actions' in prepared) {
+      return {
+        content: JSON.stringify({
+          mails_prepares: prepared.actions.length,
+          ...(prepared.skipped.length ? { non_prepares: prepared.skipped } : {}),
+          consigne:
+            'Mails affichés un par un à la direction, rien n’est parti : dis combien sont prêts (et ceux qui manquent) ; elle les relit, les modifie et les envoie.',
+        }),
+        is_error: false,
+        actions: prepared.actions,
+      };
+    }
     return {
       content: JSON.stringify({
-        action_preparee: proposed.summary,
+        action_preparee: prepared.summary,
         consigne:
           'Action affichée à la direction, pas encore faite : annonce-la et demande « Je le fais ? ».',
       }),
       is_error: false,
-      action: proposed,
+      actions: [prepared],
     };
   } catch (error) {
     return {
       content: `Action non préparée : ${error instanceof Error ? error.message : 'erreur'}`,
       is_error: true,
+      actions: [],
     };
   }
 }

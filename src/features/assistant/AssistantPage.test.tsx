@@ -58,6 +58,7 @@ const turn = (overrides: Partial<AgentTurn> = {}): AgentTurn => ({
   answer: 'Ce mois-ci, 12 450 euros HT sur 18 factures.',
   spoken: false,
   tools: ['chiffres_du_mois', 'factures_impayees'],
+  tables: [],
   created_at: '2026-10-06T09:00:00Z',
   ...overrides,
 });

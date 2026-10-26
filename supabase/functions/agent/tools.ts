@@ -71,6 +71,23 @@ export function docNumber(prefix: string, value: string): string {
 }
 const hours = (seconds: unknown) => Math.round((Number(seconds) || 0) / 360) / 10;
 const todayIso = () => new Date().toISOString().slice(0, 10);
+/** Jour à Paris (AAAA-MM-JJ). */
+const parisDay = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+const addDays = (iso: string, days: number) =>
+  new Date(Date.parse(`${iso}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+const daysBetween = (from: string, to: string) =>
+  Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000);
+const endOfMonth = (iso: string) => {
+  const date = new Date(`${iso.slice(0, 7)}-01T12:00:00Z`);
+  date.setUTCMonth(date.getUTCMonth() + 1, 0);
+  return date.toISOString().slice(0, 10);
+};
+/** Échéances d'un véhicule (colonnes de la fiche). */
+const DEADLINE_KINDS = [
+  { type: 'ct', column: 'ct_due_date', label: 'contrôle technique' },
+  { type: 'hayon', column: 'tailgate_due_date', label: 'contrôle hayon' },
+  { type: 'antipollution', column: 'antipollution_due_date', label: 'antipollution' },
+] as const;
 
 export const RO_STATUS_LABELS: Record<string, string> = {
   assigned: 'assigné',
@@ -697,19 +714,90 @@ export const TOOLS: AgentTool[] = [
   tool({
     name: 'echeances_vehicules',
     description:
-      'Contrôles à venir ou dépassés (kind ct : contrôle technique, tailgate : hayon) : plaque, client, date, jours restants (négatif = dépassé).',
-    input_schema: schema({ dans_les_jours: { type: 'integer', minimum: 0, maximum: 365 } }, [
-      'dans_les_jours',
-    ]),
-    input: z.object({ dans_les_jours: z.number().int().min(0).max(365) }),
-    run: (db, { dans_les_jours }) =>
-      rows(
-        db.from('v_vehicle_deadlines')
-          .select('plate, client_name, kind, due_date, days_left')
-          .lte('days_left', dans_les_jours)
-          .order('days_left')
-          .limit(50),
-      ),
+      'Échéances des véhicules des clients, dépassées ou à venir dans les N jours (365 au plus) : contrôle technique (ct), contrôle hayon (hayon, au mois), antipollution. Par véhicule : plaque, marque et modèle, client, e-mail du client renseigné ou non, date, jours restants (négatif = dépassé), rendez-vous déjà prévu. Pour écrire aux clients concernés : preparer_mails.',
+    input_schema: schema(
+      {
+        dans_les_jours: { type: 'integer', minimum: 0, maximum: 365 },
+        type: { type: 'string', enum: ['tous', 'ct', 'hayon', 'antipollution'] },
+        depassees: { type: 'boolean', description: 'Inclure les échéances déjà dépassées (oui par défaut)' },
+      },
+      ['dans_les_jours'],
+    ),
+    input: z.object({
+      dans_les_jours: z.number().int().min(0).max(365),
+      type: z.enum(['tous', 'ct', 'hayon', 'antipollution']).default('tous'),
+      depassees: z.boolean().default(true),
+    }),
+    run: async (db, { dans_les_jours, type, depassees }) => {
+      const today = parisDay();
+      const limit = addDays(today, dans_les_jours);
+      const kinds = DEADLINE_KINDS.filter((kind) => type === 'tous' || kind.type === type);
+      const vehicles = await read<Record<string, unknown>[]>(
+        db
+          .from('vehicles')
+          .select(
+            'id, plate, brand, model, ct_due_date, tailgate_due_date, antipollution_due_date, client:clients(name, email)',
+          )
+          .is('archived_at', null)
+          .or(kinds.map((kind) => `${kind.column}.lte.${limit}`).join(','))
+          .limit(500),
+      );
+      const appointments = vehicles.length
+        ? await read<{ vehicle_id: string; scheduled_date: string }[]>(
+          db
+            .from('v_appointments_overview')
+            .select('vehicle_id, scheduled_date')
+            .in('vehicle_id', vehicles.map((vehicle) => String(vehicle.id)))
+            .eq('status', 'planned')
+            .gte('scheduled_date', today)
+            .order('scheduled_date'),
+        )
+        : [];
+      const list = vehicles.flatMap((vehicle) => {
+        const client = vehicle.client as { name: string; email: string | null } | null;
+        return kinds.flatMap((kind) => {
+          const stored = vehicle[kind.column] as string | null;
+          if (!stored) return [];
+          // Hayon : contrôle valable jusqu'à la fin du mois noté
+          const due = kind.type === 'hayon' ? endOfMonth(stored) : stored;
+          const left = daysBetween(today, due);
+          if (due > limit || (!depassees && left < 0)) return [];
+          return [{
+            plaque: vehicle.plate,
+            vehicule: [vehicle.brand, vehicle.model].filter(Boolean).join(' ') || null,
+            client: client?.name ?? null,
+            email_client: client?.email ? 'oui' : 'non',
+            echeance: kind.label,
+            date: due,
+            jours_restants: left,
+            rendez_vous_prevu: appointments.find((item) => item.vehicle_id === vehicle.id)?.scheduled_date ??
+              null,
+          }];
+        });
+      });
+      return list.sort((a, b) => a.jours_restants - b.jours_restants).slice(0, 200);
+    },
+  }),
+  tool({
+    name: 'clients_inactifs',
+    description:
+      'Clients venus à l’atelier mais plus revenus depuis N mois (60 au plus) : nom, contact, e-mail, téléphone, nombre d’OR, dernier passage, CA HT. Pour une relance commerciale : preparer_mails.',
+    input_schema: schema({ depuis_mois: { type: 'integer', minimum: 1, maximum: 60 } }, ['depuis_mois']),
+    input: z.object({ depuis_mois: z.number().int().min(1).max(60) }),
+    run: (db, { depuis_mois }) => {
+      const cutoff = new Date(`${parisDay()}T12:00:00Z`);
+      cutoff.setUTCMonth(cutoff.getUTCMonth() - depuis_mois);
+      return rows(
+        db
+          .from('v_clients_overview')
+          .select('name, contact_name, email, phone, orders_count, last_visit, revenue_ht')
+          .is('archived_at', null)
+          .gt('orders_count', 0)
+          .lt('last_visit', cutoff.toISOString().slice(0, 10))
+          .order('revenue_ht', { ascending: false, nullsFirst: false })
+          .limit(100),
+      );
+    },
   }),
   tool({
     name: 'contrats_entretien',

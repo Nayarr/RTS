@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from '@std/assert';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ACTION_DEFINITIONS, ACTION_TOOLS, runAction } from './actions.ts';
+import { DISPLAY_DEFINITIONS, runDisplay } from './display.ts';
 
 /**
  * Fausse base : lectures servies par table, une seule écriture permise (insertion dans
@@ -57,7 +58,7 @@ Deno.test('outils d’action : noms « preparer_… », schémas fermés', () =>
     assert(tool.name.startsWith('preparer_'), tool.name);
     assertEquals(tool.input_schema.additionalProperties, false, tool.name);
   }
-  assertEquals(ACTION_TOOLS.length, 4);
+  assertEquals(ACTION_TOOLS.length, 10);
 });
 
 Deno.test('rendez-vous préparé, pas créé : résumé lisible, technicien reconnu', async () => {
@@ -261,4 +262,208 @@ Deno.test('mail libre : adresse dite, sinon client sans e-mail signalé', async 
   );
   assertEquals(noEmail.is_error, true);
   assertStringIncludes(noEmail.content, 'demande l’adresse');
+});
+
+Deno.test('mails groupés : un par client à partir du modèle, client sans e-mail signalé, rien envoyé', async () => {
+  const { db, inserts, writes } = fakeDb({
+    clients: [
+      { id: 'c1', name: 'Transports Martin', email: 'Compta@Martin.fr', name_key: 'TRANSPORTSMARTIN' },
+      { id: 'c3', name: 'Frigo Leroy', email: 'atelier@leroy.fr', name_key: 'FRIGOLEROY' },
+      { id: 'c2', name: 'Dupont', email: null, name_key: 'DUPONT' },
+    ],
+  });
+  const result = await runAction(
+    db,
+    'preparer_mails',
+    {
+      objet: 'Contrôle technique à prévoir, {client}',
+      texte: 'Bonjour,\nVos véhicules : {details}.\nL’équipe de RAPID TRUCK SERVICE',
+      destinataires: [
+        { client: 'Transports Martin', details: 'AB-123-CD le 12 novembre' },
+        { client: 'Frigo Leroy', details: 'EF-456-GH le 3 décembre' },
+        { client: 'Transports Martin', details: 'en double' },
+        { client: 'Dupont', details: 'IJ-789-KL le 20 novembre' },
+      ],
+    },
+    'conv1',
+  );
+  assertEquals(result.is_error, false, result.content);
+  assertEquals(writes, []);
+  assertEquals(result.actions.length, 2);
+  assertEquals(inserts.map((insert) => insert.row.kind), ['send_mail', 'send_mail']);
+  assertEquals(inserts[0]?.row.payload, {
+    to: 'compta@martin.fr',
+    client_id: 'c1',
+    client_name: 'Transports Martin',
+    subject: 'Contrôle technique à prévoir, Transports Martin',
+    text: 'Bonjour,\nVos véhicules : AB-123-CD le 12 novembre.\nL’équipe de RAPID TRUCK SERVICE',
+    category: 'workshop',
+    invoice_ids: [],
+    invoice_numbers: [],
+  });
+  assertStringIncludes(String(inserts[1]?.row.summary), 'Mail à Frigo Leroy (atelier@leroy.fr)');
+  assertStringIncludes(result.content, 'Dupont : pas d’e-mail valable sur la fiche de Dupont');
+
+  const none = await runAction(
+    db,
+    'preparer_mails',
+    { objet: 'Info', texte: 'Bonjour', destinataires: [{ client: 'Dupont' }] },
+    null,
+  );
+  assertEquals(none.is_error, true);
+  assertStringIncludes(none.content, 'aucun mail préparé');
+});
+
+Deno.test('échéance, date d’OR, OR à facturer et brouillon de facture : préparés, pas faits', async () => {
+  const { db, inserts, writes } = fakeDb({
+    v_vehicles_overview: [{ id: 'v1', plate: 'AB-123-CD', client_name: 'Transports Martin' }],
+    v_repair_orders_overview: [
+      { ...ORDER, status: 'work_done', client_id: 'c1', client_name: 'Transports Martin' },
+      { id: 'ro2', number: 'OR00490', plate: 'EF-456-GH', status: 'to_invoice', client_id: 'c1' },
+    ],
+  });
+  const hayon = await runAction(
+    db,
+    'preparer_echeance',
+    { immatriculation: 'ab123cd', echeance: 'hayon', date: '2027-03-14' },
+    null,
+  );
+  assertEquals(hayon.is_error, false, hayon.content);
+  assertEquals(inserts[0]?.row.payload, {
+    vehicle_id: 'v1',
+    plate: 'AB-123-CD',
+    field: 'tailgate_due_date',
+    date: '2027-03-14',
+  });
+  assertEquals(inserts[0]?.row.summary, 'Contrôle hayon de AB-123-CD (Transports Martin) : mars 2027');
+
+  const planned = await runAction(
+    db,
+    'preparer_planification_or',
+    { numero_or: '488', date: '2099-03-14', heure_debut: '08:00', heure_fin: '10:30' },
+    null,
+  );
+  assertEquals(planned.is_error, false, planned.content);
+  assertEquals(inserts[1]?.row.kind, 'schedule_order');
+  assertStringIncludes(
+    String(inserts[1]?.row.summary),
+    'OR OR00488 (AB-123-CD) prévu le samedi 14 mars à 8h00',
+  );
+  const late = await runAction(
+    db,
+    'preparer_planification_or',
+    { numero_or: '488', date: '2099-03-14', heure_debut: '10:00', heure_fin: '09:00' },
+    null,
+  );
+  assertEquals(late.is_error, true);
+
+  const validated = await runAction(db, 'preparer_or_facture_a_faire', { numero_or: '488' }, null);
+  assertEquals(validated.is_error, false, validated.content);
+  assertEquals(inserts[2]?.row.payload, { repair_order_id: 'ro1' });
+
+  const draft = await runAction(db, 'preparer_brouillon_facture', { numeros_or: ['488', 'or 490'] }, null);
+  assertEquals(draft.is_error, false, draft.content);
+  assertEquals(inserts[3]?.row.payload, { repair_order_ids: ['ro1', 'ro2'] });
+  assertStringIncludes(
+    String(inserts[3]?.row.summary),
+    'Brouillon de facture groupée pour OR00488 (AB-123-CD)',
+  );
+  assertEquals(writes, []);
+});
+
+Deno.test('brouillon de facture : OR inconnu, pas terminé ou de deux clients refusés', async () => {
+  const { db, inserts } = fakeDb({
+    v_repair_orders_overview: [
+      { id: 'ro1', number: 'OR00488', status: 'in_progress', client_id: 'c1' },
+      { id: 'ro2', number: 'OR00490', status: 'to_invoice', client_id: 'c1' },
+      { id: 'ro3', number: 'OR00491', status: 'work_done', client_id: 'c2' },
+    ],
+  });
+  const missing = await runAction(db, 'preparer_brouillon_facture', { numeros_or: ['999'] }, null);
+  assertStringIncludes(missing.content, 'OR OR00999 introuvable');
+  const open = await runAction(db, 'preparer_brouillon_facture', { numeros_or: ['488'] }, null);
+  assertStringIncludes(open.content, 'n’est pas terminé');
+  const mixed = await runAction(db, 'preparer_brouillon_facture', { numeros_or: ['490', '491'] }, null);
+  assertStringIncludes(mixed.content, 'même client');
+  assertEquals(inserts, []);
+});
+
+Deno.test('rendez-vous déplacé ou annulé : le bon rendez-vous, sinon la date demandée', async () => {
+  const two = fakeDb({
+    v_vehicles_overview: [{ id: 'v1', plate: 'AB-123-CD', client_name: 'Transports Martin' }],
+    v_appointments_overview: [
+      {
+        id: 'ap1',
+        scheduled_date: '2099-03-10',
+        start_time: '09:00:00',
+        plate: 'AB-123-CD',
+        client_name: 'Martin',
+      },
+      {
+        id: 'ap2',
+        scheduled_date: '2099-03-17',
+        start_time: '14:00:00',
+        plate: 'AB-123-CD',
+        client_name: 'Martin',
+      },
+    ],
+  });
+  const ambiguous = await runAction(
+    two.db,
+    'preparer_changement_rendez_vous',
+    { immatriculation: 'AB-123-CD', nouvelle_date: '2099-03-20' },
+    null,
+  );
+  assertEquals(ambiguous.is_error, true);
+  assertStringIncludes(ambiguous.content, 'précise la date');
+
+  const one = fakeDb({
+    v_vehicles_overview: [{ id: 'v1', plate: 'AB-123-CD', client_name: 'Transports Martin' }],
+    v_appointments_overview: [
+      {
+        id: 'ap1',
+        scheduled_date: '2099-03-10',
+        start_time: '09:00:00',
+        plate: 'AB-123-CD',
+        client_name: 'Martin',
+      },
+    ],
+  });
+  const moved = await runAction(
+    one.db,
+    'preparer_changement_rendez_vous',
+    { immatriculation: 'AB-123-CD', nouvelle_date: '2099-03-20', nouvelle_heure: '10:00' },
+    null,
+  );
+  assertEquals(moved.is_error, false, moved.content);
+  assertEquals(one.inserts[0]?.row.payload, {
+    appointment_id: 'ap1',
+    date: '2099-03-20',
+    start_time: '10:00',
+    end_time: null,
+  });
+  assertStringIncludes(String(one.inserts[0]?.row.summary), 'au vendredi 20 mars à 10h00');
+  const cancelled = await runAction(
+    one.db,
+    'preparer_changement_rendez_vous',
+    { immatriculation: 'AB-123-CD', annuler: true },
+    null,
+  );
+  assertEquals(one.inserts[1]?.row.payload, { appointment_id: 'ap1', cancel: true });
+  assertStringIncludes(cancelled.content, 'Je le fais ?');
+  assertEquals(one.writes, []);
+});
+
+Deno.test('tableau : affiché tel quel, lignes de la bonne largeur seulement', () => {
+  const shown = runDisplay({
+    titre: 'Contrôles techniques',
+    colonnes: ['Plaque', 'Client', 'Date'],
+    lignes: [['AB-123-CD', 'Martin', '2026-11-12'], ['EF-456-GH', null, 3]],
+  });
+  assertEquals(shown.is_error, false);
+  assertEquals(shown.table?.lignes, [['AB-123-CD', 'Martin', '2026-11-12'], ['EF-456-GH', '', '3']]);
+  assertStringIncludes(shown.content, 'ne le recopie pas');
+  const broken = runDisplay({ titre: 'X', colonnes: ['A', 'B'], lignes: [['seul']] });
+  assertEquals(broken.is_error, true);
+  assertEquals(DISPLAY_DEFINITIONS[0]?.input_schema.additionalProperties, false);
 });

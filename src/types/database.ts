@@ -164,6 +164,7 @@ export type Database = {
           profile_id: string;
           question: string;
           spoken: boolean;
+          tables: NonNullable<Json>;
           tools: string[];
         };
         Insert: {
@@ -178,6 +179,7 @@ export type Database = {
           profile_id: string;
           question: string;
           spoken?: boolean;
+          tables?: NonNullable<Json>;
           tools?: string[];
         };
         Update: {
@@ -192,6 +194,7 @@ export type Database = {
           profile_id?: string;
           question?: string;
           spoken?: boolean;
+          tables?: NonNullable<Json>;
           tools?: string[];
         };
         Relationships: [
@@ -7480,6 +7483,28 @@ export type Database = {
       duplicate_quote: { Args: { p_quote_id: string }; Returns: string };
       duplicate_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
       duration_label: { Args: { p_minutes: number }; Returns: string };
+      edit_agent_mail: {
+        Args: { p_action_id: string; p_subject: string; p_text: string; p_to: string };
+        Returns: {
+          conversation_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          error: string | null;
+          id: string;
+          kind: string;
+          payload: NonNullable<Json>;
+          profile_id: string;
+          result: Json | null;
+          status: string;
+          summary: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'agent_actions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       employee_name: { Args: { p_profile_id: string; p_technician_id: string }; Returns: string };
       ensure_client_and_vehicle: {
         Args: {
