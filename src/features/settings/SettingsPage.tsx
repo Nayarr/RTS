@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { Building2, FileText, Timer, Wrench, type LucideIcon } from 'lucide-react';
+import { Archive, Building2, FileText, Timer, Wrench, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { cn } from '@/lib/utils';
 import { BillingForm } from './BillingForm';
@@ -8,15 +8,17 @@ import { CompanyForm } from './CompanyForm';
 import { useSettings } from './hooks';
 import { LaborRatesForm } from './LaborRatesForm';
 import { LogoCard } from './LogoCard';
+import { ArchivesPanel } from './ArchivesPanel';
 import { WorkshopForm } from './WorkshopForm';
 
-type Section = 'entreprise' | 'facturation' | 'taux' | 'atelier';
+type Section = 'entreprise' | 'facturation' | 'taux' | 'atelier' | 'archives';
 
 const SECTIONS: { value: Section; label: string; icon: LucideIcon }[] = [
   { value: 'entreprise', label: 'Entreprise', icon: Building2 },
   { value: 'facturation', label: 'Devis et factures', icon: FileText },
   { value: 'taux', label: 'Taux horaires', icon: Timer },
   { value: 'atelier', label: 'Atelier', icon: Wrench },
+  { value: 'archives', label: 'Archives', icon: Archive },
 ];
 
 const isSection = (value: string): value is Section => SECTIONS.some((section) => section.value === value);
@@ -99,6 +101,7 @@ function SettingsSections({
             {section === 'facturation' && <BillingForm company={settings.data.company} />}
             {section === 'taux' && <LaborRatesForm rates={settings.data.laborRates} />}
             {section === 'atelier' && <WorkshopForm app={settings.data.app} />}
+            {section === 'archives' && <ArchivesPanel />}
           </div>
         </div>
       )}

@@ -110,6 +110,7 @@ export async function searchClients(query: string): Promise<{ id: string; name: 
     .from('clients')
     .select('id, name')
     .ilike('name', `%${term.replace(/[%_]/g, '')}%`)
+    .is('archived_at', null)
     .order('name')
     .limit(8);
   if (error) throw error;
