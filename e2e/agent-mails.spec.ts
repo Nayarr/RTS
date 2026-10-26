@@ -81,7 +81,8 @@ test('mails reçus : comptés dans l’Agent Direction, triés, lus puis marqué
   await loginAs(page, 'direction@rts.local');
   await page.goto('/agent-direction');
 
-  const link = page.getByRole('link', { name: /Mails reçus/ });
+  // Bouton de l'agent (le menu a aussi son lien « Mails reçus »)
+  const link = page.getByRole('link', { name: /^Mails reçus .*à traiter/ });
   await expect(link.getByLabel('2 à traiter')).toBeVisible();
   await link.click();
   await expect(page).toHaveURL(/\/agent-direction\/mails$/);

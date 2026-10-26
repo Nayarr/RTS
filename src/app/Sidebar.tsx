@@ -150,6 +150,19 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
             <span className="voix">Voix</span>
           </Link>
         )}
+        {role === 'direction' && (
+          // Mails reçus, rangés par l'agent : accessibles depuis le menu, sans passer par l'agent
+          <div className="subnav">
+            <Link
+              to="/agent-direction/mails"
+              className={cn('si', current === '/agent-direction/mails' && 'on')}
+              aria-current={current === '/agent-direction/mails' ? 'page' : undefined}
+              onClick={onNavigate}
+            >
+              <span>Mails reçus</span>
+            </Link>
+          </div>
+        )}
         <div className="nav-scroll">
           {ops.length > 0 && <div className="overline">Opérations</div>}
           {ops.map(renderGroup)}

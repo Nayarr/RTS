@@ -340,7 +340,12 @@ export function AssistantPage() {
             <div className="agent-text">
               <Question text={pending.question} spoken={pending.spoken} />
               <p className="agent-big" role="status">
-                Je regarde les chiffres…
+                <span className="agent-thinking" aria-hidden>
+                  <span />
+                  <span />
+                  <span />
+                </span>
+                <span className="sr-only">L’agent réfléchit</span>
               </p>
             </div>
           ) : lastTurn ? (
