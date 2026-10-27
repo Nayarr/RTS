@@ -34,6 +34,8 @@ async function diagnosticWithQuote(plate: string) {
     p_requested_work: 'Bruit au freinage',
   });
   if (error) throw error;
+  // Mission de l'OR (déjà dans les travaux effectués) remplacée par les travaux du test
+  await reception.from('ro_lines').delete().eq('repair_order_id', order.id).eq('kind', 'done');
   // Adresse de facturation : mention obligatoire pour émettre une facture
   await reception
     .from('clients')

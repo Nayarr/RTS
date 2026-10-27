@@ -47,6 +47,8 @@ update public.inspections set data = '{
 where repair_order_id = :'ro';
 select is(public.inspection_missing_points((select data from public.inspections where repair_order_id = :'ro')), 0,
           'Fiche complète : plus aucun point manquant');
+-- Mission « Entretien » dans les travaux effectués : le technicien donne son temps
+update public.ro_lines set estimated_hours = 1 where repair_order_id = :'ro' and kind = 'done';
 select lives_ok(format($$ select public.complete_repair_order(%L) $$, :'ro'), 'Fiche complète : OR terminé');
 
 -- Sans exigence : la fiche reste libre
@@ -56,6 +58,7 @@ select id as free from public.create_repair_order('EF-456-GH', 'remorque', null,
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
 insert into public.ro_photos (repair_order_id, file_id, label)
 values (:'free', pg_temp.fake_file('ro_photo'), 'Contrôle technique');
+update public.ro_lines set estimated_hours = 0.5 where repair_order_id = :'free' and kind = 'done';
 select lives_ok(format($$ select public.complete_repair_order(%L) $$, :'free'), 'Sans exigence : fiche vide acceptée');
 
 -- ---------------------------------------------------------------- OR depuis un devis accepté

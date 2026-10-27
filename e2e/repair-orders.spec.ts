@@ -82,7 +82,8 @@ test('un second OR sur le même véhicule demande confirmation', async ({ page }
   const dialog = page.getByRole('dialog', { name: 'Créer un autre OR pour ce véhicule ?' });
   await dialog.getByRole('button', { name: 'Créer quand même' }).click();
   await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
-  await expect(page.getByText('Pneus', { exact: true })).toBeVisible();
+  // La mission est aussi dans les travaux effectués de l'OR
+  await expect(page.getByText('Pneus', { exact: true }).first()).toBeVisible();
   expect(page.url()).not.toBe(firstUrl);
 });
 

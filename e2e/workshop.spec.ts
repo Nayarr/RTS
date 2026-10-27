@@ -82,18 +82,18 @@ test('le technicien réalise un OR de bout en bout, le bureau voit le résultat'
 
   // Fiche de contrôle : plaquettes HS → réparation ajoutée aux travaux à prévoir
   await page.getByRole('radiogroup', { name: 'Plaquettes avant' }).getByRole('radio', { name: 'HS' }).click();
-  await expect(page.getByRole('textbox', { name: 'Description de la tâche' }).first()).toHaveValue(
-    'Remplacement Plaquettes avant',
-  );
-
-  // Travaux effectués : une tâche avec son temps
-  await page.getByRole('button', { name: 'Ajouter une tâche' }).first().click();
-  const doneTask = page.getByRole('textbox', { name: 'Description de la tâche' }).first();
-  await expect(doneTask).toHaveValue('');
-  await doneTask.fill('Remplacement plaquettes avant');
-  await doneTask.blur();
   const card = (title: string) =>
     page.locator('[data-slot="card"]').filter({ has: page.getByRole('heading', { name: title }) });
+  await expect(
+    card('Pièces / réparations à prévoir (devis)')
+      .getByRole('textbox', { name: 'Description de la tâche' })
+      .first(),
+  ).toHaveValue('Remplacement Plaquettes avant');
+
+  // Travaux effectués : la mission de l'OR y est déjà, le technicien donne son temps
+  await expect(
+    card('Travaux effectués').getByRole('textbox', { name: 'Description de la tâche' }),
+  ).toHaveValue('Bruit au freinage');
   const doneTime = card('Travaux effectués').getByRole('combobox', { name: 'Temps estimé' }).first();
   await doneTime.selectOption('2h');
   await expect(doneTime).toHaveValue('2h');

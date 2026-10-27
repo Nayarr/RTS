@@ -39,6 +39,8 @@ test('client suisse au n° de TVA contrôlé : facture sans TVA, mention et n° 
     p_requested_work: 'Freinage',
   });
   if (error) throw error;
+  // Mission de l'OR (déjà dans les travaux effectués) remplacée par les travaux du test
+  await api.from('ro_lines').delete().eq('repair_order_id', order.id).eq('kind', 'done');
   const clientId = order.client_id ?? '';
   await api
     .from('clients')

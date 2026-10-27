@@ -333,9 +333,15 @@ export function NewRepairOrderPage() {
                   rows={4}
                   placeholder="Description de l’intervention demandée"
                   aria-invalid={errors.requested_work ? true : undefined}
-                  aria-describedby={errors.requested_work ? 'requested_work-error' : undefined}
+                  aria-describedby={errors.requested_work ? 'requested_work-error' : 'requested_work-hint'}
                   {...register('requested_work')}
                 />
+                {!errors.requested_work && (
+                  <p id="requested_work-hint" className="hint">
+                    Une tâche par ligne : chacune arrive dans les travaux effectués du technicien, qui donne
+                    son temps.
+                  </p>
+                )}
                 {errors.requested_work && (
                   <p id="requested_work-error" className="err">
                     {errors.requested_work.message}

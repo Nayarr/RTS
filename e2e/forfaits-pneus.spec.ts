@@ -55,6 +55,8 @@ test('pneus avant HS et arrière à 50 % : « Remplacement Pneus » pour le tech
     p_technician_id: alice?.id,
   });
   if (error) throw error;
+  // Mission de l'OR (déjà dans les travaux effectués) remplacée par les travaux du test
+  await reception.from('ro_lines').delete().eq('repair_order_id', order.id).eq('kind', 'done');
 
   // Technicien : pneus avant HS, arrière à 50 % ; il ne voit que ses deux lignes
   await loginAs(page, 'alice@rts.local');

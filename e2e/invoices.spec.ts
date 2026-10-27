@@ -36,6 +36,8 @@ async function createFinishedOrder(plate: string, clientName: string) {
     p_mileage: 184320,
   });
   if (error) throw error;
+  // Mission de l'OR (déjà dans les travaux effectués) remplacée par les travaux du test
+  await client.from('ro_lines').delete().eq('repair_order_id', order.id).eq('kind', 'done');
   const work = await client.from('ro_lines').insert({
     repair_order_id: order.id,
     kind: 'done',
