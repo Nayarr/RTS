@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
 import { AgentActions, type AgentActionsHandle } from './AgentActions';
 import { isGoAhead } from './agent-actions';
-import { cancelAgentAction, executeAgentAction, sendAgentMail, type AgentAction } from './api';
+import { AgentTable } from './AgentTable';
+import { tableFileName, tableText } from './agent-table';
+import { cancelAgentAction, editAgentMail, executeAgentAction, sendAgentMail, type AgentAction } from './api';
 import type * as AssistantApi from './api';
 
 vi.mock('./api', async (importOriginal) => ({
@@ -12,6 +14,7 @@ vi.mock('./api', async (importOriginal) => ({
   executeAgentAction: vi.fn(),
   sendAgentMail: vi.fn(),
   cancelAgentAction: vi.fn(),
+  editAgentMail: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -26,6 +29,20 @@ const action: AgentAction = {
   created_at: '2026-10-13T09:00:00Z',
   payload: null,
 };
+
+/** Mail préparé par l'agent pour un client. */
+const mail = (id: string, client: string): AgentAction => ({
+  ...action,
+  id,
+  kind: 'send_mail',
+  summary: `Mail à ${client} : « Contrôle technique »`,
+  payload: {
+    to: 'contact@transports-martin.fr',
+    subject: 'Contrôle technique',
+    text: `Bonjour ${client},\nVotre contrôle approche.`,
+    client_name: client,
+  },
+});
 
 describe('actions préparées par l’Agent Direction', () => {
   beforeEach(() => {
@@ -65,30 +82,68 @@ describe('actions préparées par l’Agent Direction', () => {
     expect(screen.getByText('Exécution dans 5 s')).toBeInTheDocument();
   });
 
-  it('mail préparé : lu en entier avant l’envoi, envoyé par la fonction d’envoi au bout de 5 s', async () => {
-    const mail: AgentAction = {
-      ...action,
-      id: 'a2',
-      kind: 'send_mail',
-      summary: 'Relance à Transports Martin (compta@martin.fr) : « Facture F11887 », factures F11887',
-      payload: {
-        to: 'compta@martin.fr',
-        subject: 'Facture F11887',
-        text: 'Madame, Monsieur,\nSauf erreur de notre part…',
-      },
-    };
-    vi.mocked(sendAgentMail).mockResolvedValue({ ...mail, status: 'done' });
-    renderRoutes([{ path: '/', element: <AgentActions actions={[mail]} /> }]);
-    expect(screen.getByText('À : compta@martin.fr · Objet : Facture F11887')).toBeInTheDocument();
-    expect(screen.getByText(/Sauf erreur de notre part/)).toBeInTheDocument();
-    expect(screen.getByText('Préparé par l’agent : rien ne part avant ta validation.')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Valider/ }));
+  it('mail préparé : relu en entier, envoyé par la fonction d’envoi au bout de 5 s', async () => {
+    vi.mocked(sendAgentMail).mockResolvedValue({ ...mail('a2', 'Transports Martin'), status: 'done' });
+    renderRoutes([{ path: '/', element: <AgentActions actions={[mail('a2', 'Transports Martin')]} /> }]);
+    expect(screen.getByText('Mail préparé · Transports Martin')).toBeInTheDocument();
+    expect(screen.getByLabelText('À')).toHaveValue('contact@transports-martin.fr');
+    expect(screen.getByLabelText('Texte')).toHaveValue(
+      'Bonjour Transports Martin,\nVotre contrôle approche.',
+    );
+    expect(screen.getByText('Préparé par l’agent : rien ne part avant « Envoyer ».')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Envoyer/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
     expect(screen.getByText('Envoi dans 5 s')).toBeInTheDocument();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
-    expect(sendAgentMail).toHaveBeenCalledWith(mail);
+    expect(editAgentMail).not.toHaveBeenCalled();
+    expect(vi.mocked(sendAgentMail).mock.calls[0]?.[0].id).toBe('a2');
     expect(executeAgentAction).not.toHaveBeenCalled();
+  });
+
+  it('mails groupés : un par un, modifié avant l’envoi, écarté, sans rien envoyer d’autre', async () => {
+    const first = mail('m1', 'Transports Martin');
+    const second = mail('m2', 'Frigo Leroy');
+    vi.mocked(editAgentMail).mockResolvedValue(first);
+    vi.mocked(sendAgentMail).mockResolvedValue({ ...first, status: 'done' });
+    renderRoutes([{ path: '/', element: <AgentActions actions={[first, second]} /> }]);
+    expect(screen.getByText(/Mail 1 sur 2 · Transports Martin/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mail suivant' }));
+    expect(screen.getByText(/Mail 2 sur 2 · Frigo Leroy/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Ne pas envoyer/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(vi.mocked(cancelAgentAction).mock.calls[0]?.[0]).toBe('m2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mail précédent' }));
+    fireEvent.change(screen.getByLabelText('Objet'), { target: { value: 'Contrôle technique de novembre' } });
+    fireEvent.click(screen.getByRole('button', { name: /Envoyer/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    expect(editAgentMail).toHaveBeenCalledWith('m1', {
+      to: 'contact@transports-martin.fr',
+      subject: 'Contrôle technique de novembre',
+      text: 'Bonjour Transports Martin,\nVotre contrôle approche.',
+    });
+    expect(vi.mocked(sendAgentMail).mock.calls.map(([sent]) => sent.id)).toEqual(['m1']);
+  });
+
+  it('tableau de l’agent : affiché, copiable dans un tableur, nommé pour le téléchargement', () => {
+    const table = {
+      titre: 'Contrôles techniques d’ici fin novembre',
+      colonnes: ['Plaque', 'Client', 'Date'],
+      lignes: [['AB-123-CD', 'Transports Martin', '12/11/2026']],
+    };
+    renderRoutes([{ path: '/', element: <AgentTable table={table} /> }]);
+    expect(screen.getByRole('region', { name: table.titre })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Transports Martin' })).toBeInTheDocument();
+    expect(tableText(table)).toBe('Plaque\tClient\tDate\nAB-123-CD\tTransports Martin\t12/11/2026');
+    expect(tableFileName(table.titre)).toBe('controles-techniques-d-ici-fin-novembre.csv');
   });
 
   it('réponses dictées qui valident', () => {

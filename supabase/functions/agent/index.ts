@@ -3,9 +3,11 @@
 //
 // La page « Assistant » envoie la question ; l'assistant Claude (Sonnet) choisit les outils de
 // lecture utiles (tools.ts), qui interrogent la base avec les droits de la personne connectée,
-// puis répond. Il peut aussi préparer trois actions (actions.ts : rendez-vous, travail sur un OR,
-// technicien assigné), notées « proposées » et renvoyées à la page : rien ne s'exécute avant la
-// validation de la direction. Hormis ces propositions, seul l'historique de la conversation est écrit.
+// puis répond. Il peut aussi préparer des actions (actions.ts : rendez-vous, travaux et dates des
+// OR, échéances, brouillon de facture, mails un par un), notées « proposées » et renvoyées à la
+// page : rien ne s'exécute avant la validation de la direction. Il peut montrer une liste en
+// tableau (display.ts), gardé avec la réponse. Hormis ces propositions, seul l'historique de la
+// conversation est écrit.
 // Réservé à la direction, réglage « Assistant de la direction » activé, limite de questions par
 // jour. Clé : secret ANTHROPIC_AGENT_API_KEY (sans clé : assistant indisponible).
 //
@@ -26,6 +28,7 @@ import {
 } from './prompt.ts';
 import { runTool, TOOL_DEFINITIONS } from './tools.ts';
 import { ACTION_DEFINITIONS, isActionTool, type ProposedAction, runAction } from './actions.ts';
+import { type AgentTable, DISPLAY_DEFINITIONS, isDisplayTool, runDisplay } from './display.ts';
 import {
   BRIEFING_JSON_SCHEMA,
   briefingRequest,
@@ -205,6 +208,7 @@ export default {
     const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
     const used = new Set<string>();
     const proposed: ProposedAction[] = [];
+    const tables: AgentTable[] = [];
     let answer: string | null = null;
     let keep = true;
 
@@ -212,14 +216,15 @@ export default {
       for (let step = 0; step < MAX_STEPS && answer === null; step++) {
         const response = await claude.messages.create({
           model: MODEL,
-          max_tokens: 4000,
+          // Mails groupés : un modèle et une ligne par client, de quoi en préparer une quarantaine
+          max_tokens: 8000,
           // Consignes et outils relus en cache d'une question à l'autre ; la conversation aussi
           system: [
             { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
             { type: 'text', text: context, cache_control: { type: 'ephemeral' } },
           ],
           cache_control: { type: 'ephemeral' },
-          tools: [...TOOL_DEFINITIONS, ...ACTION_DEFINITIONS],
+          tools: [...TOOL_DEFINITIONS, ...ACTION_DEFINITIONS, ...DISPLAY_DEFINITIONS],
           output_config: { effort: 'low' },
           messages,
         });
@@ -241,13 +246,18 @@ export default {
               used.add(call.name);
               if (isActionTool(call.name)) {
                 // Action préparée seulement : la direction la valide ensuite dans l'appli
-                const { action, ...result } = await runAction(
+                const { actions, ...result } = await runAction(
                   ctx.supabase,
                   call.name,
                   call.input,
                   conversationId ?? null,
                 );
-                if (action) proposed.push(action);
+                proposed.push(...actions);
+                return { type: 'tool_result' as const, tool_use_id: call.id, ...result };
+              }
+              if (isDisplayTool(call.name)) {
+                const { table, ...result } = runDisplay(call.input);
+                if (table) tables.push(table);
                 return { type: 'tool_result' as const, tool_use_id: call.id, ...result };
               }
               const result = await runTool(ctx.supabase, call.name, call.input);
@@ -316,6 +326,7 @@ export default {
         answer,
         spoken,
         tools: [...used],
+        tables,
         input_tokens: usage.input,
         output_tokens: usage.output,
         cache_read_tokens: usage.cacheRead,
@@ -325,7 +336,7 @@ export default {
       .single();
     if (turnError) console.error(turnError); // réponse obtenue : le journal ne bloque pas
 
-    return json(200, { conversation_id: id, turn_id: turn?.id ?? null, answer, actions: proposed });
+    return json(200, { conversation_id: id, turn_id: turn?.id ?? null, answer, actions: proposed, tables });
   }),
 };
 

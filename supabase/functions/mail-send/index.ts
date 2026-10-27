@@ -72,13 +72,14 @@ export default {
         .maybeSingle();
       if (!action || action.kind !== 'send_mail') return fail(404, 'Mail préparé introuvable');
       if (action.status !== 'proposed') return fail(409, 'Mail déjà envoyé ou annulé');
-      if (Date.parse(action.created_at) < Date.now() - 30 * 60_000) {
+      // Mail préparé : relu et modifié à son rythme, valable 24 h
+      if (Date.parse(action.created_at) < Date.now() - 24 * 3_600_000) {
         await admin.from('agent_actions').update({
           status: 'cancelled',
           decided_at: new Date().toISOString(),
           error: 'Expirée',
         }).eq('id', action.id).eq('status', 'proposed');
-        return fail(410, 'Mail préparé il y a plus de 30 minutes : redemande-le à l’agent');
+        return fail(410, 'Mail préparé il y a plus de 24 heures : redemande-le à l’agent');
       }
       const prepared = agentMailRequest(action.payload, agentMail.data.idempotency_key);
       if (!prepared) return fail(400, 'Mail préparé illisible');

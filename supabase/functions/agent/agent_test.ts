@@ -1,5 +1,6 @@
 import { assert, assertEquals, assertMatch, assertStringIncludes } from '@std/assert';
 import { ACTION_TOOLS } from './actions.ts';
+import { DISPLAY_DEFINITIONS } from './display.ts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   answerText,
@@ -173,7 +174,8 @@ const SAMPLE_INPUTS: Record<string, unknown> = {
   garanties: { statut: 'en_cours' },
   vehicule: { plaque: 'EZ-093-WV' },
   client: { nom: 'Leroy' },
-  echeances_vehicules: { dans_les_jours: 30 },
+  echeances_vehicules: { dans_les_jours: 60, type: 'ct', depassees: false },
+  clients_inactifs: { depuis_mois: 12 },
   recherche: { texte: 'Leroy' },
   pointages: { du: '2026-10-01', au: '2026-10-07', technicien: 'Bruno' },
   conges: { du: '2026-10-05', au: '2026-10-11' },
@@ -272,7 +274,7 @@ Deno.test('fiche atelier : statuts des OR, confusions de dictée et noms d’out
   assertStringIncludes(SYSTEM_PROMPT, 'Assigné (assigned');
   assertStringIncludes(SYSTEM_PROMPT, '« horaires »');
   assertStringIncludes(SYSTEM_PROMPT, 'hayon');
-  const names = new Set([...TOOLS, ...ACTION_TOOLS].map((tool) => tool.name));
+  const names = new Set([...TOOLS, ...ACTION_TOOLS, ...DISPLAY_DEFINITIONS].map((tool) => tool.name));
   for (const [, name] of SYSTEM_PROMPT.matchAll(/\b([a-z]+(?:_[a-z]+)+)\b/g)) {
     if (
       /_(?:id|at|ht|ttc)$|^(?:in_progress|work_done|quote_pending|to_invoice|to_order|paid_leave)$/.test(name)

@@ -272,5 +272,22 @@
     "tools": [],
     "answer": "ne (peux|fais|modifie|envoie)|lecture|lire",
     "note": "Doit refuser d'agir (lecture seule) et dire où le faire"
+  },
+  {
+    "id": 31,
+    "question": "Sors-moi la liste des véhicules dont le contrôle technique arrive à échéance d'ici deux mois",
+    "tools": [
+      "echeances_vehicules"
+    ],
+    "answer": "contr[oô]le|véhicule|tableau"
+  },
+  {
+    "id": 32,
+    "question": "Écris un mail à chaque entreprise dont un véhicule doit passer le contrôle technique ce mois-ci",
+    "tools": [
+      "echeances_vehicules",
+      "preparer_mails"
+    ],
+    "answer": "mails?"
   }
 ]

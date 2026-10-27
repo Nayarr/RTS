@@ -6,10 +6,17 @@ import type { InboxEmail } from './mails';
 
 type Tables = Database['public']['Tables'];
 export type AgentConversation = Pick<Tables['agent_conversations']['Row'], 'id' | 'title' | 'updated_at'>;
+/** Tableau montré par l'agent avec sa réponse (liste à copier ou télécharger). */
+export interface AgentTable {
+  titre: string;
+  colonnes: string[];
+  lignes: string[][];
+}
+
 export type AgentTurn = Pick<
   Tables['agent_turns']['Row'],
   'id' | 'conversation_id' | 'question' | 'answer' | 'spoken' | 'tools' | 'created_at'
->;
+> & { tables: AgentTable[] };
 
 export interface AgentAnswer {
   conversation_id: string;
@@ -17,30 +24,65 @@ export interface AgentAnswer {
   answer: string;
   /** Actions préparées pendant cette question (à valider). */
   actions?: Pick<AgentAction, 'id' | 'kind' | 'summary'>[];
+  tables?: AgentTable[];
 }
 
-/** Action préparée par l'agent (rendez-vous, travail sur un OR, technicien assigné, mail). */
+/**
+ * Action préparée par l'agent : rendez-vous (pris, déplacé, annulé), travail, technicien ou date
+ * d'un OR, OR à facturer, brouillon de facture, échéance d'un véhicule, mail.
+ */
 export type AgentAction = Pick<
   Tables['agent_actions']['Row'],
   'id' | 'conversation_id' | 'summary' | 'status' | 'error' | 'created_at'
 > & {
-  kind: 'appointment' | 'ro_work' | 'assign_technician' | 'send_mail';
+  kind:
+    | 'appointment'
+    | 'ro_work'
+    | 'assign_technician'
+    | 'send_mail'
+    | 'vehicle_deadline'
+    | 'schedule_order'
+    | 'appointment_change'
+    | 'order_to_invoice'
+    | 'invoice_draft';
   result: { link?: string } | null;
   /** Mail préparé : destinataire, objet et texte relus par la direction avant l'envoi. */
-  payload: { to?: string; subject?: string; text?: string } | null;
+  payload: { to?: string; subject?: string; text?: string; client_name?: string | null } | null;
 };
 
-/** Actions encore à valider d'une conversation (30 minutes au plus). */
+/** Validité d'une action préparée : 30 minutes, 24 h pour un mail (relu à son rythme). */
+const ACTION_MINUTES = 30;
+const MAIL_HOURS = 24;
+
+/** Actions encore à valider d'une conversation. */
 export async function fetchPendingActions(conversationId: string): Promise<AgentAction[]> {
   const { data, error } = await supabase
     .from('agent_actions')
     .select('id, conversation_id, kind, summary, status, result, error, created_at, payload')
     .eq('conversation_id', conversationId)
     .eq('status', 'proposed')
-    .gte('created_at', new Date(Date.now() - 30 * 60_000).toISOString())
+    .gte('created_at', new Date(Date.now() - MAIL_HOURS * 3_600_000).toISOString())
     .order('created_at');
   if (error) throw error;
-  return data as AgentAction[];
+  const since = Date.now() - ACTION_MINUTES * 60_000;
+  return (data as AgentAction[]).filter(
+    (action) => action.kind === 'send_mail' || new Date(action.created_at).getTime() >= since,
+  );
+}
+
+/** Mail préparé modifié par la direction avant l'envoi (destinataire, objet, texte). */
+export async function editAgentMail(
+  id: string,
+  mail: { to: string; subject: string; text: string },
+): Promise<AgentAction> {
+  const { data, error } = await supabase.rpc('edit_agent_mail', {
+    p_action_id: id,
+    p_to: mail.to,
+    p_subject: mail.subject,
+    p_text: mail.text,
+  });
+  if (error) throw error;
+  return data as unknown as AgentAction;
 }
 
 /** Exécute une action validée par la direction (droits vérifiés par la base). */
@@ -125,11 +167,14 @@ export async function fetchConversations(): Promise<AgentConversation[]> {
 export async function fetchTurns(conversationId: string): Promise<AgentTurn[]> {
   const { data, error } = await supabase
     .from('agent_turns')
-    .select('id, conversation_id, question, answer, spoken, tools, created_at')
+    .select('id, conversation_id, question, answer, spoken, tools, tables, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at');
   if (error) throw error;
-  return data;
+  return data.map((turn) => ({
+    ...turn,
+    tables: Array.isArray(turn.tables) ? (turn.tables as unknown as AgentTable[]) : [],
+  }));
 }
 
 export async function deleteConversation(id: string): Promise<void> {
