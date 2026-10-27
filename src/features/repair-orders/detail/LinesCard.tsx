@@ -1,3 +1,4 @@
+import { formatEuro, formatQuantity } from '@/lib/numbers';
 import type { RoLine } from '../api';
 import { formatHours } from '../constants';
 
@@ -8,6 +9,21 @@ const VISIBILITY_LABELS: Partial<Record<string, string>> = {
   quote: 'Devis et facture seulement',
   workshop: 'Atelier seulement (pas au devis)',
 };
+
+/** Temps de la ligne ; forfait au devis seulement (pneus) : son prix, son temps ne compte pas. */
+function lineAmount(line: RoLine) {
+  if (line.visibility === 'quote' && line.unit_price !== null) {
+    return `${formatQuantity(line.quantity)} × ${formatEuro(line.unit_price)} HT`;
+  }
+  if (line.estimated_hours === null) {
+    return line.standard_hours === null || line.kind === 'done'
+      ? '-'
+      : `${formatHours(line.standard_hours)} (barème)`;
+  }
+  return `${formatHours(line.estimated_hours)}${line.estimate_is_minimum ? '+' : ''}${
+    line.kind === 'done' ? ' réel' : ''
+  }`;
+}
 
 function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
   if (lines.length === 0) return <p className="hint py-2.5">{empty}</p>;
@@ -29,15 +45,8 @@ function LineList({ lines, empty }: { lines: RoLine[]; empty: string }) {
             )}
           </span>
           <span className="col shrink-0 items-end gap-0.5">
-            <span className="muted num">
-              {line.estimated_hours === null
-                ? line.standard_hours === null || line.kind === 'done'
-                  ? '-'
-                  : `${formatHours(line.standard_hours)} (barème)`
-                : `${formatHours(line.estimated_hours)}${line.estimate_is_minimum ? '+' : ''}`}
-              {line.kind === 'done' && line.estimated_hours !== null && ' réel'}
-            </span>
-            {line.kind === 'done' && line.billed_hours !== null && (
+            <span className="muted num">{lineAmount(line)}</span>
+            {line.kind === 'done' && line.billed_hours !== null && line.visibility !== 'quote' && (
               <span className="hint num">facturé {formatHours(line.billed_hours)}</span>
             )}
           </span>

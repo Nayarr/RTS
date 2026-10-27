@@ -80,6 +80,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Sur l’OR, « Préparer le devis » reprend les travaux à prévoir, calcule la main d’œuvre au taux horaire et applique les forfaits. Ajoute pièces, main d’œuvre, texte et remises.',
       '« Envoyer au client (lien à signer) » prépare un lien : le client consulte et signe en ligne, le devis passe seul en « Accepté ».',
       'Devis accepté (en ligne, sur la borne ou au bureau) : l’OR d’origine passe « Facture à faire » ; « Créer l’OR avec les travaux acceptés » et choisis le technicien.',
+      'Forfaits des pneus (devis et facture seulement) : sur la fiche OR, affichés avec leur quantité et leur prix unitaire (« 2 × 18,00 € HT »), leur temps de barème ne compte pas.',
       'Devis avec le contrôle du hayon : dès qu’il est envoyé (ou accepté au bureau), l’échéance du hayon du véhicule passe à 6 mois plus tard, le rappel ne part donc pas. Sur la fiche véhicule, « Renouvelé (+6 mois) » fait de même à la main.',
       'Devis envoyé resté sans réponse : le dernier jour travaillé du mois (samedi compris) à 8 h, la réception et la direction sont prévenues, et l’OR d’origine passe « Facture à faire » pour facturer le travail déjà fait. Le devis reste signable par le client.',
       'Travaux déjà faits avant le devis (diagnostic, contrôle) : dès que le devis est accepté, choisis pour chaque ligne « Facturer » (facture séparée émise tout de suite, prix modifiable) ou « Offrir » (visible sur la facture avec 100 % de remise). Un bandeau orange reste sur l’OR tant que ce n’est pas fait.',
