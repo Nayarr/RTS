@@ -64,25 +64,6 @@ export function InspectionCard({
       {data && (
         <div className="card-b grid gap-5 md:grid-cols-3">
           <div className="col gap-2">
-            <h3 className="overline">Niveaux</h3>
-            {FLUID_FIELDS.map(([key, label]) => {
-              const fluid = data.niveaux?.[key];
-              return (
-                <Row key={key} label={label}>
-                  {fluid?.etat === 'manque' ? (
-                    <span className="badge s-warn">
-                      Appoint fait{fluid.litres ? ` (${String(fluid.litres)} L)` : ''}
-                    </span>
-                  ) : fluid?.etat === 'bon' ? (
-                    <span className="badge s-ok">Niveau bon</span>
-                  ) : (
-                    <span className="muted">-</span>
-                  )}
-                </Row>
-              );
-            })}
-          </div>
-          <div className="col gap-2">
             <h3 className="overline">Pneus · usure</h3>
             {wearFieldsFor(vehicleType).map(([key, label]) => (
               <Row key={key} label={label}>
@@ -123,6 +104,25 @@ export function InspectionCard({
                 <Value value={data.controles?.[key]} options={OK_HS_OPTIONS} />
               </Row>
             ))}
+          </div>
+          <div className="col gap-2">
+            <h3 className="overline">Niveaux</h3>
+            {FLUID_FIELDS.map(([key, label]) => {
+              const fluid = data.niveaux?.[key];
+              return (
+                <Row key={key} label={label}>
+                  {fluid?.etat === 'manque' ? (
+                    <span className="badge s-warn">
+                      Appoint fait{fluid.litres ? ` (${String(fluid.litres)} L)` : ''}
+                    </span>
+                  ) : fluid?.etat === 'bon' ? (
+                    <span className="badge s-ok">Niveau bon</span>
+                  ) : (
+                    <span className="muted">-</span>
+                  )}
+                </Row>
+              );
+            })}
           </div>
         </div>
       )}

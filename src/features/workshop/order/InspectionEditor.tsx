@@ -247,34 +247,6 @@ export function InspectionEditor({
         </p>
       )}
 
-      {FLUID_FIELDS.map(([key, label]) => {
-        const fluid = data.niveaux?.[key];
-        return (
-          <ChipRow
-            key={key}
-            label={label}
-            options={FLUID_OPTIONS}
-            value={fluid?.etat}
-            disabled={locked}
-            onChange={(value) => setFluid(key, { etat: value })}
-          >
-            {fluid?.etat === 'manque' && (
-              <Input
-                type="number"
-                step="0.5"
-                min="0"
-                inputMode="decimal"
-                placeholder="Litres ajoutés"
-                aria-label={`${label} : litres ajoutés`}
-                disabled={locked}
-                value={fluid.litres ?? ''}
-                onChange={(event) => setFluid(key, { litres: event.target.value })}
-              />
-            )}
-          </ChipRow>
-        );
-      })}
-
       {wearFieldsFor(vehicleType).map(([key, label]) => (
         <ChipRow
           key={key}
@@ -389,6 +361,35 @@ export function InspectionEditor({
         disabled={locked}
         onChange={(value) => update((current) => ({ ...current, probleme_electrique: value }))}
       />
+
+      {/* Niveaux : en fin de fiche, vérifiés une fois le reste contrôlé */}
+      {FLUID_FIELDS.map(([key, label]) => {
+        const fluid = data.niveaux?.[key];
+        return (
+          <ChipRow
+            key={key}
+            label={label}
+            options={FLUID_OPTIONS}
+            value={fluid?.etat}
+            disabled={locked}
+            onChange={(value) => setFluid(key, { etat: value })}
+          >
+            {fluid?.etat === 'manque' && (
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                inputMode="decimal"
+                placeholder="Litres ajoutés"
+                aria-label={`${label} : litres ajoutés`}
+                disabled={locked}
+                value={fluid.litres ?? ''}
+                onChange={(event) => setFluid(key, { litres: event.target.value })}
+              />
+            )}
+          </ChipRow>
+        );
+      })}
       {tailgateScan && (
         <TailgateLabelDialog
           key={tailgateScan}
