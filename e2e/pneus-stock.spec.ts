@@ -40,7 +40,7 @@ test('entrée de pneus, seuil mini avec alerte, sortie avec motif, pneus réserv
   const label = `${size} arrière`;
 
   await loginAs(page, 'reception@rts.local');
-  await goTo(page, 'Stock', 'Pneumatiques');
+  await goTo(page, null, 'Pneumatiques');
   await expect(page.getByRole('heading', { name: 'Pneumatiques' })).toBeVisible();
 
   // Entrée de 4 pneus, seuil mini 6 : la ligne est tout de suite à commander

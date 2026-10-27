@@ -68,6 +68,23 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
   const renderGroup = (group: NavGroup) => {
     const isOpen = Boolean(open[group.id]);
     const Icon = group.icon;
+    const [first] = group.items;
+    if (group.direct && first) {
+      const count = dashboard.data && first.count && role ? first.count(dashboard.data, role) : 0;
+      return (
+        <Link
+          key={group.id}
+          to={first.to}
+          className={cn('ni', first.to === current && 'on')}
+          aria-current={first.to === current ? 'page' : undefined}
+          onClick={onNavigate}
+        >
+          <Icon className="size-[18px]" />
+          <span>{group.label}</span>
+          {count > 0 && <span className={cn('cnt', first.hot && 'hot')}>{count}</span>}
+        </Link>
+      );
+    }
     const listId = `nav-${group.id}`;
     return (
       <div key={group.id}>

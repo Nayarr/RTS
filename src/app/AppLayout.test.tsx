@@ -60,18 +60,31 @@ describe('AppLayout', () => {
     expect(within(menu()).getByRole('link', { name: 'Comptes et rôles' })).toHaveAttribute('href', '/equipe');
   });
 
-  it('la réception ne voit de la partie Gestion que le stock des pneus', async () => {
+  it('la réception ne voit de la partie Gestion que les pneumatiques', async () => {
     vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
     renderRoutes(routes, { auth: { session: fakeSession() } });
     expect((await screen.findAllByText('Réception')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: 'Équipe' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Réglages' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Stock' }));
+    expect(screen.queryByRole('button', { name: 'Stock' })).not.toBeInTheDocument();
+    // Pneumatiques : une entrée du menu à part, sans sous-menu à déplier
     expect(within(menu()).getByRole('link', { name: 'Pneumatiques' })).toHaveAttribute(
       'href',
       '/stock/pneumatiques',
     );
     expect(within(menu()).queryByRole('link', { name: 'Pièces' })).not.toBeInTheDocument();
+  });
+
+  it('direction : les pneumatiques au même niveau que Stock et Pilotage', async () => {
+    vi.mocked(fetchProfile).mockResolvedValue(profile('direction'));
+    renderRoutes(routes, { auth: { session: fakeSession() } });
+    expect(await within(menu()).findByRole('link', { name: 'Pneumatiques' })).toHaveAttribute(
+      'href',
+      '/stock/pneumatiques',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Stock' }));
+    expect(within(menu()).getByRole('link', { name: 'Pièces' })).toBeInTheDocument();
+    expect(within(menu()).getAllByRole('link', { name: 'Pneumatiques' })).toHaveLength(1);
   });
 
   it('écran ouvert : son groupe est déplié et l’entrée marquée, avec le compteur en attente', async () => {

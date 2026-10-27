@@ -18,7 +18,7 @@ const unique = (label: string, project: string) =>
 test('la réception n’a du stock que les pneumatiques', async ({ page }) => {
   await loginAs(page, 'reception@rts.local');
   const side = await sideNav(page);
-  await side.getByRole('button', { name: 'Stock', exact: true }).click();
+  await expect(side.getByRole('button', { name: 'Stock', exact: true })).toHaveCount(0);
   await expect(side.getByRole('link', { name: 'Pneumatiques' })).toBeVisible();
   await expect(side.getByRole('link', { name: 'Consommables' })).toHaveCount(0);
   await page.goto('/stock/consommables');
