@@ -130,6 +130,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     items: [
       '« Rechercher » en haut de l’écran (ou Ctrl + K) : immatriculation, client, n° d’OR, de devis ou de facture. Entrée ouvre le premier résultat.',
       'Fiche archivée par la direction (client ou véhicule) : hors des listes et de la recherche, son historique reste ; elle revient d’elle-même au prochain OR. Direction : « Archiver » sur la fiche, « Restaurer » sur la fiche ou dans Réglages › Archives ; « Supprimer » seulement pour une fiche sans OR, devis ni facture.',
+      'Véhicule racheté par un autre client : « Transférer à un autre client » sur la fiche véhicule. Il passe chez le nouveau propriétaire, l’historique reste entier sur la fiche (propriétaires successifs, client de chaque passage) ; les OR, devis et factures déjà faits restent à l’ancien, qui le retrouve dans « Véhicules cédés » de sa fiche. Le véhicule sort de son contrat d’entretien.',
     ],
   },
 ];

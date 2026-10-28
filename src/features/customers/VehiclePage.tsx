@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarDays, Download, ImageIcon, Plus, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, CalendarDays, Download, ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -22,8 +22,9 @@ import { todayIso } from '@/features/repair-orders/schemas';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { taskSummary } from '@/features/repair-orders/tasks';
 import { useProfile } from '@/features/auth/useProfile';
-import { deleteVehicle, updateVehicle, type VehicleDetail } from './api';
+import { deleteVehicle, updateVehicle, type VehicleDetail, type VehicleOwnerChange } from './api';
 import { ArchiveButton, ArchivedBanner } from './ArchiveControls';
+import { TransferVehicleDialog } from './TransferVehicleDialog';
 import {
   DEADLINE_LABELS,
   DEADLINE_BADGE_CLASS,
@@ -53,12 +54,13 @@ export function VehiclePage() {
 }
 
 function VehicleView({ detail }: { detail: VehicleDetail }) {
-  const { vehicle, orders, lines } = detail;
+  const { vehicle, owners, orders, lines } = detail;
   const today = todayIso();
   const [appointment, setAppointment] = useState(false);
   const [book, setBook] = useState<PdfFile | null>(null);
   const [bookPending, setBookPending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [transferring, setTransferring] = useState(false);
   const { data: profile } = useProfile();
   const isDirection = profile?.role === 'direction';
   const navigate = useNavigate();
@@ -132,6 +134,9 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
               onClick={() => void openBook()}
             >
               <Download /> Carnet d’entretien (PDF)
+            </Button>
+            <Button variant="outline" onClick={() => setTransferring(true)}>
+              <ArrowRightLeft /> Transférer à un autre client
             </Button>
             <Button variant="outline" onClick={() => setAppointment(true)}>
               <CalendarDays /> Prendre rendez-vous
@@ -271,6 +276,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                     <tr>
                       <th>OR</th>
                       <th>Date</th>
+                      {owners.length > 0 && <th>Client</th>}
                       <th>Travaux</th>
                       <th className="r">Km</th>
                       <th>Statut</th>
@@ -290,6 +296,15 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                             </Link>
                           </td>
                           <td className="num">{formatDate(order.created_at)}</td>
+                          {owners.length > 0 && (
+                            <td className="whitespace-nowrap">
+                              {order.client_id === vehicle.client_id ? (
+                                order.client_name
+                              ) : (
+                                <span className="muted">{order.client_name}</span>
+                              )}
+                            </td>
+                          )}
                           <td className="max-w-[320px] truncate whitespace-nowrap">
                             {work || taskSummary(order.requested_work)}
                           </td>
@@ -383,6 +398,8 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
             </div>
           </section>
 
+          {owners.length > 0 && <OwnersCard owners={owners} createdAt={vehicle.created_at} />}
+
           <section data-slot="card" className="card" aria-labelledby="vehicle-registration">
             <div className="card-h flex-wrap">
               <h2 className="h2" id="vehicle-registration">
@@ -439,7 +456,45 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
         />
       )}
       {book && <PdfPreviewDialog file={book} onClose={() => setBook(null)} />}
+      {transferring && <TransferVehicleDialog vehicle={vehicle} onClose={() => setTransferring(false)} />}
     </>
+  );
+}
+
+/** Propriétaires successifs : le premier depuis l'entrée du véhicule, puis un par transfert. */
+function OwnersCard({ owners, createdAt }: { owners: VehicleOwnerChange[]; createdAt: string }) {
+  const periods = [
+    { key: 'first', name: owners[0]?.from_client_name, since: createdAt, note: null },
+    ...owners.map((change) => ({
+      key: change.id,
+      name: change.to_client_name,
+      since: change.changed_at,
+      note: change.note,
+    })),
+  ].reverse();
+  return (
+    <section data-slot="card" className="card" aria-labelledby="vehicle-owners">
+      <div className="card-h">
+        <h2 className="h2" id="vehicle-owners">
+          Propriétaires
+        </h2>
+        <span className="cnt">{periods.length}</span>
+      </div>
+      <ol className="card-b col gap-2.5">
+        {periods.map((period, index) => (
+          <li key={period.key} className="col gap-0.5">
+            <span className="row wrap gap-x-2">
+              <b>{period.name ?? 'Sans client'}</b>
+              {index === 0 && <span className="badge s-ok">Actuel</span>}
+            </span>
+            <span className="hint">
+              {period.key === 'first' ? 'Dans l’appli depuis le' : 'Depuis le'} {formatDate(period.since)}
+              {period.note && ` · ${period.note}`}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

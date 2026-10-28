@@ -55,11 +55,20 @@ export interface ClientDetail {
   orders: RepairOrderOverview[];
   invoices: ClientInvoice[];
   quotes: ClientQuote[];
+  /** Véhicules cédés à un autre client (dernier transfert de chacun). */
+  transferred: TransferredVehicle[];
+}
+
+export interface TransferredVehicle {
+  id: string;
+  changed_at: string;
+  to_client_name: string | null;
+  vehicle: { id: string; plate: string };
 }
 
 /** Fiche client : coordonnées, véhicules, OR, factures et devis. */
 export async function fetchClient(id: string): Promise<ClientDetail | null> {
-  const [client, vehicles, orders, invoices, quotes] = await Promise.all([
+  const [client, vehicles, orders, invoices, quotes, transferred] = await Promise.all([
     supabase.from('v_clients_overview').select('*').eq('id', id).maybeSingle(),
     supabase.from('v_vehicles_overview').select('*').eq('client_id', id).order('plate'),
     supabase
@@ -77,8 +86,15 @@ export async function fetchClient(id: string): Promise<ClientDetail | null> {
       .select('id, number, status, created_at, total_ttc, plate')
       .eq('client_id', id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('vehicle_owner_changes')
+      .select('id, changed_at, to_client_name, vehicle:vehicles(id, plate)')
+      .eq('from_client_id', id)
+      .order('changed_at', { ascending: false }),
   ]);
-  for (const result of [client, vehicles, orders, invoices, quotes]) if (result.error) throw result.error;
+  for (const result of [client, vehicles, orders, invoices, quotes, transferred]) {
+    if (result.error) throw result.error;
+  }
   if (!client.data) return null;
   return {
     client: client.data as ClientOverview,
@@ -86,6 +102,12 @@ export async function fetchClient(id: string): Promise<ClientDetail | null> {
     orders: (orders.data ?? []) as RepairOrderOverview[],
     invoices: (invoices.data ?? []) as ClientInvoice[],
     quotes: quotes.data ?? [],
+    // Dernier transfert de chaque véhicule, s'il n'est pas revenu au client depuis
+    transferred: (transferred.data ?? []).filter(
+      (change, index, all) =>
+        all.findIndex((other) => other.vehicle.id === change.vehicle.id) === index &&
+        !vehicles.data?.some((vehicle) => vehicle.id === change.vehicle.id),
+    ),
   };
 }
 
@@ -187,8 +209,15 @@ export type VehicleOrderLine = Pick<
   'repair_order_id' | 'kind' | 'line_type' | 'description'
 >;
 
+export type VehicleOwnerChange = Pick<
+  Tables<'vehicle_owner_changes'>,
+  'id' | 'from_client_id' | 'from_client_name' | 'to_client_id' | 'to_client_name' | 'note' | 'changed_at'
+>;
+
 export interface VehicleDetail {
   vehicle: VehicleOverview;
+  /** Propriétaires successifs, du plus ancien transfert au plus récent. */
+  owners: VehicleOwnerChange[];
   orders: RepairOrderOverview[];
   lines: VehicleOrderLine[];
   /** Numéros de facture par OR. */
@@ -197,16 +226,22 @@ export interface VehicleDetail {
 
 /** Fiche véhicule : identification, passages (du plus récent au plus ancien) et leurs travaux. */
 export async function fetchVehicle(id: string): Promise<VehicleDetail | null> {
-  const [vehicle, orders] = await Promise.all([
+  const [vehicle, orders, owners] = await Promise.all([
     supabase.from('v_vehicles_overview').select('*').eq('id', id).maybeSingle(),
     supabase
       .from('v_repair_orders_overview')
       .select('*')
       .eq('vehicle_id', id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('vehicle_owner_changes')
+      .select('id, from_client_id, from_client_name, to_client_id, to_client_name, note, changed_at')
+      .eq('vehicle_id', id)
+      .order('changed_at'),
   ]);
   if (vehicle.error) throw vehicle.error;
   if (orders.error) throw orders.error;
+  if (owners.error) throw owners.error;
   if (!vehicle.data) return null;
   const orderIds = orders.data.flatMap((order) => (order.id ? [order.id] : []));
   const [lines, invoices] = orderIds.length
@@ -236,10 +271,21 @@ export async function fetchVehicle(id: string): Promise<VehicleDetail | null> {
   }
   return {
     vehicle: vehicle.data as VehicleOverview,
+    owners: owners.data,
     orders: orders.data as RepairOrderOverview[],
     lines: lines.data ?? [],
     invoiceNumbers,
   };
+}
+
+/** Véhicule racheté par un autre client : il passe chez lui, son historique reste sur sa fiche. */
+export async function transferVehicle(vehicleId: string, clientId: string, note: string) {
+  const { error } = await supabase.rpc('transfer_vehicle', {
+    p_vehicle_id: vehicleId,
+    p_client_id: clientId,
+    p_note: note.trim() || undefined,
+  });
+  if (error) throw error;
 }
 
 export async function updateVehicle(id: string, patch: TablesUpdate<'vehicles'>) {
