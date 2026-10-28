@@ -5,7 +5,7 @@ import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
 import type { Profile } from '@/features/auth/roles';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
-import { fetchActiveTechnicians } from '@/features/repair-orders/api';
+import { fetchActiveTechnicians, searchClients } from '@/features/repair-orders/api';
 import type * as RepairOrdersApi from '@/features/repair-orders/api';
 import { addDays } from '@/features/planning/domain';
 import { todayIso } from '@/features/repair-orders/schemas';
@@ -18,6 +18,7 @@ import {
   fetchClients,
   fetchDeadlines,
   fetchVehicle,
+  transferVehicle,
   updateClient,
   updateVehicle,
   type ClientDetail,
@@ -51,6 +52,7 @@ vi.mock('./api', async (importOriginal) => ({
   updateClient: vi.fn(),
   updateVehicle: vi.fn(),
   deleteClient: vi.fn(),
+  transferVehicle: vi.fn(),
 }));
 vi.mock('@/features/auth/api', async (importOriginal) => ({
   ...(await importOriginal<typeof AuthApi>()),
@@ -59,6 +61,7 @@ vi.mock('@/features/auth/api', async (importOriginal) => ({
 vi.mock('@/features/repair-orders/api', async (importOriginal) => ({
   ...(await importOriginal<typeof RepairOrdersApi>()),
   fetchActiveTechnicians: vi.fn(),
+  searchClients: vi.fn(),
 }));
 vi.mock('@/features/rentals/fleet-api', async (importOriginal) => ({
   ...(await importOriginal<typeof FleetApi>()),
@@ -134,6 +137,7 @@ const order = (overrides: Partial<RepairOrderOverview>) =>
 
 const VEHICLE_DETAIL: VehicleDetail = {
   vehicle: vehicle(),
+  owners: [],
   orders: [
     order({
       id: 'ro2',
@@ -302,6 +306,7 @@ describe('clients et véhicules : écrans', () => {
     ],
     invoices: [],
     quotes: [],
+    transferred: [],
   };
 
   it('fiche client (réception) : coordonnées enregistrées sans les conditions commerciales', async () => {
@@ -398,6 +403,78 @@ describe('clients et véhicules : écrans', () => {
     const dialog = screen.getByRole('dialog', { name: 'Nouveau rendez-vous' });
     expect(within(dialog).getByLabelText('Immatriculation')).toHaveValue('GH-512-RT');
     expect(within(dialog).getByLabelText('Client')).toHaveValue('Transports Martin');
+  });
+
+  it('fiche véhicule : transfert à un autre client, propriétaires et client de chaque passage', async () => {
+    vi.mocked(transferVehicle).mockResolvedValue(undefined);
+    vi.mocked(searchClients).mockResolvedValue([
+      { id: 'c1', name: 'Transports Martin' },
+      { id: 'c2', name: 'Logistique Durand' },
+    ]);
+    vi.mocked(fetchVehicle).mockResolvedValue({
+      ...VEHICLE_DETAIL,
+      vehicle: vehicle({ client_id: 'c2', client_name: 'Logistique Durand' }),
+      owners: [
+        {
+          id: 'oc1',
+          from_client_id: 'c1',
+          from_client_name: 'Transports Martin',
+          to_client_id: 'c2',
+          to_client_name: 'Logistique Durand',
+          note: 'Racheté avec la flotte',
+          changed_at: '2026-10-15T09:00:00Z',
+        },
+      ],
+      orders: VEHICLE_DETAIL.orders.map((item) => ({
+        ...item,
+        client_id: 'c1',
+        client_name: 'Transports Martin',
+      })),
+    });
+    renderAs('reception', '/vehicules/v1', <VehiclePage />, '/vehicules/:id');
+
+    const owners = await screen.findByRole('region', { name: 'Propriétaires' });
+    expect(
+      within(owners)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      'Logistique DurandActuelDepuis le 15/10/2026 · Racheté avec la flotte',
+      'Transports MartinDans l’appli depuis le 01/01/2025',
+    ]);
+    // Passages de l'ancien propriétaire : gardés, avec son nom
+    const history = screen.getByRole('region', { name: /Historique/ });
+    expect(within(history).getAllByText('Transports Martin')).toHaveLength(2);
+
+    await userEvent.click(screen.getByRole('button', { name: /Transférer à un autre client/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Transférer GH-512-RT à un autre client' });
+    const submit = within(dialog).getByRole('button', { name: 'Transférer' });
+    expect(submit).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText('Nouveau propriétaire'), 'Tr');
+    // Le propriétaire actuel n'est pas proposé
+    await userEvent.click(await within(dialog).findByRole('option', { name: 'Transports Martin' }));
+    expect(within(dialog).queryByRole('option', { name: 'Logistique Durand' })).toBeNull();
+    await userEvent.type(within(dialog).getByLabelText('Motif (facultatif)'), 'Revendu');
+    await userEvent.click(submit);
+    await waitFor(() => expect(transferVehicle).toHaveBeenCalledWith('v1', 'c1', 'Revendu'));
+  });
+
+  it('fiche client : véhicules cédés à un autre client', async () => {
+    vi.mocked(fetchClient).mockResolvedValue({
+      ...CLIENT_DETAIL,
+      transferred: [
+        {
+          id: 'oc1',
+          changed_at: '2026-10-15T09:00:00Z',
+          to_client_name: 'Logistique Durand',
+          vehicle: { id: 'v9', plate: 'AA-111-BB' },
+        },
+      ],
+    });
+    renderAs('reception', '/clients/c1', <ClientPage />, '/clients/:id');
+    const sold = await screen.findByRole('generic', { name: 'Véhicules cédés' });
+    expect(within(sold).getByRole('link', { name: 'AA-111-BB' })).toHaveAttribute('href', '/vehicules/v9');
+    expect(within(sold).getByText('à Logistique Durand le 15/10/2026')).toBeInTheDocument();
   });
 
   it('échéances des véhicules', async () => {

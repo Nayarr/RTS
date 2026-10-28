@@ -61,7 +61,7 @@ export function ClientPage() {
 }
 
 function ClientView({ detail }: { detail: ClientDetail }) {
-  const { client, vehicles, orders, invoices, quotes } = detail;
+  const { client, vehicles, orders, invoices, quotes, transferred } = detail;
   const { data: profile } = useProfile();
   const isDirection = profile?.role === 'direction';
   const navigate = useNavigate();
@@ -437,6 +437,23 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                   </li>
                 ))}
               </ul>
+            )}
+            {transferred.length > 0 && (
+              <div className="card-b col gap-1.5 border-t" aria-label="Véhicules cédés">
+                <span className="lbl">Véhicules cédés</span>
+                <ul className="col gap-1">
+                  {transferred.map((change) => (
+                    <li key={change.id} className="row wrap gap-x-2 text-[13.5px]">
+                      <Link to={`/vehicules/${change.vehicle.id}`} className="plate b ul">
+                        {change.vehicle.plate}
+                      </Link>
+                      <span className="hint">
+                        à {change.to_client_name ?? 'sans client'} le {formatDate(change.changed_at)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </section>
         </div>

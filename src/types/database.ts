@@ -5616,6 +5616,99 @@ export type Database = {
         };
         Relationships: [];
       };
+      vehicle_owner_changes: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          from_client_id: string | null;
+          from_client_name: string | null;
+          id: string;
+          note: string | null;
+          to_client_id: string | null;
+          to_client_name: string | null;
+          vehicle_id: string;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_client_id?: string | null;
+          from_client_name?: string | null;
+          id?: string;
+          note?: string | null;
+          to_client_id?: string | null;
+          to_client_name?: string | null;
+          vehicle_id: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_client_id?: string | null;
+          from_client_name?: string | null;
+          id?: string;
+          note?: string | null;
+          to_client_id?: string | null;
+          to_client_name?: string | null;
+          vehicle_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vehicle_owner_changes_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_owner_changes_from_client_id_fkey';
+            columns: ['from_client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_owner_changes_from_client_id_fkey';
+            columns: ['from_client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_owner_changes_to_client_id_fkey';
+            columns: ['to_client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_owner_changes_to_client_id_fkey';
+            columns: ['to_client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_owner_changes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'vehicle_owner_changes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_owner_changes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       vehicles: {
         Row: {
           antipollution_due_date: string | null;
@@ -8198,6 +8291,10 @@ export type Database = {
       tire_size_key: { Args: { p_size: string }; Returns: string };
       tire_size_label: { Args: { p_size: string }; Returns: string };
       tire_stock_kpis: { Args: Record<PropertyKey, never>; Returns: Json };
+      transfer_vehicle: {
+        Args: { p_client_id: string; p_note?: string; p_vehicle_id: string };
+        Returns: undefined;
+      };
       treasury_overview: { Args: Record<PropertyKey, never>; Returns: Json };
       tts_release: { Args: { p_characters: number }; Returns: undefined };
       tts_reserve: { Args: { p_characters: number }; Returns: number };
