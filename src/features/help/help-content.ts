@@ -187,7 +187,7 @@ export const FAQ: HelpQuestion[] = [
   {
     question: 'Quelles notifications je reçois sur mon téléphone ?',
     answer:
-      'Bureau : chaque alerte de la cloche qui demande une action (devis accepté ou refusé, devis sans réponse en fin de mois, travaux avant devis, OR en retard, factures en retard, stock bas, demande de rendez-vous, borne bloquée…). La nuit (21 h - 7 h), elles attendent 7 h, sauf la réponse d’un client à un devis. Direction : les demandes de congé. Technicien : OR confié, modifié ou rouvert, et réponse à sa demande de congé.',
+      'Bureau : chaque alerte de la cloche qui demande une action (devis accepté ou refusé, devis sans réponse en fin de mois, travaux avant devis, OR en retard, factures en retard, stock bas, demande de rendez-vous, borne bloquée…). La nuit (21 h - 7 h), elles attendent 7 h, sauf la réponse d’un client à un devis. Direction : toutes ses alertes de la cloche (signature reçue, location reconduite, badge pendant une absence, sous-traitance en retard compris), les demandes de congé, et l’atelier en direct : OR commencé, mis en pause, repris, travaux terminés. Jamais pour sa propre action. Technicien : OR confié, modifié ou rouvert, et réponse à sa demande de congé.',
   },
   {
     question: 'Je ne reçois pas les notifications',

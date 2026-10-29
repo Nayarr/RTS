@@ -25,12 +25,12 @@ select is(public.push_quiet_until('2026-10-18 05:10+02'), '2026-10-18 07:00+02':
 -- ---------------------------------------------------------------- Alertes de la cloche
 insert into public.notifications (recipient_role, type, title, link, dedupe_key) values
   ('direction', 'low_stock', 'Stock bas : AdBlue', '/stock/consommables', 'stock-1'),
-  ('direction', 'rental_renewed', 'Location LC-2026-0001 reconduite', '/location', 'renew-1');
+  ('reception', 'rental_renewed', 'Location LC-2026-0001 reconduite', '/location', 'renew-1');
 select results_eq(
   $$select title, not_before is not distinct from public.push_quiet_until() from public.push_outbox
-    where profile_id = '00000000-0000-0000-0000-0000000000d1'$$,
+    where profile_id in ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000e1')$$,
   $$values ('Stock bas : AdBlue', true)$$,
-  'Alerte à action en push (gardée jusqu''au matin la nuit) ; une information reste dans la cloche');
+  'Alerte à action en push (gardée jusqu''au matin la nuit) ; une information de la réception reste dans la cloche');
 
 update public.push_outbox set not_before = now() + interval '3 hours';
 set local role service_role;
@@ -84,7 +84,9 @@ insert into public.repair_orders (id, vehicle_id, requested_work, technician_id,
    '10000000-0000-0000-0000-0000000000a1', 'assigned');
 delete from public.push_outbox;
 update public.repair_orders set status = 'work_done' where id = '50000000-0000-0000-0000-000000000076';
-select is((select count(*)::integer from public.push_outbox), 0, 'OR terminé : rien au technicien');
+select is((select count(*)::integer from public.push_outbox where profile_id <> '00000000-0000-0000-0000-0000000000d1'), 0,
+          'OR terminé : rien au technicien (la direction est prévenue)');
+delete from public.push_outbox;
 update public.repair_orders set status = 'assigned' where id = '50000000-0000-0000-0000-000000000076';
 select results_eq(
   $$select profile_id, title from public.push_outbox$$,

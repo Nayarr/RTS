@@ -7895,6 +7895,7 @@ export type Database = {
         };
         Returns: number;
       };
+      queue_work_push: { Args: { p_event: string; p_repair_order_id: string }; Returns: undefined };
       quote_signature_request: { Args: { p_quote_id: string }; Returns: Json };
       receive_tires: {
         Args: {
