@@ -464,12 +464,13 @@ describe('Agent Direction', () => {
     expect(await within(link).findByLabelText('3 à traiter')).toBeInTheDocument();
   });
 
-  it('réception : questions sans chiffre d’affaires, ni mails reçus ni réponses préparées', async () => {
-    vi.mocked(fetchPreparedReplies).mockResolvedValue([REPLY]);
+  it('réception : questions sans chiffre d’affaires, mails reçus accessibles', async () => {
     setup('reception');
     expect(await screen.findByRole('button', { name: RECEPTION_SUGGESTIONS[3] })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: SUGGESTIONS[0] })).toBeNull();
-    expect(screen.queryByRole('link', { name: /Mails reçus/ })).toBeNull();
-    expect(screen.queryByRole('article', { name: 'Mail de Jean Moreau' })).toBeNull();
+    expect(screen.getByRole('link', { name: /Mails reçus/ })).toHaveAttribute(
+      'href',
+      '/agent-direction/mails',
+    );
   });
 });

@@ -60,6 +60,11 @@ export const routes: RouteObject[] = [
                     path: '/agent-direction',
                     lazy: page(() => import('@/features/assistant/AssistantPage'), 'AssistantPage'),
                   },
+                  // Mails reçus par les boîtes de l'atelier, triés par l'agent
+                  {
+                    path: '/agent-direction/mails',
+                    lazy: page(() => import('@/features/assistant/MailsPage'), 'MailsPage'),
+                  },
                   // Stock des pneus : aussi pour la réception (le reste du stock est à la direction)
                   {
                     path: '/stock/pneumatiques',
@@ -283,10 +288,6 @@ export const routes: RouteObject[] = [
                   {
                     path: '/pilotage/performance',
                     lazy: page(() => import('@/features/reporting/PerformancePage'), 'PerformancePage'),
-                  },
-                  {
-                    path: '/agent-direction/mails',
-                    lazy: page(() => import('@/features/assistant/MailsPage'), 'MailsPage'),
                   },
                   { path: '/pilotage/assistant', element: <Navigate to="/agent-direction" replace /> },
                 ],

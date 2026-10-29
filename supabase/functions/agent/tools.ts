@@ -1124,7 +1124,7 @@ export const TOOLS: AgentTool[] = [
 
 /**
  * Lectures réservées à la direction : ce que la réception ne voit pas dans l'appli (pilotage,
- * équipe, stock, réglages, mails reçus).
+ * équipe, stock, réglages).
  */
 export const DIRECTION_ONLY_TOOLS: ReadonlySet<string> = new Set([
   'chiffres_du_mois',
@@ -1136,8 +1136,6 @@ export const DIRECTION_ONLY_TOOLS: ReadonlySet<string> = new Set([
   'performance_techniciens',
   'stock_consommables',
   'reglages_atelier',
-  'mails',
-  'mail',
 ]);
 
 /** Définitions envoyées à l'assistant (nom, rôle, schéma des paramètres). */

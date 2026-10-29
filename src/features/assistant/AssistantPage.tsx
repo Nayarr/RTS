@@ -75,10 +75,8 @@ export function AssistantPage() {
   const [voiceName, setVoiceName] = useState(chosenVoiceName);
   // Voix réglée par la direction : Azure (voix naturelle) ou celle du navigateur
   const settings = useSettings();
-  // Réception : lecture seule et mails, sans les mails reçus (réservés à la direction). Chargés dès
-  // l'ouverture tant que le rôle n'est pas encore lu : le point du jour les enchaîne sans attendre.
-  const role = useProfile().data?.role;
-  const isDirection = role !== 'reception';
+  // Réception : lecture seule et mails, questions proposées sans chiffre d'affaires
+  const isDirection = useProfile().data?.role !== 'reception';
   const azure = settings.data?.app.tts_provider === 'azure';
   useEffect(() => setVoiceProvider(azure ? 'azure' : 'browser'), [azure]);
 
@@ -101,13 +99,11 @@ export function AssistantPage() {
     queryKey: ['agent', 'replies'],
     queryFn: fetchPreparedReplies,
     refetchInterval: 60_000,
-    enabled: isDirection,
   });
   const mailsToHandle = useQuery({
     queryKey: ['agent', 'mails', 'a-traiter'],
     queryFn: countMailsToHandle,
     refetchInterval: 2 * 60_000,
-    enabled: isDirection,
   });
   // Actions préparées par l'agent dans cette conversation, à valider
   const actions = useQuery({
@@ -296,18 +292,16 @@ export function AssistantPage() {
             >
               <Sun /> Point du jour
             </Button>
-            {isDirection && (
-              <Button asChild variant="outline">
-                <Link to="/agent-direction/mails">
-                  <Mail /> Mails reçus
-                  {Boolean(mailsToHandle.data) && (
-                    <span className="agent-count" aria-label={`${mailsToHandle.data} à traiter`}>
-                      {mailsToHandle.data}
-                    </span>
-                  )}
-                </Link>
-              </Button>
-            )}
+            <Button asChild variant="outline">
+              <Link to="/agent-direction/mails">
+                <Mail /> Mails reçus
+                {Boolean(mailsToHandle.data) && (
+                  <span className="agent-count" aria-label={`${mailsToHandle.data} à traiter`}>
+                    {mailsToHandle.data}
+                  </span>
+                )}
+              </Link>
+            </Button>
             <Button
               variant="outline"
               aria-expanded={historyOpen}
@@ -330,7 +324,7 @@ export function AssistantPage() {
               briefing={briefing.data}
               loading={briefing.isPending || refreshBriefing.isPending}
               failure={briefing.error instanceof Error ? briefing.error.message : null}
-              replies={isDirection ? (replies.data ?? []) : []}
+              replies={replies.data ?? []}
               autoplay={voiceOn}
               refreshing={refreshBriefing.isPending}
               onRefresh={() => refreshBriefing.mutate()}

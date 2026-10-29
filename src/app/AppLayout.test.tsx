@@ -73,12 +73,15 @@ describe('AppLayout', () => {
       '/stock/pneumatiques',
     );
     expect(within(menu()).queryByRole('link', { name: 'Pièces' })).not.toBeInTheDocument();
-    // Agent Direction en lecture seule (mails seulement) ; les mails reçus restent à la direction
+    // Agent Direction en lecture seule (mails seulement), avec les mails reçus
     expect(within(menu()).getByRole('link', { name: /Agent Direction/ })).toHaveAttribute(
       'href',
       '/agent-direction',
     );
-    expect(within(menu()).queryByRole('link', { name: 'Mails reçus' })).not.toBeInTheDocument();
+    expect(within(menu()).getByRole('link', { name: 'Mails reçus' })).toHaveAttribute(
+      'href',
+      '/agent-direction/mails',
+    );
   });
 
   it('direction : les pneumatiques au même niveau que Stock et Pilotage', async () => {

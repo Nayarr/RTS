@@ -4,7 +4,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(18);
 
 \ir helpers/fixtures.psql
 
@@ -49,9 +49,15 @@ select throws_ok($$delete from public.inbox_emails$$, '42501', null, 'Pas de sup
 
 -- ---------------------------------------------------------------- Autres rôles
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
-select is((select count(*)::int from public.inbox_emails), 0, 'Réception : aucun mail visible');
+select ok((select count(*)::int from public.inbox_emails) > 0, 'Réception : voit les mails reçus');
+select is(public.set_inbox_emails_handled(array['1b000000-0000-0000-0000-000000000001']::uuid[], true), 1,
+          'Réception : coche un mail traité');
+select is(public.set_inbox_emails_handled(array['1b000000-0000-0000-0000-000000000001']::uuid[], false), 1,
+          'Réception : remet un mail à traiter');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
+select is((select count(*)::int from public.inbox_emails), 0, 'Technicien : aucun mail visible');
 select throws_ok($$select public.set_inbox_emails_handled(array['1b000000-0000-0000-0000-000000000001']::uuid[], true)$$,
-                 '42501', null, 'Réception : ne peut rien marquer');
+                 '42501', null, 'Technicien : ne peut rien marquer');
 select pg_temp.act_as_anon();
 select throws_ok('select id from public.inbox_emails', '42501', null, 'Visiteur : refusé');
 reset role;

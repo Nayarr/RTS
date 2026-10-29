@@ -59,10 +59,9 @@ test('réception : Agent Direction en lecture seule, mails relus un par un puis 
   });
 
   await loginAs(page, 'reception@rts.local');
-  // Menu : l'agent, sans les mails reçus de la direction
+  // L'agent, sans les questions sur le chiffre d'affaires
   await page.goto('/agent-direction');
   await expect(page.getByRole('heading', { name: 'Agent Direction' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Mails reçus/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Combien on a facturé ce mois-ci ?' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Écrire la question' }).click();

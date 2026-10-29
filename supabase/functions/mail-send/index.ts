@@ -9,8 +9,8 @@
 // Secrets : RESEND_API_KEY, et MAIL_FROM tant qu'aucun domaine n'est réglé (sans eux : envoi
 // indisponible, la messagerie de l'ordinateur reste proposée). Chaque envoi est gardé dans
 // email_deliveries.
-// Réponse préparée par l'Agent Direction (inbox_email_id) : réservée à la direction, envoyée dans
-// le fil du mail reçu, qui est ensuite marqué répondu et traité.
+// Réponse préparée par l'Agent Direction (inbox_email_id) : envoyée par le bureau (direction ou
+// réception) dans le fil du mail reçu, qui est ensuite marqué répondu et traité.
 // Mail préparé par l'Agent Direction (agent_action_id) : envoyé par la personne du bureau qui l'a
 // demandé (direction ou réception) ; le contenu est relu dans l'action (jamais pris dans la
 // requête), l'action est marquée faite et, pour une relance, la relance est notée sur chaque facture.
@@ -95,8 +95,6 @@ export default {
 
     let inReplyTo: string | null = null;
     if (request.inbox_email_id) {
-      const { data: isDirection } = await ctx.supabase.rpc('is_direction');
-      if (isDirection !== true) return fail(403, 'Réponse aux mails reçus réservée à la direction');
       const { data: received } = await admin
         .from('inbox_emails')
         .select('message_id, reply_status')
