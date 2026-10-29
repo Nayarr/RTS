@@ -258,9 +258,21 @@ test('ancienne adresse Pilotage › Assistant : renvoyée vers Agent Direction',
   await expect(page).toHaveURL(/\/agent-direction$/);
 });
 
-test('réception : pas d’Agent Direction', async ({ page }, testInfo) => {
+test('réception : Agent Direction dans le menu, sans les mails reçus ; technicien : pas d’agent', async ({
+  page,
+}, testInfo) => {
+  const mobile = testInfo.project.name.includes('mobile');
   await loginAs(page, 'reception@rts.local');
-  if (testInfo.project.name.includes('mobile')) await page.getByRole('button', { name: 'Menu' }).click();
+  if (mobile) await page.getByRole('button', { name: 'Menu' }).click();
+  await expect(page.getByRole('link', { name: /Agent Direction/ })).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Mails reçus' })).toHaveCount(0);
+  await page.goto('/agent-direction/mails');
+  await expect(page.getByText('Accès refusé')).toBeVisible();
+
+  await page.goto('/');
+  if (mobile) await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('button', { name: 'Se déconnecter' }).first().click();
+  await loginAs(page, 'alice@rts.local');
   await expect(page.getByRole('link', { name: /Agent Direction/ })).toHaveCount(0);
   await page.goto('/agent-direction');
   await expect(page.getByText('Accès refusé')).toBeVisible();
