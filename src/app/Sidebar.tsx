@@ -167,7 +167,7 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
             <span className="voix">Voix</span>
           </Link>
         )}
-        {role === 'direction' && (
+        {isOffice && (
           // Mails reçus, rangés par l'agent : accessibles depuis le menu, sans passer par l'agent
           <div className="subnav">
             <Link

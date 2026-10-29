@@ -4,7 +4,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(11);
 
 \ir helpers/fixtures.psql
 
@@ -36,10 +36,13 @@ select ok(not public.postpone_inbox_reply('1c000000-0000-0000-0000-000000000002'
 select throws_ok($$update public.inbox_emails set reply_body = 'x'$$, '42501', null,
                  'Réponse jamais réécrite depuis l''appli');
 
--- ---------------------------------------------------------------- Réception
+-- ---------------------------------------------------------------- Réception et technicien
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
+select lives_ok($$select public.postpone_inbox_reply('1c000000-0000-0000-0000-000000000001')$$,
+                'Réception : remet une réponse à plus tard');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
 select throws_ok($$select public.postpone_inbox_reply('1c000000-0000-0000-0000-000000000001')$$, '42501', null,
-                 'Réception : ne peut rien remettre à plus tard');
+                 'Technicien : ne peut rien remettre à plus tard');
 reset role;
 
 -- ---------------------------------------------------------------- Tâche de secours

@@ -412,7 +412,15 @@ Deno.test('point du jour : phrases vérifiées (étiquette, texte, urgent), text
 
 Deno.test('réception : lectures de ce qu’elle voit dans l’appli, mails seulement en écriture', () => {
   const reception = (name: string) => toolAllowed(name, false);
-  for (const name of ['factures_impayees', 'ordres_reparation', 'echeances_vehicules', 'afficher_tableau']) {
+  for (
+    const name of [
+      'factures_impayees',
+      'ordres_reparation',
+      'echeances_vehicules',
+      'afficher_tableau',
+      'mails',
+    ]
+  ) {
     assert(reception(name), name);
   }
   for (const name of ['preparer_mail', 'preparer_mails']) assert(reception(name), name);
@@ -423,7 +431,7 @@ Deno.test('réception : lectures de ce qu’elle voit dans l’appli, mails seul
       'rentabilite',
       'pointages',
       'stock_consommables',
-      'mails',
+      'reglages_atelier',
     ]
   ) {
     assert(!reception(name), name);
@@ -436,7 +444,7 @@ Deno.test('réception : lectures de ce qu’elle voit dans l’appli, mails seul
   for (const name of [...others, 'tresorerie', 'mails']) assert(toolAllowed(name, true), name);
 });
 
-Deno.test('réception : point du jour sans les chiffres du mois ni les mails reçus', async () => {
+Deno.test('réception : point du jour sans les chiffres du mois, avec les mails reçus', async () => {
   const asked: string[] = [];
   const db = {
     rpc: (fn: string) => {
@@ -472,6 +480,6 @@ Deno.test('réception : point du jour sans les chiffres du mois ni les mails re�
   const sections = await gatherBriefing(db, '2026-10-29', (tool) => toolAllowed(tool, false));
   const tools = sections.map((section) => section.tool);
   assert(!tools.includes('chiffres_du_mois'));
-  assert(!tools.includes('mails'));
   assert(!asked.includes('monthly_report'));
+  assert(asked.includes('inbox_emails'));
 });

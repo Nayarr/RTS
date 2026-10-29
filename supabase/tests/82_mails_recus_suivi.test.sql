@@ -1,9 +1,9 @@
 -- =============================================================================
--- Mails reçus : dernier appel de Resend, lisible par la direction seule
+-- Mails reçus : dernier appel de Resend, lisible par le bureau (direction et réception)
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(4);
+select plan(5);
 
 \ir helpers/fixtures.psql
 
@@ -16,7 +16,9 @@ select throws_ok($$ update public.inbox_webhook_status set result = 'stored' $$,
                  'Personne ne le modifie depuis l''appli');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
-select is_empty($$ select 1 from public.inbox_webhook_status $$, 'La réception ne le voit pas');
+select isnt_empty($$ select 1 from public.inbox_webhook_status $$, 'La réception le voit (page Mails reçus)');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
+select is_empty($$ select 1 from public.inbox_webhook_status $$, 'Le technicien ne le voit pas');
 
 reset role;
 select throws_ok($$ insert into public.inbox_webhook_status (id, result) values (false, 'stored') $$, '23514',

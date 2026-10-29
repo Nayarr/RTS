@@ -81,7 +81,7 @@ export default {
     if (isOffice !== true) return fail(403, 'Assistant réservé au bureau');
     const { data: isDirection } = await ctx.supabase.rpc('is_direction');
     const direction = isDirection === true;
-    // Réception : lecture seule (hors pilotage, équipe, stock, réglages, mails reçus), mails seulement
+    // Réception : lecture seule (hors pilotage, équipe, stock, réglages), mails seulement
     const allowed = (name: string) => toolAllowed(name, direction);
     const tools = [...TOOL_DEFINITIONS, ...ACTION_DEFINITIONS, ...DISPLAY_DEFINITIONS].filter((item) =>
       allowed(item.name)

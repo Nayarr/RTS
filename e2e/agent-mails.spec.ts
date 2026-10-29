@@ -105,8 +105,13 @@ test('mails reçus : comptés dans l’Agent Direction, triés, lus puis marqué
   await expect(rows.first()).toContainText('Promo pneus');
 });
 
-test('réception : pas de mails de la direction', async ({ page }) => {
+test('mails reçus : ouverts à la réception, pas au technicien', async ({ page }) => {
+  await simulateMails(page);
   await loginAs(page, 'reception@rts.local');
+  await page.goto('/agent-direction/mails');
+  await expect(page.getByRole('heading', { name: 'Mails reçus' })).toBeVisible();
+  await page.getByRole('button', { name: 'Se déconnecter' }).first().click();
+  await loginAs(page, 'alice@rts.local');
   await page.goto('/agent-direction/mails');
   await expect(page.getByRole('heading', { name: 'Mails reçus' })).toBeHidden();
 });
