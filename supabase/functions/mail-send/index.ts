@@ -11,9 +11,9 @@
 // email_deliveries.
 // Réponse préparée par l'Agent Direction (inbox_email_id) : réservée à la direction, envoyée dans
 // le fil du mail reçu, qui est ensuite marqué répondu et traité.
-// Mail préparé par l'Agent Direction (agent_action_id) : réservé à la direction qui l'a validé ; le
-// contenu est relu dans l'action (jamais pris dans la requête), l'action est marquée faite et, pour
-// une relance, la relance est notée sur chaque facture.
+// Mail préparé par l'Agent Direction (agent_action_id) : envoyé par la personne du bureau qui l'a
+// demandé (direction ou réception) ; le contenu est relu dans l'action (jamais pris dans la
+// requête), l'action est marquée faite et, pour une relance, la relance est notée sur chaque facture.
 // =============================================================================
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
@@ -94,10 +94,6 @@ export default {
     }
 
     let inReplyTo: string | null = null;
-    if (agentAction) {
-      const { data: isDirection } = await ctx.supabase.rpc('is_direction');
-      if (isDirection !== true) return fail(403, 'Mails de l’Agent Direction réservés à la direction');
-    }
     if (request.inbox_email_id) {
       const { data: isDirection } = await ctx.supabase.rpc('is_direction');
       if (isDirection !== true) return fail(403, 'Réponse aux mails reçus réservée à la direction');

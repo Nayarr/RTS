@@ -115,6 +115,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'L’appli prépare le message ; il part par ta messagerie (e-mail) ou ton téléphone (SMS). Chaque envoi est noté dans l’historique de l’OR.',
       'Fiche client : « Espace client en ligne » envoie au client un lien permanent vers ses véhicules, devis et factures. « Changer le lien » désactive l’ancien.',
       'Renseigne une fois l’e-mail, le téléphone, l’adresse et le SIRET du client : ils sont repris partout.',
+      'Réception : « Agent Direction » (en haut du menu) répond aux questions sur l’atelier (OR, rendez-vous, devis, factures, clients, échéances, locations), en lecture seule. La seule chose qu’il prépare pour toi : des mails, un seul (« relance Martin pour ses factures en retard ») ou un par client (« écris à chaque client dont le contrôle technique arrive à échéance »). Tu les relis un par un, tu les modifies, puis « Envoyer » ou « Ne pas envoyer ». Chiffre d’affaires, trésorerie, équipe, stock, réglages et mails reçus restent à la direction.',
     ],
   },
   {

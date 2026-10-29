@@ -55,6 +55,11 @@ export const routes: RouteObject[] = [
               {
                 element: <RequireRole roles={['direction', 'reception']} />,
                 children: [
+                  // Agent Direction : aussi pour la réception (lecture seule, mails seulement)
+                  {
+                    path: '/agent-direction',
+                    lazy: page(() => import('@/features/assistant/AssistantPage'), 'AssistantPage'),
+                  },
                   // Stock des pneus : aussi pour la réception (le reste du stock est à la direction)
                   {
                     path: '/stock/pneumatiques',
@@ -278,10 +283,6 @@ export const routes: RouteObject[] = [
                   {
                     path: '/pilotage/performance',
                     lazy: page(() => import('@/features/reporting/PerformancePage'), 'PerformancePage'),
-                  },
-                  {
-                    path: '/agent-direction',
-                    lazy: page(() => import('@/features/assistant/AssistantPage'), 'AssistantPage'),
                   },
                   {
                     path: '/agent-direction/mails',

@@ -6,6 +6,14 @@ export const SUGGESTIONS = [
   'Quels contrôles arrivent à échéance ?',
 ];
 
+/** Réception : rien sur le chiffre d'affaires, et ce qu'elle peut faire préparer (des mails). */
+export const RECEPTION_SUGGESTIONS = [
+  'Qui nous doit de l’argent ?',
+  'Comment se présente la semaine ?',
+  'Quels contrôles arrivent à échéance ?',
+  'Prépare un mail à chaque client dont le contrôle technique arrive à échéance',
+];
+
 /** Nom lisible des lectures faites par l'assistant (outils de l'Edge Function « agent »). */
 const TOOL_LABELS: Record<string, string> = {
   tableau_de_bord: 'tableau de bord',

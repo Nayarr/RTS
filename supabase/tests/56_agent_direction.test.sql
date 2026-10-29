@@ -46,7 +46,8 @@ select is((select count(*)::int from public.agent_turns), 0, 'Conversation effac
 
 -- ---------------------------------------------------------------- Autres rôles
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
-select is((select count(*)::int from public.agent_conversations), 0, 'Réception : aucune conversation visible');
+select results_eq($$select title from public.agent_conversations$$, $$values ('Réception')$$,
+                  'Réception : ses conversations seulement, jamais celles de la direction');
 select pg_temp.act_as_anon();
 select throws_ok('select id from public.agent_conversations', '42501', null, 'Visiteur : refusé');
 select throws_ok('select public.purge_agent_conversations()', '42501', null, 'Visiteur : purge interdite');
