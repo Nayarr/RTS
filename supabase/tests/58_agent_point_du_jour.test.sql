@@ -36,7 +36,8 @@ select throws_ok($$update public.agent_briefings set text = 'x'$$, '42501', null
 
 -- ---------------------------------------------------------------- Autres rôles
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
-select is((select count(*)::int from public.agent_briefings), 0, 'Réception : aucun point visible');
+select results_eq($$select text from public.agent_briefings$$, $$values ('Point de la réception.')$$,
+                  'Réception : son point du jour seulement');
 select pg_temp.act_as_anon();
 select throws_ok('select id from public.agent_briefings', '42501', null, 'Visiteur : refusé');
 reset role;

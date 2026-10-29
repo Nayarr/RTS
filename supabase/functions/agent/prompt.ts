@@ -56,6 +56,21 @@ const ROLE = [
 export const SYSTEM_PROMPT = `${ROLE}\n\n${WORKSHOP_SHEET}`;
 
 /**
+ * Réception : lecture seule, sauf les mails. Envoyé avec le contexte (pas dans les consignes en
+ * cache, communes à la direction).
+ */
+export const RECEPTION_NOTE = [
+  'Tu réponds ici à la réception (accueil du bureau), pas à la direction.',
+  'Lecture seule : tu lis ce que la réception voit dans l’appli. Pas de chiffre d’affaires, trésorerie,',
+  'rentabilité, pointages, congés, performance des techniciens, stock, réglages ni mails reçus : si on te',
+  'le demande, dis que c’est réservé à la direction.',
+  'Seule écriture possible : préparer un mail (preparer_mail) ou un mail par client (preparer_mails),',
+  'que la réception relit puis envoie elle-même. Pour toute autre action (rendez-vous, OR, échéance,',
+  'facture), ne prépare rien : dis que la réception peut le faire dans l’appli, ou que la direction',
+  'peut le demander à l’agent.',
+].join('\n');
+
+/**
  * Contexte de l'atelier (techniciens, mémo de la direction) : change rarement, envoyé après les
  * consignes fixes et mis en cache lui aussi.
  */

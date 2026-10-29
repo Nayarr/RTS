@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/app/PageHeader';
+import { useProfile } from '@/features/auth/useProfile';
 import { useSettings } from '@/features/settings/hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +52,7 @@ import {
   voicePreference,
 } from './speech';
 import { useFrenchVoices } from './use-french-voices';
-import { sourcesLabel, SUGGESTIONS } from './suggestions';
+import { RECEPTION_SUGGESTIONS, sourcesLabel, SUGGESTIONS } from './suggestions';
 import { VoiceOrb } from './VoiceOrb';
 
 const DAY = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
@@ -74,6 +75,10 @@ export function AssistantPage() {
   const [voiceName, setVoiceName] = useState(chosenVoiceName);
   // Voix réglée par la direction : Azure (voix naturelle) ou celle du navigateur
   const settings = useSettings();
+  // Réception : lecture seule et mails, sans les mails reçus (réservés à la direction). Chargés dès
+  // l'ouverture tant que le rôle n'est pas encore lu : le point du jour les enchaîne sans attendre.
+  const role = useProfile().data?.role;
+  const isDirection = role !== 'reception';
   const azure = settings.data?.app.tts_provider === 'azure';
   useEffect(() => setVoiceProvider(azure ? 'azure' : 'browser'), [azure]);
 
@@ -96,11 +101,13 @@ export function AssistantPage() {
     queryKey: ['agent', 'replies'],
     queryFn: fetchPreparedReplies,
     refetchInterval: 60_000,
+    enabled: isDirection,
   });
   const mailsToHandle = useQuery({
     queryKey: ['agent', 'mails', 'a-traiter'],
     queryFn: countMailsToHandle,
     refetchInterval: 2 * 60_000,
+    enabled: isDirection,
   });
   // Actions préparées par l'agent dans cette conversation, à valider
   const actions = useQuery({
@@ -247,7 +254,9 @@ export function AssistantPage() {
         actions={
           <>
             <span className="sub hidden 2xl:inline">
-              Pose ta question à la voix : il lit les chiffres de l’atelier et prépare ce que tu valides.
+              {isDirection
+                ? 'Pose ta question à la voix : il lit les chiffres de l’atelier et prépare ce que tu valides.'
+                : 'Pose ta question à la voix : il lit les données de l’atelier et prépare les mails que tu relis.'}
             </span>
             {speechSupported() && (
               <button
@@ -287,16 +296,18 @@ export function AssistantPage() {
             >
               <Sun /> Point du jour
             </Button>
-            <Button asChild variant="outline">
-              <Link to="/agent-direction/mails">
-                <Mail /> Mails reçus
-                {Boolean(mailsToHandle.data) && (
-                  <span className="agent-count" aria-label={`${mailsToHandle.data} à traiter`}>
-                    {mailsToHandle.data}
-                  </span>
-                )}
-              </Link>
-            </Button>
+            {isDirection && (
+              <Button asChild variant="outline">
+                <Link to="/agent-direction/mails">
+                  <Mail /> Mails reçus
+                  {Boolean(mailsToHandle.data) && (
+                    <span className="agent-count" aria-label={`${mailsToHandle.data} à traiter`}>
+                      {mailsToHandle.data}
+                    </span>
+                  )}
+                </Link>
+              </Button>
+            )}
             <Button
               variant="outline"
               aria-expanded={historyOpen}
@@ -319,7 +330,7 @@ export function AssistantPage() {
               briefing={briefing.data}
               loading={briefing.isPending || refreshBriefing.isPending}
               failure={briefing.error instanceof Error ? briefing.error.message : null}
-              replies={replies.data ?? []}
+              replies={isDirection ? (replies.data ?? []) : []}
               autoplay={voiceOn}
               refreshing={refreshBriefing.isPending}
               onRefresh={() => refreshBriefing.mutate()}
@@ -469,7 +480,7 @@ export function AssistantPage() {
 
           {!lastTurn && !pending && !dictation.listening && (
             <ul className="chips justify-center" aria-label="Exemples de questions">
-              {SUGGESTIONS.map((suggestion) => (
+              {(isDirection ? SUGGESTIONS : RECEPTION_SUGGESTIONS).map((suggestion) => (
                 <li key={suggestion}>
                   <button
                     type="button"

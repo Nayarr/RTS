@@ -155,7 +155,7 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
           <House className="size-[18px]" />
           <span>{isOffice ? 'Tableau de bord' : 'Accueil'}</span>
         </Link>
-        {role === 'direction' && (
+        {isOffice && (
           <Link
             to="/agent-direction"
             className={cn('ni', current === '/agent-direction' && 'on')}

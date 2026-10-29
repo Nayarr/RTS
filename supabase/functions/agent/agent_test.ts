@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertMatch, assertStringIncludes } from '@std/assert';
 import { ACTION_TOOLS } from './actions.ts';
 import { DISPLAY_DEFINITIONS } from './display.ts';
+import { toolAllowed } from './access.ts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   answerText,
@@ -407,4 +408,70 @@ Deno.test('point du jour : phrases vérifiées (étiquette, texte, urgent), text
   );
   assertEquals(parseBriefing(JSON.stringify({ phrases: [] })), null);
   assertEquals(parseBriefing('Rien d’urgent.'), null);
+});
+
+Deno.test('réception : lectures de ce qu’elle voit dans l’appli, mails seulement en écriture', () => {
+  const reception = (name: string) => toolAllowed(name, false);
+  for (const name of ['factures_impayees', 'ordres_reparation', 'echeances_vehicules', 'afficher_tableau']) {
+    assert(reception(name), name);
+  }
+  for (const name of ['preparer_mail', 'preparer_mails']) assert(reception(name), name);
+  for (
+    const name of [
+      'chiffres_du_mois',
+      'tresorerie',
+      'rentabilite',
+      'pointages',
+      'stock_consommables',
+      'mails',
+    ]
+  ) {
+    assert(!reception(name), name);
+  }
+  // Toute autre action préparée : jamais pour la réception
+  const others = ACTION_TOOLS.map((tool) => tool.name).filter((name) => !name.startsWith('preparer_mail'));
+  assert(others.length >= 8);
+  for (const name of others) assert(!reception(name), name);
+  // Direction : tout
+  for (const name of [...others, 'tresorerie', 'mails']) assert(toolAllowed(name, true), name);
+});
+
+Deno.test('réception : point du jour sans les chiffres du mois ni les mails reçus', async () => {
+  const asked: string[] = [];
+  const db = {
+    rpc: (fn: string) => {
+      asked.push(fn);
+      return Promise.resolve({ data: [], error: null });
+    },
+    from: (table: string) => {
+      asked.push(table);
+      const query: Record<string, unknown> = {};
+      for (
+        const method of [
+          'select',
+          'eq',
+          'neq',
+          'in',
+          'gte',
+          'lte',
+          'lt',
+          'gt',
+          'is',
+          'not',
+          'or',
+          'order',
+          'limit',
+        ]
+      ) {
+        query[method] = () => query;
+      }
+      query.then = (resolve: (value: unknown) => void) => resolve({ data: [], error: null });
+      return query;
+    },
+  } as unknown as SupabaseClient;
+  const sections = await gatherBriefing(db, '2026-10-29', (tool) => toolAllowed(tool, false));
+  const tools = sections.map((section) => section.tool);
+  assert(!tools.includes('chiffres_du_mois'));
+  assert(!tools.includes('mails'));
+  assert(!asked.includes('monthly_report'));
 });

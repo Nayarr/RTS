@@ -54,8 +54,12 @@ export function briefingReads(today: string): { tool: string; label: string; inp
 }
 
 /** Fait toutes les lectures en parallèle ; une lecture en échec est simplement laissée de côté. */
-export async function gatherBriefing(db: SupabaseClient, today: string): Promise<BriefingSection[]> {
-  const reads = briefingReads(today);
+export async function gatherBriefing(
+  db: SupabaseClient,
+  today: string,
+  allowed: (tool: string) => boolean = () => true,
+): Promise<BriefingSection[]> {
+  const reads = briefingReads(today).filter((item) => allowed(item.tool));
   const results = await Promise.all(reads.map((item) => runTool(db, item.tool, item.input)));
   return reads.flatMap((item, index) => {
     const result = results[index];

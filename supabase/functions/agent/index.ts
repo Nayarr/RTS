@@ -8,8 +8,9 @@
 // page : rien ne s'exécute avant la validation de la direction. Il peut montrer une liste en
 // tableau (display.ts), gardé avec la réponse. Hormis ces propositions, seul l'historique de la
 // conversation est écrit.
-// Réservé à la direction, réglage « Assistant de la direction » activé, limite de questions par
-// jour. Clé : secret ANTHROPIC_AGENT_API_KEY (sans clé : assistant indisponible).
+// Direction et réception (bureau), réglage « Assistant de la direction » activé, limite de questions
+// par jour. Réception : lectures de ce qu'elle voit dans l'appli, seule écriture la préparation de
+// mails. Clé : secret ANTHROPIC_AGENT_API_KEY (sans clé : assistant indisponible).
 //
 // Avec { briefing: true } : point du jour (briefing.ts), fait une fois par jour et gardé ;
 // { briefing: true, refresh: true } le refait avec les données du moment.
@@ -23,10 +24,12 @@ import {
   conversationTitle,
   parisToday,
   questionText,
+  RECEPTION_NOTE,
   SYSTEM_PROMPT,
   workshopContext,
 } from './prompt.ts';
 import { runTool, TOOL_DEFINITIONS } from './tools.ts';
+import { toolAllowed } from './access.ts';
 import { ACTION_DEFINITIONS, isActionTool, type ProposedAction, runAction } from './actions.ts';
 import { type AgentTable, DISPLAY_DEFINITIONS, isDisplayTool, runDisplay } from './display.ts';
 import {
@@ -74,8 +77,15 @@ export default {
     if (req.method !== 'POST') return fail(405, 'Méthode non autorisée');
     if (!claude) return fail(503, 'Assistant pas encore configuré');
 
+    const { data: isOffice } = await ctx.supabase.rpc('is_office');
+    if (isOffice !== true) return fail(403, 'Assistant réservé au bureau');
     const { data: isDirection } = await ctx.supabase.rpc('is_direction');
-    if (isDirection !== true) return fail(403, 'Assistant réservé à la direction');
+    const direction = isDirection === true;
+    // Réception : lecture seule (hors pilotage, équipe, stock, réglages, mails reçus), mails seulement
+    const allowed = (name: string) => toolAllowed(name, direction);
+    const tools = [...TOOL_DEFINITIONS, ...ACTION_DEFINITIONS, ...DISPLAY_DEFINITIONS].filter((item) =>
+      allowed(item.name)
+    );
     const { data: settings } = await ctx.supabase
       .from('app_settings')
       .select('agent_enabled, agent_memo')
@@ -94,10 +104,11 @@ export default {
         .select('display_name')
         .eq('is_active', true)
         .order('sort_order');
-      return workshopContext({
+      const workshop = workshopContext({
         technicians: (team ?? []).map((member) => String(member.display_name)),
         memo: String(settings?.agent_memo ?? ''),
       });
+      return direction ? workshop : `${workshop}\n\n${RECEPTION_NOTE}`;
     };
 
     const briefingAsked = briefingSchema.safeParse(body);
@@ -117,7 +128,10 @@ export default {
         );
       }
 
-      const [sections, context] = await Promise.all([gatherBriefing(ctx.supabase, today), loadContext()]);
+      const [sections, context] = await Promise.all([
+        gatherBriefing(ctx.supabase, today, allowed),
+        loadContext(),
+      ]);
       let response: Anthropic.Message;
       try {
         response = await claude.messages.create({
@@ -224,7 +238,7 @@ export default {
             { type: 'text', text: context, cache_control: { type: 'ephemeral' } },
           ],
           cache_control: { type: 'ephemeral' },
-          tools: [...TOOL_DEFINITIONS, ...ACTION_DEFINITIONS, ...DISPLAY_DEFINITIONS],
+          tools,
           output_config: { effort: 'low' },
           messages,
         });
@@ -244,6 +258,14 @@ export default {
           const results = await Promise.all(
             calls.map(async (call) => {
               used.add(call.name);
+              if (!allowed(call.name)) {
+                return {
+                  type: 'tool_result' as const,
+                  tool_use_id: call.id,
+                  content: 'Réservé à la direction',
+                  is_error: true,
+                };
+              }
               if (isActionTool(call.name)) {
                 // Action préparée seulement : la direction la valide ensuite dans l'appli
                 const { actions, ...result } = await runAction(

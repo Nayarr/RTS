@@ -1,7 +1,10 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderRoutes } from '@/test/render';
+import { fetchProfile } from '@/features/auth/api';
+import type * as AuthApi from '@/features/auth/api';
+import type { Profile } from '@/features/auth/roles';
+import { fakeSession, renderRoutes } from '@/test/render';
 import {
   askAgent,
   deleteConversation,
@@ -19,7 +22,7 @@ import { AssistantPage } from './AssistantPage';
 import { saveListened } from './briefing-player';
 import { speak, stopSpeaking } from './speech';
 import type * as SpeechModule from './speech';
-import { SUGGESTIONS } from './suggestions';
+import { RECEPTION_SUGGESTIONS, SUGGESTIONS } from './suggestions';
 
 vi.mock('./api', () => ({
   askAgent: vi.fn(),
@@ -34,6 +37,10 @@ vi.mock('./api', () => ({
   fetchPendingActions: vi.fn(() => Promise.resolve([])),
   executeAgentAction: vi.fn(),
   cancelAgentAction: vi.fn(),
+}));
+vi.mock('@/features/auth/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof AuthApi>()),
+  fetchProfile: vi.fn(),
 }));
 vi.mock('./speech', async (importOriginal) => ({
   ...(await importOriginal<typeof SpeechModule>()),
@@ -165,10 +172,23 @@ class FakeRecognition {
   }
 }
 
-const setup = () =>
-  renderRoutes([{ path: '/agent-direction', element: <AssistantPage /> }], {
+const profile = (role: Profile['role']): Profile => ({
+  id: 'p1',
+  email: `${role}@test.fr`,
+  full_name: role,
+  role,
+  is_active: true,
+  created_at: '2026-09-27T00:00:00Z',
+  updated_at: '2026-09-27T00:00:00Z',
+});
+
+const setup = (role: Profile['role'] = 'direction') => {
+  vi.mocked(fetchProfile).mockResolvedValue(profile(role));
+  return renderRoutes([{ path: '/agent-direction', element: <AssistantPage /> }], {
     initialPath: '/agent-direction',
+    auth: { session: fakeSession() },
   });
+};
 
 describe('Agent Direction', () => {
   beforeEach(() => {
@@ -442,5 +462,14 @@ describe('Agent Direction', () => {
     const link = await screen.findByRole('link', { name: /Mails reçus/ });
     expect(link).toHaveAttribute('href', '/agent-direction/mails');
     expect(await within(link).findByLabelText('3 à traiter')).toBeInTheDocument();
+  });
+
+  it('réception : questions sans chiffre d’affaires, ni mails reçus ni réponses préparées', async () => {
+    vi.mocked(fetchPreparedReplies).mockResolvedValue([REPLY]);
+    setup('reception');
+    expect(await screen.findByRole('button', { name: RECEPTION_SUGGESTIONS[3] })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: SUGGESTIONS[0] })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Mails reçus/ })).toBeNull();
+    expect(screen.queryByRole('article', { name: 'Mail de Jean Moreau' })).toBeNull();
   });
 });

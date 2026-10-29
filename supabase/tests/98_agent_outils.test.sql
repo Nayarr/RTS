@@ -87,7 +87,7 @@ select throws_ok($$ select public.edit_agent_mail('a9800000-0000-0000-0000-00000
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');  -- réception
 select throws_ok($$ select public.edit_agent_mail('a9800000-0000-0000-0000-000000000008', 'a@b.fr', 'X', 'Y') $$,
-                 '42501', 'Réservé à la direction', 'La réception ne modifie pas les mails de l''agent');
+                 'P0002', 'Mail préparé introuvable', 'La réception ne modifie pas les mails préparés par la direction');
 
 select * from finish();
 rollback;

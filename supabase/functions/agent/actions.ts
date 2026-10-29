@@ -753,6 +753,9 @@ export const ACTION_DEFINITIONS = ACTION_TOOLS.map(({ name, description, input_s
 
 export const isActionTool = (name: string) => ACTION_TOOLS.some((tool) => tool.name === name);
 
+/** Seules écritures de la réception : préparer des mails, qu'elle relit et envoie elle-même. */
+export const RECEPTION_ACTIONS: ReadonlySet<string> = new Set(['preparer_mail', 'preparer_mails']);
+
 /** Prépare l'action demandée ; une erreur devient un résultat lisible par l'assistant. */
 export async function runAction(
   db: Db,

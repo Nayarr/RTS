@@ -22,8 +22,8 @@ select is((select status from public.agent_actions where id = '70000000-0000-000
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
 select throws_like($$
   insert into public.agent_actions (kind, payload, summary)
-  values ('send_mail', '{"to": "x@y.fr"}', 'Mail')
-$$, '%row-level security%', 'La réception ne prépare pas de mail pour l''agent');
+  values ('appointment', '{"plate": "AB-123-CD"}', 'Rendez-vous')
+$$, '%row-level security%', 'La réception ne prépare que des mails avec l''agent');
 
 select * from finish();
 rollback;
