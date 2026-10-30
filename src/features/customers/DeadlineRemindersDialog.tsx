@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BellRing, Mail } from 'lucide-react';
 import { toast } from 'sonner';
@@ -39,7 +39,8 @@ export function DeadlineRemindersDialog({
   const queryClient = useQueryClient();
   const settings = useSettings();
   const mail = useQuery({ queryKey: mailSettingsKey, queryFn: fetchMailSettings });
-  const groups = useMemo(() => remindersByClient(deadlines), [deadlines]);
+  // Liste figée à l'ouverture : les clients relancés restent affichés « Relancé » après l'envoi
+  const [groups] = useState(() => remindersByClient(deadlines));
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [done, setDone] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
