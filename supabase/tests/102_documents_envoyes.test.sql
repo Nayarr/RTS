@@ -43,14 +43,14 @@ select public.issue_invoice(:'invoice_id');
 
 select is((select sent_at from public.v_invoices_overview where id = :'invoice_id'), null,
           'Facture émise : pas encore envoyée');
-select is((select invoice_sent from public.v_repair_orders_overview where id = '50000000-0000-0000-0000-000000002002'),
-          false, 'OR « Facturé » tant que la facture n''est pas partie');
+select is((select status from public.v_repair_orders_overview where id = '50000000-0000-0000-0000-000000002002'),
+          'invoiced'::public.repair_order_status, 'OR « Facturé » (pas de catégorie « Facture envoyée »)');
 
 select public.share_invoice(:'invoice_id');
 select isnt((select sent_at from public.invoices where id = :'invoice_id'), null,
             'Lien de la facture préparé pour le client : facture envoyée');
-select is((select invoice_sent from public.v_repair_orders_overview where id = '50000000-0000-0000-0000-000000002002'),
-          true, 'L''OR passe « Facture envoyée »');
+select isnt((select sent_at from public.v_invoices_overview where id = :'invoice_id'), null,
+            'Liste des factures : date d''envoi visible');
 
 reset role;
 update public.invoices set sent_at = '2026-10-01 10:00+02' where id = :'invoice_id';

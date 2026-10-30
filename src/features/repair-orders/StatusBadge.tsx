@@ -5,19 +5,17 @@ import { CATEGORY_META, orderCategory, type RepairOrderStatus } from './constant
 /**
  * Pastille du statut de l'OR (couleur du statut, comme la maquette).
  * `technicianId` : null pour un OR pas encore assigné (affiché « Non assigné »).
- * `quoteSent` / `invoiceSent` : devis ou facture partis au client (« Devis envoyé », « Facture envoyée »).
+ * `quoteSent` : devis parti au client, en attente de sa réponse (« Devis envoyé »).
  */
 export function StatusBadge({
   status,
   technicianId,
   quoteSent,
-  invoiceSent,
   className,
 }: {
   status: RepairOrderStatus;
   technicianId?: string | null;
   quoteSent?: boolean | null;
-  invoiceSent?: boolean | null;
   className?: string;
 }) {
   const meta =
@@ -26,7 +24,6 @@ export function StatusBadge({
         status,
         technician_id: technicianId,
         quote_sent: quoteSent,
-        invoice_sent: invoiceSent,
       })
     ];
   return (

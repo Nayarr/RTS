@@ -173,7 +173,6 @@ export function RepairOrdersPage() {
                             status={order.status}
                             technicianId={order.technician_id}
                             quoteSent={order.quote_sent}
-                            invoiceSent={order.invoice_sent}
                           />
                           <PartsBadge order={order} />
                         </span>
@@ -224,7 +223,6 @@ export function RepairOrdersPage() {
                           status={order.status}
                           technicianId={order.technician_id}
                           quoteSent={order.quote_sent}
-                          invoiceSent={order.invoice_sent}
                         />
                       </div>
                       <p className="line-clamp-2">{taskSummary(order.requested_work)}</p>

@@ -1,12 +1,12 @@
 -- =============================================================================
 -- Devis envoyés, factures envoyées
 --
--- Demande du client : une catégorie « Devis envoyé » et une catégorie « Facture envoyée »,
--- dans la liste des OR comme dans les listes des devis et des factures.
+-- Demande du client : une catégorie « Devis envoyé » (liste des OR et des devis) et une
+-- catégorie « Factures envoyées » dans la liste des factures (côté OR, « Facturé » suffit).
 --   - Facture : date du premier envoi au client (lien préparé, envoi par l'appli, relance) ;
 --     reprise pour les factures déjà partagées (date d'émission).
---   - OR : « Devis envoyé » quand son devis attend la réponse du client, « Facture envoyée »
---     quand sa facture est partie (colonnes quote_sent / invoice_sent de la vue).
+--   - OR : « Devis envoyé » quand son devis attend la réponse du client (colonne quote_sent
+--     de la vue).
 -- =============================================================================
 
 alter table public.invoices add column sent_at timestamptz;
@@ -109,7 +109,7 @@ create trigger invoice_reminders_sent
   for each row execute function public.invoice_reminders_sent();
 
 -- ---------------------------------------------------------------------------
--- Vues : date d'envoi de la facture, devis et facture envoyés de l'OR
+-- Vues : date d'envoi de la facture, devis envoyé de l'OR
 -- ---------------------------------------------------------------------------
 create or replace view public.v_invoices_overview
 with (security_invoker = on) as
@@ -211,11 +211,7 @@ with (security_invoker = on) as
           WHERE ((l.repair_order_id = r.id) AND (l.kind = 'done'::ro_line_kind))) AS declared_hours,
     (EXISTS ( SELECT 1
            FROM quotes q
-          WHERE ((q.repair_order_id = r.id) AND (q.status = 'sent'::quote_status)))) AS quote_sent,
-    (EXISTS ( SELECT 1
-           FROM (invoice_repair_orders iro
-             JOIN invoices i ON ((i.id = iro.invoice_id)))
-          WHERE ((iro.repair_order_id = r.id) AND (i.sent_at IS NOT NULL)))) AS invoice_sent
+          WHERE ((q.repair_order_id = r.id) AND (q.status = 'sent'::quote_status)))) AS quote_sent
    FROM ((((repair_orders r
      JOIN vehicles v ON ((v.id = r.vehicle_id)))
      LEFT JOIN clients c ON ((c.id = r.client_id)))

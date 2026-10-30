@@ -316,7 +316,6 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                               status={order.status}
                               technicianId={order.technician_id}
                               quoteSent={order.quote_sent}
-                              invoiceSent={order.invoice_sent}
                             />
                           </td>
                         </tr>

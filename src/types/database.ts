@@ -6811,7 +6811,6 @@ export type Database = {
           id: string | null;
           inspection_required: boolean | null;
           intervention_type: Database['public']['Enums']['intervention_type'] | null;
-          invoice_sent: boolean | null;
           legacy_id: string | null;
           maintenance_contract_id: string | null;
           mileage: number | null;
