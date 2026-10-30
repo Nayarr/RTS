@@ -47,7 +47,9 @@ async function createFinishedOrder(plate: string, clientName: string) {
   return order;
 }
 
-test('facture pro forma : main d’œuvre au forfait, jamais le nombre d’heures', async ({ page }, testInfo) => {
+test('facture pro forma : quantité de main d’œuvre sans l’unité « h », prix et total inchangés', async ({
+  page,
+}, testInfo) => {
   const id = `${testInfo.project.name.includes('mobile') ? 'M' : 'D'}${String(Date.now()).slice(-7)}`;
   const order = await createFinishedOrder(`P${id}`, `Client pro forma ${id}`);
 
@@ -61,10 +63,11 @@ test('facture pro forma : main d’œuvre au forfait, jamais le nombre d’heure
   await expect(preview.getByText(/^Proforma_/)).toBeVisible();
   const download = page.waitForEvent('download');
   await preview.getByRole('link', { name: 'Télécharger' }).click();
-  // Textes du PDF (polices standard, non compressés) : ligne au forfait, ni « 3 h » ni taux horaire
+  // Textes du PDF (polices standard, non compressés) : « 3 » et non « 3 h », taux horaire gardé
   const pdf = readFileSync(await (await download).path()).toString('latin1');
   expect(pdf).toContain('(Remplacement disques avant)');
   expect(pdf).not.toContain('(3 h)');
-  expect(pdf).not.toContain('(90,00');
+  expect(pdf).toContain('(3)');
+  expect(pdf).toContain('(90,00');
   expect(pdf.match(/\(270,00 /g)?.length).toBeGreaterThanOrEqual(2);
 });
