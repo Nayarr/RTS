@@ -1,5 +1,6 @@
 import { assertEquals, assertStringIncludes } from '@std/assert';
 import {
+  agentMailDeadlines,
   agentMailRequest,
   agentMailRequestSchema,
   attachmentsBytes,
@@ -234,4 +235,13 @@ Deno.test('mail préparé par l’agent : contenu relu dans l’action, adresse 
     null,
   );
   assertEquals(agentMailRequest({ to: 'a@b.fr', subject: 'x', text: 'y', category: 'signature' }, key), null);
+});
+
+Deno.test('mail de l’agent : échéances relancées lues dans l’action, illisibles ignorées', () => {
+  const vehicle = crypto.randomUUID();
+  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: vehicle, kind: 'tailgate' }] }), [
+    { vehicle_id: vehicle, kind: 'tailgate' },
+  ]);
+  assertEquals(agentMailDeadlines({ invoice_ids: [] }), []);
+  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: 'x', kind: 'ct' }] }), []);
 });

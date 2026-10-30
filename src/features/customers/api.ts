@@ -302,3 +302,9 @@ export async function fetchDeadlines(): Promise<VehicleDeadline[]> {
   if (error) throw error;
   return data;
 }
+
+/** Relance notée (page Échéances) : refusée pour un véhicule déjà relancé depuis moins de 3 mois. */
+export async function recordDeadlineReminders(items: { vehicle_id: string; kind: string }[]): Promise<void> {
+  const { error } = await supabase.rpc('record_deadline_reminders', { p_items: items });
+  if (error) throw error;
+}

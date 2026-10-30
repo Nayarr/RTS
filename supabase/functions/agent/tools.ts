@@ -84,9 +84,9 @@ const endOfMonth = (iso: string) => {
 };
 /** Échéances d'un véhicule (colonnes de la fiche). */
 const DEADLINE_KINDS = [
-  { type: 'ct', column: 'ct_due_date', label: 'contrôle technique' },
-  { type: 'hayon', column: 'tailgate_due_date', label: 'contrôle hayon' },
-  { type: 'antipollution', column: 'antipollution_due_date', label: 'antipollution' },
+  { type: 'ct', kind: 'ct', column: 'ct_due_date', label: 'contrôle technique' },
+  { type: 'hayon', kind: 'tailgate', column: 'tailgate_due_date', label: 'contrôle hayon' },
+  { type: 'antipollution', kind: 'antipollution', column: 'antipollution_due_date', label: 'antipollution' },
 ] as const;
 
 export const RO_STATUS_LABELS: Record<string, string> = {
@@ -714,7 +714,7 @@ export const TOOLS: AgentTool[] = [
   tool({
     name: 'echeances_vehicules',
     description:
-      'Échéances des véhicules des clients, dépassées ou à venir dans les N jours (365 au plus) : contrôle technique (ct), contrôle hayon (hayon, au mois), antipollution. Par véhicule : plaque, marque et modèle, client, e-mail du client renseigné ou non, date, jours restants (négatif = dépassé), rendez-vous déjà prévu. Pour écrire aux clients concernés : preparer_mails.',
+      'Échéances des véhicules des clients, dépassées ou à venir dans les N jours (365 au plus) : contrôle technique (ct), contrôle hayon (hayon, au mois), antipollution. Par véhicule : plaque, marque et modèle, client, e-mail du client renseigné ou non, date, jours restants (négatif = dépassé), rendez-vous déjà prévu, date de la dernière relance (deja_relance_le, moins de 3 mois). Un véhicule déjà relancé ne se relance pas avant 3 mois : ne le mets pas dans les mails. Pour écrire aux clients concernés : preparer_mails, avec les échéances relancées.',
     input_schema: schema(
       {
         dans_les_jours: { type: 'integer', minimum: 0, maximum: 365 },
@@ -753,6 +753,17 @@ export const TOOLS: AgentTool[] = [
             .order('scheduled_date'),
         )
         : [];
+      // Relances des 3 derniers mois (page Échéances, agent, rappels automatiques)
+      const reminders = vehicles.length
+        ? await read<{ vehicle_id: string; kind: string; sent_at: string }[]>(
+          db
+            .from('deadline_reminders')
+            .select('vehicle_id, kind, sent_at')
+            .in('vehicle_id', vehicles.map((vehicle) => String(vehicle.id)))
+            .gt('sent_at', new Date(Date.now() - 92 * 86_400_000).toISOString())
+            .order('sent_at', { ascending: false }),
+        )
+        : [];
       const list = vehicles.flatMap((vehicle) => {
         const client = vehicle.client as { name: string; email: string | null } | null;
         return kinds.flatMap((kind) => {
@@ -772,6 +783,9 @@ export const TOOLS: AgentTool[] = [
             jours_restants: left,
             rendez_vous_prevu: appointments.find((item) => item.vehicle_id === vehicle.id)?.scheduled_date ??
               null,
+            deja_relance_le: reminders
+              .find((item) => item.vehicle_id === vehicle.id && item.kind === kind.kind)
+              ?.sent_at.slice(0, 10) ?? null,
           }];
         });
       });

@@ -50,6 +50,16 @@ export const agentMailPayloadSchema = z.object({
   invoice_ids: z.array(z.guid()).max(20).default([]),
 });
 
+const deadlinesSchema = z
+  .array(z.object({ vehicle_id: z.guid(), kind: z.enum(['ct', 'tailgate', 'antipollution']) }))
+  .max(40);
+
+/** Échéances relancées par un mail de l'agent (notées à l'envoi : pas de relance pendant 3 mois). */
+export function agentMailDeadlines(payload: unknown): z.infer<typeof deadlinesSchema> {
+  const parsed = deadlinesSchema.safeParse((payload as { deadlines?: unknown } | null)?.deadlines ?? []);
+  return parsed.success ? parsed.data : [];
+}
+
 /** Requête d'envoi tirée d'un mail préparé par l'agent (sans pièce jointe ni lien). */
 export function agentMailRequest(payload: unknown, idempotencyKey: string): MailRequest | null {
   const parsed = agentMailPayloadSchema.safeParse(payload);

@@ -1323,6 +1323,62 @@ export type Database = {
           },
         ];
       };
+      deadline_reminders: {
+        Row: {
+          id: string;
+          kind: string;
+          sent_at: string;
+          sent_by: string | null;
+          source: string;
+          vehicle_id: string;
+        };
+        Insert: {
+          id?: string;
+          kind: string;
+          sent_at?: string;
+          sent_by?: string | null;
+          source: string;
+          vehicle_id: string;
+        };
+        Update: {
+          id?: string;
+          kind?: string;
+          sent_at?: string;
+          sent_by?: string | null;
+          source?: string;
+          vehicle_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'deadline_reminders_sent_by_fkey';
+            columns: ['sent_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deadline_reminders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'deadline_reminders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deadline_reminders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       diagnostic_requests: {
         Row: {
           answer: string;
@@ -7066,12 +7122,14 @@ export type Database = {
       };
       v_vehicle_deadlines: {
         Row: {
+          client_email: string | null;
           client_id: string | null;
           client_name: string | null;
           days_left: number | null;
           due_date: string | null;
           kind: string | null;
           plate: string | null;
+          reminded_at: string | null;
           vehicle_id: string | null;
         };
         Relationships: [
@@ -7543,6 +7601,10 @@ export type Database = {
         Returns: Database['public']['Enums']['app_role'];
       };
       current_technician_id: { Args: Record<PropertyKey, never>; Returns: string };
+      deadline_recently_reminded: {
+        Args: { p_kind: string; p_now?: string; p_vehicle_id: string };
+        Returns: boolean;
+      };
       decide_leave_request: {
         Args: { p_approve: boolean; p_id: string };
         Returns: {
@@ -7921,6 +7983,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      record_deadline_reminders: { Args: { p_items: Json; p_source?: string }; Returns: number };
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
         Returns: {

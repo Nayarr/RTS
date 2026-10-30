@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { CalendarClock, Info, TriangleAlert, Truck } from 'lucide-react';
+import { BellRing, CalendarClock, Info, TriangleAlert, Truck } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { Button } from '@/components/ui/button';
 import { AppointmentDialog } from '@/features/planning/AppointmentDialog';
@@ -11,6 +11,8 @@ import { fleetDeadlineRows } from '@/features/rentals/fleet-domain';
 import { useFleet } from '@/features/rentals/fleet-hooks';
 import { cn } from '@/lib/utils';
 import { CustomersTabs } from './CustomersTabs';
+import { DeadlineRemindersDialog } from './DeadlineRemindersDialog';
+import { canRemind } from './deadline-reminders';
 import { monthLabel } from '@/lib/month';
 import { DEADLINE_BADGE_CLASS, DEADLINE_LABELS, deadlineStatus, type DeadlineKind } from './domain';
 import { useDeadlines } from './hooks';
@@ -26,14 +28,26 @@ export function DeadlinesPage() {
   const showFleet = params.get('vue') === 'flotte';
   const fleetRows = fleetDeadlineRows(fleet.data ?? [], today);
   const [booking, setBooking] = useState<AppointmentPreset | null>(null);
+  const [reminding, setReminding] = useState(false);
   const list = deadlines.data ?? [];
   const statuses = list.map((deadline) => deadlineStatus(deadline.due_date, today));
   const overdue = statuses.filter((status) => status?.tone === 'overdue').length;
   const vehicles = new Set(list.map((deadline) => deadline.vehicle_id)).size;
+  const toRemind = list.filter(canRemind).length;
 
   return (
     <>
-      <PageHeader crumbs={[{ label: 'Clients et véhicules' }, { label: 'Échéances' }]} title="Échéances" />
+      <PageHeader
+        crumbs={[{ label: 'Clients et véhicules' }, { label: 'Échéances' }]}
+        title="Échéances"
+        actions={
+          !showFleet && (
+            <Button onClick={() => setReminding(true)} disabled={toRemind === 0}>
+              <BellRing /> Relancer les échéances{toRemind > 0 ? ` (${toRemind})` : ''}
+            </Button>
+          )
+        }
+      />
 
       <div className="col gap-4">
         <div className="toolbar">
@@ -150,11 +164,18 @@ export function DeadlinesPage() {
                           </td>
                           <td>{deadline.client_name ?? '-'}</td>
                           <td>
-                            {status && (
-                              <span className={`badge ${DEADLINE_BADGE_CLASS[status.tone]}`}>
-                                {status.label}
-                              </span>
-                            )}
+                            <span className="col items-start gap-1">
+                              {status && (
+                                <span className={`badge ${DEADLINE_BADGE_CLASS[status.tone]}`}>
+                                  {status.label}
+                                </span>
+                              )}
+                              {deadline.reminded_at && (
+                                <span className="hint" title="Pas de nouvelle relance pendant 3 mois">
+                                  Relancé le {frenchDate(deadline.reminded_at.slice(0, 10))}
+                                </span>
+                              )}
+                            </span>
                           </td>
                           <td className="r">
                             <Button
@@ -182,6 +203,9 @@ export function DeadlinesPage() {
         )}
       </div>
 
+      {reminding && (
+        <DeadlineRemindersDialog deadlines={list} today={today} onClose={() => setReminding(false)} />
+      )}
       {booking && <AppointmentDialog appointment={null} preset={booking} onClose={() => setBooking(null)} />}
     </>
   );
