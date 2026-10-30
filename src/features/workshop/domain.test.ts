@@ -82,8 +82,10 @@ describe('clôture de l’OR par le technicien', () => {
     expect(finishBlockers([line({ estimated_hours: 1 })], null, CT)).toEqual([]);
   });
 
-  it('photo du contrôle technique exigée dans tous les cas', () => {
+  it('photo du contrôle technique exigée, sauf pour une remorque', () => {
     expect(finishBlockers([], null, [])).toEqual(['Photo du contrôle technique obligatoire']);
+    expect(finishBlockers([], null, [], false, 'vul')).toEqual(['Photo du contrôle technique obligatoire']);
+    expect(finishBlockers([], null, [], false, 'remorque')).toEqual([]);
   });
 
   it('temps estimé de chaque tâche, à l’aveugle : le barème ne compte jamais pour le technicien', () => {
