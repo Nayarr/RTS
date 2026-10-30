@@ -70,6 +70,12 @@ test('page Échéances : un mail par client pour ses véhicules, plus de relance
     sql(`select count(*) from public.deadline_reminders r join public.vehicles v on v.id = r.vehicle_id
          where v.plate in ('RA${id}', 'RB${id}') and r.source = 'page'`),
   ).toBe('2');
-  await page.getByRole('button', { name: /Relancer les échéances/ }).click();
-  await expect(page.getByRole('dialog', { name: 'Relancer les échéances' }).getByText(client)).toHaveCount(0);
+  // Plus proposé à la relance (bouton grisé s'il ne reste personne d'autre à relancer)
+  const again = page.getByRole('button', { name: /Relancer les échéances/ });
+  if (await again.isEnabled()) {
+    await again.click();
+    await expect(page.getByRole('dialog', { name: 'Relancer les échéances' }).getByText(client)).toHaveCount(
+      0,
+    );
+  }
 });
