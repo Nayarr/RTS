@@ -1,14 +1,17 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronDown, Paperclip, RotateCcw } from 'lucide-react';
+import { CalendarCheck, Check, ChevronDown, Paperclip, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/app/PageHeader';
+import { Button } from '@/components/ui/button';
 import { FilterChips } from '@/components/ListControls';
 import { cn } from '@/lib/utils';
-import { fetchInboxEmails, fetchInboxWebhookStatus, setMailsHandled } from './api';
+import { decideDeadlineUpdates, fetchInboxEmails, fetchInboxWebhookStatus, setMailsHandled } from './api';
 import {
   attachmentNames,
   CATEGORY_META,
+  deadlineUpdateLine,
+  deadlineUpdates,
   MAIL_FILTERS,
   matchesMailFilter,
   sortMails,
@@ -180,6 +183,11 @@ function MailRow({
               </span>
             )}
             {mail.needs_reply && !mail.handled_at && <span className="tag">Réponse attendue</span>}
+            {mail.deadline_updates_status === 'proposed' && (
+              <span className="tag">
+                <CalendarCheck className="size-3" /> Échéance à mettre à jour
+              </span>
+            )}
             {files.length > 0 && (
               <span className="tag">
                 <Paperclip className="size-3" />{' '}
@@ -196,6 +204,7 @@ function MailRow({
               {mail.mailbox && ` · reçu sur ${mail.mailbox}`}
               {files.length > 0 && ` · pièces jointes : ${files.join(', ')}`}
             </p>
+            <DeadlineUpdates mail={mail} />
             <p className="mail-text">{mail.body || '(mail vide)'}</p>
           </div>
         )}
@@ -224,5 +233,59 @@ function MailRow({
         </button>
       )}
     </li>
+  );
+}
+
+/**
+ * Contrôle technique ou hayon renouvelé annoncé dans le mail : nouvelles dates proposées pour les
+ * fiches des véhicules (cohérentes, vérifiées par la base), appliquées ou écartées par le bureau.
+ */
+function DeadlineUpdates({ mail }: { mail: InboxEmail }) {
+  const queryClient = useQueryClient();
+  const updates = deadlineUpdates(mail.deadline_updates);
+  const decide = useMutation({
+    mutationFn: (apply: boolean) => decideDeadlineUpdates(mail.id, apply),
+    onSuccess: (_, apply) => {
+      void queryClient.invalidateQueries({ queryKey: ['agent', 'mails'] });
+      void queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success(apply ? 'Fiches des véhicules mises à jour' : 'Mise à jour écartée');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Réessaie'),
+  });
+  if (updates.length === 0 || mail.deadline_updates_status === 'none') return null;
+  const proposed = mail.deadline_updates_status === 'proposed';
+  return (
+    <section className="alert s-blue col items-start gap-2" aria-label="Échéances proposées">
+      <span className="row gap-2">
+        <CalendarCheck className="i" />
+        <b>
+          {proposed
+            ? 'Mettre à jour la fiche du véhicule ?'
+            : mail.deadline_updates_status === 'applied'
+              ? 'Fiche du véhicule mise à jour'
+              : 'Mise à jour écartée'}
+        </b>
+      </span>
+      <ul className="col gap-0.5">
+        {updates.map((update) => (
+          <li key={`${update.vehicle_id}-${update.kind}`}>{deadlineUpdateLine(update)}</li>
+        ))}
+      </ul>
+      {proposed && (
+        <div className="row flex-wrap gap-2">
+          <Button size="sm" disabled={decide.isPending} onClick={() => decide.mutate(true)}>
+            Mettre à jour
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={decide.isPending}
+            onClick={() => decide.mutate(false)}
+          >
+            Ignorer
+          </Button>
+        </div>
+      )}
+    </section>
   );
 }

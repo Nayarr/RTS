@@ -187,7 +187,7 @@ export async function fetchInboxEmails(): Promise<InboxEmail[]> {
   const { data, error } = await supabase
     .from('inbox_emails')
     .select(
-      'id, mailbox, from_name, from_address, subject, body, attachments, received_at, triage_status, category, urgency, summary, needs_reply, handled_at, clients(name)',
+      'id, mailbox, from_name, from_address, subject, body, attachments, received_at, triage_status, category, urgency, summary, needs_reply, handled_at, deadline_updates, deadline_updates_status, clients(name)',
     )
     .order('received_at', { ascending: false })
     .limit(500);
@@ -200,6 +200,12 @@ export async function fetchInboxWebhookStatus() {
   const { data, error } = await supabase.from('inbox_webhook_status').select('*').maybeSingle();
   if (error) throw error;
   return data;
+}
+
+/** Dates de contrôle proposées d'après un mail : appliquées aux fiches des véhicules, ou écartées. */
+export async function decideDeadlineUpdates(id: string, apply: boolean): Promise<void> {
+  const { error } = await supabase.rpc('decide_inbox_deadline_updates', { p_mail_id: id, p_apply: apply });
+  if (error) throw error;
 }
 
 /** Marque des mails traités (ou les remet à traiter). */

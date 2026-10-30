@@ -121,6 +121,7 @@ Deno.test('tri : consignes sans tiret cadratin, contenu du mail traité comme un
 
 Deno.test('tri : mail présenté avec client reconnu, pièces jointes et texte borné', () => {
   const request = triageRequest({
+    receivedOn: '2026-10-30',
     mailbox: 'atelier@rapidtruckservice.fr',
     fromName: 'Jean Moreau',
     fromAddress: 'jean@transports-moreau.fr',
@@ -131,6 +132,7 @@ Deno.test('tri : mail présenté avec client reconnu, pièces jointes et texte b
   });
   assertStringIncludes(request, 'De : Jean Moreau <jean@transports-moreau.fr> (client connu de l’atelier');
   assertStringIncludes(request, 'Objet : (sans objet)');
+  assertStringIncludes(request, 'Reçu le : 2026-10-30');
   assertStringIncludes(request, 'Pièces jointes : photo.jpg');
   assert(request.length < 6_400);
 });
@@ -144,6 +146,7 @@ Deno.test('tri : réponse vérifiée, tiret cadratin retiré, réponse invalide 
         urgency: 'normale',
         summary: `Transports Moreau ${dash} devis embrayage pour AB-123-CD`,
         needs_reply: true,
+        renouvellements: [],
       }),
     ),
     {
@@ -151,7 +154,33 @@ Deno.test('tri : réponse vérifiée, tiret cadratin retiré, réponse invalide 
       urgency: 'normale',
       summary: 'Transports Moreau, devis embrayage pour AB-123-CD',
       needs_reply: true,
+      renouvellements: [],
     },
+  );
+  // Contrôle renouvelé annoncé : plaque et prochaine échéance ; date illisible rejetée
+  assertEquals(
+    parseTriage(
+      JSON.stringify({
+        category: 'administratif',
+        urgency: 'faible',
+        summary: 'MCE confirme le contrôle technique de AB-123-CD',
+        needs_reply: false,
+        renouvellements: [{ immatriculation: 'AB-123-CD', controle: 'ct', date: '2027-10-27' }],
+      }),
+    )?.renouvellements,
+    [{ immatriculation: 'AB-123-CD', controle: 'ct', date: '2027-10-27' }],
+  );
+  assertEquals(
+    parseTriage(
+      JSON.stringify({
+        category: 'administratif',
+        urgency: 'faible',
+        summary: 'x',
+        needs_reply: false,
+        renouvellements: [{ immatriculation: 'AB-123-CD', controle: 'ct', date: 'octobre 2027' }],
+      }),
+    ),
+    null,
   );
   assertEquals(parseTriage('pas du json'), null);
   assertEquals(
