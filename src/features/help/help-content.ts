@@ -91,7 +91,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     title: 'Facturer',
     items: [
       'Sur l’OR, « Facturer » prépare un brouillon avec les travaux effectués, les pièces, les consommables, la sous-traitance et le déplacement. Vérifie, ajuste, puis « Émettre la facture ».',
-      '« Aperçu pro forma » produit une facture pro forma sans numéro.',
+      '« Aperçu pro forma » produit une facture pro forma sans numéro, la main d’œuvre au forfait (jamais le nombre d’heures).',
       'Une facture émise ne se modifie plus : pour la corriger, « Générer un avoir », puis une nouvelle facture si besoin.',
       'Sur la facture : « Enregistrer un paiement » (même partiel), « Envoyer au client » pour le lien en ligne, « Relancer » quand elle est en retard.',
       'Moyens de paiement : virement, chèque, carte bancaire, espèces, prélèvement (la LCR / traite n’est plus proposée ; les anciens paiements en LCR restent affichés).',

@@ -177,6 +177,8 @@ export interface DocumentLine {
   quantity: number;
   discount_percent: number;
   net: number;
+  /** Ligne au forfait : quantité masquée (main d'œuvre d'une pro forma, sans les heures). */
+  lumpSum?: boolean;
 }
 
 /** Ligne offerte (geste commercial) : remise de 100 % sur une ligne chiffrée. */
@@ -235,7 +237,7 @@ export function drawLinesTable(
       if (offered) offeredRows.add(body.length);
       body.push([
         pdfText(line.description) || '-',
-        docQuantity(line.quantity, line.line_type === 'labor'),
+        line.lumpSum ? '-' : docQuantity(line.quantity, line.line_type === 'labor'),
         docMoney(line.unit_price ?? 0),
         line.discount_percent > 0 ? `${String(line.discount_percent).replace('.', ',')} %` : '-',
         docMoney(line.net),
