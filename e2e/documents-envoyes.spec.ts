@@ -73,7 +73,7 @@ test('OR « Devis envoyé » dès que son devis part au client, filtre « Devis 
   await expect(page.getByText(plate).first()).toBeVisible();
 });
 
-test('facture envoyée au client : OR « Facture envoyée », filtre « Factures envoyées »', async ({
+test('facture envoyée au client : OR toujours « Facturé », filtre « Factures envoyées »', async ({
   page,
 }, testInfo) => {
   const plate = `FE${suffix(testInfo.project.name)}`;
@@ -114,7 +114,8 @@ test('facture envoyée au client : OR « Facture envoyée », filtre « Factures
   await expect(page.getByText(/envoyée le \d{2}\/\d{2}\/\d{4}/)).toBeVisible();
 
   await page.goto(`/or/${order.id}`);
-  await expect(page.getByText('Facture envoyée', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Facturé', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Facture envoyée', { exact: true })).toHaveCount(0);
 
   await page.goto('/factures?filtre=sent');
   await page.getByRole('searchbox', { name: 'Rechercher une facture' }).fill(plate);
