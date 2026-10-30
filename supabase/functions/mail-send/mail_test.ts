@@ -203,6 +203,15 @@ Deno.test('réponse à un mail reçu : même fil chez le client, en-tête vérif
   assertEquals(threadHeader(null), null);
 });
 
+Deno.test('mail de l’agent : échéances relancées lues dans l’action, illisibles ignorées', () => {
+  const vehicle = crypto.randomUUID();
+  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: vehicle, kind: 'tailgate' }] }), [
+    { vehicle_id: vehicle, kind: 'tailgate' },
+  ]);
+  assertEquals(agentMailDeadlines({ invoice_ids: [] }), []);
+  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: 'x', kind: 'ct' }] }), []);
+});
+
 Deno.test('mail préparé par l’agent : contenu relu dans l’action, adresse de facturation pour une relance', () => {
   const key = '3f6c2f47-6c2b-4b8e-9d0e-2a3c7b1d5e90';
   assertEquals(
@@ -235,13 +244,4 @@ Deno.test('mail préparé par l’agent : contenu relu dans l’action, adresse 
     null,
   );
   assertEquals(agentMailRequest({ to: 'a@b.fr', subject: 'x', text: 'y', category: 'signature' }, key), null);
-});
-
-Deno.test('mail de l’agent : échéances relancées lues dans l’action, illisibles ignorées', () => {
-  const vehicle = crypto.randomUUID();
-  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: vehicle, kind: 'tailgate' }] }), [
-    { vehicle_id: vehicle, kind: 'tailgate' },
-  ]);
-  assertEquals(agentMailDeadlines({ invoice_ids: [] }), []);
-  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: 'x', kind: 'ct' }] }), []);
 });
