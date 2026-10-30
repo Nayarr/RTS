@@ -32,6 +32,9 @@ export const CATEGORY_META: Record<string, { label: string; color: string }> = {
   autre: { label: 'Autre', color: '#6B7280' },
 };
 
+/** Boîte d'où part la réponse : celle qui a reçu le mail (« comptoir@ »), atelier@ par défaut. */
+export const replyMailbox = (mailbox: string | null) => `${mailbox?.split('@')[0] || 'atelier'}@`;
+
 export const URGENCY_META: Record<string, { label: string; color: string }> = {
   urgente: { label: 'Urgent', color: '#B5453A' },
   normale: { label: 'Normal', color: '#C98A00' },
