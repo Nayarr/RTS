@@ -2518,6 +2518,7 @@ export type Database = {
           pdf_file_id: string | null;
           public_token: string | null;
           rental_id: string | null;
+          sent_at: string | null;
           service_date: string | null;
           status: Database['public']['Enums']['invoice_status'];
           total_ht: number | null;
@@ -2549,6 +2550,7 @@ export type Database = {
           pdf_file_id?: string | null;
           public_token?: string | null;
           rental_id?: string | null;
+          sent_at?: string | null;
           service_date?: string | null;
           status?: Database['public']['Enums']['invoice_status'];
           total_ht?: number | null;
@@ -2580,6 +2582,7 @@ export type Database = {
           pdf_file_id?: string | null;
           public_token?: string | null;
           rental_id?: string | null;
+          sent_at?: string | null;
           service_date?: string | null;
           status?: Database['public']['Enums']['invoice_status'];
           total_ht?: number | null;
@@ -6337,6 +6340,7 @@ export type Database = {
           reminders_count: number | null;
           repair_order_ids: string[] | null;
           repair_order_numbers: string[] | null;
+          sent_at: string | null;
           service_date: string | null;
           status: Database['public']['Enums']['invoice_status'] | null;
           total_ht: number | null;
@@ -6807,6 +6811,7 @@ export type Database = {
           id: string | null;
           inspection_required: boolean | null;
           intervention_type: Database['public']['Enums']['intervention_type'] | null;
+          invoice_sent: boolean | null;
           legacy_id: string | null;
           maintenance_contract_id: string | null;
           mileage: number | null;
@@ -6822,6 +6827,7 @@ export type Database = {
           plate: string | null;
           plate_key: string | null;
           pre_quote_work_settled_at: string | null;
+          quote_sent: boolean | null;
           requested_work: string | null;
           roadside_address: string | null;
           roadside_km: number | null;
