@@ -150,6 +150,7 @@ export const NAV_PATHS = [
   ...GROUPS.flatMap((group) => group.items.map((item) => item.to)),
   '/agent-direction',
   '/agent-direction/mails',
+  '/agenda',
   '/reglages',
   '/aide',
 ];

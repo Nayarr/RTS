@@ -76,6 +76,14 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     ],
   },
   {
+    title: 'Mon agenda',
+    items: [
+      'Menu « Mon agenda », sous « Mails reçus » : ton calendrier personnel, comme Outlook. Personne d’autre ne voit tes rendez-vous, direction comprise.',
+      'Vues Jour, Semaine ou Mois ; le petit calendrier à gauche change de jour et liste ses rendez-vous. Clique dans une case vide de la grille pour poser un rendez-vous à cette heure, ou sur un rendez-vous pour le modifier ou le supprimer.',
+      '« Journée entière » pour un jour ou plusieurs (salon, congé, déplacement) : il s’affiche en haut de la grille.',
+    ],
+  },
+  {
     title: 'Devis',
     items: [
       'Sur l’OR, « Préparer le devis » reprend les travaux à prévoir, calcule la main d’œuvre au taux horaire et applique les forfaits. Ajoute pièces, main d’œuvre, texte et remises.',
