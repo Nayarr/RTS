@@ -390,7 +390,7 @@ export function InvoicePage() {
                 <h2 className="disp text-[30px] leading-none font-bold tracking-[.06em]">FACTURE</h2>
                 <span className="hint">
                   {invoice.number
-                    ? `N° ${invoice.number} · émise le ${formatDate(invoice.issued_at)} · échéance ${formatDate(invoice.due_date)}`
+                    ? `N° ${invoice.number} · émise le ${formatDate(invoice.issued_at)} · échéance ${formatDate(invoice.due_date)}${invoice.sent_at ? ` · envoyée le ${formatDate(invoice.sent_at)}` : ''}`
                     : 'Brouillon : numéro attribué à l’émission'}
                 </span>
               </div>

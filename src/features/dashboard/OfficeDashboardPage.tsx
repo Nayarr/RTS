@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { AlertsBell } from '@/features/alerts/AlertsBell';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
-import { CATEGORY_META, CATEGORY_ORDER } from '@/features/repair-orders/constants';
+import { CATEGORY_META, OPEN_CATEGORIES } from '@/features/repair-orders/constants';
 import { formatEuro } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { freshnessLabel } from './freshness';
@@ -96,7 +96,6 @@ export function OfficeDashboardPage() {
   const online = useOnline();
   const data = dashboard.data;
   const isDirection = profile?.role === 'direction';
-  const openCategories = CATEGORY_ORDER.filter((category) => category !== 'invoiced');
   const todoCount = data
     ? [
         data.quotes_awaiting_response,
@@ -169,8 +168,8 @@ export function OfficeDashboardPage() {
                 Voir tous les OR →
               </Link>
             </div>
-            <ul className="kstrip grid-cols-2 sm:grid-cols-4 xl:grid-cols-7">
-              {openCategories.map((category) => (
+            <ul className="kstrip grid-cols-2 sm:grid-cols-4 xl:grid-cols-8">
+              {OPEN_CATEGORIES.map((category) => (
                 <Tile
                   key={category}
                   to={`/or?filtre=${category}`}
