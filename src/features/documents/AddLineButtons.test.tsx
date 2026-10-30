@@ -13,7 +13,32 @@ vi.mock('@/features/catalogs/api', async (importOriginal) => ({
   fetchParts: vi.fn(),
   saveCatalogPart: vi.fn(),
 }));
-vi.mock('./hooks', () => ({ useServicePackages: () => ({ data: [], isSuccess: true }) }));
+vi.mock('./hooks', () => ({
+  useServicePackages: () => ({ data: [], isSuccess: true }),
+  useLaborRates: () => ({ data: laborRates }),
+}));
+
+// Taux des réglages (seed)
+const { laborRates } = vi.hoisted(() => ({
+  laborRates: [
+    { category: 'pl', label: 'PL', labor_line_label: 'MO PL', hourly_rate: 90, updated_at: '' },
+    { category: 'vul', label: 'VUL', labor_line_label: 'MO VUL', hourly_rate: 75, updated_at: '' },
+    {
+      category: 'remorque',
+      label: 'Remorque',
+      labor_line_label: 'MO remorque',
+      hourly_rate: 90,
+      updated_at: '',
+    },
+    {
+      category: 'tolerie',
+      label: 'Tôlerie/Carrosserie',
+      labor_line_label: 'MO tôlerie',
+      hourly_rate: 80,
+      updated_at: '',
+    },
+  ],
+}));
 
 const basePart: Part = {
   id: 'p1',
@@ -144,5 +169,51 @@ describe('geste commercial', () => {
       { path: '/', element: <TotalsList totals={computeTotals(lines)} offered={offeredTotal(lines)} /> },
     ]);
     expect(screen.getByLabelText('Totaux')).toHaveTextContent('Dont offert');
+  });
+});
+
+describe('ajout de main d’œuvre', () => {
+  it('taux du véhicule proposé, tôlerie choisie : taux et catégorie de la ligne suivent', async () => {
+    const onAdd = renderButtons();
+    await userEvent.click(screen.getByRole('button', { name: /Ajouter de la main d’œuvre/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Main d’œuvre' });
+    const choice = within(dialog).getByLabelText('Taux horaire');
+    expect(choice).toHaveValue('pl');
+    expect(within(dialog).getByLabelText('Taux HT (€/h)')).toHaveValue('90');
+    await userEvent.selectOptions(choice, 'tolerie');
+    expect(within(dialog).getByLabelText('Taux HT (€/h)')).toHaveValue('80');
+    await userEvent.type(within(dialog).getByLabelText('Prestation'), 'Redressage longeron');
+    await userEvent.type(within(dialog).getByLabelText('Temps (heures)'), '3');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(onAdd).toHaveBeenCalledWith({
+        line_type: 'labor',
+        description: 'Redressage longeron',
+        hours: 3,
+        quantity: 3,
+        unit_price: 80,
+        labor_category: 'tolerie',
+      }),
+    );
+  });
+
+  it('taux du client proposé d’abord, taux modifiable pour la ligne', async () => {
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    renderRoutes([{ path: '/', element: <AddLineButtons vehicleType="vul" laborRate={70} onAdd={onAdd} /> }]);
+    await userEvent.click(screen.getByRole('button', { name: /Ajouter de la main d’œuvre/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Main d’œuvre' });
+    expect(within(dialog).getByLabelText('Taux horaire')).toHaveValue('client');
+    const rate = within(dialog).getByLabelText('Taux HT (€/h)');
+    expect(rate).toHaveValue('70');
+    await userEvent.clear(rate);
+    await userEvent.type(rate, '72,5');
+    await userEvent.type(within(dialog).getByLabelText('Prestation'), 'Diagnostic');
+    await userEvent.type(within(dialog).getByLabelText('Temps (heures)'), '1');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(onAdd).toHaveBeenCalledWith(
+        expect.objectContaining({ unit_price: 72.5, labor_category: 'vul', hours: 1 }),
+      ),
+    );
   });
 });

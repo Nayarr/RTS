@@ -33,6 +33,7 @@ import { QuotePage } from './QuotePage';
 import { QuotesPage } from './QuotesPage';
 import { RepairOrderQuotesCard } from './RepairOrderQuotesCard';
 
+import type * as DocumentHooks from '@/features/documents/hooks';
 vi.mock('@/features/auth/api', async (importOriginal) => ({
   ...(await importOriginal<typeof AuthApi>()),
   fetchProfile: vi.fn(),
@@ -69,6 +70,12 @@ vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
   ...(await importOriginal<typeof ContactApi>()),
   fetchClientContact: vi.fn(),
   updateClientContact: vi.fn(),
+}));
+vi.mock('@/features/documents/hooks', async (importOriginal) => ({
+  ...(await importOriginal<typeof DocumentHooks>()),
+  useLaborRates: () => ({
+    data: [{ category: 'pl', label: 'PL', labor_line_label: 'MO PL', hourly_rate: 90, updated_at: '' }],
+  }),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
