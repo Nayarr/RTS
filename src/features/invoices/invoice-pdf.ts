@@ -40,10 +40,7 @@ export interface InvoicePdfInput {
   proforma?: { client: ClientBilling; paymentTermsDays: number; now?: Date };
 }
 
-/**
- * Lignes imprimées. Pro forma : jamais le nombre d'heures, la main d'œuvre est présentée au
- * forfait (montant de la ligne, quantité masquée).
- */
+/** Lignes imprimées. Pro forma : quantité de la main d'œuvre sans l'unité « h » (« 6 », pas « 6 h »). */
 export function invoiceDocumentLines(lines: InvoiceLine[], proforma: boolean): DocumentLine[] {
   return lines.map((line) => ({
     line_type: line.line_type,
@@ -52,13 +49,7 @@ export function invoiceDocumentLines(lines: InvoiceLine[], proforma: boolean): D
     quantity: line.quantity,
     discount_percent: line.discount_percent,
     net: lineNet(line),
-    ...(proforma && line.line_type === 'labor'
-      ? {
-          unit_price: Math.round((line.unit_price ?? 0) * line.quantity * 100) / 100,
-          quantity: 1,
-          lumpSum: true,
-        }
-      : {}),
+    ...(proforma ? { plainQuantity: true } : {}),
   }));
 }
 
