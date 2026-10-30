@@ -17,9 +17,16 @@ import { toast } from 'sonner';
 import { saveCatalogPart, type Part } from '@/features/catalogs/api';
 import { PartFields } from '@/features/catalogs/PartFields';
 import { partFromForm, partSchema, partToForm, type PartValues } from '@/features/catalogs/schemas';
-import { decimalField, decimalValue, formatEuro } from '@/lib/numbers';
-import { useServicePackages } from './hooks';
-import { packagesFor, type NewLine, type ServicePackage, type VehicleType } from './lines';
+import { Label } from '@/components/ui/label';
+import { decimalField, decimalText, decimalValue, formatEuro } from '@/lib/numbers';
+import { useLaborRates, useServicePackages } from './hooks';
+import {
+  packagesFor,
+  type LaborCategory,
+  type NewLine,
+  type ServicePackage,
+  type VehicleType,
+} from './lines';
 import { PartSuggestions } from '@/features/catalogs/PartSuggestions';
 import { useQueryClient } from '@tanstack/react-query';
 import { partsKey } from '@/features/catalogs/hooks';
@@ -29,37 +36,63 @@ type Dialogs = 'labor' | 'package' | 'part' | 'tires' | null;
 
 const laborSchema = z.object({
   description: z.string().trim().min(1, 'Indique la prestation').max(500),
+  rate: decimalField({ required: true }),
   hours: decimalField({ required: true, positive: true }),
 });
 type LaborValues = z.infer<typeof laborSchema>;
 
+/** Choix « taux du client » dans la liste des taux (taux propre à sa fiche). */
+const CLIENT_RATE = 'client';
+
 const partLineSchema = partSchema.extend({ quantity: decimalField({ required: true, positive: true }) });
 type PartLineValues = z.infer<typeof partLineSchema>;
 
+/**
+ * Main d'œuvre : taux des réglages au choix (poids lourds, utilitaires, tôlerie…), celui du
+ * véhicule (ou le taux propre au client) proposé d'abord, modifiable pour la ligne.
+ */
 function LaborDialog({
   rate,
+  vehicleType,
   onAdd,
   onClose,
 }: {
   rate: number;
-  onAdd: (values: { description: string; hours: number }) => void;
+  vehicleType: VehicleType;
+  onAdd: (values: { description: string; hours: number; rate: number; category: LaborCategory }) => void;
   onClose: () => void;
 }) {
+  const rates = useLaborRates().data ?? [];
+  const standard = rates.find((item) => item.category === vehicleType);
+  // Taux de la fiche client, différent du taux du type de véhicule
+  const clientRate = standard !== undefined && standard.hourly_rate !== rate;
+  const [picked, setPicked] = useState('');
+  const choice = picked || (clientRate ? CLIENT_RATE : vehicleType);
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LaborValues>({
     resolver: zodResolver(laborSchema),
-    defaultValues: { description: '', hours: '' },
+    defaultValues: { description: '', rate: decimalText(rate), hours: '' },
   });
+
+  const pick = (value: string) => {
+    setPicked(value);
+    const item = rates.find((candidate) => candidate.category === value);
+    setValue('rate', decimalText(value === CLIENT_RATE ? rate : (item?.hourly_rate ?? rate)), {
+      shouldValidate: true,
+    });
+  };
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Main d’œuvre</DialogTitle>
           <DialogDescription>
-            Chiffrée au taux horaire applicable : {formatEuro(rate)} HT / h.
+            Choisis le taux horaire : celui du véhicule est proposé, les taux se règlent dans Paramètres.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -67,7 +100,12 @@ function LaborDialog({
           noValidate
           className="space-y-4"
           onSubmit={handleSubmit((values) =>
-            onAdd({ description: values.description.trim(), hours: decimalValue(values.hours) ?? 0 }),
+            onAdd({
+              description: values.description.trim(),
+              hours: decimalValue(values.hours) ?? 0,
+              rate: decimalValue(values.rate) ?? 0,
+              category: choice === CLIENT_RATE ? vehicleType : (choice as LaborCategory),
+            }),
           )}
         >
           <FormField
@@ -77,14 +115,40 @@ function LaborDialog({
             error={errors.description?.message}
             {...register('description')}
           />
-          <FormField
-            id="labor-hours"
-            label="Temps (heures)"
-            inputMode="decimal"
-            placeholder="Ex : 2,5"
-            error={errors.hours?.message}
-            {...register('hours')}
-          />
+          <div className="field">
+            <Label htmlFor="labor-category">Taux horaire</Label>
+            <select
+              id="labor-category"
+              className="inp"
+              value={choice}
+              onChange={(event) => pick(event.target.value)}
+            >
+              {clientRate && <option value={CLIENT_RATE}>Taux du client · {formatEuro(rate)} HT / h</option>}
+              {rates.map((item) => (
+                <option key={item.category} value={item.category}>
+                  {item.label} · {formatEuro(item.hourly_rate)} HT / h
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3.5">
+            <FormField
+              id="labor-rate"
+              label="Taux HT (€/h)"
+              inputMode="decimal"
+              className="num"
+              error={errors.rate?.message}
+              {...register('rate')}
+            />
+            <FormField
+              id="labor-hours"
+              label="Temps (heures)"
+              inputMode="decimal"
+              placeholder="Ex : 2,5"
+              error={errors.hours?.message}
+              {...register('hours')}
+            />
+          </div>
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
@@ -265,7 +329,7 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
 
 /**
  * Boutons d'ajout de l'ancienne appli : ligne libre, forfait, pièce (saisie et gardée dans la base),
- * main d'œuvre au taux applicable, texte. Le document enregistre la ligne (`onAdd`).
+ * main d'œuvre au taux choisi, texte. Le document enregistre la ligne (`onAdd`).
  */
 export function AddLineButtons({
   vehicleType,
@@ -330,15 +394,16 @@ export function AddLineButtons({
       {open === 'labor' && (
         <LaborDialog
           rate={laborRate}
+          vehicleType={vehicleType}
           onClose={() => setOpen(null)}
-          onAdd={({ description, hours }) =>
+          onAdd={({ description, hours, rate, category }) =>
             add({
               line_type: 'labor',
               description,
               hours,
               quantity: hours,
-              unit_price: laborRate,
-              labor_category: vehicleType,
+              unit_price: rate,
+              labor_category: category,
             })
           }
         />
