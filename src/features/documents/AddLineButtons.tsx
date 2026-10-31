@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { decimalField, decimalText, decimalValue, formatEuro } from '@/lib/numbers';
 import { useLaborRates, useServicePackages } from './hooks';
 import {
+  laborRateKey,
   packagesFor,
   type LaborCategory,
   type NewLine,
@@ -80,7 +81,7 @@ function LaborDialog({
 
   const pick = (value: string) => {
     setPicked(value);
-    const item = rates.find((candidate) => candidate.category === value);
+    const item = rates.find((candidate) => laborRateKey(candidate) === value);
     setValue('rate', decimalText(value === CLIENT_RATE ? rate : (item?.hourly_rate ?? rate)), {
       shouldValidate: true,
     });
@@ -104,7 +105,10 @@ function LaborDialog({
               description: values.description.trim(),
               hours: decimalValue(values.hours) ?? 0,
               rate: decimalValue(values.rate) ?? 0,
-              category: choice === CLIENT_RATE ? vehicleType : (choice as LaborCategory),
+              // Type ajouté par la direction : catégorie du véhicule, prix du type choisi
+              category:
+                rates.find((item) => laborRateKey(item) === choice)?.category ??
+                (vehicleType as LaborCategory),
             }),
           )}
         >
@@ -125,7 +129,7 @@ function LaborDialog({
             >
               {clientRate && <option value={CLIENT_RATE}>Taux du client · {formatEuro(rate)} HT / h</option>}
               {rates.map((item) => (
-                <option key={item.category} value={item.category}>
+                <option key={item.id} value={laborRateKey(item)}>
                   {item.label} · {formatEuro(item.hourly_rate)} HT / h
                 </option>
               ))}

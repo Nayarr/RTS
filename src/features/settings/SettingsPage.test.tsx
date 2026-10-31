@@ -1,14 +1,23 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
-import { fetchSettings, updateCompanySettings, updateLaborRates, type Settings } from './api';
+import {
+  addLaborRate,
+  deleteLaborRate,
+  fetchSettings,
+  updateCompanySettings,
+  updateLaborRates,
+  type Settings,
+} from './api';
 import type * as SettingsApi from './api';
 import { SettingsPage } from './SettingsPage';
 
 vi.mock('./api', async (importOriginal) => ({
   ...(await importOriginal<typeof SettingsApi>()),
+  addLaborRate: vi.fn(),
+  deleteLaborRate: vi.fn(),
   fetchSettings: vi.fn(),
   updateCompanySettings: vi.fn(),
   updateLaborRates: vi.fn(),
@@ -47,10 +56,21 @@ const settings: Settings = {
   },
   laborRates: [
     {
+      id: 'r-pl',
       category: 'pl',
       label: 'PL',
       labor_line_label: 'Main d’œuvre mécanique poids lourds niveau 1',
       hourly_rate: 90,
+      sort_order: 1,
+      updated_at: '2026-09-28T00:00:00Z',
+    },
+    {
+      id: 'r-elec',
+      category: null,
+      label: 'Électricité',
+      labor_line_label: 'Main d’œuvre électricité',
+      hourly_rate: 95,
+      sort_order: 100,
       updated_at: '2026-09-28T00:00:00Z',
     },
   ],
@@ -134,13 +154,48 @@ describe('SettingsPage', () => {
     vi.mocked(updateLaborRates).mockResolvedValue();
     renderSettings();
     await userEvent.click(await screen.findByRole('tab', { name: 'Taux horaires' }));
-    const rate = await screen.findByLabelText(/^Taux HT \(€\/h\)/);
+    const rate = await screen.findByLabelText('Taux HT (€/h) : PL');
     await userEvent.clear(rate);
     await userEvent.type(rate, '95');
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() => expect(updateLaborRates).toHaveBeenCalledOnce());
-    expect(vi.mocked(updateLaborRates).mock.calls[0]?.[0]).toEqual([{ category: 'pl', hourly_rate: 95 }]);
+    expect(vi.mocked(updateLaborRates).mock.calls[0]?.[0]).toEqual([{ id: 'r-pl', hourly_rate: 95 }]);
+  });
+
+  it('types de main d’œuvre : ajout, suppression des types ajoutés, taux de base gardés', async () => {
+    vi.mocked(addLaborRate).mockResolvedValue();
+    vi.mocked(deleteLaborRate).mockResolvedValue();
+    renderSettings();
+    await userEvent.click(await screen.findByRole('tab', { name: 'Taux horaires' }));
+    await screen.findByLabelText('Taux HT (€/h) : PL');
+    expect(screen.queryByRole('button', { name: 'Supprimer le type : PL' })).toBeNull();
+
+    await userEvent.type(screen.getByLabelText('Nouveau type : catégorie'), 'Diagnostic');
+    await userEvent.type(
+      screen.getByLabelText('Nouveau type : libellé sur les documents'),
+      'Diagnostic électronique',
+    );
+    await userEvent.type(screen.getByLabelText('Nouveau type : taux HT (€/h)'), '85,5');
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(addLaborRate).toHaveBeenCalledWith({
+        label: 'Diagnostic',
+        labor_line_label: 'Diagnostic électronique',
+        hourly_rate: 85.5,
+      }),
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Supprimer le type : Électricité' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Supprimer ce type de main d’œuvre ?' })).getByRole(
+        'button',
+        {
+          name: 'Supprimer',
+        },
+      ),
+    );
+    await waitFor(() => expect(deleteLaborRate).toHaveBeenCalledWith('r-elec'));
   });
 
   it('affiche le refus de la base', async () => {

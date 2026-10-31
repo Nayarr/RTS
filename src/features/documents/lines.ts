@@ -9,6 +9,10 @@ export type VehicleType = Enums<'vehicle_type'>;
 export type LaborCategory = Enums<'labor_category'>;
 export type ServicePackage = Tables<'service_packages'>;
 
+/** Valeur d'un taux horaire dans une liste : sa catégorie pour un taux de base, son identifiant sinon. */
+export const laborRateKey = (rate: { id: string; category: LaborCategory | null }) =>
+  rate.category ?? rate.id;
+
 export interface PricedLine {
   line_type: LineType;
   unit_price: number | null;

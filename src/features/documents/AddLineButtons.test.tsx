@@ -21,23 +21,21 @@ vi.mock('./hooks', () => ({
 // Taux des réglages (seed)
 const { laborRates } = vi.hoisted(() => ({
   laborRates: [
-    { category: 'pl', label: 'PL', labor_line_label: 'MO PL', hourly_rate: 90, updated_at: '' },
-    { category: 'vul', label: 'VUL', labor_line_label: 'MO VUL', hourly_rate: 75, updated_at: '' },
-    {
-      category: 'remorque',
-      label: 'Remorque',
-      labor_line_label: 'MO remorque',
-      hourly_rate: 90,
-      updated_at: '',
-    },
-    {
-      category: 'tolerie',
-      label: 'Tôlerie/Carrosserie',
-      labor_line_label: 'MO tôlerie',
-      hourly_rate: 80,
-      updated_at: '',
-    },
-  ],
+    ['r1', 'pl', 'PL', 90, 1],
+    ['r2', 'vul', 'VUL', 75, 2],
+    ['r3', 'remorque', 'Remorque', 90, 3],
+    ['r4', 'tolerie', 'Tôlerie/Carrosserie', 80, 4],
+    // Type ajouté par la direction (sans catégorie)
+    ['r5', null, 'Électricité', 95, 100],
+  ].map(([id, category, label, hourly_rate, sort_order]) => ({
+    id,
+    category,
+    label,
+    labor_line_label: `MO ${String(label)}`,
+    hourly_rate,
+    sort_order,
+    updated_at: '',
+  })),
 }));
 
 const basePart: Part = {
@@ -213,6 +211,24 @@ describe('ajout de main d’œuvre', () => {
     await waitFor(() =>
       expect(onAdd).toHaveBeenCalledWith(
         expect.objectContaining({ unit_price: 72.5, labor_category: 'vul', hours: 1 }),
+      ),
+    );
+  });
+});
+
+describe('type de main d’œuvre ajouté par la direction', () => {
+  it('proposé à l’ajout : son prix, la catégorie du véhicule sur la ligne', async () => {
+    const onAdd = renderButtons();
+    await userEvent.click(screen.getByRole('button', { name: /Ajouter de la main d’œuvre/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Main d’œuvre' });
+    await userEvent.selectOptions(within(dialog).getByLabelText('Taux horaire'), 'r5');
+    expect(within(dialog).getByLabelText('Taux HT (€/h)')).toHaveValue('95');
+    await userEvent.type(within(dialog).getByLabelText('Prestation'), 'Recherche de panne');
+    await userEvent.type(within(dialog).getByLabelText('Temps (heures)'), '1');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() =>
+      expect(onAdd).toHaveBeenCalledWith(
+        expect.objectContaining({ unit_price: 95, labor_category: 'pl', description: 'Recherche de panne' }),
       ),
     );
   });
