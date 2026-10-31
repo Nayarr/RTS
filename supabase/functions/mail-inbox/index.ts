@@ -84,6 +84,7 @@ const claude = anthropicKey
 
 interface PendingMail {
   id: string;
+  received_at: string;
   mailbox: string | null;
   from_name: string;
   from_address: string;
@@ -95,7 +96,8 @@ interface PendingMail {
 }
 
 /** L'expéditeur attend une réponse que l'agent peut préparer (ni publicité, ni administratif…). */
-const wantsReply = (result: Triage) => result.needs_reply && REPLY_CATEGORIES.includes(result.category);
+const wantsReply = (result: Pick<Triage, 'needs_reply' | 'category'>) =>
+  result.needs_reply && REPLY_CATEGORIES.includes(result.category);
 
 /** Trie un mail et enregistre le résultat ; en cas d'échec, il reste en attente pour un nouvel essai. */
 async function triage(admin: SupabaseClient, mail: PendingMail): Promise<Triage | null> {
@@ -111,6 +113,7 @@ async function triage(admin: SupabaseClient, mail: PendingMail): Promise<Triage 
         {
           role: 'user',
           content: triageRequest({
+            receivedOn: parisToday(new Date(mail.received_at)),
             mailbox: mail.mailbox,
             fromName: mail.from_name,
             fromAddress: mail.from_address,
@@ -123,11 +126,12 @@ async function triage(admin: SupabaseClient, mail: PendingMail): Promise<Triage 
       ],
     });
     const text = response.content.map((block) => (block.type === 'text' ? block.text : '')).join('');
-    const result = parseTriage(text);
-    if (!result) {
+    const parsed = parseTriage(text);
+    if (!parsed) {
       console.error('mail-inbox tri illisible', response.stop_reason);
       return null;
     }
+    const { renouvellements, ...result } = parsed;
     const { error } = await admin
       .from('inbox_emails')
       .update({
@@ -139,7 +143,15 @@ async function triage(admin: SupabaseClient, mail: PendingMail): Promise<Triage 
       })
       .eq('id', mail.id);
     if (error) console.error(error);
-    return error ? null : result;
+    // Contrôle renouvelé annoncé par le client : dates cohérentes proposées pour la fiche véhicule
+    if (!error && renouvellements.length) {
+      const { error: proposeError } = await admin.rpc('propose_inbox_deadline_updates', {
+        p_mail_id: mail.id,
+        p_items: renouvellements,
+      });
+      if (proposeError) console.error(proposeError);
+    }
+    return error ? null : parsed;
   } catch (err) {
     if (err instanceof Anthropic.APIError) {
       console.error('mail-inbox tri', err.status, err.message);
@@ -309,7 +321,7 @@ function inBackground(work: Promise<unknown>) {
 }
 
 const PENDING_COLUMNS =
-  'id, mailbox, from_name, from_address, subject, body, attachments, triage_attempts, clients(name)';
+  'id, received_at, mailbox, from_name, from_address, subject, body, attachments, triage_attempts, clients(name)';
 
 export default {
   fetch: withSupabase({ auth: 'none' }, async (req, ctx) => {

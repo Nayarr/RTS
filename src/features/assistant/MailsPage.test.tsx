@@ -2,14 +2,15 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
-import { fetchInboxEmails, fetchInboxWebhookStatus, setMailsHandled } from './api';
-import { matchesMailFilter, sortMails, type InboxEmail } from './mails';
+import { decideDeadlineUpdates, fetchInboxEmails, fetchInboxWebhookStatus, setMailsHandled } from './api';
+import { deadlineUpdateLine, matchesMailFilter, sortMails, type InboxEmail } from './mails';
 import { MailsPage } from './MailsPage';
 
 vi.mock('./api', () => ({
   fetchInboxEmails: vi.fn(),
   fetchInboxWebhookStatus: vi.fn(),
   setMailsHandled: vi.fn(),
+  decideDeadlineUpdates: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -28,6 +29,8 @@ const mail = (overrides: Partial<InboxEmail> = {}): InboxEmail => ({
   summary: 'Transports Moreau demande un devis embrayage pour AB-123-CD.',
   needs_reply: true,
   handled_at: null,
+  deadline_updates: [],
+  deadline_updates_status: 'none',
   clients: { name: 'Transports Moreau & Fils' },
   ...overrides,
 });
@@ -135,5 +138,55 @@ describe('Mails reçus', () => {
     vi.mocked(fetchInboxEmails).mockResolvedValue([]);
     setup();
     expect(await screen.findByText(/Aucun mail reçu pour l’instant/)).toBeInTheDocument();
+  });
+});
+
+describe('mail qui confirme un contrôle renouvelé', () => {
+  const RENEWAL = mail({
+    id: 'm9',
+    subject: 'CT fait',
+    category: 'administratif',
+    needs_reply: false,
+    deadline_updates: [
+      { vehicle_id: 'v1', plate: 'AB-123-CD', kind: 'ct', date: '2027-10-27', current: '2026-10-28' },
+      { vehicle_id: 'v1', plate: 'AB-123-CD', kind: 'tailgate', date: '2027-09-01', current: null },
+    ],
+    deadline_updates_status: 'proposed',
+  });
+
+  it('libellés : date du contrôle technique, mois du hayon, date de la fiche', () => {
+    expect(
+      deadlineUpdateLine({
+        vehicle_id: 'v1',
+        plate: 'AB-123-CD',
+        kind: 'ct',
+        date: '2027-10-27',
+        current: '2026-10-28',
+      }),
+    ).toBe('AB-123-CD : contrôle technique au 27/10/2027 (fiche : 28/10/2026)');
+    expect(
+      deadlineUpdateLine({
+        vehicle_id: 'v1',
+        plate: 'AB-123-CD',
+        kind: 'tailgate',
+        date: '2027-09-01',
+        current: null,
+      }),
+    ).toBe('AB-123-CD : contrôle hayon en 09/2027 (fiche : vide)');
+  });
+
+  it('nouvelles dates proposées, fiche mise à jour en un clic', async () => {
+    vi.mocked(fetchInboxEmails).mockResolvedValue([RENEWAL]);
+    vi.mocked(fetchInboxWebhookStatus).mockResolvedValue(null);
+    vi.mocked(decideDeadlineUpdates).mockResolvedValue();
+    setup();
+    const row = await screen.findByRole('button', { name: /CT fait.*Échéance à mettre à jour/ });
+    expect(row).toHaveTextContent('Échéance à mettre à jour');
+    await userEvent.click(row);
+    const card = screen.getByRole('region', { name: 'Échéances proposées' });
+    expect(card).toHaveTextContent('Mettre à jour la fiche du véhicule ?');
+    expect(card).toHaveTextContent('AB-123-CD : contrôle technique au 27/10/2027 (fiche : 28/10/2026)');
+    await userEvent.click(within(card).getByRole('button', { name: 'Mettre à jour' }));
+    await waitFor(() => expect(decideDeadlineUpdates).toHaveBeenCalledWith('m9', true));
   });
 });

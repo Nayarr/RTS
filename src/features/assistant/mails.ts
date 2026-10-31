@@ -17,7 +17,42 @@ export type InboxEmail = Pick<
   | 'summary'
   | 'needs_reply'
   | 'handled_at'
+  | 'deadline_updates'
+  | 'deadline_updates_status'
 > & { clients: { name: string } | null };
+
+/** Nouvelle date de contrôle proposée d'après le mail (vérifiée par la base). */
+export interface DeadlineUpdate {
+  vehicle_id: string;
+  plate: string;
+  kind: 'ct' | 'tailgate';
+  date: string;
+  current: string | null;
+}
+
+/** Dates proposées lues dans le mail (entrées illisibles écartées). */
+export function deadlineUpdates(value: unknown): DeadlineUpdate[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is DeadlineUpdate =>
+      typeof item === 'object' &&
+      item !== null &&
+      typeof (item as DeadlineUpdate).plate === 'string' &&
+      ((item as DeadlineUpdate).kind === 'ct' || (item as DeadlineUpdate).kind === 'tailgate') &&
+      /^\d{4}-\d{2}-\d{2}$/.test(String((item as DeadlineUpdate).date)),
+  );
+}
+
+const shortDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+const monthOf = (iso: string) => `${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+
+/** « AB-123-CD : contrôle technique au 27/10/2027 (fiche : 28/10/2026) » ; hayon au mois. */
+export function deadlineUpdateLine(update: DeadlineUpdate): string {
+  const hayon = update.kind === 'tailgate';
+  const when = (iso: string) => (hayon ? monthOf(iso) : shortDate(iso));
+  const label = hayon ? 'contrôle hayon en' : 'contrôle technique au';
+  return `${update.plate} : ${label} ${when(update.date)} (fiche : ${update.current ? when(update.current) : 'vide'})`;
+}
 
 export const CATEGORY_META: Record<string, { label: string; color: string }> = {
   devis: { label: 'Demande de devis', color: '#137017' },

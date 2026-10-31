@@ -1836,6 +1836,10 @@ export type Database = {
           category: string | null;
           client_id: string | null;
           created_at: string;
+          deadline_updates: NonNullable<Json>;
+          deadline_updates_decided_at: string | null;
+          deadline_updates_decided_by: string | null;
+          deadline_updates_status: string;
           from_address: string;
           from_name: string;
           handled_at: string | null;
@@ -1874,6 +1878,10 @@ export type Database = {
           category?: string | null;
           client_id?: string | null;
           created_at?: string;
+          deadline_updates?: NonNullable<Json>;
+          deadline_updates_decided_at?: string | null;
+          deadline_updates_decided_by?: string | null;
+          deadline_updates_status?: string;
           from_address: string;
           from_name?: string;
           handled_at?: string | null;
@@ -1912,6 +1920,10 @@ export type Database = {
           category?: string | null;
           client_id?: string | null;
           created_at?: string;
+          deadline_updates?: NonNullable<Json>;
+          deadline_updates_decided_at?: string | null;
+          deadline_updates_decided_by?: string | null;
+          deadline_updates_status?: string;
           from_address?: string;
           from_name?: string;
           handled_at?: string | null;
@@ -1957,6 +1969,13 @@ export type Database = {
             columns: ['client_id'];
             isOneToOne: false;
             referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inbox_emails_deadline_updates_decided_by_fkey';
+            columns: ['deadline_updates_decided_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
           {
@@ -7657,6 +7676,57 @@ export type Database = {
         Args: { p_kind: string; p_now?: string; p_vehicle_id: string };
         Returns: boolean;
       };
+      decide_inbox_deadline_updates: {
+        Args: { p_apply: boolean; p_mail_id: string };
+        Returns: {
+          attachments: NonNullable<Json>;
+          body: string;
+          category: string | null;
+          client_id: string | null;
+          created_at: string;
+          deadline_updates: NonNullable<Json>;
+          deadline_updates_decided_at: string | null;
+          deadline_updates_decided_by: string | null;
+          deadline_updates_status: string;
+          from_address: string;
+          from_name: string;
+          handled_at: string | null;
+          handled_by: string | null;
+          id: string;
+          input_tokens: number;
+          mailbox: string | null;
+          message_id: string | null;
+          needs_reply: boolean | null;
+          output_tokens: number;
+          provider_id: string;
+          received_at: string;
+          reply_attempts: number;
+          reply_basis: string | null;
+          reply_body: string | null;
+          reply_input_tokens: number;
+          reply_output_tokens: number;
+          reply_prepared_at: string | null;
+          reply_provider_id: string | null;
+          reply_request: string | null;
+          reply_sent_at: string | null;
+          reply_sent_by: string | null;
+          reply_status: string;
+          reply_subject: string | null;
+          reply_tools: string[];
+          subject: string;
+          summary: string | null;
+          to_addresses: string[];
+          triage_attempts: number;
+          triage_status: string;
+          urgency: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'inbox_emails';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       decide_leave_request: {
         Args: { p_approve: boolean; p_id: string };
         Returns: {
@@ -7977,6 +8047,7 @@ export type Database = {
           worked_hours: number;
         }[];
       };
+      propose_inbox_deadline_updates: { Args: { p_items: Json; p_mail_id: string }; Returns: number };
       public_book_appointment: { Args: { p_date: string; p_time: string; p_token: string }; Returns: Json };
       public_booking: { Args: { p_token: string }; Returns: Json };
       public_find_document: { Args: { p_token: string }; Returns: Json };

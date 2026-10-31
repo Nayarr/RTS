@@ -1,4 +1,5 @@
-// Tri d'un mail reçu par Claude Haiku : catégorie, urgence, résumé d'une ligne, réponse attendue.
+// Tri d'un mail reçu par Claude Haiku : catégorie, urgence, résumé d'une ligne, réponse attendue,
+// et nouvelles échéances de contrôle confirmées par le client (proposées pour la fiche véhicule).
 import { z } from 'zod';
 
 export const TRIAGE_MODEL = 'claude-haiku-4-5';
@@ -19,11 +20,19 @@ export const CATEGORIES = [
 ] as const;
 export const URGENCIES = ['urgente', 'normale', 'faible'] as const;
 
+/** Contrôle renouvelé annoncé dans le mail : prochaine échéance, vérifiée ensuite par la base. */
+const renewalSchema = z.object({
+  immatriculation: z.string().trim().min(1).max(20),
+  controle: z.enum(['ct', 'hayon']),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
 export const triageSchema = z.object({
   category: z.enum(CATEGORIES),
   urgency: z.enum(URGENCIES),
   summary: z.string().trim().min(1).max(300),
   needs_reply: z.boolean(),
+  renouvellements: z.array(renewalSchema).max(20).default([]),
 });
 export type Triage = z.infer<typeof triageSchema>;
 
@@ -35,8 +44,21 @@ export const TRIAGE_JSON_SCHEMA = {
     urgency: { type: 'string', enum: [...URGENCIES] },
     summary: { type: 'string' },
     needs_reply: { type: 'boolean' },
+    renouvellements: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          immatriculation: { type: 'string' },
+          controle: { type: 'string', enum: ['ct', 'hayon'] },
+          date: { type: 'string', description: 'Prochaine échéance, AAAA-MM-JJ' },
+        },
+        required: ['immatriculation', 'controle', 'date'],
+        additionalProperties: false,
+      },
+    },
   },
-  required: ['category', 'urgency', 'summary', 'needs_reply'],
+  required: ['category', 'urgency', 'summary', 'needs_reply', 'renouvellements'],
   additionalProperties: false,
 } as const;
 
@@ -69,10 +91,18 @@ export const TRIAGE_SYSTEM = [
   'Résumé : une phrase de 25 mots au plus, en français, qui dit qui demande quoi (plaque, montant',
   'ou date si le mail en donne). Pas de tiret cadratin.',
   'needs_reply : vrai si l’expéditeur attend une réponse de l’atelier.',
+  '',
+  'renouvellements : seulement si le mail confirme qu’un contrôle technique (ct) ou un contrôle hayon',
+  '(hayon) d’un véhicule a été fait ou renouvelé, avec sa plaque : la prochaine échéance (fin de',
+  'validité du nouveau contrôle), au format AAAA-MM-JJ ; hayon : le 1er du mois de l’étiquette. Date',
+  'du contrôle passé seulement, sans validité : ne mets rien. Plaque ou date incertaine : ne mets rien.',
+  'Sinon : liste vide.',
 ].join('\n');
 
 /** Mail présenté au tri : expéditeur, boîte, objet, pièces jointes et début du texte. */
 export function triageRequest(mail: {
+  /** Jour de réception (AAAA-MM-JJ) : sert à lire « l’an prochain », « dans deux ans »… */
+  receivedOn: string;
   mailbox: string | null;
   fromName: string;
   fromAddress: string;
@@ -83,6 +113,7 @@ export function triageRequest(mail: {
 }): string {
   const from = mail.fromName ? `${mail.fromName} <${mail.fromAddress}>` : mail.fromAddress;
   const lines = [
+    `Reçu le : ${mail.receivedOn}`,
     `Boîte : ${mail.mailbox ?? 'inconnue'}`,
     `De : ${from}${mail.clientName ? ` (client connu de l’atelier : ${mail.clientName})` : ''}`,
     `Objet : ${mail.subject || '(sans objet)'}`,
