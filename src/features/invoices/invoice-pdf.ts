@@ -40,6 +40,19 @@ export interface InvoicePdfInput {
   proforma?: { client: ClientBilling; paymentTermsDays: number; now?: Date };
 }
 
+/** Lignes imprimées. Pro forma : quantité de la main d'œuvre sans l'unité « h » (« 6 », pas « 6 h »). */
+export function invoiceDocumentLines(lines: InvoiceLine[], proforma: boolean): DocumentLine[] {
+  return lines.map((line) => ({
+    line_type: line.line_type,
+    description: line.description,
+    unit_price: line.unit_price,
+    quantity: line.quantity,
+    discount_percent: line.discount_percent,
+    net: lineNet(line),
+    ...(proforma ? { plainQuantity: true } : {}),
+  }));
+}
+
 /** Facture (maquette « PDF devis et facture ») : dates, client, lignes, totaux, geste commercial, mentions. */
 export async function buildInvoicePdf({ invoice, lines, company, logo, proforma }: InvoicePdfInput) {
   const kit = await createPdf();
@@ -83,14 +96,7 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   const metaEnd = drawMeta(doc, meta);
   const boxEnd = drawClientBox(doc, 'Facturé à', client);
 
-  const documentLines: DocumentLine[] = lines.map((line) => ({
-    line_type: line.line_type,
-    description: line.description,
-    unit_price: line.unit_price,
-    quantity: line.quantity,
-    discount_percent: line.discount_percent,
-    net: lineNet(line),
-  }));
+  const documentLines = invoiceDocumentLines(lines, Boolean(proforma));
   let y = drawLinesTable(kit, [{ title: null, lines: documentLines }], Math.max(metaEnd, boxEnd) + 8) + 8;
 
   // Totaux : figés à l'émission, recalculés pour un brouillon

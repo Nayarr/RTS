@@ -19,12 +19,13 @@ import { OverdueRemindersDialog } from './OverdueRemindersDialog';
 import { useCreditNotes, useInvoices } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 
-type Filter = 'to_collect' | 'partial' | 'overdue' | 'paid' | 'draft' | 'no_order' | 'all';
+type Filter = 'to_collect' | 'sent' | 'partial' | 'overdue' | 'paid' | 'draft' | 'no_order' | 'all';
 type Sort = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
 
 const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'all', label: 'Toutes' },
   { value: 'draft', label: 'Brouillons', color: '#6B7280' },
+  { value: 'sent', label: 'Factures envoyées', color: '#2F6F8F' },
   { value: 'to_collect', label: 'À encaisser', color: '#C98A00' },
   { value: 'partial', label: 'Partiel', color: '#4750B5' },
   { value: 'overdue', label: 'En retard', color: '#B5453A' },
@@ -39,6 +40,7 @@ function matchesFilter(invoice: InvoiceOverview, filter: Filter) {
   if (filter === 'no_order') return invoice.repair_order_ids.length === 0;
   if (filter === 'draft') return invoice.status === 'draft';
   if (invoice.status === 'draft') return false;
+  if (filter === 'sent') return invoice.sent_at !== null;
   if (filter === 'paid') return invoice.payment_status === 'paid';
   // Payées en partie (un ou plusieurs paiements), en retard ou non
   if (filter === 'partial') return isPartiallyPaid(invoice);

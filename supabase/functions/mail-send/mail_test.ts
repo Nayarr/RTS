@@ -6,6 +6,7 @@ import {
   base64Bytes,
   mailHtml,
   mailText,
+  replySender,
   requestSchema,
   resendFailure,
   resendPayload,
@@ -234,4 +235,17 @@ Deno.test('mail préparé par l’agent : contenu relu dans l’action, adresse 
     null,
   );
   assertEquals(agentMailRequest({ to: 'a@b.fr', subject: 'x', text: 'y', category: 'signature' }, key), null);
+});
+
+Deno.test('réponse à un mail reçu : depuis la boîte qui l’a reçu, si elle est du domaine d’envoi', () => {
+  const usual = { address: 'atelier@rapidtruckservice.fr', replyTo: 'atelier@rapidtruckservice.fr' };
+  assertEquals(replySender(usual, 'Comptoir@RapidTruckService.fr'), {
+    address: 'comptoir@rapidtruckservice.fr',
+    replyTo: 'comptoir@rapidtruckservice.fr',
+  });
+  assertEquals(replySender(usual, 'atelier@rapidtruckservice.fr'), usual);
+  // Autre domaine (non vérifié chez Resend), boîte inconnue ou illisible : adresse habituelle
+  assertEquals(replySender(usual, 'contact@autre-domaine.fr'), usual);
+  assertEquals(replySender(usual, null), usual);
+  assertEquals(replySender(usual, 'Comptoir <comptoir@rapidtruckservice.fr>'), usual);
 });

@@ -12,7 +12,7 @@ import {
 import type { AppRole } from '@/features/auth/roles';
 import type { OfficeDashboard } from '@/features/dashboard/api';
 import { DIAGNOSTIC_HELP_ENABLED } from '@/features/knowledge/flags';
-import { CATEGORY_ORDER } from '@/features/repair-orders/constants';
+import { OPEN_CATEGORIES } from '@/features/repair-orders/constants';
 
 export interface NavLeaf {
   to: string;
@@ -36,10 +36,7 @@ export interface NavGroup {
 }
 
 const activeOrders = (data: OfficeDashboard) =>
-  CATEGORY_ORDER.filter((category) => category !== 'invoiced').reduce(
-    (sum, category) => sum + (data.repair_orders[category] ?? 0),
-    0,
-  );
+  OPEN_CATEGORIES.reduce((sum, category) => sum + (data.repair_orders[category] ?? 0), 0);
 
 /** Menu du bureau, rangé comme la maquette ; la réception ne voit pas la partie « Gestion ». */
 export const GROUPS: NavGroup[] = [
@@ -150,6 +147,7 @@ export const NAV_PATHS = [
   ...GROUPS.flatMap((group) => group.items.map((item) => item.to)),
   '/agent-direction',
   '/agent-direction/mails',
+  '/agenda',
   '/reglages',
   '/aide',
 ];

@@ -22,7 +22,7 @@ const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'all', label: 'Tous' },
   ...QUOTE_STATUS_ORDER.map((status) => ({
     value: status,
-    label: status === 'sent' ? 'En attente de réponse' : QUOTE_STATUS_META[status].label,
+    label: status === 'sent' ? 'Devis envoyés' : QUOTE_STATUS_META[status].label,
     color: QUOTE_STATUS_META[status].color,
   })),
   { value: 'no_order', label: 'Sans OR' },
