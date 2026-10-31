@@ -1,6 +1,17 @@
 import { useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router';
-import { AudioLines, ChevronDown, CircleHelp, House, LogOut, Moon, Settings, Sun, Tv } from 'lucide-react';
+import {
+  AudioLines,
+  CalendarDays,
+  ChevronDown,
+  CircleHelp,
+  House,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  Tv,
+} from 'lucide-react';
 import { signOut } from '@/features/auth/api';
 import { ROLE_LABELS } from '@/features/auth/roles';
 import { useProfile } from '@/features/auth/useProfile';
@@ -179,6 +190,18 @@ export function Sidebar({ className, onNavigate }: { className?: string; onNavig
               <span>Mails reçus</span>
             </Link>
           </div>
+        )}
+        {isOffice && (
+          // Agenda personnel : les rendez-vous du compte connecté
+          <Link
+            to="/agenda"
+            className={cn('ni', current === '/agenda' && 'on')}
+            aria-current={current === '/agenda' ? 'page' : undefined}
+            onClick={onNavigate}
+          >
+            <CalendarDays className="size-[18px]" />
+            <span>Mon agenda</span>
+          </Link>
         )}
         <div className="nav-scroll">
           {ops.length > 0 && <div className="overline">Opérations</div>}

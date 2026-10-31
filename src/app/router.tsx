@@ -65,6 +65,11 @@ export const routes: RouteObject[] = [
                     path: '/agent-direction/mails',
                     lazy: page(() => import('@/features/assistant/MailsPage'), 'MailsPage'),
                   },
+                  // Agenda personnel de chaque compte du bureau
+                  {
+                    path: '/agenda',
+                    lazy: page(() => import('@/features/agenda/AgendaPage'), 'AgendaPage'),
+                  },
                   // Stock des pneus : aussi pour la réception (le reste du stock est à la direction)
                   {
                     path: '/stock/pneumatiques',

@@ -26,6 +26,7 @@ const WEEK: WorkshopWorkload = {
       planned_hours: 36,
       planned_orders: 8,
       clocked_hours: 44,
+      badged_hours: 40,
       absence: null,
     },
     {
@@ -38,6 +39,7 @@ const WEEK: WorkshopWorkload = {
       planned_hours: 35,
       planned_orders: 6,
       clocked_hours: 33,
+      badged_hours: 0,
       absence: null,
     },
     {
@@ -50,6 +52,7 @@ const WEEK: WorkshopWorkload = {
       planned_hours: 0,
       planned_orders: 0,
       clocked_hours: 0,
+      badged_hours: 0,
       absence: 'rest',
     },
   ],
@@ -84,8 +87,8 @@ describe('charge de travail atelier', () => {
       '106',
     );
 
-    // Présence badgée et heures non affectées (badgé − déclaré)
-    expect(alice).toHaveTextContent('Badgé 44 h · 2,5 h non affectées');
+    // Chrono des OR, présence à la borne et heures non affectées (présence − déclaré)
+    expect(alice).toHaveTextContent('Badgé 40 h sur les OR · présence 44 h · 2,5 h non affectées');
     expect(within(card).getByRole('group', { name: 'Présence badgée de l’atelier' })).toHaveTextContent(
       'Présence badgée 77 hDéclaré sur les OR 74,5 hÉcart 2,5 h non affectées',
     );
@@ -93,9 +96,11 @@ describe('charge de travail atelier', () => {
     const bruno = within(card).getByRole('listitem', { name: 'Bruno' });
     expect(bruno).toHaveTextContent('33 h / 39 h · 85 %');
     expect(bruno).not.toHaveTextContent('non affectées');
+    expect(bruno).toHaveTextContent('Badgé 0 h sur les OR · présence 33 h');
     expect(within(bruno).getAllByText('33 h')[0]).not.toHaveClass('gold-text');
 
     const samir = within(card).getByRole('listitem', { name: 'Samir' });
+    expect(samir).not.toHaveTextContent('Badgé');
     expect(samir).toHaveTextContent('Absent · repos');
     expect(within(samir).queryByRole('meter')).toBeNull();
 
@@ -189,4 +194,15 @@ describe('charge de travail atelier', () => {
     expect(screen.getByText('Novembre 2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ce mois-ci' })).toBeInTheDocument();
   });
+});
+
+it('technicien qui badge sur ses OR sans pointer à la borne : heures badgées affichées', async () => {
+  vi.mocked(fetchWorkshopWorkload).mockResolvedValue({
+    ...WEEK,
+    technicians: [{ ...WEEK.technicians[1]!, name: 'Mouez', clocked_hours: 0, badged_hours: 6.5 }],
+  });
+  setup();
+  const row = await screen.findByRole('listitem', { name: 'Mouez' });
+  expect(row).toHaveTextContent('Badgé 6,5 h sur les OR');
+  expect(row).not.toHaveTextContent('présence');
 });

@@ -41,6 +41,7 @@ export function WorkloadDetailDialog({
   });
   const declared = Number(technician.declared_hours);
   const clocked = Number(technician.clocked_hours ?? 0);
+  const badged = Number(technician.badged_hours ?? 0);
   const gap = unassignedHours(clocked, declared);
 
   return (
@@ -51,11 +52,12 @@ export function WorkloadDetailDialog({
           <DialogDescription>{periodText}</DialogDescription>
         </DialogHeader>
 
-        <dl className="grid grid-cols-3 gap-2 text-center">
+        <dl className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
           {(
             [
               ['Déclaré', hours(declared)],
-              ['Badgé', hours(clocked)],
+              ['Badgé sur les OR', hours(badged)],
+              ['Présence borne', hours(clocked)],
               ['Non affectées', hours(gap)],
             ] as const
           ).map(([label, value]) => (

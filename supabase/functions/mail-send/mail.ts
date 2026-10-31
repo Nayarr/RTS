@@ -106,6 +106,20 @@ export function senderFor(
   return fallback.from ? { address: fallback.from, replyTo: fallback.replyTo } : null;
 }
 
+/**
+ * Réponse à un mail reçu : elle part de la boîte qui l'a reçu (comptoir@, atelier@…), réponses du
+ * client comprises, quand cette boîte est du domaine d'envoi ; sinon de l'adresse habituelle.
+ */
+export function replySender(
+  sender: { address: string; replyTo: string | null },
+  mailbox: string | null | undefined,
+): { address: string; replyTo: string | null } {
+  const box = mailbox?.trim().toLowerCase() ?? '';
+  const host = (address: string) => address.split('@')[1]?.toLowerCase() ?? '';
+  if (!/^[^\s@<>"]+@[^\s@<>"]+$/.test(box) || host(box) !== host(sender.address)) return sender;
+  return { address: box, replyTo: box };
+}
+
 /** Expéditeur affiché « Nom de l'atelier <adresse> » (sans caractère qui casserait l'en-tête). */
 export function senderAddress(name: string, address: string): string {
   const clean = name.replace(/["<>\r\n]/g, '').trim();

@@ -23,7 +23,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
       'Pneus : avant et arrière. Pour un camion à plus d’essieux ou une remorque, « Ajouter un essieu » (pas sur un utilitaire). Tape la taille en chiffres (31570225) : les barres et le point se mettent tout seuls.',
       'Photographie les étiquettes (contrôle hayon, extincteurs) avec le bouton appareil photo à côté de chacune.',
       'Niveaux (lave-glace, liquide de refroidissement, huile) : en fin de fiche. « Niveau bon », ou l’appoint fait avec les litres ajoutés.',
-      'Dans « Échéances du véhicule », renseigne les dates du contrôle technique et du contrôle hayon lues sur le camion. La photo du contrôle technique est obligatoire pour terminer l’OR.',
+      'Dans « Échéances du véhicule », renseigne les dates du contrôle technique et du contrôle hayon lues sur le camion. La photo du contrôle technique est obligatoire pour terminer l’OR, sauf pour une remorque (facultative).',
     ],
   },
   {
@@ -76,6 +76,14 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     ],
   },
   {
+    title: 'Mon agenda',
+    items: [
+      'Menu « Mon agenda », sous « Mails reçus » : ton calendrier personnel, comme Outlook. Personne d’autre ne voit tes rendez-vous, direction comprise.',
+      'Vues Jour, Semaine ou Mois ; le petit calendrier à gauche change de jour et liste ses rendez-vous. Clique dans une case vide de la grille pour poser un rendez-vous à cette heure, ou sur un rendez-vous pour le modifier ou le supprimer.',
+      '« Journée entière » pour un jour ou plusieurs (salon, congé, déplacement) : il s’affiche en haut de la grille.',
+    ],
+  },
+  {
     title: 'Devis',
     items: [
       'Sur l’OR, « Préparer le devis » reprend les travaux à prévoir, calcule la main d’œuvre au taux horaire et applique les forfaits. Ajoute pièces, main d’œuvre, texte et remises.',
@@ -91,7 +99,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     title: 'Facturer',
     items: [
       'Sur l’OR, « Facturer » prépare un brouillon avec les travaux effectués, les pièces, les consommables, la sous-traitance et le déplacement. Vérifie, ajuste, puis « Émettre la facture ».',
-      '« Aperçu pro forma » produit une facture pro forma sans numéro.',
+      '« Aperçu pro forma » produit une facture pro forma sans numéro (quantités de main d’œuvre sans l’unité « h »).',
       'Une facture émise ne se modifie plus : pour la corriger, « Générer un avoir », puis une nouvelle facture si besoin.',
       'Sur la facture : « Enregistrer un paiement » (même partiel), « Envoyer au client » pour le lien en ligne, « Relancer » quand elle est en retard.',
       'Moyens de paiement : virement, chèque, carte bancaire, espèces, prélèvement (la LCR / traite n’est plus proposée ; les anciens paiements en LCR restent affichés).',

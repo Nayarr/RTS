@@ -53,7 +53,16 @@ export interface RentalDetail {
   licenses: DrivingLicense[];
   client: Pick<
     Tables<'clients'>,
-    'id' | 'name' | 'kind' | 'phone' | 'email' | 'billing_address' | 'first_name' | 'last_name'
+    | 'id'
+    | 'name'
+    | 'kind'
+    | 'phone'
+    | 'email'
+    | 'billing_address'
+    | 'first_name'
+    | 'last_name'
+    | 'siret'
+    | 'vat_number'
   >;
   inspections: RentalInspection[];
   photos: RentalPhoto[];
@@ -71,7 +80,7 @@ export async function fetchRental(id: string): Promise<RentalDetail | null> {
     supabase.from('driving_licenses').select('*').eq('client_id', row.client_id).order('created_at'),
     supabase
       .from('clients')
-      .select('id, name, kind, phone, email, billing_address, first_name, last_name')
+      .select('id, name, kind, phone, email, billing_address, first_name, last_name, siret, vat_number')
       .eq('id', row.client_id)
       .single(),
     supabase.from('rental_inspections').select('*').eq('rental_id', id),
