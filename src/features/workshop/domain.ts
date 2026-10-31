@@ -54,6 +54,9 @@ export const timeOptionLabel = (option: string) =>
 /** Photo du contrôle technique (procès-verbal ou vignette), prise depuis les échéances du véhicule. */
 export const CT_PHOTO_LABEL = 'Contrôle technique';
 
+/** Photo du contrôle technique exigée pour terminer l'OR : facultative pour une remorque. */
+export const ctPhotoRequired = (vehicleType: 'pl' | 'vul' | 'remorque') => vehicleType !== 'remorque';
+
 /** VIN mis en forme : majuscules, sans espaces ni tirets. */
 export const normalizeVin = (value: string) => value.replace(/[\s-]/g, '').toUpperCase();
 
@@ -82,7 +85,7 @@ const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? '
 
 /**
  * Ce qu'il reste à compléter avant « Travaux terminés » (mêmes règles que la base) : temps estimé de
- * chaque tâche, taille des pneus à 50 % ou HS, photo du contrôle technique, photo de l'étiquette du
+ * chaque tâche, taille des pneus à 50 % ou HS, photo du contrôle technique (sauf remorque), photo de l'étiquette du
  * contrôle hayon HS, et tous les points de la fiche quand la direction l'exige.
  */
 export function finishBlockers(
@@ -121,7 +124,9 @@ export function finishBlockers(
       blockers.push(`Taille des pneus ${label} obligatoire (${etat === 'HS' ? 'HS' : '50 %'})`);
     }
   }
-  if (!photoLabels.includes(CT_PHOTO_LABEL)) blockers.push('Photo du contrôle technique obligatoire');
+  if (ctPhotoRequired(vehicleType) && !photoLabels.includes(CT_PHOTO_LABEL)) {
+    blockers.push('Photo du contrôle technique obligatoire');
+  }
   if (inspection?.controles?.hayon === 'HS' && !photoLabels.includes(TAILGATE_PHOTO_LABEL)) {
     blockers.push('Photo de l’étiquette contrôle hayon obligatoire (HS)');
   }

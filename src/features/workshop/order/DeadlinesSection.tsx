@@ -21,6 +21,7 @@ export function DeadlinesSection({
   locked,
   capture,
   photoLabels,
+  ctRequired,
 }: {
   repairOrderId: string;
   vehicleId: string;
@@ -28,6 +29,8 @@ export function DeadlinesSection({
   capture: PhotoCapture;
   /** Libellés des photos déjà prises sur l'OR. */
   photoLabels: string[];
+  /** Photo du contrôle technique exigée (pas pour une remorque). */
+  ctRequired: boolean;
 }) {
   const ctTaken = photoLabels.includes(CT_PHOTO_LABEL);
   const deadlines = useVehicleDeadlines(vehicleId);
@@ -43,7 +46,7 @@ export function DeadlinesSection({
         Échéances du véhicule
       </h2>
       <span className="hint">Relevées sur le véhicule (contrôle technique, étiquette du hayon).</span>
-      {!ctTaken && !locked && (
+      {ctRequired && !ctTaken && !locked && (
         <p className="err">Photo du contrôle technique obligatoire avant de terminer l’OR.</p>
       )}
       {/* Sur téléphone, l'une sous l'autre : les libellés longs ne décalent plus les dates */}
@@ -85,7 +88,7 @@ export function DeadlinesSection({
                     size="icon"
                     className={cn(
                       'shrink-0',
-                      ctTaken ? 'text-success' : 'border-destructive text-destructive',
+                      ctTaken ? 'text-success' : ctRequired && 'border-destructive text-destructive',
                     )}
                     aria-label={`Photo du contrôle technique${ctTaken ? ' (déjà prise)' : ''}`}
                     disabled={capture.uploadingLabel === CT_PHOTO_LABEL}

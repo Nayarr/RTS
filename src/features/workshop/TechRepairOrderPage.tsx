@@ -11,7 +11,7 @@ import { DiagnosticHelp } from '@/features/knowledge/DiagnosticHelp';
 import { DIAGNOSTIC_HELP_ENABLED } from '@/features/knowledge/flags';
 import { TaskList } from '@/features/repair-orders/TaskList';
 import { fetchLabelScanEnabled, markSeen } from './api';
-import { CT_PHOTO_LABEL, finishBlockers, TAILGATE_PHOTO_LABEL } from './domain';
+import { CT_PHOTO_LABEL, ctPhotoRequired, finishBlockers, TAILGATE_PHOTO_LABEL } from './domain';
 import { seenKey } from './hooks';
 import { DeadlinesSection } from './order/DeadlinesSection';
 import { TechnicalInspectionDialog } from './order/TechnicalInspectionDialog';
@@ -150,6 +150,7 @@ export function TechRepairOrderPage() {
         locked={locked}
         capture={capture}
         photoLabels={photos.map((photo) => photo.label)}
+        ctRequired={ctPhotoRequired(order.vehicle_type)}
       />
       {/* Comme l'ancienne appli : kilométrage, photos, fiche de contrôle, puis travaux. */}
       {!locked && DIAGNOSTIC_HELP_ENABLED && (
