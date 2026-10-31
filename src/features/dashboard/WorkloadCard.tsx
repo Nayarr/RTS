@@ -28,17 +28,24 @@ const PERIODS: [WorkloadPeriod, string][] = [
   ['month', 'Mois'],
 ];
 
-/** Jauge déclaré ÷ disponible : rouge → ambre → vert, or (avec reflet) à 100 % et plus. */
-function Gauge({ ratio, label }: { ratio: number; label: string }) {
-  const color = loadColor(ratio);
+/**
+ * Jauge déclaré ÷ disponible : rouge → ambre → vert, or (avec reflet) à 100 % et plus.
+ * `neutral` : temps saisi hors heures d'ouverture (rien à comparer), jauge pleine et grise.
+ */
+function Gauge({ ratio, label, neutral = false }: { ratio: number; label: string; neutral?: boolean }) {
+  const color = neutral ? 'var(--muted-foreground)' : loadColor(ratio);
   return (
     <div
       className="bar h-[6px]! rounded-[3px]!"
-      role="meter"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(ratio * 100)}
+      {...(neutral
+        ? { 'aria-hidden': true, 'data-testid': 'gauge-off-hours' }
+        : {
+            role: 'meter',
+            'aria-label': label,
+            'aria-valuemin': 0,
+            'aria-valuemax': 100,
+            'aria-valuenow': Math.round(ratio * 100),
+          })}
     >
       <i
         className={cn(color === 'gold' && 'gauge-gold')}
@@ -115,9 +122,12 @@ function TechnicianRow({ row, onOpen }: { row: TechnicianWorkload; onOpen: () =>
               )} (${row.planned_orders} OR)`}
         </span>
         {absent ? null : offHours ? (
-          <span className="text-[13px] text-muted-foreground">
-            <b className="num text-[15px] text-foreground">{hours(declared)}</b> hors heures d’ouverture
-          </span>
+          <>
+            <span className="text-[13px] text-muted-foreground">
+              <b className="num text-[15px] text-foreground">{hours(declared)}</b> hors heures d’ouverture
+            </span>
+            <Gauge ratio={1} neutral label={`Charge de ${row.name}`} />
+          </>
         ) : (
           <>
             <span className="text-[13px] text-muted-foreground">
