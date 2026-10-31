@@ -35,7 +35,7 @@ import {
   voiceCommand,
   type VoiceCommand,
 } from './briefing-player';
-import { CATEGORY_META } from './mails';
+import { CATEGORY_META, replyMailbox } from './mails';
 import { prefetchSpeech, speak, speechSupported, stopSpeaking } from './speech';
 import { sourcesLabel } from './suggestions';
 import { VoiceOrb } from './VoiceOrb';
@@ -626,7 +626,9 @@ function MailCard({
             </div>
           ) : (
             <>
-              <b>Je l’envoie à {reply.from_address} depuis atelier@ ?</b>
+              <b>
+                Je l’envoie à {reply.from_address} depuis {replyMailbox(reply.mailbox)} ?
+              </b>
               <div className="brief-actions">
                 <button
                   type="button"

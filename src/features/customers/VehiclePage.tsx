@@ -312,7 +312,11 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                             {order.mileage ? order.mileage.toLocaleString('fr-FR') : '-'}
                           </td>
                           <td>
-                            <StatusBadge status={order.status} technicianId={order.technician_id} />
+                            <StatusBadge
+                              status={order.status}
+                              technicianId={order.technician_id}
+                              quoteSent={order.quote_sent}
+                            />
                           </td>
                         </tr>
                       );
