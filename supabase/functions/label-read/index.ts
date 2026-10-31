@@ -15,6 +15,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import { ObjectStorage, storageConfigFromEnv } from '../_shared/storage.ts';
+import { sourceBlock } from './source.ts';
 import {
   INSPECTION_READING_SCHEMA,
   inspectionReadingPrompt,
@@ -89,9 +90,6 @@ const registrationSchema = z.object({
   confidence: z.enum(['haute', 'moyenne', 'faible']),
 });
 
-const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-type ImageType = (typeof IMAGE_TYPES)[number];
-
 const json = (status: number, body: unknown) => Response.json(body, { status });
 const fail = (status: number, error: string) => json(status, { error });
 
@@ -140,15 +138,12 @@ export default {
         .not('uploaded_at', 'is', null)
         .maybeSingle();
       if (error || !file) return fail(404, 'Photo introuvable');
-      if (!IMAGE_TYPES.includes(file.mime_type as ImageType)) {
-        return fail(400, 'Format de photo non pris en charge');
+      if (!sourceBlock(file.mime_type, '')) {
+        return fail(400, 'Format non pris en charge : photo (JPEG, PNG, WebP) ou PDF');
       }
       const bytes = await storage.get(file.bucket, file.storage_key);
       if (!bytes) return fail(404, 'Photo introuvable');
-      images.push({
-        type: 'image' as const,
-        source: { type: 'base64' as const, media_type: file.mime_type as ImageType, data: toBase64(bytes) },
-      });
+      images.push(sourceBlock(file.mime_type, toBase64(bytes))!);
     }
 
     const today = parisToday();

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageUploadButton } from '@/features/files/ImageUploadButton';
+import { IMAGE_OR_PDF, ImageUploadButton } from '@/features/files/ImageUploadButton';
 import { cn } from '@/lib/utils';
 import { readRegistration, saveFleetVehicle, type RegistrationReading } from './fleet-api';
 import { CATEGORIES, CATEGORY_META, hasEngine, LICENSE_CATEGORIES } from './fleet-domain';
@@ -371,12 +371,13 @@ function FleetVehicleForm({ id, initial }: { id: string | null; initial: FleetVe
             </div>
             <div className="card-b col gap-2.5">
               <p className="hint">
-                Photographie la carte grise : immatriculation, marque, modèle, VIN, première immatriculation,
-                catégorie et carburant sont remplis, à vérifier avant d’enregistrer.
+                Photographie la carte grise ou choisis son PDF : immatriculation, marque, modèle, VIN,
+                première immatriculation, catégorie et carburant sont remplis, à vérifier avant d’enregistrer.
               </p>
               <ImageUploadButton
                 category="registration_doc"
                 size="sm"
+                accept={IMAGE_OR_PDF}
                 onUploaded={(fileId) => void readCard(fileId)}
               >
                 <ScanLine /> {reading === 'reading' ? 'Lecture…' : 'Lire la carte grise'}
