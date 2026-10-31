@@ -3283,6 +3283,53 @@ export type Database = {
           },
         ];
       };
+      personal_events: {
+        Row: {
+          all_day: boolean;
+          created_at: string;
+          ends_at: string;
+          id: string;
+          location: string | null;
+          notes: string | null;
+          profile_id: string;
+          starts_at: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          all_day?: boolean;
+          created_at?: string;
+          ends_at: string;
+          id?: string;
+          location?: string | null;
+          notes?: string | null;
+          profile_id?: string;
+          starts_at: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          all_day?: boolean;
+          created_at?: string;
+          ends_at?: string;
+          id?: string;
+          location?: string | null;
+          notes?: string | null;
+          profile_id?: string;
+          starts_at?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'personal_events_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
