@@ -118,7 +118,7 @@ export function LaborRatesForm({ rates }: { rates: LaborRate[] }) {
       pending={save.isPending}
       onCancel={() => reset()}
     >
-      <div className="-mx-[22px] -my-5 overflow-x-auto">
+      <div className="relative -mx-[22px] -my-5 overflow-x-auto">
         <table className="tbl min-w-[820px]">
           <thead>
             <tr>
