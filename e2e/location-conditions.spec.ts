@@ -52,11 +52,12 @@ test('conditions générales du contrat type : lues par le client avant de signe
   const client = await context.newPage();
   await client.goto(`/d/${token}`);
   const terms = client.getByRole('list', { name: 'Conditions générales de location' });
-  await expect(terms).toContainText('Article 1 : Durée de la location');
+  await expect(terms).toContainText('Article 1 : Objet du contrat');
+  await expect(terms).toContainText('Article 2 : Durée de la location');
   await expect(terms).toContainText('pour des périodes successives de un (1) mois');
   await expect(terms).toContainText(/Le loyer est de 900,00\s€ HT par mois/);
   await expect(terms).toContainText('Aucun dépôt de garantie n’est demandé pour ce contrat.');
-  await expect(terms).toContainText('Article 10 : Droit applicable et juridiction compétente');
+  await expect(terms).toContainText('Article 11 : Droit applicable et juridiction compétente');
   await context.close();
 
   // Comptoir : conditions lisibles à l'étape de la signature
@@ -64,6 +65,6 @@ test('conditions générales du contrat type : lues par le client avant de signe
   await page.goto(`/location/contrats/${rental}/depart?etape=4`);
   await page.getByText('Lire les conditions générales de location').click();
   await expect(page.getByRole('list', { name: 'Conditions générales de location' })).toContainText(
-    'Article 6 : Assurance',
+    'Article 7 : Assurance',
   );
 });
