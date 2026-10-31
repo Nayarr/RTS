@@ -13,6 +13,8 @@ export interface TechnicianWorkload {
   planned_orders: number;
   /** Présence badgée à la borne sur la période (présence en cours comprise). */
   clocked_hours: number;
+  /** Chrono des OR badgé sur la période (chrono en cours compris). */
+  badged_hours: number;
   /** Aucune heure disponible sur la période : congés, repos, ou atelier fermé (week-end). */
   absence: 'leave' | 'rest' | 'closed' | null;
 }

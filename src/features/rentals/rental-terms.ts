@@ -19,6 +19,41 @@ export interface RentalTermsInput {
   tacit_renewal?: boolean;
 }
 
+export interface RentalClauseInput {
+  extra_km_price: number | null;
+  fuel_price_per_liter: number | null;
+  late_fee_per_hour: number | null;
+  franchise: number | null;
+}
+
+const listFr = (items: string[]) =>
+  items.length > 1 ? `${items.slice(0, -1).join(', ')} et ${items[items.length - 1]}` : (items[0] ?? '');
+
+/**
+ * Clause au-dessus des signatures : ne cite que les frais chiffrés au contrat (km sup., carburant,
+ * retard, franchise) et rattache les conditions générales des pages suivantes à la signature.
+ */
+export function rentalClause(input: RentalClauseInput): string {
+  const set = (value: number | null) => value !== null && value > 0;
+  const charged = [
+    set(input.extra_km_price) ? 'les kilomètres supplémentaires' : null,
+    set(input.fuel_price_per_liter) ? 'le carburant manquant' : null,
+    set(input.late_fee_per_hour) ? 'les retards' : null,
+  ].filter((item): item is string => item !== null);
+  const fees = charged.length
+    ? ` ${listFr(charged).replace(/^l/, 'L')} ${charged.length > 1 ? 'sont facturés' : 'est facturé'} selon les tarifs ci-dessus.`
+    : '';
+  const damages = set(input.franchise)
+    ? ' Les dommages constatés au retour sont facturés dans la limite de la franchise.'
+    : ' Les dommages constatés au retour sont facturés au locataire.';
+  return (
+    'Le locataire reconnaît avoir reçu le véhicule dans l’état décrit ci-dessus et s’engage à le restituer à la date et à l’heure prévues, au même niveau de carburant.' +
+    fees +
+    damages +
+    ' Il déclare avoir pris connaissance des conditions générales de location jointes au présent contrat et les accepter.'
+  );
+}
+
 /** « un jour », « une semaine », « un mois », « un an ». */
 const ONE: Record<string, string> = {
   day: 'un (1) jour',
@@ -33,6 +68,13 @@ export function rentalTerms(input: RentalTermsInput): TermsArticle[] {
   const price = input.unit_price * (1 - input.discount_percent / 100);
   const monthly = input.rate_period === 'month';
   return [
+    {
+      title: 'Objet du contrat',
+      paragraphs: [
+        'Le contrat a pour objet la location par le Bailleur au profit du Locataire du véhicule désigné en première page.',
+        'Le véhicule est remis en bon état de fonctionnement, sous réserve de l’état des lieux contradictoire établi lors de sa remise.',
+      ],
+    },
     {
       title: 'Durée de la location',
       paragraphs: [

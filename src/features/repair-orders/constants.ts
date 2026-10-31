@@ -25,21 +25,42 @@ export const STATUS_ORDER: RepairOrderStatus[] = [
   'invoiced',
 ];
 
-/** Catégorie des listes et du tableau de bord : un OR « assigned » sans technicien est à part. */
-export type RepairOrderCategory = RepairOrderStatus | 'unassigned';
+/**
+ * Catégorie des listes et du tableau de bord : un OR « assigned » sans technicien est à part ;
+ * « Devis envoyé » : devis en attente de la réponse du client.
+ */
+export type RepairOrderCategory = RepairOrderStatus | 'unassigned' | 'quote_sent';
 
 export const CATEGORY_META: Record<RepairOrderCategory, { label: string; color: string }> = {
   unassigned: UNASSIGNED_META,
   ...STATUS_META,
+  quote_sent: { label: 'Devis envoyé', color: '#8A4FB5' },
 };
 
-export const CATEGORY_ORDER: RepairOrderCategory[] = ['unassigned', ...STATUS_ORDER];
+export const CATEGORY_ORDER: RepairOrderCategory[] = [
+  'unassigned',
+  'assigned',
+  'in_progress',
+  'work_done',
+  'quote_pending',
+  'quote_sent',
+  'to_invoice',
+  'invoiced',
+];
+
+/** Catégories des OR encore à traiter (compteurs du menu et du tableau de bord). */
+export const OPEN_CATEGORIES = CATEGORY_ORDER.filter((category) => category !== 'invoiced');
 
 export const orderCategory = (order: {
   status: RepairOrderStatus;
-  technician_id: string | null;
-}): RepairOrderCategory =>
-  order.status === 'assigned' && order.technician_id === null ? 'unassigned' : order.status;
+  /** Absent : OR considéré comme assigné. */
+  technician_id?: string | null;
+  quote_sent?: boolean | null;
+}): RepairOrderCategory => {
+  if (order.status === 'assigned' && order.technician_id === null) return 'unassigned';
+  if (order.status === 'quote_pending' && order.quote_sent) return 'quote_sent';
+  return order.status;
+};
 
 /** Statuts pendant lesquels le technicien assigné peut encore travailler sur l'OR. */
 export const OPEN_STATUSES: RepairOrderStatus[] = ['assigned', 'in_progress'];

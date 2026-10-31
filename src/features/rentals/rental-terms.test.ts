@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rentalTerms } from './rental-terms';
+import { rentalClause, rentalTerms } from './rental-terms';
 
 const monthly = { rate_period: 'month', unit_price: 900, discount_percent: 0, vat_rate: 20, deposit: 0 };
 
@@ -7,6 +7,7 @@ describe('conditions générales de location', () => {
   it('contrat au mois : reconduction d’un mois, loyer payable au 5, mois commencé dû, sans dépôt', () => {
     const terms = rentalTerms(monthly);
     expect(terms.map((article) => article.title)).toEqual([
+      'Objet du contrat',
       'Durée de la location',
       'Loyer',
       'Dépôt de garantie',
@@ -45,5 +46,32 @@ describe('conditions générales de location', () => {
     expect(text).not.toContain('Tout mois commencé');
     expect(text).not.toContain('tacite reconduction');
     expect(text).toMatch(/dépôt de garantie de 1\s500,00\s€/);
+  });
+
+  it('clause du contrat : ne cite que les frais chiffrés et renvoie aux conditions générales', () => {
+    const none = {
+      extra_km_price: null,
+      fuel_price_per_liter: null,
+      late_fee_per_hour: null,
+      franchise: null,
+    };
+    const bare = rentalClause(none);
+    expect(bare).not.toMatch(/kilomètres supplémentaires|retards|franchise|carburant manquant/);
+    expect(bare).toContain('Les dommages constatés au retour sont facturés au locataire.');
+    expect(bare).toContain('avoir pris connaissance des conditions générales de location');
+
+    expect(rentalClause({ ...none, fuel_price_per_liter: 2.2 })).toContain(
+      'Le carburant manquant est facturé selon les tarifs ci-dessus.',
+    );
+    const full = rentalClause({
+      extra_km_price: 0.3,
+      fuel_price_per_liter: 2.2,
+      late_fee_per_hour: 25,
+      franchise: 1500,
+    });
+    expect(full).toContain(
+      'Les kilomètres supplémentaires, le carburant manquant et les retards sont facturés selon les tarifs ci-dessus.',
+    );
+    expect(full).toContain('dans la limite de la franchise');
   });
 });

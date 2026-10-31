@@ -52,14 +52,23 @@ const ABSENCE = { leave: 'Absent · congés', rest: 'Absent · repos', closed: '
 
 const percent = (ratio: number) => `${Math.round(ratio * 100)} %`;
 
-/** Présence badgée et heures non affectées à un OR (écart avec le déclaré). */
-function Presence({ clocked, declared }: { clocked: number; declared: number }) {
+/**
+ * Chrono badgé sur les OR, présence pointée à la borne (si le technicien pointe) et heures de
+ * présence non affectées à un OR (écart avec le déclaré).
+ */
+function Presence({ badged, clocked, declared }: { badged: number; clocked: number; declared: number }) {
   const gap = unassignedHours(clocked, declared);
   return (
     <span className="row gap-1.5 text-[12.5px] text-muted-foreground">
       <Clock className="i xs shrink-0" aria-hidden />
       <span>
-        Badgé <b className="num text-foreground">{hours(clocked)}</b>
+        Badgé <b className="num text-foreground">{hours(badged)}</b> sur les OR
+        {clocked > 0 && (
+          <>
+            {' · présence '}
+            <b className="num text-foreground">{hours(clocked)}</b>
+          </>
+        )}
         {gap > 0 && (
           <>
             {' · '}
@@ -78,10 +87,11 @@ function TechnicianRow({ row, onOpen }: { row: TechnicianWorkload; onOpen: () =>
   const declared = Number(row.declared_hours);
   const available = Number(row.available_hours);
   const clocked = Number(row.clocked_hours ?? 0);
+  const badged = Number(row.badged_hours ?? 0);
   const ratio = loadRatio(declared, available);
   const gauge = loadColor(ratio);
   // Pas d'heures disponibles : absent, sauf s'il a quand même saisi du temps ou badgé
-  const absent = row.absence !== null && declared === 0 && clocked === 0;
+  const absent = row.absence !== null && declared === 0 && clocked === 0 && badged === 0;
   const offHours = row.absence !== null && !absent;
   return (
     <li aria-label={row.name} className={cn(absent && 'opacity-60')}>
@@ -123,7 +133,7 @@ function TechnicianRow({ row, onOpen }: { row: TechnicianWorkload; onOpen: () =>
             <Gauge ratio={ratio} label={`Charge de ${row.name}`} />
           </>
         )}
-        {!absent && <Presence clocked={clocked} declared={declared} />}
+        {!absent && <Presence badged={badged} clocked={clocked} declared={declared} />}
       </button>
     </li>
   );
@@ -282,8 +292,9 @@ export function WorkloadCard() {
               </p>
               <p className="hint">
                 Déclaré : temps saisi par les mécaniciens dans les travaux effectués, compté le jour de la
-                saisie. Disponible : heures d’ouverture, hors repos et congés. Badgé : présence à la borne ;
-                l’écart montre les heures de présence sans temps déclaré sur un OR.
+                saisie. Disponible : heures d’ouverture, hors repos et congés. Badgé : chrono des OR ;
+                présence : pointage à la borne, l’écart montre les heures de présence sans temps déclaré sur
+                un OR.
               </p>
             </div>
           </>

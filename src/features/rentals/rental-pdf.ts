@@ -12,7 +12,8 @@ import {
   pdfMoney,
   pdfText,
 } from '@/lib/pdf';
-import { ensureSpace } from '@/lib/pdf-document';
+import { drawFooter, ensureSpace } from '@/lib/pdf-document';
+import { formatSiret } from '@/lib/siret';
 import { CATEGORY_META, hasEngine, vehicleTitle } from './fleet-domain';
 import type { RentalDetail } from './rental-api';
 import {
@@ -24,7 +25,7 @@ import {
   round2,
   SIDE_SLOTS,
 } from './rental-domain';
-import { rentalTerms, type RentalTermsInput } from './rental-terms';
+import { rentalClause, rentalTerms, type RentalTermsInput } from './rental-terms';
 
 const paris = (iso: string, withTime = true) =>
   new Intl.DateTimeFormat('fr-FR', {
@@ -94,9 +95,13 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
     y = Math.max(endLeft, endRight) + 4;
   };
 
+  const optional = (label: string, value: string | null | undefined): [string, string][] =>
+    value ? [[label, value]] : [];
   twoColumns(
     box(loan ? 'BÉNÉFICIAIRE' : 'LOCATAIRE', [
       ['Nom', client.name],
+      ...optional('SIRET', client.siret && formatSiret(client.siret)),
+      ...optional('N° TVA', client.vat_number),
       ['Adresse', client.billing_address ?? '-'],
       ['Téléphone', client.phone ?? '-'],
       ['E-mail', client.email ?? '-'],
@@ -112,6 +117,8 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
     box('VÉHICULE', [
       ['Immatriculation', vehicle.plate],
       ['Modèle', vehicleTitle(vehicle)],
+      ['N° de série', vehicle.vin ?? '-'],
+      ...optional('1re circulation', vehicle.first_registration && frDate(vehicle.first_registration)),
       ['Catégorie', `${CATEGORY_META[vehicle.category].label} · permis ${vehicle.license_category}`],
       ['Carburant', vehicle.fuel_type ?? '-'],
     ]),
@@ -165,6 +172,9 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
             ? `Carburant : ${pdfMoney(rental.fuel_price_per_liter)} / L`
             : null,
           `Caution : ${pdfMoney(rental.deposit)}${deposit ? ` (${deposit})` : ''}`,
+          present(rental.late_fee_per_hour) && rental.late_fee_per_hour > 0
+            ? `Retard : ${pdfMoney(rental.late_fee_per_hour)} HT / h`
+            : null,
           present(rental.franchise) ? `Franchise : ${pdfMoney(rental.franchise)}` : null,
         ]
           .filter(Boolean)
@@ -233,31 +243,50 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
     departure?.equipment.length ? `Équipements : ${departure.equipment.join(', ')}` : null,
     `Dommages existants : ${departureDamages.length ? departureDamages.map((item, index) => `${index + 1}. ${item.label}`).join(' ; ') : 'aucun'}`,
   ].filter((line): line is string => Boolean(line));
-  for (const line of facts) {
-    const wrapped = doc.splitTextToSize(pdfText(line), PAGE_W - 2 * MARGIN) as string[];
-    doc.text(wrapped, MARGIN, y);
-    y += wrapped.length * 4;
-  }
+  // Une seule ligne (ou plus si elle déborde) : la place sert aux signatures en bas de page
+  const factLines = doc.splitTextToSize(pdfText(facts.join('   ·   ')), PAGE_W - 2 * MARGIN) as string[];
+  doc.text(factLines, MARGIN, y);
+  y += factLines.length * 4;
 
   y += 2;
   doc.setFontSize(8);
   doc.setTextColor(98, 104, 98);
   const clause = loan
     ? 'Le bénéficiaire reconnaît avoir reçu le véhicule dans l’état décrit ci-dessus et s’engage à le restituer à la fin de l’intervention, au même niveau de carburant.'
-    : 'Le locataire reconnaît avoir reçu le véhicule dans l’état décrit ci-dessus et s’engage à le restituer à la date et à l’heure prévues, au même niveau de carburant. Les kilomètres supplémentaires, le carburant manquant, les retards et les dommages constatés au retour sont facturés selon les conditions ci-dessus, dans la limite de la franchise.';
+    : rentalClause(rental);
   const wrapped = doc.splitTextToSize(pdfText(clause), PAGE_W - 2 * MARGIN) as string[];
   doc.text(wrapped, MARGIN, y);
   doc.setTextColor(0, 0, 0);
-  y += wrapped.length * 3.6 + 4;
+  y += wrapped.length * 3.6 + 3;
 
-  // Signatures
+  // Lieu et date, puis signatures, au-dessus du filet de pied de page (276) ; sinon page suivante
+  if (y + 32 > 274) {
+    doc.addPage();
+    y = 20;
+  }
+  doc.setFontSize(8.5);
+  doc.text(
+    pdfText(
+      `Fait à ${settings.company.city || '________________'}, le ${
+        rental.signed_at ? paris(rental.signed_at, false) : '____ / ____ / ________'
+      }, en deux exemplaires.`,
+    ),
+    MARGIN,
+    y,
+  );
+  y += 3;
   const half = (PAGE_W - 2 * MARGIN - 8) / 2;
   doc.setDrawColor(215, 220, 215);
   doc.rect(MARGIN, y, half, 28);
   doc.rect(MARGIN + half + 8, y, half, 28);
-  doc.setFontSize(8.5);
   doc.text(pdfText(`Pour ${settings.company.legal_name}`), MARGIN + 2, y + 4);
   doc.text(loan ? 'Le bénéficiaire' : 'Le locataire · « lu et approuvé »', MARGIN + half + 10, y + 4);
+  doc.setFontSize(7);
+  doc.setTextColor(98, 104, 98);
+  doc.text('Nom, qualité, signature et cachet', MARGIN + 2, y + 26.5);
+  doc.text('Nom, qualité, signature et cachet', MARGIN + half + 10, y + 26.5);
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(8.5);
   if (rental.signature_file_id) {
     const signatureUrl = (await fetchFileUrls([rental.signature_file_id]).catch(() => noUrls))[
       rental.signature_file_id
@@ -277,6 +306,7 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
   }
 
   if (!loan) drawTerms(doc, { ...rental, vat_rate: settings.company.default_vat_rate });
+  drawFooter(doc, []);
 
   return {
     blob: doc.output('blob'),
