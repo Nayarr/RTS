@@ -119,7 +119,7 @@ export function LaborRatesForm({ rates }: { rates: LaborRate[] }) {
       onCancel={() => reset()}
     >
       <div className="-mx-[22px] -my-5 overflow-x-auto">
-        <table className="tbl">
+        <table className="tbl min-w-[820px]">
           <thead>
             <tr>
               <th className="pl-[22px]!">Catégorie</th>
