@@ -20,6 +20,7 @@ import '@supabase/functions-js/edge-runtime.d.ts';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import {
+  agentMailDeadlines,
   agentMailRequest,
   agentMailRequestSchema,
   attachmentsBytes,
@@ -64,7 +65,9 @@ export default {
 
     // Mail préparé par l'agent : contenu lu dans l'action, avec les droits de la personne connectée
     const agentMail = agentMailRequestSchema.safeParse(body);
-    let agentAction: { id: string; invoice_ids: string[] } | null = null;
+    let agentAction:
+      | { id: string; invoice_ids: string[]; deadlines: ReturnType<typeof agentMailDeadlines> }
+      | null = null;
     let parsed = requestSchema.safeParse(body);
     if (agentMail.success) {
       const { data: action } = await ctx.supabase
@@ -87,7 +90,21 @@ export default {
       if (!prepared) return fail(400, 'Mail préparé illisible');
       parsed = requestSchema.safeParse(prepared);
       const ids = (action.payload as { invoice_ids?: unknown }).invoice_ids;
-      agentAction = { id: action.id, invoice_ids: Array.isArray(ids) ? ids.map(String) : [] };
+      agentAction = {
+        id: action.id,
+        invoice_ids: Array.isArray(ids) ? ids.map(String) : [],
+        deadlines: agentMailDeadlines(action.payload),
+      };
+      // Relance d'échéances : jamais deux fois en 3 mois (page Échéances, autre mail, rappel)
+      for (const deadline of agentAction.deadlines) {
+        const { data: reminded } = await ctx.supabase.rpc('deadline_recently_reminded', {
+          p_vehicle_id: deadline.vehicle_id,
+          p_kind: deadline.kind,
+        });
+        if (reminded) {
+          return fail(409, 'Véhicule déjà relancé depuis moins de 3 mois : redemande le mail à l’agent');
+        }
+      }
     }
     if (!parsed.success) return fail(400, 'Adresse e-mail ou message invalide');
     const request = parsed.data;
@@ -194,6 +211,13 @@ export default {
           .from('invoice_reminders')
           .insert(agentAction.invoice_ids.map((invoice_id) => ({ invoice_id, sent_by: userId })));
         if (reminderError) console.error(reminderError);
+      }
+      if (agentAction.deadlines.length) {
+        const { error: deadlineError } = await ctx.supabase.rpc('record_deadline_reminders', {
+          p_items: agentAction.deadlines,
+          p_source: 'agent',
+        });
+        if (deadlineError) console.error(deadlineError);
       }
     }
     return json(200, { id: result.id });

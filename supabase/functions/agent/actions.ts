@@ -418,6 +418,8 @@ const DEADLINES = {
   hayon: { field: 'tailgate_due_date', label: 'Contrôle hayon' },
   antipollution: { field: 'antipollution_due_date', label: 'Antipollution' },
 } as const;
+/** Échéance de l'agent → contrôle noté dans les relances (deadline_reminders.kind). */
+const REMINDER_KINDS = { ct: 'ct', hayon: 'tailgate', antipollution: 'antipollution' } as const;
 const ORDER_PROPERTIES = {
   numero_or: string('Numéro de l’OR (ex. 488 ou OR00488)'),
   immatriculation: string('Immatriculation, si le numéro n’est pas donné'),
@@ -435,7 +437,7 @@ ACTION_TOOLS.push(
   action({
     name: 'preparer_mails',
     description:
-      'Prépare un mail par client à partir d’un modèle (contrôles à venir, relance commerciale…) : objet et texte avec {client} (nom du client) et {details} (ce qui le concerne : plaques, dates), puis la liste des clients avec leurs détails. Chaque mail part à l’e-mail de la fiche du client. Rien n’est envoyé : la direction les relit un par un, les modifie, les envoie ou les écarte.',
+      'Prépare un mail par client à partir d’un modèle (contrôles à venir, relance commerciale…) : objet et texte avec {client} (nom du client) et {details} (ce qui le concerne : plaques, dates), puis la liste des clients avec leurs détails. Relance d’échéances : donne aussi, par client, les échéances relancées (relances) ; un véhicule déjà relancé depuis moins de 3 mois est refusé. Chaque mail part à l’e-mail de la fiche du client. Rien n’est envoyé : la direction les relit un par un, les modifie, les envoie ou les écarte.',
     input_schema: schema(
       {
         objet: string('Objet du mail, {client} possible'),
@@ -450,6 +452,20 @@ ACTION_TOOLS.push(
               details: string(
                 'Ce qui concerne ce client, ex. « AB-123-CD : contrôle technique le 12 novembre »',
               ),
+              relances: {
+                type: 'array',
+                maxItems: 40,
+                description: 'Relance d’échéances : chaque véhicule et contrôle cité dans les détails',
+                items: {
+                  type: 'object',
+                  properties: {
+                    immatriculation: string('Immatriculation du véhicule'),
+                    echeance: { type: 'string', enum: ['ct', 'hayon', 'antipollution'] },
+                  },
+                  required: ['immatriculation', 'echeance'],
+                  additionalProperties: false,
+                },
+              },
             },
             required: ['client'],
             additionalProperties: false,
@@ -462,7 +478,18 @@ ACTION_TOOLS.push(
       objet: text(200),
       texte: text(5000),
       destinataires: z
-        .array(z.object({ client: text(120), details: z.string().trim().max(1000).optional() }))
+        .array(
+          z.object({
+            client: text(120),
+            details: z.string().trim().max(1000).optional(),
+            relances: z
+              .array(
+                z.object({ immatriculation: text(20), echeance: z.enum(['ct', 'hayon', 'antipollution']) }),
+              )
+              .max(40)
+              .default([]),
+          }),
+        )
         .min(1)
         .max(40),
     }),
@@ -477,6 +504,25 @@ ACTION_TOOLS.push(
           seen.add(client.id);
           const to = (client.email ?? '').trim().toLowerCase();
           if (!EMAIL.test(to)) throw new Error(`pas d’e-mail valable sur la fiche de ${client.name}`);
+          // Échéances relancées : jamais deux fois en 3 mois (page Échéances, agent, rappels)
+          const deadlines: { vehicle_id: string; kind: string }[] = [];
+          for (const item of recipient.relances) {
+            const vehicle = await findVehicle(db, item.immatriculation);
+            const kind = REMINDER_KINDS[item.echeance];
+            const { data: reminded, error } = await db.rpc('deadline_recently_reminded', {
+              p_vehicle_id: vehicle.id,
+              p_kind: kind,
+            });
+            if (error) throw new Error(error.message);
+            if (reminded) {
+              throw new Error(
+                `${vehicle.plate} déjà relancé depuis moins de 3 mois (${
+                  DEADLINES[item.echeance].label.toLowerCase()
+                }) : retire-le du mail`,
+              );
+            }
+            deadlines.push({ vehicle_id: vehicle.id, kind });
+          }
           const fill = (value: string) =>
             value.replaceAll('{client}', client.name).replaceAll('{details}', recipient.details ?? '').trim();
           const subject = fill(input.objet).slice(0, 200);
@@ -494,6 +540,7 @@ ACTION_TOOLS.push(
                 category: 'workshop',
                 invoice_ids: [],
                 invoice_numbers: [],
+                deadlines,
               },
               `Mail à ${client.name} (${to}) : « ${subject} »`.slice(0, 500),
             ),

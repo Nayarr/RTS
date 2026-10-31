@@ -270,6 +270,8 @@ test('réception : Agent Direction et mails reçus dans le menu ; technicien : p
   await page.goto('/');
   if (mobile) await page.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('button', { name: 'Se déconnecter' }).first().click();
+  // Déconnexion terminée (session effacée) avant de se reconnecter
+  await expect(page.getByLabel('E-mail')).toBeVisible();
   await loginAs(page, 'alice@rts.local');
   await expect(page.getByRole('link', { name: /Agent Direction/ })).toHaveCount(0);
   await page.goto('/agent-direction');

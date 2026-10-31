@@ -1,5 +1,6 @@
 import { assertEquals, assertStringIncludes } from '@std/assert';
 import {
+  agentMailDeadlines,
   agentMailRequest,
   agentMailRequestSchema,
   attachmentsBytes,
@@ -201,6 +202,15 @@ Deno.test('réponse à un mail reçu : même fil chez le client, en-tête vérif
   assertEquals(threadHeader(' <abc@x.fr> '), '<abc@x.fr>');
   assertEquals(threadHeader('<abc@x.fr>\r\nBcc: pirate@x.fr'), null);
   assertEquals(threadHeader(null), null);
+});
+
+Deno.test('mail de l’agent : échéances relancées lues dans l’action, illisibles ignorées', () => {
+  const vehicle = crypto.randomUUID();
+  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: vehicle, kind: 'tailgate' }] }), [
+    { vehicle_id: vehicle, kind: 'tailgate' },
+  ]);
+  assertEquals(agentMailDeadlines({ invoice_ids: [] }), []);
+  assertEquals(agentMailDeadlines({ deadlines: [{ vehicle_id: 'x', kind: 'ct' }] }), []);
 });
 
 Deno.test('mail préparé par l’agent : contenu relu dans l’action, adresse de facturation pour une relance', () => {

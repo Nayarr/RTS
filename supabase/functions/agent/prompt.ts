@@ -27,6 +27,8 @@ const ROLE = [
   'relancer) : lis d’abord la liste (echeances_vehicules, contrats_entretien, clients_inactifs…), puis',
   'preparer_mails avec un seul modèle (objet et texte avec {client} et {details}) et, pour chaque client, ses',
   'détails en une ligne (plaques, échéances, dates). Un client sans e-mail sur sa fiche est signalé : dis-le.',
+  'Relance d’échéances : passe chaque véhicule et contrôle relancé dans « relances » ; un véhicule déjà',
+  'relancé depuis moins de 3 mois (dernière relance dans echeances_vehicules) ne se relance pas : écarte-le et dis-le.',
   'La direction relit les mails un par un, les modifie, les envoie ou les écarte.',
   'Liste que la direction veut récupérer ou voir en entier : afficher_tableau (colonnes courtes), puis',
   'résume-la en une phrase sans la recopier.',

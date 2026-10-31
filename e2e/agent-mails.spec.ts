@@ -111,6 +111,8 @@ test('mails reçus : ouverts à la réception, pas au technicien', async ({ page
   await page.goto('/agent-direction/mails');
   await expect(page.getByRole('heading', { name: 'Mails reçus' })).toBeVisible();
   await page.getByRole('button', { name: 'Se déconnecter' }).first().click();
+  // Déconnexion terminée (session effacée) avant de se reconnecter
+  await expect(page.getByLabel('E-mail')).toBeVisible();
   await loginAs(page, 'alice@rts.local');
   await page.goto('/agent-direction/mails');
   await expect(page.getByRole('heading', { name: 'Mails reçus' })).toBeHidden();

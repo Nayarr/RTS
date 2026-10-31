@@ -98,6 +98,8 @@ test('OR en dépannage extérieur : lieu, trajet calculé, déplacement de la zo
 
   // Le mécano voit le lieu d'intervention
   await page.getByRole('button', { name: 'Se déconnecter' }).first().click();
+  // Déconnexion terminée (session effacée) avant de se reconnecter
+  await expect(page.getByLabel('E-mail')).toBeVisible();
   await loginAs(page, 'alice@rts.local');
   await page.goto(`/atelier/or/${orderId}`);
   await expect(page.getByText('Aire de Roissy, 95700 Roissy-en-France')).toBeVisible();

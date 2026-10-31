@@ -488,6 +488,8 @@ describe('clients et véhicules : écrans', () => {
         // Hayon : la vue donne la fin du mois d'échéance
         due_date: '2020-09-30',
         days_left: -8,
+        client_email: 'contact@martin.fr',
+        reminded_at: '2026-10-20T09:00:00Z',
       },
     ]);
     renderAs('reception', '/vehicules/echeances', <DeadlinesPage />, '/vehicules/echeances');
@@ -495,6 +497,9 @@ describe('clients et véhicules : écrans', () => {
     expect(within(item).getByRole('link', { name: 'GH-512-RT' })).toHaveAttribute('href', '/vehicules/v1');
     expect(item).toHaveTextContent('Contrôle hayon09/2020Transports Martin');
     expect(item).toHaveTextContent(/Dépassé/);
+    // Déjà relancé : plus de relance pendant 3 mois
+    expect(item).toHaveTextContent('Relancé le 20/10/2026');
+    expect(screen.getByRole('button', { name: /Relancer les échéances/ })).toBeDisabled();
   });
 
   it('échéances de la flotte de location : assurance expirée (bloqué), vidange proche', async () => {

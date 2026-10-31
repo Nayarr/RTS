@@ -7,7 +7,10 @@ import { DISPLAY_DEFINITIONS, runDisplay } from './display.ts';
  * Fausse base : lectures servies par table, une seule écriture permise (insertion dans
  * agent_actions), gardée pour vérification.
  */
-function fakeDb(data: Record<string, unknown[]>) {
+function fakeDb(
+  data: Record<string, unknown[]>,
+  rpc: Record<string, (args: Record<string, unknown>) => unknown> = {},
+) {
   const inserts: { table: string; row: Record<string, unknown> }[] = [];
   const writes: string[] = [];
   const query = (table: string): unknown =>
@@ -43,7 +46,11 @@ function fakeDb(data: Record<string, unknown[]>) {
         },
       },
     );
-  const db = { from: (table: string) => query(table) } as unknown as SupabaseClient;
+  const db = {
+    from: (table: string) => query(table),
+    rpc: (name: string, args: Record<string, unknown>) =>
+      Promise.resolve({ data: rpc[name]?.(args) ?? null, error: null }),
+  } as unknown as SupabaseClient;
   return { db, inserts, writes };
 }
 
@@ -300,6 +307,7 @@ Deno.test('mails groupés : un par client à partir du modèle, client sans e-ma
     category: 'workshop',
     invoice_ids: [],
     invoice_numbers: [],
+    deadlines: [],
   });
   assertStringIncludes(String(inserts[1]?.row.summary), 'Mail à Frigo Leroy (atelier@leroy.fr)');
   assertStringIncludes(result.content, 'Dupont : pas d’e-mail valable sur la fiche de Dupont');
@@ -466,4 +474,54 @@ Deno.test('tableau : affiché tel quel, lignes de la bonne largeur seulement', (
   const broken = runDisplay({ titre: 'X', colonnes: ['A', 'B'], lignes: [['seul']] });
   assertEquals(broken.is_error, true);
   assertEquals(DISPLAY_DEFINITIONS[0]?.input_schema.additionalProperties, false);
+});
+
+Deno.test('relance d’échéances par l’agent : véhicules notés, déjà relancé depuis moins de 3 mois refusé', async () => {
+  const { db, inserts } = fakeDb(
+    {
+      clients: [{ id: 'c1', name: 'MCE', email: 'parc@mce.fr' }],
+      v_vehicles_overview: [{ id: 'v1', plate: 'AB-123-CD', client_name: 'MCE' }],
+    },
+    // Hayon déjà relancé, contrôle technique pas encore
+    { deadline_recently_reminded: (args) => args.p_kind === 'tailgate' },
+  );
+  const ok = await runAction(
+    db,
+    'preparer_mails',
+    {
+      objet: 'Contrôles à prévoir',
+      texte: 'Bonjour {client}, {details}',
+      destinataires: [
+        {
+          client: 'MCE',
+          details: 'AB-123-CD : CT dépassé',
+          relances: [{ immatriculation: 'AB-123-CD', echeance: 'ct' }],
+        },
+      ],
+    },
+    null,
+  );
+  assertEquals(ok.is_error, false, ok.content);
+  assertEquals(inserts[0]?.row.payload && (inserts[0].row.payload as { deadlines: unknown }).deadlines, [
+    { vehicle_id: 'v1', kind: 'ct' },
+  ]);
+
+  const refused = await runAction(
+    db,
+    'preparer_mails',
+    {
+      objet: 'Contrôles à prévoir',
+      texte: 'Bonjour {client}, {details}',
+      destinataires: [
+        {
+          client: 'MCE',
+          details: 'AB-123-CD : hayon',
+          relances: [{ immatriculation: 'AB-123-CD', echeance: 'hayon' }],
+        },
+      ],
+    },
+    null,
+  );
+  assertEquals(refused.is_error, true);
+  assertStringIncludes(refused.content, 'AB-123-CD déjà relancé depuis moins de 3 mois (contrôle hayon)');
 });
