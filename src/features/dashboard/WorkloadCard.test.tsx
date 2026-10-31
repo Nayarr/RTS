@@ -169,6 +169,8 @@ describe('charge de travail atelier', () => {
     const alice = await screen.findByRole('listitem', { name: 'Alice' });
     expect(alice).toHaveTextContent('2,5 h hors heures d’ouverture');
     expect(within(alice).queryByRole('meter')).toBeNull();
+    // Jauge gardée (pleine, grise) : la carte garde sa forme les jours de fermeture
+    expect(within(alice).getByTestId('gauge-off-hours')).toBeInTheDocument();
     expect(screen.getByRole('listitem', { name: 'Bruno' })).toHaveTextContent('Atelier fermé');
   });
 
