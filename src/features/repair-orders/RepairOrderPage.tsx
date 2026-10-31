@@ -126,7 +126,7 @@ export function RepairOrderPage() {
       <div className="split grid-cols-1! xl:grid-cols-[minmax(0,1fr)_380px]!">
         <div className="col gap-5">
           <PreQuoteWorkCard repairOrderId={order.id} />
-          <LinesCard lines={lines} />
+          <LinesCard lines={lines} repairOrderId={order.id} editable={editable} />
           <PartsCard
             repairOrderId={order.id}
             lines={lines}
