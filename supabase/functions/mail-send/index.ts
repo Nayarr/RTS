@@ -10,7 +10,8 @@
 // indisponible, la messagerie de l'ordinateur reste proposée). Chaque envoi est gardé dans
 // email_deliveries.
 // Réponse préparée par l'Agent Direction (inbox_email_id) : envoyée par le bureau (direction ou
-// réception) dans le fil du mail reçu, qui est ensuite marqué répondu et traité.
+// réception) dans le fil du mail reçu, depuis la boîte qui l'a reçu (comptoir@, atelier@), puis le
+// mail reçu est marqué répondu et traité.
 // Mail préparé par l'Agent Direction (agent_action_id) : envoyé par la personne du bureau qui l'a
 // demandé (direction ou réception) ; le contenu est relu dans l'action (jamais pris dans la
 // requête), l'action est marquée faite et, pour une relance, la relance est notée sur chaque facture.
@@ -24,6 +25,7 @@ import {
   attachmentsBytes,
   DAILY_LIMIT,
   MAX_ATTACHMENTS_BYTES,
+  replySender,
   requestSchema,
   resendFailure,
   resendPayload,
@@ -94,15 +96,17 @@ export default {
     }
 
     let inReplyTo: string | null = null;
+    let mailbox: string | null = null;
     if (request.inbox_email_id) {
       const { data: received } = await admin
         .from('inbox_emails')
-        .select('message_id, reply_status')
+        .select('message_id, reply_status, mailbox')
         .eq('id', request.inbox_email_id)
         .maybeSingle();
       if (!received) return fail(404, 'Mail reçu introuvable');
       if (received.reply_status === 'sent') return fail(409, 'Réponse déjà envoyée');
       inReplyTo = threadHeader(received.message_id);
+      mailbox = received.mailbox;
     }
     const { count } = await admin
       .from('email_deliveries')
@@ -114,11 +118,12 @@ export default {
 
     const { data: company } = await ctx.supabase.from('company_settings').select('legal_name, email')
       .maybeSingle();
-    const sender = senderFor(request.category, settings, {
+    const usual = senderFor(request.category, settings, {
       from: fromAddress,
       replyTo: company?.email ?? null,
     });
-    if (!sender) return fail(503, 'Renseigne le domaine d’envoi dans Réglages › Atelier');
+    if (!usual) return fail(503, 'Renseigne le domaine d’envoi dans Réglages › Atelier');
+    const sender = replySender(usual, mailbox);
     const response = await fetch(`${apiUrl}/emails`, {
       method: 'POST',
       headers: {

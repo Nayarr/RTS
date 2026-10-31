@@ -278,7 +278,7 @@ export async function postponeReply(id: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Envoie la réponse préparée telle quelle, depuis atelier@, dans le fil du mail reçu. */
+/** Envoie la réponse préparée telle quelle, depuis la boîte qui a reçu le mail, dans son fil. */
 export function sendPreparedReply(reply: PreparedReply) {
   return sendMail({
     category: 'workshop',
