@@ -5,7 +5,9 @@ import {
   agentMailRequestSchema,
   attachmentsBytes,
   base64Bytes,
+  batches,
   mailHtml,
+  mailingMessages,
   mailText,
   replySender,
   requestSchema,
@@ -258,4 +260,43 @@ Deno.test('réponse à un mail reçu : depuis la boîte qui l’a reçu, si elle
   assertEquals(replySender(usual, 'contact@autre-domaine.fr'), usual);
   assertEquals(replySender(usual, null), usual);
   assertEquals(replySender(usual, 'Comptoir <comptoir@rapidtruckservice.fr>'), usual);
+});
+
+Deno.test('mail groupé de l’agent : un message par client, son nom à la place de {client}', () => {
+  const messages = mailingMessages({
+    subject: 'Machine à vendre, {client}',
+    text: 'Bonjour {client},\nNotre machine de parallélisme est à vendre.',
+    category: 'workshop',
+    recipients: [
+      { client_id: KEY, name: 'Transports Martin', to: 'compta@martin.fr' },
+      { client_id: KEY, name: 'Frigo Leroy', to: 'atelier@leroy.fr' },
+    ],
+  });
+  assertEquals(messages, [
+    {
+      to: 'compta@martin.fr',
+      subject: 'Machine à vendre, Transports Martin',
+      text: 'Bonjour Transports Martin,\nNotre machine de parallélisme est à vendre.',
+    },
+    {
+      to: 'atelier@leroy.fr',
+      subject: 'Machine à vendre, Frigo Leroy',
+      text: 'Bonjour Frigo Leroy,\nNotre machine de parallélisme est à vendre.',
+    },
+  ]);
+  assertEquals(mailingMessages({ subject: 'Info', text: 'Bonjour', recipients: [] }), null);
+  assertEquals(
+    mailingMessages({
+      subject: 'Info',
+      text: 'Bonjour',
+      recipients: [{ client_id: KEY, name: 'X', to: 'pas-un-mail' }],
+    }),
+    null,
+  );
+});
+
+Deno.test('envoi groupé de Resend : paquets de 100 messages au plus', () => {
+  const sizes = batches(Array.from({ length: 250 }, (_, index) => index)).map((group) => group.length);
+  assertEquals(sizes, [100, 100, 50]);
+  assertEquals(batches([]), []);
 });
