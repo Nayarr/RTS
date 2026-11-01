@@ -17,12 +17,12 @@ async function loginAs(page: Page, email: string) {
   await expect(page.getByRole('button', { name: 'Se déconnecter' }).first()).toBeVisible();
 }
 
-test('charge atelier, vue jour : temps saisi un samedi, jauge gardée', async ({ page }, testInfo) => {
+test('charge atelier, vue jour : temps saisi un dimanche, jauge gardée', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Tableau de bord du bureau');
-  // Dernier samedi passé (atelier fermé), au calendrier de Paris
+  // Dernier dimanche passé (atelier fermé), au calendrier de Paris
   const today = parisDay();
-  const back = (new Date(`${today}T12:00:00Z`).getUTCDay() + 1) % 7 || 7;
-  const saturday = parisDay(-back);
+  const back = new Date(`${today}T12:00:00Z`).getUTCDay() || 7;
+  const sunday = parisDay(-back);
   const reception = createClient<Database>(
     env.VITE_SUPABASE_URL ?? '',
     env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '',
@@ -32,14 +32,14 @@ test('charge atelier, vue jour : temps saisi un samedi, jauge gardée', async ({
   const { data: order, error } = await reception.rpc('create_repair_order', {
     p_plate: `SA${String(Date.now()).slice(-7)}`,
     p_vehicle_type: 'pl',
-    p_client_name: 'Client du samedi',
+    p_client_name: 'Client du dimanche',
     p_requested_work: 'Dépannage',
   });
   if (error) throw error;
-  // Travail déclaré par Alice ce samedi-là
+  // Travail déclaré par Alice ce dimanche-là
   sql(`insert into public.ro_lines (repair_order_id, kind, line_type, description, estimated_hours, technician_id, created_at)
-       select '${order.id}', 'done', 'labor', 'Dépannage du samedi', 2, t.id,
-              ('${saturday}'::date + time '10:00') at time zone 'Europe/Paris'
+       select '${order.id}', 'done', 'labor', 'Dépannage du dimanche', 2, t.id,
+              ('${sunday}'::date + time '10:00') at time zone 'Europe/Paris'
        from public.technicians t where t.display_name = 'Alice'`);
 
   await loginAs(page, 'reception@rts.local');
