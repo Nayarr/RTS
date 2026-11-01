@@ -223,6 +223,7 @@ export type Database = {
           daily_hours: number;
           expected_arrival: string;
           friday_hours: number;
+          saturday_hours: number;
           friday_lunch_start: string;
           id: boolean;
           label_scan_enabled: boolean;
@@ -263,6 +264,7 @@ export type Database = {
           daily_hours?: number;
           expected_arrival?: string;
           friday_hours?: number;
+          saturday_hours?: number;
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
@@ -303,6 +305,7 @@ export type Database = {
           daily_hours?: number;
           expected_arrival?: string;
           friday_hours?: number;
+          saturday_hours?: number;
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
