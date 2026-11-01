@@ -35,7 +35,8 @@ export function TailgateLabelDialog({
   fileId: string;
   repairOrderId: string;
   vehicleId: string;
-  onApply: (verdict: 'OK' | 'HS') => void;
+  /** Verdict et mois du prochain contrôle (1er jour du mois), gardés sur la fiche de l'OR. */
+  onApply: (verdict: 'OK' | 'HS', dueMonth: string) => void;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -55,7 +56,7 @@ export function TailgateLabelDialog({
     mutationFn: () => updateDeadlines(repairOrderId, { tailgate_due_date: date }),
     onSuccess: async () => {
       if (verdict) {
-        onApply(verdict.value);
+        onApply(verdict.value, date);
         toast.success(`Contrôle hayon : ${verdict.value === 'OK' ? 'OK' : 'À FAIRE'}`);
       }
       await queryClient.invalidateQueries({ queryKey: ['vehicles', vehicleId, 'deadlines'] });
