@@ -6,6 +6,8 @@ import type { FileCategory } from './api';
 import { useUploadFile } from './hooks';
 
 const ACCEPTED = 'image/jpeg,image/png,image/webp';
+/** Photo ou PDF (carte grise scannée…), pour les catégories qui acceptent les PDF. */
+export const IMAGE_OR_PDF = `${ACCEPTED},application/pdf`;
 
 /**
  * Bouton d'ajout de photo : galerie ou appareil photo sur téléphone / tablette,
@@ -18,6 +20,7 @@ export function ImageUploadButton({
   variant = 'outline',
   compress = true,
   size = 'default',
+  accept = ACCEPTED,
 }: {
   category: FileCategory;
   onUploaded: (fileId: string) => void;
@@ -26,6 +29,8 @@ export function ImageUploadButton({
   /** false : fichier envoyé tel quel (logo PNG avec transparence). */
   compress?: boolean;
   size?: 'default' | 'sm';
+  /** Types acceptés (photos par défaut ; IMAGE_OR_PDF pour une carte grise). */
+  accept?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploadFile(category, { compress });
@@ -45,7 +50,7 @@ export function ImageUploadButton({
       <input
         ref={input}
         type="file"
-        accept={ACCEPTED}
+        accept={accept}
         hidden
         onChange={onChange}
         data-testid={`upload-${category}`}

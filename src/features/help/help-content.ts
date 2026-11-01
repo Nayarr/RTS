@@ -62,6 +62,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Tu peux laisser l’OR sans technicien (badge « Non assigné ») et l’assigner plus tard, depuis l’OR ou le planning. Les informations de l’OR s’enregistrent toutes seules.',
       'Pour un dépannage, choisis le type d’intervention « Dépannage » : déplacement, kilomètres et temps de trajet sont ajoutés à la facture.',
       'Dépannage extérieur : carte « Lieu d’intervention » de l’OR (à la création ou sur sa fiche), coche « Dépannage extérieur », tape l’adresse et choisis-la dans la liste, puis « Calculer le trajet » (distance et temps aller-retour, trafic compris ; modifiables). Le déplacement facturé suit la zone (Réglages › Atelier) : zone 1 moins de 10 km aller-retour 60 € HT, zone 2 jusqu’à 20 km 90 €, zone 3 jusqu’à 40 km 130 € ; au-delà, prix à saisir. Trajet plus long que celui de la zone (zone 1 : 30 min ; zone 2 : 1 h ; zone 3 : 1 h 30, 7 min de tolérance) : temps de trajet facturé, 1 h au moins puis à la minute. Le mécano voit le lieu et un lien « Itinéraire ».',
+      'Fiche OR, carte « Intervention atelier » : le bureau ajoute une ligne aux travaux effectués ou à prévoir (avec son temps si besoin), modifie le texte d’une ligne (crayon) ou la supprime (corbeille), tant que l’OR n’est pas facturé.',
     ],
   },
   {
