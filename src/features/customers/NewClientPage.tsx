@@ -21,14 +21,9 @@ import {
 } from '@/features/rentals/license-domain';
 import { LicenseEditor } from '@/features/rentals/LicenseEditor';
 import { cn } from '@/lib/utils';
+import { accountOptions } from '@/lib/account-type';
 import { createClient } from './api';
-import {
-  ACCOUNT_TYPE_LABELS,
-  emptyNewClient,
-  newClientFromForm,
-  newClientSchema,
-  type NewClientValues,
-} from './domain';
+import { emptyNewClient, newClientFromForm, newClientSchema, type NewClientValues } from './domain';
 
 /** Le permis n'est enregistré que s'il a été scanné ou saisi. */
 const licenseStarted = (values: LicenseValues) =>
@@ -282,7 +277,7 @@ export function NewClientPage() {
               <div className="field">
                 <Label htmlFor="new-client-account-type">Type de compte</Label>
                 <select id="new-client-account-type" className="inp" {...register('account_type')}>
-                  {Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => (
+                  {accountOptions('comptant').map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
                     </option>

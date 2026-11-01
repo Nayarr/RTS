@@ -873,6 +873,7 @@ export type Database = {
           contact_name: string | null;
           created_at: string;
           discount_percent: number | null;
+          direct_debit_day: number | null;
           email: string | null;
           first_name: string | null;
           hourly_rate: number | null;
@@ -903,6 +904,7 @@ export type Database = {
           contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
+          direct_debit_day?: number | null;
           email?: string | null;
           first_name?: string | null;
           hourly_rate?: number | null;
@@ -933,6 +935,7 @@ export type Database = {
           contact_name?: string | null;
           created_at?: string;
           discount_percent?: number | null;
+          direct_debit_day?: number | null;
           email?: string | null;
           first_name?: string | null;
           hourly_rate?: number | null;
@@ -6193,6 +6196,7 @@ export type Database = {
           contact_name: string | null;
           created_at: string | null;
           discount_percent: number | null;
+          direct_debit_day: number | null;
           email: string | null;
           first_name: string | null;
           hourly_rate: number | null;
