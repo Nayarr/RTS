@@ -65,7 +65,7 @@ Deno.test('outils d’action : noms « preparer_… », schémas fermés', () =>
     assert(tool.name.startsWith('preparer_'), tool.name);
     assertEquals(tool.input_schema.additionalProperties, false, tool.name);
   }
-  assertEquals(ACTION_TOOLS.length, 10);
+  assertEquals(ACTION_TOOLS.length, 11);
 });
 
 Deno.test('rendez-vous préparé, pas créé : résumé lisible, technicien reconnu', async () => {
@@ -320,6 +320,71 @@ Deno.test('mails groupés : un par client à partir du modèle, client sans e-ma
   );
   assertEquals(none.is_error, true);
   assertStringIncludes(none.content, 'aucun mail préparé');
+});
+
+Deno.test('mail groupé : un seul envoi préparé, clients filtrés, sans e-mail comptés, rien envoyé', async () => {
+  const { db, inserts, writes } = fakeDb({
+    clients: [
+      { id: 'c1', name: 'Transports Martin', email: 'Compta@Martin.fr', kind: 'pro', archived_at: null },
+      { id: 'c2', name: 'Frigo Leroy', email: 'atelier@leroy.fr', kind: 'pro', archived_at: null },
+      { id: 'c3', name: 'Dupont', email: null, kind: 'pro', archived_at: null },
+      { id: 'c4', name: 'Jean Moreau', email: 'jean@moreau.fr', kind: 'individual', archived_at: null },
+      { id: 'c5', name: 'Martin bis', email: 'compta@martin.fr', kind: 'pro', archived_at: null },
+      { id: 'c6', name: 'Ancien', email: 'ancien@exemple.fr', kind: 'pro', archived_at: '2026-01-01' },
+    ],
+    vehicles: [
+      { client_id: 'c1', vehicle_type: 'pl' },
+      { client_id: 'c2', vehicle_type: 'vul' },
+      { client_id: 'c3', vehicle_type: 'pl' },
+    ],
+  });
+  const result = await runAction(
+    db,
+    'preparer_envoi_groupe',
+    {
+      objet: 'Machine de parallélisme à vendre',
+      texte:
+        'Bonjour {client},\nNous vendons notre machine de parallélisme.\nL’équipe de RAPID TRUCK SERVICE',
+      tous: true,
+    },
+    'conv1',
+  );
+  assertEquals(result.is_error, false, result.content);
+  assertEquals(writes, []);
+  assertEquals(inserts.length, 1);
+  assertEquals(inserts[0]?.row.kind, 'send_mailing');
+  // Une adresse en double et un client archivé écartés ; un sans e-mail compté
+  assertEquals(inserts[0]?.row.payload, {
+    subject: 'Machine de parallélisme à vendre',
+    text: 'Bonjour {client},\nNous vendons notre machine de parallélisme.\nL’équipe de RAPID TRUCK SERVICE',
+    category: 'workshop',
+    recipients: [
+      { client_id: 'c1', name: 'Transports Martin', to: 'compta@martin.fr' },
+      { client_id: 'c2', name: 'Frigo Leroy', to: 'atelier@leroy.fr' },
+      { client_id: 'c4', name: 'Jean Moreau', to: 'jean@moreau.fr' },
+    ],
+    without_email: 1,
+  });
+  assertEquals(inserts[0]?.row.summary, 'Mail groupé à 3 clients : « Machine de parallélisme à vendre »');
+  assertStringIncludes(result.content, 'rien n’est parti');
+
+  // Clients pro qui ont un poids lourd
+  const trucks = await runAction(
+    db,
+    'preparer_envoi_groupe',
+    { objet: 'Info', texte: 'Bonjour', type_client: 'pro', types_vehicule: ['pl'] },
+    null,
+  );
+  assertEquals(trucks.is_error, false, trucks.content);
+  assertEquals(
+    (inserts[1]?.row.payload as { recipients: { client_id: string }[] }).recipients.map((r) => r.client_id),
+    ['c1'],
+  );
+
+  // Sans destinataire précisé : rien de préparé
+  const vague = await runAction(db, 'preparer_envoi_groupe', { objet: 'Info', texte: 'Bonjour' }, null);
+  assertEquals(vague.is_error, true);
+  assertStringIncludes(vague.content, 'précise les destinataires');
 });
 
 Deno.test('échéance, date d’OR, OR à facturer et brouillon de facture : préparés, pas faits', async () => {

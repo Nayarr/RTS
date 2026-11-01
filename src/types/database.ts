@@ -7788,6 +7788,28 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      edit_agent_mailing: {
+        Args: { p_action_id: string; p_client_ids: string[]; p_subject: string; p_text: string };
+        Returns: {
+          conversation_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          error: string | null;
+          id: string;
+          kind: string;
+          payload: NonNullable<Json>;
+          profile_id: string;
+          result: Json | null;
+          status: string;
+          summary: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'agent_actions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       employee_name: { Args: { p_profile_id: string; p_technician_id: string }; Returns: string };
       ensure_client_and_vehicle: {
         Args: {

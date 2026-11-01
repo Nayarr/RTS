@@ -1,7 +1,8 @@
 // Actions que l'assistant de la direction peut PRÉPARER : rendez-vous (pris, déplacé ou annulé),
 // travail à ajouter sur un OR, technicien à assigner, date prévue d'un OR, OR passé « Facture à
-// faire », brouillon de facture, échéance d'un véhicule, mails (un seul, ou un par client à partir
-// d'un modèle ; envoyés par mail-send après validation, modifiables avant). Un outil ne fait que lire
+// faire », brouillon de facture, échéance d'un véhicule, mails (un seul, un par client à partir
+// d'un modèle, ou un mail groupé au même texte pour tous les clients ou une partie ; envoyés par
+// mail-send après validation, modifiables avant). Un outil ne fait que lire
 // (vérifier l'OR, le véhicule, le technicien) puis noter l'action proposée dans agent_actions ; elle
 // s'exécute seulement quand la direction la valide dans l'appli (execute_agent_action). Rien
 // d'autre n'est écrit.
@@ -29,6 +30,7 @@ export interface ProposedAction {
     | 'ro_work'
     | 'assign_technician'
     | 'send_mail'
+    | 'send_mailing'
     | 'vehicle_deadline'
     | 'schedule_order'
     | 'appointment_change'
@@ -792,6 +794,164 @@ ACTION_TOOLS.push(
   }),
 );
 
+/** Mails d'un envoi groupé : au plus la limite d'envoi de 24 h (mail-send). */
+export const MAILING_MAX = 300;
+const PAGE = 1000;
+
+/** Toutes les lignes d'une lecture (par pages de 1 000). */
+async function allRows<T>(
+  read: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
+) {
+  const rows: T[] = [];
+  for (let from = 0;; from += PAGE) {
+    const { data, error } = await read(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const page = (data ?? []) as T[];
+    rows.push(...page);
+    if (page.length < PAGE) return rows;
+  }
+}
+
+const VEHICLE_TYPES = ['pl', 'vul', 'remorque'] as const;
+
+ACTION_TOOLS.push(
+  action({
+    name: 'preparer_envoi_groupe',
+    description:
+      'Prépare un mail groupé au même texte (annonce, info commerciale : matériel à vendre, fermeture, nouveau service…) pour tous les clients ou une partie : tous (tous: true), ou filtrés par type de client (pro ou particulier), type de véhicule (clients qui ont au moins un PL, VUL ou remorque), clients venus à l’atelier depuis N mois, ou une liste de noms. Un mail part à chaque client (son adresse seule, jamais les autres en copie), {client} est remplacé par son nom. Clients sans e-mail valable écartés et comptés. Rien n’est envoyé : la direction relit le texte et la liste des destinataires, en retire si besoin, puis envoie. Pour un mail différent par client (échéances, relances), utilise preparer_mails.',
+    input_schema: schema(
+      {
+        objet: string('Objet du mail, {client} possible'),
+        texte: string('Texte complet (formule de politesse et signature), {client} possible'),
+        tous: { type: 'boolean', description: 'Tous les clients qui ont un e-mail' },
+        type_client: { type: 'string', enum: ['pro', 'particulier'] },
+        types_vehicule: {
+          type: 'array',
+          items: { type: 'string', enum: [...VEHICLE_TYPES] },
+          description: 'Clients qui ont au moins un véhicule de ces types',
+        },
+        venus_depuis_mois: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 60,
+          description: 'Clients avec un OR créé depuis N mois',
+        },
+        clients: { type: 'array', maxItems: 100, items: string('Nom du client') },
+      },
+      ['objet', 'texte'],
+    ),
+    input: z.object({
+      objet: text(200),
+      texte: text(5000),
+      tous: z.boolean().optional(),
+      type_client: z.enum(['pro', 'particulier']).optional(),
+      types_vehicule: z.array(z.enum(VEHICLE_TYPES)).max(3).optional(),
+      venus_depuis_mois: z.number().int().min(1).max(60).optional(),
+      clients: z.array(text(120)).max(100).optional(),
+    }),
+    run: async (db, input, conversationId) => {
+      const filtered = Boolean(
+        input.type_client || input.types_vehicule?.length || input.venus_depuis_mois || input.clients?.length,
+      );
+      if (!input.tous && !filtered) {
+        throw new Error(
+          'précise les destinataires : tous les clients, ou un filtre (type, véhicules, venus depuis, noms)',
+        );
+      }
+      type Client = {
+        id: string;
+        name: string;
+        email: string | null;
+        kind: string | null;
+        archived_at: string | null;
+      };
+      let list = (
+        await allRows<Client>((from, to) =>
+          db.from('clients').select('id, name, email, kind, archived_at').is('archived_at', null).order(
+            'name',
+          )
+            .range(from, to)
+        )
+      ).filter((client) => !client.archived_at);
+      if (input.clients?.length) {
+        const named = new Set<string>();
+        for (const name of input.clients) named.add((await findClient(db, name)).id);
+        list = list.filter((client) => named.has(client.id));
+      }
+      if (input.type_client) {
+        const kind = input.type_client === 'pro' ? 'pro' : 'individual';
+        list = list.filter((client) => (client.kind ?? 'pro') === kind);
+      }
+      const types = input.types_vehicule ?? [];
+      if (types.length) {
+        const owners = new Set(
+          (
+            await allRows<{ client_id: string | null; vehicle_type: string }>((from, to) =>
+              db.from('vehicles').select('client_id, vehicle_type').in('vehicle_type', types).range(from, to)
+            )
+          )
+            .filter((vehicle) => (types as string[]).includes(vehicle.vehicle_type))
+            .map((vehicle) => vehicle.client_id),
+        );
+        list = list.filter((client) => owners.has(client.id));
+      }
+      if (input.venus_depuis_mois) {
+        const since = new Date();
+        since.setMonth(since.getMonth() - input.venus_depuis_mois);
+        const sinceIso = since.toISOString();
+        const visitors = new Set(
+          (
+            await allRows<{ client_id: string | null; created_at: string }>((from, to) =>
+              db.from('repair_orders').select('client_id, created_at').gte('created_at', sinceIso).range(
+                from,
+                to,
+              )
+            )
+          )
+            .filter((order) => order.created_at >= sinceIso)
+            .map((order) => order.client_id),
+        );
+        list = list.filter((client) => visitors.has(client.id));
+      }
+      // Un mail par adresse (deux fiches avec la même adresse : un seul mail)
+      const seen = new Set<string>();
+      const recipients: { client_id: string; name: string; to: string }[] = [];
+      let withoutEmail = 0;
+      for (const client of list) {
+        const to = (client.email ?? '').trim().toLowerCase();
+        if (!EMAIL.test(to)) {
+          withoutEmail += 1;
+          continue;
+        }
+        if (seen.has(to)) continue;
+        seen.add(to);
+        recipients.push({ client_id: client.id, name: client.name, to });
+      }
+      if (recipients.length === 0) {
+        throw new Error(
+          `aucun client avec un e-mail valable${withoutEmail ? ` (${withoutEmail} sans e-mail)` : ''}`,
+        );
+      }
+      if (recipients.length > MAILING_MAX) {
+        throw new Error(
+          `${recipients.length} clients : plus de ${MAILING_MAX} mails par jour, découpe l’envoi (par type de client ou de véhicule)`,
+        );
+      }
+      const subject = input.objet.slice(0, 200);
+      return propose(
+        db,
+        conversationId,
+        'send_mailing',
+        { subject, text: input.texte, category: 'workshop', recipients, without_email: withoutEmail },
+        `Mail groupé à ${recipients.length} client${recipients.length > 1 ? 's' : ''} : « ${subject} »`.slice(
+          0,
+          500,
+        ),
+      );
+    },
+  }),
+);
+
 export const ACTION_DEFINITIONS = ACTION_TOOLS.map(({ name, description, input_schema }) => ({
   name,
   description,
@@ -832,6 +992,17 @@ export async function runAction(
         }),
         is_error: false,
         actions: prepared.actions,
+      };
+    }
+    if (prepared.kind === 'send_mailing') {
+      return {
+        content: JSON.stringify({
+          envoi_groupe_prepare: prepared.summary,
+          consigne:
+            'Mail groupé affiché à la direction, rien n’est parti : dis à combien de clients il partira (et combien n’ont pas d’e-mail) ; elle relit le texte et la liste, puis l’envoie.',
+        }),
+        is_error: false,
+        actions: [prepared],
       };
     }
     return {

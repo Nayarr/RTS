@@ -29,7 +29,7 @@ export interface AgentAnswer {
 
 /**
  * Action préparée par l'agent : rendez-vous (pris, déplacé, annulé), travail, technicien ou date
- * d'un OR, OR à facturer, brouillon de facture, échéance d'un véhicule, mail.
+ * d'un OR, OR à facturer, brouillon de facture, échéance d'un véhicule, mail, mail groupé.
  */
 export type AgentAction = Pick<
   Tables['agent_actions']['Row'],
@@ -40,6 +40,7 @@ export type AgentAction = Pick<
     | 'ro_work'
     | 'assign_technician'
     | 'send_mail'
+    | 'send_mailing'
     | 'vehicle_deadline'
     | 'schedule_order'
     | 'appointment_change'
@@ -47,8 +48,26 @@ export type AgentAction = Pick<
     | 'invoice_draft';
   result: { link?: string } | null;
   /** Mail préparé : destinataire, objet et texte relus par la direction avant l'envoi. */
-  payload: { to?: string; subject?: string; text?: string; client_name?: string | null } | null;
+  payload: {
+    to?: string;
+    subject?: string;
+    text?: string;
+    client_name?: string | null;
+    /** Mail groupé : un mail à chaque client, sans e-mail écartés. */
+    recipients?: MailingRecipient[];
+    without_email?: number;
+  } | null;
 };
+
+export interface MailingRecipient {
+  client_id: string;
+  name: string;
+  to: string;
+}
+
+/** Mail à relire (seul ou groupé) : valable 24 h, envoyé par la fonction d'envoi des e-mails. */
+export const isMailAction = (action: Pick<AgentAction, 'kind'>) =>
+  action.kind === 'send_mail' || action.kind === 'send_mailing';
 
 /** Validité d'une action préparée : 30 minutes, 24 h pour un mail (relu à son rythme). */
 const ACTION_MINUTES = 30;
@@ -66,7 +85,7 @@ export async function fetchPendingActions(conversationId: string): Promise<Agent
   if (error) throw error;
   const since = Date.now() - ACTION_MINUTES * 60_000;
   return (data as AgentAction[]).filter(
-    (action) => action.kind === 'send_mail' || new Date(action.created_at).getTime() >= since,
+    (action) => isMailAction(action) || new Date(action.created_at).getTime() >= since,
   );
 }
 
@@ -80,6 +99,21 @@ export async function editAgentMail(
     p_to: mail.to,
     p_subject: mail.subject,
     p_text: mail.text,
+  });
+  if (error) throw error;
+  return data as unknown as AgentAction;
+}
+
+/** Mail groupé relu par la direction : objet, texte et destinataires gardés (aucun ajouté). */
+export async function editAgentMailing(
+  id: string,
+  mailing: { subject: string; text: string; clientIds: string[] },
+): Promise<AgentAction> {
+  const { data, error } = await supabase.rpc('edit_agent_mailing', {
+    p_action_id: id,
+    p_subject: mailing.subject,
+    p_text: mailing.text,
+    p_client_ids: mailing.clientIds,
   });
   if (error) throw error;
   return data as unknown as AgentAction;
