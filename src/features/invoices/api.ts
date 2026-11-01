@@ -1,3 +1,4 @@
+import { accountChoice, type AccountChoice } from '@/lib/account-type';
 import { fetchAllRows } from '@/lib/all-rows';
 import { supabase } from '@/lib/supabase';
 import type { Enums, Tables, TablesInsert, TablesUpdate } from '@/types/database';
@@ -14,7 +15,7 @@ export type DueDateChange = Pick<
   changer: { full_name: string } | null;
 };
 /** Type de compte du client : comptant ou prélèvement. */
-export type AccountType = 'comptant' | 'prelevement';
+export type AccountType = AccountChoice;
 export type CreditNote = Tables<'credit_notes'>;
 export type PaymentStatus = 'paid' | 'pending' | 'partial' | 'overdue';
 
@@ -117,7 +118,7 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
   const [client, order] = await Promise.all([
     supabase
       .from('clients')
-      .select('name, billing_address, siret, email, discount_percent, account_type')
+      .select('name, billing_address, siret, email, discount_percent, account_type, direct_debit_day')
       .eq('id', overview.client_id)
       .single(),
     overview.repair_order_ids[0]
@@ -132,14 +133,14 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
   });
   if (rate.error) throw rate.error;
 
-  const { discount_percent, account_type, ...billing } = client.data;
+  const { discount_percent, account_type, direct_debit_day, ...billing } = client.data;
   return {
     invoice: overview,
     lines: lines.data ?? [],
     payments: payments.data ?? [],
     creditNotes: creditNotes.data ?? [],
     dueDateChanges: dueDates.data ?? [],
-    accountType: account_type === 'prelevement' ? 'prelevement' : 'comptant',
+    accountType: accountChoice({ account_type, direct_debit_day }),
     client: billing,
     vehicleType: order.data.vehicle_type,
     laborRate: rate.data,
