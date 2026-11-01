@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, type Page, test, type TestInfo } from '@playwright/test';
 import { sql } from './support/db';
 
 // Comptes de développement créés par supabase/seed.sql (base locale uniquement).
@@ -13,18 +13,24 @@ async function loginAs(page: Page, email: string) {
 }
 
 const suffix = (testInfo: TestInfo) =>
-  `${String(Date.now()).slice(-5)}${Math.floor(Math.random() * 90 + 10)}${testInfo.project.name.includes('mobile') ? 'M' : 'D'}`;
+  `${String(Date.now()).slice(-5)}${Math.floor(Math.random() * 90 + 10)}${
+    testInfo.project.name.includes('mobile') ? 'M' : 'D'
+  }`;
 
 test('page Échéances : un mail par client pour ses véhicules, plus de relance pendant 3 mois', async ({
   page,
 }, testInfo) => {
   const id = suffix(testInfo);
   const client = `Flotte ${id}`;
-  // Client avec deux camions : contrôle technique dépassé, hayon du mois en cours
-  sql(`with c as (insert into public.clients (name, email) values ('${client}', 'parc.${id.toLowerCase()}@exemple.fr') returning id)
+  // Client avec deux camions : contrôle technique dépassé, hayon du mois en cours. Mois pris à l'heure
+  // de Paris comme l'appli (la base est en UTC : décalée d'un mois la nuit d'un changement de mois)
+  sql(
+    `with c as (insert into public.clients (name, email) values ('${client}', 'parc.${id.toLowerCase()}@exemple.fr') returning id)
        insert into public.vehicles (plate, client_id, vehicle_type, ct_due_date, tailgate_due_date)
        select 'RA${id}', c.id, 'pl'::public.vehicle_type, current_date - 10, null from c
-       union all select 'RB${id}', c.id, 'pl'::public.vehicle_type, null, date_trunc('month', current_date)::date from c`);
+       union all select 'RB${id}', c.id, 'pl'::public.vehicle_type, null,
+         date_trunc('month', (now() at time zone 'Europe/Paris')::date)::date from c`,
+  );
   const sent: Record<string, unknown>[] = [];
   await page.route('**/functions/v1/mail-send', async (route) => {
     sent.push(route.request().postDataJSON() as Record<string, unknown>);
@@ -51,8 +57,9 @@ test('page Échéances : un mail par client pour ses véhicules, plus de relance
   const others = dialog.getByRole('checkbox', { name: /^Relancer / });
   // Seul ce client : les autres de la base locale sont décochés
   for (const box of await others.all()) {
-    if ((await box.getAttribute('aria-label')) !== `Relancer ${client}` && (await box.isChecked()))
+    if ((await box.getAttribute('aria-label')) !== `Relancer ${client}` && (await box.isChecked())) {
       await box.uncheck();
+    }
   }
   await expect(dialog.getByText(`RA${id} : contrôle technique dépassé depuis le`)).toBeVisible();
   await expect(dialog.getByText(`RB${id} : contrôle hayon à faire avant fin`)).toBeVisible();
