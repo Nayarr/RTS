@@ -19,13 +19,11 @@ export function useServicePackages() {
 
 export type LaborRate = Tables<'labor_rates'>;
 
-/** Ordre des catégories dans les listes (celui des réglages). */
-const CATEGORY_ORDER: LaborRate['category'][] = ['pl', 'vul', 'remorque', 'tolerie'];
-
+/** Taux de base d'abord (poids lourds, VUL, remorque, tôlerie), puis types ajoutés (ordre des réglages). */
 export async function fetchLaborRates(): Promise<LaborRate[]> {
   const { data, error } = await supabase.from('labor_rates').select('*');
   if (error) throw error;
-  return [...data].sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
+  return [...data].sort((a, b) => a.sort_order - b.sort_order || a.label.localeCompare(b.label));
 }
 
 /** Taux horaires des réglages, proposés à l'ajout de main d'œuvre. */

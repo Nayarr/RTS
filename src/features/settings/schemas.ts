@@ -116,7 +116,8 @@ export const billingFromForm = (v: BillingValues) => ({
 export const laborRatesSchema = z.object({
   rates: z.array(
     z.object({
-      category: z.enum(['pl', 'vul', 'remorque', 'tolerie']),
+      id: z.string(),
+      category: z.enum(['pl', 'vul', 'remorque', 'tolerie']).nullable(),
       label: z.string().trim().min(1, 'Indique le libellé').max(40),
       labor_line_label: z.string().trim().min(1, 'Indique le libellé sur les documents').max(120),
       hourly_rate: money,
@@ -126,7 +127,8 @@ export const laborRatesSchema = z.object({
 export type LaborRatesValues = z.infer<typeof laborRatesSchema>;
 
 export const laborRatesToForm = (rates: LaborRate[]): LaborRatesValues => ({
-  rates: rates.map(({ category, label, labor_line_label, hourly_rate }) => ({
+  rates: rates.map(({ id, category, label, labor_line_label, hourly_rate }) => ({
+    id,
     category,
     label,
     labor_line_label,

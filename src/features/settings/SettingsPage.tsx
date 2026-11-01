@@ -63,7 +63,7 @@ function SettingsSections({
       {settings.isError && <p className="text-destructive">Impossible de charger les réglages.</p>}
 
       {settings.isSuccess && (
-        <div className="grid items-start gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
           <nav
             className="snav max-lg:static! max-lg:flex-row! max-lg:overflow-x-auto max-lg:[&>button]:shrink-0"
             aria-label="Sections des réglages"

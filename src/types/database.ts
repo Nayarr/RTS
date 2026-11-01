@@ -2891,24 +2891,30 @@ export type Database = {
       };
       labor_rates: {
         Row: {
-          category: Database['public']['Enums']['labor_category'];
+          category: Database['public']['Enums']['labor_category'] | null;
           hourly_rate: number;
+          id: string;
           label: string;
           labor_line_label: string;
+          sort_order: number;
           updated_at: string;
         };
         Insert: {
-          category: Database['public']['Enums']['labor_category'];
+          category?: Database['public']['Enums']['labor_category'] | null;
           hourly_rate: number;
+          id?: string;
           label: string;
           labor_line_label: string;
+          sort_order?: number;
           updated_at?: string;
         };
         Update: {
-          category?: Database['public']['Enums']['labor_category'];
+          category?: Database['public']['Enums']['labor_category'] | null;
           hourly_rate?: number;
+          id?: string;
           label?: string;
           labor_line_label?: string;
+          sort_order?: number;
           updated_at?: string;
         };
         Relationships: [];
