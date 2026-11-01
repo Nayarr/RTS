@@ -21,7 +21,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
     items: [
       'Choisis OK, 50 % ou HS pour chaque élément : la fiche est enregistrée automatiquement. Un élément HS ou à 50 % ajoute tout seul la ligne « Remplacement … » dans les travaux à prévoir, avec ton temps estimé à donner.',
       'Pneus : avant et arrière. Pour un camion à plus d’essieux ou une remorque, « Ajouter un essieu » (pas sur un utilitaire). Tape la taille en chiffres (31570225) : les barres et le point se mettent tout seuls.',
-      'Photographie les étiquettes (contrôle hayon, extincteurs) avec le bouton appareil photo à côté de chacune.',
+      'Photographie les étiquettes (contrôle hayon, extincteurs) avec le bouton appareil photo à côté de chacune. Quand l’étiquette du hayon est lue, le mois du prochain contrôle s’affiche entre parenthèses dans la fiche de contrôle de l’OR, côté bureau.',
       'Niveaux (lave-glace, liquide de refroidissement, huile) : en fin de fiche. « Niveau bon », ou l’appoint fait avec les litres ajoutés.',
       'Dans « Échéances du véhicule », renseigne les dates du contrôle technique et du contrôle hayon lues sur le camion. La photo du contrôle technique est obligatoire pour terminer l’OR, sauf pour une remorque (facultative).',
     ],

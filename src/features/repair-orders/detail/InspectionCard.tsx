@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { monthLabel } from '@/lib/month';
 import {
   CHECK_FIELDS,
   countAlerts,
@@ -100,7 +101,15 @@ export function InspectionCard({
               <Value value={data.probleme_electrique} options={YES_NO_OPTIONS} />
             </Row>
             {CHECK_FIELDS.map(([key, label]) => (
-              <Row key={key} label={label}>
+              <Row
+                key={key}
+                // Mois lu en scannant l'étiquette du hayon sur cet OR
+                label={
+                  key === 'hayon' && data.hayon_echeance
+                    ? `${label} (${monthLabel(data.hayon_echeance)})`
+                    : label
+                }
+              >
                 <Value value={data.controles?.[key]} options={OK_HS_OPTIONS} />
               </Row>
             ))}
