@@ -223,7 +223,6 @@ export type Database = {
           daily_hours: number;
           expected_arrival: string;
           friday_hours: number;
-          saturday_hours: number;
           friday_lunch_start: string;
           id: boolean;
           label_scan_enabled: boolean;
@@ -249,6 +248,7 @@ export type Database = {
           roadside_zone3_max_km: number;
           roadside_zone3_max_minutes: number;
           roadside_zone3_price: number;
+          saturday_hours: number;
           tts_monthly_limit: number;
           tts_provider: string;
           tts_voice: string;
@@ -264,7 +264,6 @@ export type Database = {
           daily_hours?: number;
           expected_arrival?: string;
           friday_hours?: number;
-          saturday_hours?: number;
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
@@ -290,6 +289,7 @@ export type Database = {
           roadside_zone3_max_km?: number;
           roadside_zone3_max_minutes?: number;
           roadside_zone3_price?: number;
+          saturday_hours?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;
@@ -305,7 +305,6 @@ export type Database = {
           daily_hours?: number;
           expected_arrival?: string;
           friday_hours?: number;
-          saturday_hours?: number;
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
@@ -331,6 +330,7 @@ export type Database = {
           roadside_zone3_max_km?: number;
           roadside_zone3_max_minutes?: number;
           roadside_zone3_price?: number;
+          saturday_hours?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;
