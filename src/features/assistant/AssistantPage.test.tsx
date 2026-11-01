@@ -378,6 +378,22 @@ describe('Agent Direction', () => {
     await waitFor(() => expect(sendPreparedReply).toHaveBeenCalledWith(REPLY, expect.anything()));
   });
 
+  it('réponses préparées arrivées après le point du jour : lecture attendue, leurs mails lus', async () => {
+    localStorage.removeItem('rts-point-du-jour-ecoute');
+    let arrive: (replies: PreparedReply[]) => void = () => undefined;
+    vi.mocked(fetchPreparedReplies).mockReturnValue(new Promise((resolve) => (arrive = resolve)));
+    setup();
+    await screen.findByText(BRIEFING.phrases[0]!.texte);
+    expect(speak).not.toHaveBeenCalled();
+    act(() => arrive([REPLY]));
+    await waitFor(() => expect(lastSpoken()).toBe(BRIEFING.phrases[0]?.texte));
+    await endSpeech();
+    await endSpeech();
+    expect(lastSpoken()).toBe(
+      'Mail de Jean Moreau. Il veut un devis pour l’embrayage de son Volvo AB-123-CD. Voici la réponse préparée.',
+    );
+  });
+
   it('réponse relue : envoi annulé pendant les 5 secondes, plus tard, modifier', async () => {
     vi.mocked(fetchPreparedReplies).mockResolvedValue([REPLY]);
     setup();
