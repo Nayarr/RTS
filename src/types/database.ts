@@ -248,6 +248,7 @@ export type Database = {
           roadside_zone3_max_km: number;
           roadside_zone3_max_minutes: number;
           roadside_zone3_price: number;
+          saturday_hours: number;
           tts_monthly_limit: number;
           tts_provider: string;
           tts_voice: string;
@@ -288,6 +289,7 @@ export type Database = {
           roadside_zone3_max_km?: number;
           roadside_zone3_max_minutes?: number;
           roadside_zone3_price?: number;
+          saturday_hours?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;
@@ -328,6 +330,7 @@ export type Database = {
           roadside_zone3_max_km?: number;
           roadside_zone3_max_minutes?: number;
           roadside_zone3_price?: number;
+          saturday_hours?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;

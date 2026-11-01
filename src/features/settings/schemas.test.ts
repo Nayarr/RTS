@@ -119,6 +119,7 @@ describe('workshopSchema', () => {
     late_tolerance: '09:05',
     daily_hours: 8,
     friday_hours: 7.5,
+    saturday_hours: 8,
     roadside_flat_fee: 60,
     roadside_zone2_price: 90,
     roadside_zone3_price: 130,

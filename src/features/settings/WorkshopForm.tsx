@@ -129,6 +129,16 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             error={errors.friday_hours?.message}
             {...register('friday_hours', { valueAsNumber: true })}
           />
+          <FormField
+            id="saturday_hours"
+            label="Heures le samedi"
+            type="number"
+            step="0.25"
+            inputMode="decimal"
+            className="num"
+            error={errors.saturday_hours?.message}
+            {...register('saturday_hours', { valueAsNumber: true })}
+          />
         </div>
       </fieldset>
 
