@@ -325,7 +325,8 @@ export function AssistantPage() {
               loading={briefing.isPending || refreshBriefing.isPending}
               failure={briefing.error instanceof Error ? briefing.error.message : null}
               replies={replies.data ?? []}
-              autoplay={voiceOn}
+              // Lecture lancée quand les réponses préparées sont là (sinon leurs mails ne sont pas lus)
+              autoplay={voiceOn && !replies.isPending}
               refreshing={refreshBriefing.isPending}
               onRefresh={() => refreshBriefing.mutate()}
             />
