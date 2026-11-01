@@ -76,7 +76,7 @@ async function fakeVoice(page: Page, { listened, heard }: { listened: boolean; h
  * la réponse préparée de la table des mails reçus (écrite par « mail-inbox »), l'envoi part par
  * « mail-send » (aucun e-mail réel).
  */
-async function simulate(page: Page) {
+async function simulate(page: Page, { slowReplies = false } = {}) {
   const sends: Record<string, unknown>[] = [];
   const postponed: unknown[] = [];
   let status = 'ready';
@@ -117,7 +117,9 @@ async function simulate(page: Page) {
       ],
     }),
   );
-  await page.route('**/rest/v1/inbox_emails?*', (route) => {
+  await page.route('**/rest/v1/inbox_emails?*', async (route) => {
+    // Réponses préparées arrivées après le point du jour (téléphone lent)
+    if (slowReplies) await new Promise((resolve) => setTimeout(resolve, 1_500));
     if (route.request().method() === 'HEAD') {
       return route.fulfill({
         status: 200,
@@ -166,11 +168,11 @@ async function simulate(page: Page) {
   return { sends, postponed };
 }
 
-test('point du jour lu à l’ouverture, réponse dictée, « envoie » à la voix : envoi après 5 secondes', async ({
+test('point du jour lu à l’ouverture (réponses préparées arrivées après), réponse dictée, « envoie » à la voix : envoi après 5 secondes', async ({
   page,
 }) => {
   await fakeVoice(page, { listened: false, heard: 'oui envoie' });
-  const { sends } = await simulate(page);
+  const { sends } = await simulate(page, { slowReplies: true });
   await loginAs(page, 'direction@rts.local');
   await page.goto('/agent-direction');
 
