@@ -112,3 +112,52 @@ test('lecture désactivée : la photo est simplement ajoutée', async ({ page },
   ).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog', { name: 'Lecture de l’étiquette du hayon' })).toHaveCount(0);
 });
+
+test('étiquette lue et validée par le technicien : mois du prochain contrôle sur la fiche, côté bureau', async ({
+  page,
+  browser,
+}, testInfo) => {
+  const plate = `LD${String(Date.now()).slice(-7)}${testInfo.project.name.includes('mobile') ? 'M' : 'D'}`;
+  const order = await orderForAlice(plate);
+  await setLabelScan(true);
+  try {
+    // Lecture simulée (pas de clé de l'assistant en test) : prochain contrôle en mars 2099
+    await page.route('**/functions/v1/label-read', (route) =>
+      route.fulfill({
+        json: {
+          due_month: '032099',
+          last_control_month: '092098',
+          label_text: '03 2099',
+          confidence: 'haute',
+        },
+      }),
+    );
+    await loginAs(page, 'alice@rts.local');
+    await page.goto(`/atelier/or/${order.id}`);
+    await photographTailgateLabel(page);
+    const dialog = page.getByRole('dialog', { name: 'Lecture de l’étiquette du hayon' });
+    await expect(dialog.getByLabel('Prochain contrôle hayon (modifiable) : année')).toHaveValue('2099');
+    await dialog.getByRole('button', { name: 'Valider' }).click();
+    await expect(dialog).toBeHidden();
+    await expect
+      .poll(async () => {
+        const reception = await signedIn('reception@rts.local');
+        const { data } = await reception
+          .from('inspections')
+          .select('data')
+          .eq('repair_order_id', order.id)
+          .maybeSingle();
+        return (data?.data as { hayon_echeance?: string } | null)?.hayon_echeance ?? null;
+      })
+      .toBe('2099-03-01');
+
+    // Fiche de l'OR côté bureau (autre session)
+    const office = await browser.newPage();
+    await loginAs(office, 'reception@rts.local');
+    await office.goto(`/or/${order.id}`);
+    const sheet = office.getByRole('region', { name: 'Fiche de contrôle' });
+    await expect(sheet.getByText('Étiquette contrôle hayon (03/2099)')).toBeVisible();
+  } finally {
+    await setLabelScan(false);
+  }
+});

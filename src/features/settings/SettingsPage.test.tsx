@@ -95,6 +95,7 @@ const settings: Settings = {
     friday_lunch_start: '12:30:00',
     daily_hours: 8,
     friday_hours: 7.5,
+    saturday_hours: 8,
     overtime_start: '18:30:00',
     expected_arrival: '09:00:00',
     late_tolerance: '09:05:00',

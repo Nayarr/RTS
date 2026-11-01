@@ -248,6 +248,7 @@ export type Database = {
           roadside_zone3_max_km: number;
           roadside_zone3_max_minutes: number;
           roadside_zone3_price: number;
+          saturday_hours: number;
           tts_monthly_limit: number;
           tts_provider: string;
           tts_voice: string;
@@ -288,6 +289,7 @@ export type Database = {
           roadside_zone3_max_km?: number;
           roadside_zone3_max_minutes?: number;
           roadside_zone3_price?: number;
+          saturday_hours?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;
@@ -328,6 +330,7 @@ export type Database = {
           roadside_zone3_max_km?: number;
           roadside_zone3_max_minutes?: number;
           roadside_zone3_price?: number;
+          saturday_hours?: number;
           tts_monthly_limit?: number;
           tts_provider?: string;
           tts_voice?: string;
@@ -872,6 +875,7 @@ export type Database = {
           civility: string | null;
           contact_name: string | null;
           created_at: string;
+          direct_debit_day: number | null;
           discount_percent: number | null;
           email: string | null;
           first_name: string | null;
@@ -902,6 +906,7 @@ export type Database = {
           civility?: string | null;
           contact_name?: string | null;
           created_at?: string;
+          direct_debit_day?: number | null;
           discount_percent?: number | null;
           email?: string | null;
           first_name?: string | null;
@@ -932,6 +937,7 @@ export type Database = {
           civility?: string | null;
           contact_name?: string | null;
           created_at?: string;
+          direct_debit_day?: number | null;
           discount_percent?: number | null;
           email?: string | null;
           first_name?: string | null;
@@ -6192,6 +6198,7 @@ export type Database = {
           civility: string | null;
           contact_name: string | null;
           created_at: string | null;
+          direct_debit_day: number | null;
           discount_percent: number | null;
           email: string | null;
           first_name: string | null;
@@ -7857,6 +7864,10 @@ export type Database = {
       inspection_wear_fields_for: {
         Args: { p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: string[];
+      };
+      invoice_due_date: {
+        Args: { p_account_type: string; p_debit_day: number; p_issued: string; p_terms: number };
+        Returns: string;
       };
       invoiced_ro_lines: {
         Args: { p_from: string; p_to: string };

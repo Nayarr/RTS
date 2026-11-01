@@ -174,14 +174,11 @@ export function invoicesCsvRows(invoices: InvoiceOverview[]) {
   return { headers, rows };
 }
 
-export const ACCOUNT_TYPES: Record<AccountType, string> = {
-  comptant: 'Comptant',
-  prelevement: 'Prélèvement',
-};
+export { ACCOUNT_CHOICES as ACCOUNT_TYPES } from '@/lib/account-type';
 
 /** Mode proposé pour un paiement : prélèvement pour un client en prélèvement, sinon carte. */
 export const defaultPaymentMethod = (accountType: AccountType): PaymentChoice =>
-  accountType === 'prelevement' ? 'direct_debit' : 'card';
+  accountType.startsWith('prelevement') ? 'direct_debit' : 'card';
 
 const STAMP = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',

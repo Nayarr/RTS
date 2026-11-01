@@ -5,6 +5,7 @@ import type { TablesInsert, TablesUpdate } from '@/types/database';
 import type { ClientOverview, VehicleOverview } from './api';
 import { formatSiret, siretField, siretValue } from '@/lib/siret';
 import { monthEnd } from '@/lib/month';
+import { ACCOUNT_CHOICE_VALUES, accountChoice, accountFromChoice } from '@/lib/account-type';
 
 // ---------------------------------------------------------------- Échéances
 
@@ -138,7 +139,7 @@ export const clientSchema = z
       )
       .max(MAX_OTHER_PHONES),
     billing_address: z.string().trim().max(300),
-    account_type: z.enum(['comptant', 'prelevement']),
+    account_type: z.enum(ACCOUNT_CHOICE_VALUES),
     siret: siretField,
     discount_percent: cappedDecimal('Remise', 100),
     hourly_rate: decimalField(),
@@ -160,7 +161,7 @@ export const clientToForm = (client: ClientOverview): ClientValues => ({
   phone: client.phone ?? '',
   other_phones: otherPhones(client.other_phones),
   billing_address: client.billing_address ?? '',
-  account_type: client.account_type === 'prelevement' ? 'prelevement' : 'comptant',
+  account_type: accountChoice(client),
   siret: formatSiret(client.siret),
   discount_percent: decimalText(client.discount_percent),
   hourly_rate: decimalText(client.hourly_rate),
@@ -180,7 +181,7 @@ export function clientFromForm(values: ClientValues, withPricing: boolean): Tabl
       phone: phone.trim(),
     })),
     billing_address: text(values.billing_address),
-    account_type: values.account_type,
+    ...accountFromChoice(values.account_type),
     siret: siretValue(values.siret),
     notes: text(values.notes),
     ...(withPricing
@@ -277,7 +278,7 @@ export const newClientSchema = z
     phone: z.string().trim().max(30),
     email: z.union([z.literal(''), z.string().trim().email('E-mail invalide')]),
     billing_address: z.string().trim().max(300),
-    account_type: z.enum(['comptant', 'prelevement']),
+    account_type: z.enum(ACCOUNT_CHOICE_VALUES),
     notes: z.string().max(2000),
   })
   .superRefine(requireIdentity);
@@ -311,12 +312,9 @@ export function newClientFromForm(values: NewClientValues): TablesInsert<'client
     phone: text(values.phone),
     email: text(values.email),
     billing_address: text(values.billing_address),
-    account_type: values.account_type,
+    ...accountFromChoice(values.account_type),
     notes: text(values.notes),
   };
 }
 
 export const CLIENT_KIND_LABELS = { pro: 'Pro', individual: 'Particulier' } as const;
-
-/** Type de compte : comptant (réglé à la remise du véhicule) ou prélèvement. */
-export const ACCOUNT_TYPE_LABELS = { comptant: 'Comptant', prelevement: 'Prélèvement' } as const;
