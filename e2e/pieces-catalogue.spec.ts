@@ -57,9 +57,9 @@ test('pièce de l’OR : marge liée au prix, catalogue mis à jour ou complét�
   await dialog.getByLabel('Désignation').fill(designation);
   await dialog.getByLabel('Marque').fill('Gates');
   await dialog.getByLabel('Réf. fabricant').fill(`G-${id}`);
-  await dialog.getByLabel('Achat HT (€)').fill('40');
+  await dialog.getByLabel('Prix d’achat HT (€)').fill('40');
   await dialog.getByLabel('Marge (%)').fill('50');
-  await expect(dialog.getByLabel('Vente HT (€)')).toHaveValue('60');
+  await expect(dialog.getByLabel('Prix de vente HT (€)')).toHaveValue('60');
   await dialog.getByLabel('Quantité').fill('2');
   await expect(dialog.getByLabel('Total HT de la ligne')).toHaveText(/120,00/);
   await dialog.getByRole('button', { name: 'Enregistrer' }).click();
@@ -73,7 +73,7 @@ test('pièce de l’OR : marge liée au prix, catalogue mis à jour ou complét�
     .getByRole('button', { name: new RegExp(designation) })
     .click();
   await expect(dialog.getByLabel('Marge (%)')).toHaveValue('50');
-  await dialog.getByLabel('Vente HT (€)').fill('64');
+  await dialog.getByLabel('Prix de vente HT (€)').fill('64');
   await expect(dialog.getByLabel('Marge (%)')).toHaveValue('60');
   await dialog.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(dialog).toBeHidden();

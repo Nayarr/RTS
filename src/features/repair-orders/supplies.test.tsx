@@ -230,6 +230,21 @@ describe('règles', () => {
   });
 });
 
+/** Champs d'une pièce, les mêmes dans l'OR et dans un devis ou une facture. */
+const PART_FIELD_LABELS = [
+  'Désignation',
+  'Référence véhicule',
+  'Réf. fabricant',
+  'Réf. constructeur',
+  'Marque',
+  'Fournisseur',
+  'Prix d’achat HT (€)',
+  'Frais de port HT (€)',
+  'Prix de vente HT (€)',
+  'Marge (%)',
+  'Quantité',
+];
+
 describe('fiche OR : pièces', () => {
   it('affiche la pièce, son fournisseur, le total et l’attente pièces', async () => {
     setup();
@@ -259,6 +274,8 @@ describe('fiche OR : pièces', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /Ajouter une pièce/ }));
     const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
+    // Mêmes champs que la pièce ajoutée à un devis
+    for (const label of PART_FIELD_LABELS) expect(within(dialog).getByLabelText(label)).toBeInTheDocument();
     // Pièces de la base proposées pendant la saisie de la désignation
     await userEvent.type(within(dialog).getByLabelText('Désignation'), 'filtre');
     const suggestions = await within(dialog).findByRole('list', { name: 'Pièces de la base' });

@@ -32,7 +32,7 @@ test('pièce saisie sur le devis avec sa marge, gardée dans la base ; prestatio
   const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
   await dialog.getByLabel('Désignation').fill(part);
   await dialog.getByLabel('Référence véhicule').fill('Volvo FH 500');
-  await dialog.getByLabel('Référence pièce').fill(ref);
+  await dialog.getByLabel('Réf. fabricant').fill(ref);
   await dialog.getByLabel('Prix d’achat HT (€)').fill('40');
   await dialog.getByLabel('Frais de port HT (€)').fill('10');
   await dialog.getByLabel('Marge (%)').fill('50');

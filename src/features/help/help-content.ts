@@ -132,6 +132,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     title: 'Pièces, garanties, sous-traitance',
     items: [
       'Pièces de l’OR : suis leur commande (À commander, Commandée, Reçue). « Attente pièces » s’affiche tant qu’elles ne sont pas reçues.',
+      'Une pièce s’ajoute avec les mêmes champs sur un OR, un devis ou une facture : désignation (avec les pièces de la base proposées), référence véhicule, réf. fabricant, réf. constructeur, marque, fournisseur, prix d’achat, frais de port, prix de vente ou marge, quantité. Sur l’OR, en plus, le suivi de commande.',
       '« Retour » sur une pièce pour déclarer une garantie ou un retour fournisseur ; suivi dans l’onglet « Garanties ».',
       '« Confier un travail à un prestataire » (sous-traitance) : il est refacturé avec ta marge.',
     ],
