@@ -66,9 +66,9 @@ test('client en prélèvement, facture payée en deux fois, rangée dans « Part
 
   // Type de compte sur la fiche du client
   await page.goto(`/clients/${invoice.clientId}`);
-  await page.getByLabel('Type de compte').selectOption('prelevement');
+  await page.getByLabel('Type de compte').selectOption('Prélèvement le 5');
   await page.getByRole('button', { name: 'Enregistrer' }).first().click();
-  await expect(page.getByText('Prélèvement', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Prélèvement le 5', { exact: true }).first()).toBeVisible();
 
   // Premier paiement : 50 € en carte (le mode proposé est le prélèvement)
   await page.goto(`/factures/${invoice.id}`);

@@ -21,7 +21,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
     items: [
       'Choisis OK, 50 % ou HS pour chaque élément : la fiche est enregistrée automatiquement. Un élément HS ou à 50 % ajoute tout seul la ligne « Remplacement … » dans les travaux à prévoir, avec ton temps estimé à donner.',
       'Pneus : avant et arrière. Pour un camion à plus d’essieux ou une remorque, « Ajouter un essieu » (pas sur un utilitaire). Tape la taille en chiffres (31570225) : les barres et le point se mettent tout seuls.',
-      'Photographie les étiquettes (contrôle hayon, extincteurs) avec le bouton appareil photo à côté de chacune.',
+      'Photographie les étiquettes (contrôle hayon, extincteurs) avec le bouton appareil photo à côté de chacune. Quand l’étiquette du hayon est lue, le mois du prochain contrôle s’affiche entre parenthèses dans la fiche de contrôle de l’OR, côté bureau.',
       'Niveaux (lave-glace, liquide de refroidissement, huile) : en fin de fiche. « Niveau bon », ou l’appoint fait avec les litres ajoutés.',
       'Dans « Échéances du véhicule », renseigne les dates du contrôle technique et du contrôle hayon lues sur le camion. La photo du contrôle technique est obligatoire pour terminer l’OR, sauf pour une remorque (facultative).',
     ],
@@ -73,7 +73,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       '« En direct » montre les véhicules actuellement à l’atelier et le badgeage en cours.',
       'Rappels et échéances automatiques (Réglages, onglet « Atelier », avec l’envoi depuis l’appli) : le client reçoit le rappel la veille de son rendez-vous, et 48 h avant un contrôle technique, hayon ou antipollution (ou quand l’entretien d’un contrat est à refaire) un e-mail avec un lien pour choisir un créneau. Sa demande arrive dans « Rendez-vous », « Demandes en ligne » : « Confirmer » lui envoie la confirmation par e-mail.',
       'Les absences sont en gris dans le planning ; une absence de quelques heures (matin, après-midi, rendez-vous) apparaît sur sa plage horaire.',
-      'Accueil, « Charge de travail atelier » : heures déclarées sur les OR, heures disponibles, présence badgée à la borne et l’écart (heures de présence sans temps déclaré sur un OR). Clique sur un technicien pour voir d’où viennent ses heures.',
+      'Accueil, « Charge de travail atelier » : heures déclarées sur les OR, heures disponibles, présence badgée à la borne et l’écart (heures de présence sans temps déclaré sur un OR). Clique sur un technicien pour voir d’où viennent ses heures. Le samedi est un jour travaillé (ses heures se règlent dans « Réglages », onglet « Atelier », 0 h s’il est fermé) ; le dimanche, l’atelier est fermé.',
     ],
   },
   {
@@ -105,6 +105,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Sur la facture : « Enregistrer un paiement » (même partiel), « Envoyer au client » pour le lien en ligne, « Relancer » quand elle est en retard.',
       'Moyens de paiement : virement, chèque, carte bancaire, espèces, prélèvement (la LCR / traite n’est plus proposée ; les anciens paiements en LCR restent affichés).',
       'RIB : saisis l’IBAN et le BIC dans Réglages › Entreprise ; ils s’impriment sur chaque facture (PDF et facture en ligne) pour le règlement par virement.',
+      'Type de compte du client (fiche client) : comptant (échéance le jour de la facture), prélèvement le 5 ou le 15 (échéance au prochain 5 ou 15), règlement à quinzaine (facture du 1er au 15 réglée le 15, après le 15 réglée le 1er du mois suivant). L’échéance se calcule à l’émission de la facture et reste modifiable.',
       'Paiement en plusieurs fois : enregistre chaque paiement à part (50 € en carte, puis 20 € en espèces…) avec son mode et sa date ; la facture garde qui l’a saisi et à quelle heure, et reste dans « Partiel » de la liste des factures jusqu’au dernier euro. Le mode proposé suit le type de compte du client (comptant ou prélèvement, sur sa fiche).',
       '« Relancer les retards » (liste des factures) : un mail par client avec toutes ses factures en retard et leurs liens, envoyé depuis l’adresse de facturation (ou ouvert dans ta messagerie si l’envoi par l’appli est coupé) ; chaque facture garde la relance.',
       '« Modifier l’échéance » sur une facture émise déplace sa date d’échéance (jamais avant l’émission) : l’ancienne date et la nouvelle restent affichées sur la facture.',
@@ -132,6 +133,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     title: 'Pièces, garanties, sous-traitance',
     items: [
       'Pièces de l’OR : suis leur commande (À commander, Commandée, Reçue). « Attente pièces » s’affiche tant qu’elles ne sont pas reçues.',
+      'Une pièce s’ajoute avec les mêmes champs sur un OR, un devis ou une facture : désignation (avec les pièces de la base proposées), référence véhicule, réf. fabricant, réf. constructeur, marque, fournisseur, prix d’achat, frais de port, prix de vente ou marge, quantité. Sur l’OR, en plus, le suivi de commande.',
       '« Retour » sur une pièce pour déclarer une garantie ou un retour fournisseur ; suivi dans l’onglet « Garanties ».',
       '« Confier un travail à un prestataire » (sous-traitance) : il est refacturé avec ta marge.',
     ],

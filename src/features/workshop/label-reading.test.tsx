@@ -70,7 +70,7 @@ describe('étiquette du contrôle hayon', () => {
     await waitFor(() =>
       expect(updateDeadlines).toHaveBeenCalledWith('ro1', { tailgate_due_date: '2099-03-01' }),
     );
-    expect(onApply).toHaveBeenCalledWith('OK');
+    expect(onApply).toHaveBeenCalledWith('OK', '2099-03-01');
     expect(onClose).toHaveBeenCalled();
   });
 

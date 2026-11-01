@@ -3,12 +3,13 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(15);
 
 \ir helpers/fixtures.psql
 
--- Semaine du lundi 28/09 au dimanche 04/10/2026 : 4 × 8 h + 7,5 h = 39,5 h
-update public.app_settings set daily_hours = 8, friday_hours = 7.5, rest_reference_monday = '2026-09-28';
+-- Semaine du lundi 28/09 au dimanche 04/10/2026 : 4 × 8 h + 7,5 h + samedi 4 h = 43,5 h
+update public.app_settings set daily_hours = 8, friday_hours = 7.5, saturday_hours = 4,
+  rest_reference_monday = '2026-09-28';
 update public.technicians set rest_group = 'A' where display_name = 'Alice';   -- repos le lundi 28/09
 update public.technicians set rest_group = 'B' where display_name = 'Bruno';
 insert into public.leave_requests (technician_id, leave_type, starts_on, ends_on, status)
@@ -38,11 +39,11 @@ select results_eq(
   format($$ select (t ->> 'available_hours')::numeric, (t ->> 'declared_hours')::numeric, (t ->> 'worked_orders')::int,
                    (t ->> 'planned_hours')::numeric, (t ->> 'planned_orders')::int
             from jsonb_array_elements(%L::jsonb -> 'technicians') t where t ->> 'technician_id' = '10000000-0000-0000-0000-0000000000a1' $$, :'w'),
-  $$ values (31.5, 3.5, 2, 7.0, 2) $$,
-  'Alice : 39,5 h moins le lundi de repos ; 3,5 h déclarées sur 2 OR ; créneau de 4 h + 3 h prévues au devis');
+  $$ values (35.5, 3.5, 2, 7.0, 2) $$,
+  'Alice : 43,5 h moins le lundi de repos ; 3,5 h déclarées sur 2 OR ; créneau de 4 h + 3 h prévues au devis');
 select is(
   (select (t ->> 'available_hours')::numeric from jsonb_array_elements(:'w'::jsonb -> 'technicians') t where t ->> 'technician_id' = '10000000-0000-0000-0000-0000000000b1'),
-  23.5, 'Bruno : congés acceptés retirés, demande en attente non retirée');
+  27.5, 'Bruno : congés acceptés retirés, demande en attente non retirée');
 select is(
   (select t ->> 'absence' from jsonb_array_elements(:'w'::jsonb -> 'technicians') t where t ->> 'technician_id' = '10000000-0000-0000-0000-0000000000b1'),
   null, 'Présent une partie de la semaine : pas absent');
@@ -68,6 +69,24 @@ select is(
   (select t ->> 'absence' from jsonb_array_elements(public.workshop_workload('2026-10-04', '2026-10-04') -> 'technicians') t
    where t ->> 'technician_id' = '10000000-0000-0000-0000-0000000000b1'),
   'closed', 'Dimanche : atelier fermé');
+
+-- Samedi : atelier ouvert, heures du samedi
+select results_eq(
+  format($$ select (t ->> 'available_hours')::numeric, t ->> 'absence'
+            from jsonb_array_elements(%L::jsonb -> 'technicians') t where t ->> 'technician_id' = '10000000-0000-0000-0000-0000000000a1' $$,
+         public.workshop_workload('2026-10-03', '2026-10-03')),
+  $$ values (4::numeric, null::text) $$, 'Samedi : atelier ouvert, heures du samedi disponibles');
+reset role;
+update public.app_settings set saturday_hours = 0;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
+select is(
+  (select t ->> 'absence' from jsonb_array_elements(public.workshop_workload('2026-10-03', '2026-10-03') -> 'technicians') t
+   where t ->> 'technician_id' = '10000000-0000-0000-0000-0000000000a1'),
+  'closed', 'Samedi réglé à 0 h : atelier fermé ce jour-là');
+select is(
+  (select t ->> 'absence' from jsonb_array_elements(public.workshop_workload('2026-10-03', '2026-10-04') -> 'technicians') t
+   where t ->> 'technician_id' = '10000000-0000-0000-0000-0000000000a1'),
+  'closed', 'Samedi à 0 h et dimanche : week-end fermé');
 
 -- À planifier ou en retard
 select (public.workshop_workload('2026-09-28', '2026-10-04') -> 'to_plan' ->> 'orders')::int as before \gset

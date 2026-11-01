@@ -147,6 +147,8 @@ export interface InspectionData {
     essieux?: { taille?: string; etat?: string }[];
   };
   controles?: Partial<Record<CheckKey, string>>;
+  /** Prochain contrôle hayon lu en scannant l'étiquette sur cet OR (1er jour du mois). */
+  hayon_echeance?: string;
   probleme_electrique?: string;
   voyants?: Partial<Record<WarningLightKey, boolean>>;
   voyants_autres?: string;

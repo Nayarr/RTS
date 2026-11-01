@@ -396,7 +396,13 @@ export function InspectionEditor({
           fileId={tailgateScan}
           repairOrderId={repairOrderId}
           vehicleId={vehicleId}
-          onApply={(verdict) => setIn('controles', 'hayon', verdict)}
+          onApply={(verdict, dueMonth) =>
+            update((current) => ({
+              ...current,
+              controles: { ...current.controles, hayon: verdict },
+              hayon_echeance: dueMonth,
+            }))
+          }
           onClose={() => onTailgateScanDone?.()}
         />
       )}

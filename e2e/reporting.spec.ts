@@ -18,7 +18,7 @@ async function loginAs(page: Page, email: string) {
 const suffix = (testInfo: TestInfo) =>
   `${testInfo.project.name.includes('mobile') ? 'M' : 'D'}${String(Date.now()).slice(-7)}`;
 
-/** Facture émise puis soldée le jour même, avant l'échéance (API : réception). */
+/** Facture émise puis soldée le jour même (API : réception). */
 async function createPaidInvoice(plate: string, clientName: string) {
   const client = createClient<Database>(
     env.VITE_SUPABASE_URL ?? '',
@@ -75,9 +75,9 @@ test('la direction consulte les statistiques et la trésorerie', async ({ page }
   await page.getByRole('main').getByRole('link', { name: 'Trésorerie' }).click();
   await expect(page.getByText('Encaissé ce mois')).toBeVisible();
   await expect(page.getByRole('figure', { name: 'Encaissements attendus par semaine' })).toBeVisible();
-  // Payée avant l'échéance : délai négatif, en vert
+  // Client comptant : échéance le jour de la facture, payée le jour même (délai 0 j)
   const habit = page.getByRole('row', { name: new RegExp(clientName) });
-  await expect(habit).toContainText(/1\s*-\d+ j/);
+  await expect(habit).toContainText(/1\s*0 j/);
   await habit.getByRole('link', { name: clientName }).click();
   await expect(page.getByRole('heading', { name: clientName })).toBeVisible();
 });
