@@ -7853,6 +7853,8 @@ export type Database = {
       generate_public_token: { Args: Record<PropertyKey, never>; Returns: string };
       global_search: { Args: { p_query: string }; Returns: Json };
       inspection_activated_fields: { Args: { p_data: Json }; Returns: string[] };
+      inspection_axle_filled: { Args: { p_axle: Json }; Returns: boolean };
+      inspection_legacy_trailer_filled: { Args: { p_data: Json }; Returns: boolean };
       inspection_missing_points:
         | { Args: { p_data: Json }; Returns: number }
         | {
@@ -7865,6 +7867,7 @@ export type Database = {
         Args: { p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: string[];
       };
+      inspection_without_axle_points: { Args: { p_data: Json }; Returns: Json };
       invoice_due_date: {
         Args: { p_account_type: string; p_debit_day: number; p_issued: string; p_terms: number };
         Returns: string;
@@ -8419,6 +8422,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_repair_order_id: string };
         Returns: undefined;
       };
+      sync_trailer_axle_work: {
+        Args: { p_axles: Json; p_old_axles: Json; p_repair_order_id: string };
+        Returns: undefined;
+      };
       tech_update_repair_order: {
         Args: { p_patch: Json; p_repair_order_id: string };
         Returns: {
@@ -8495,6 +8502,7 @@ export type Database = {
       tire_size_key: { Args: { p_size: string }; Returns: string };
       tire_size_label: { Args: { p_size: string }; Returns: string };
       tire_stock_kpis: { Args: Record<PropertyKey, never>; Returns: Json };
+      trailer_axle_label: { Args: { p_axle: number; p_name: string }; Returns: string };
       transfer_vehicle: {
         Args: { p_client_id: string; p_note?: string; p_vehicle_id: string };
         Returns: undefined;

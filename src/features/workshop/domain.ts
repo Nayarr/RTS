@@ -1,6 +1,11 @@
 import type { RepairOrderOverview, RoLine } from '@/features/repair-orders/api';
 import { OPEN_STATUSES } from '@/features/repair-orders/constants';
-import { inspectionMissingPoints, type InspectionData } from '@/features/repair-orders/inspection';
+import {
+  inspectionMissingPoints,
+  trailerAxles,
+  usesTrailerAxles,
+  type InspectionData,
+} from '@/features/repair-orders/inspection';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { monthEnd } from '@/lib/month';
 
@@ -110,15 +115,23 @@ export function finishBlockers(
   const planned = timed('planned');
   if (done) blockers.push(`Temps estimé manquant : ${plural(done, 'tâche')} des travaux effectués`);
   if (planned) blockers.push(`Temps estimé manquant : ${plural(planned, 'tâche')} à prévoir`);
-  const tires: [string, { etat?: string | undefined; taille?: string | undefined }][] = [
-    ['avant', { etat: inspection?.pneus?.avant_etat, taille: inspection?.pneus?.avant_taille }],
-    ['milieu', { etat: inspection?.pneus?.milieu_etat, taille: inspection?.pneus?.milieu_taille }],
-    ['arrière', { etat: inspection?.pneus?.arriere_etat, taille: inspection?.pneus?.arriere_taille }],
-    ...(inspection?.pneus?.essieux ?? []).map((axle, index): [string, typeof axle] => [
-      `essieu ${index + 3}`,
-      axle,
-    ]),
-  ];
+  type Tire = { etat?: string | undefined; taille?: string | undefined };
+  // Remorque par essieu : pneus de chaque essieu
+  const trailer = vehicleType === 'remorque' && usesTrailerAxles(inspection);
+  const tires: [string, Tire][] = trailer
+    ? trailerAxles(inspection).map((axle, index): [string, Tire] => [
+        `essieu ${index + 1}`,
+        { etat: axle.pneus_etat, taille: axle.pneus_taille },
+      ])
+    : [
+        ['avant', { etat: inspection?.pneus?.avant_etat, taille: inspection?.pneus?.avant_taille }],
+        ['milieu', { etat: inspection?.pneus?.milieu_etat, taille: inspection?.pneus?.milieu_taille }],
+        ['arrière', { etat: inspection?.pneus?.arriere_etat, taille: inspection?.pneus?.arriere_taille }],
+        ...(inspection?.pneus?.essieux ?? []).map((axle, index): [string, typeof axle] => [
+          `essieu ${index + 3}`,
+          axle,
+        ]),
+      ];
   for (const [label, { etat, taille }] of tires) {
     if ((etat === '50' || etat === 'HS') && !taille?.trim()) {
       blockers.push(`Taille des pneus ${label} obligatoire (${etat === 'HS' ? 'HS' : '50 %'})`);

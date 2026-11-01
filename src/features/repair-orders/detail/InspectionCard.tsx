@@ -8,6 +8,10 @@ import {
   OK_HS_OPTIONS,
   optionFor,
   tireAxlesFor,
+  axleFilled,
+  TRAILER_AXLE_WEAR,
+  trailerAxles,
+  usesTrailerAxles,
   WARNING_LIGHT_FIELDS,
   wearFieldsFor,
   WEAR_OPTIONS,
@@ -44,6 +48,8 @@ export function InspectionCard({
   vehicleType: 'pl' | 'vul' | 'remorque';
 }) {
   const alerts = countAlerts(data);
+  // Remorque par essieu : les essieux remplis seulement (un essieu vide n'existe pas)
+  const trailer = vehicleType === 'remorque' && usesTrailerAxles(data);
   const lights = WARNING_LIGHT_FIELDS.filter(([key]) => data?.voyants?.[key]).map(([, label]) => label);
 
   return (
@@ -66,25 +72,47 @@ export function InspectionCard({
         <div className="card-b grid gap-5 md:grid-cols-3">
           <div className="col gap-2">
             <h3 className="overline">Pneus · usure</h3>
-            {wearFieldsFor(vehicleType).map(([key, label]) => (
-              <Row key={key} label={label}>
-                <Value value={data.usure?.[key]} options={WEAR_OPTIONS} />
-              </Row>
-            ))}
-            {tireAxlesFor(data).map(([side, label]) => {
-              const size = data.pneus?.[`${side}_taille`];
-              const state = data.pneus?.[`${side}_etat`];
-              return (
-                <Row key={side} label={`${label}${size ? ` (${size})` : ''}`}>
-                  <Value value={state} options={WEAR_OPTIONS} />
+            {wearFieldsFor(vehicleType)
+              .filter(([key]) => !trailer || !/^(disques|plaquettes)_/.test(key))
+              .map(([key, label]) => (
+                <Row key={key} label={label}>
+                  <Value value={data.usure?.[key]} options={WEAR_OPTIONS} />
                 </Row>
-              );
-            })}
-            {(data.pneus?.essieux ?? []).map((axle, index) => (
-              <Row key={index} label={`${extraAxleLabel(index)}${axle.taille ? ` (${axle.taille})` : ''}`}>
-                <Value value={axle.etat} options={WEAR_OPTIONS} />
-              </Row>
-            ))}
+              ))}
+            {trailer &&
+              trailerAxles(data).flatMap((axle, index) =>
+                axleFilled(axle)
+                  ? [
+                      ...TRAILER_AXLE_WEAR.map(([key, label]) => (
+                        <Row key={`${index}-${key}`} label={`${label} essieu ${index + 1}`}>
+                          <Value value={axle[key]} options={WEAR_OPTIONS} />
+                        </Row>
+                      )),
+                      <Row
+                        key={`${index}-pneus`}
+                        label={`Pneus essieu ${index + 1}${axle.pneus_taille ? ` (${axle.pneus_taille})` : ''}`}
+                      >
+                        <Value value={axle.pneus_etat} options={WEAR_OPTIONS} />
+                      </Row>,
+                    ]
+                  : [],
+              )}
+            {!trailer &&
+              tireAxlesFor(data).map(([side, label]) => {
+                const size = data.pneus?.[`${side}_taille`];
+                const state = data.pneus?.[`${side}_etat`];
+                return (
+                  <Row key={side} label={`${label}${size ? ` (${size})` : ''}`}>
+                    <Value value={state} options={WEAR_OPTIONS} />
+                  </Row>
+                );
+              })}
+            {!trailer &&
+              (data.pneus?.essieux ?? []).map((axle, index) => (
+                <Row key={index} label={`${extraAxleLabel(index)}${axle.taille ? ` (${axle.taille})` : ''}`}>
+                  <Value value={axle.etat} options={WEAR_OPTIONS} />
+                </Row>
+              ))}
           </div>
           <div className="col gap-2">
             <h3 className="overline">Contrôles</h3>

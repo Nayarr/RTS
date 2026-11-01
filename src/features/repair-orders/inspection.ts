@@ -153,7 +153,76 @@ export interface InspectionData {
   voyants?: Partial<Record<WarningLightKey, boolean>>;
   voyants_autres?: string;
   niveaux?: Partial<Record<FluidKey, { etat?: string; litres?: string | number }>>;
+  /** Remorque : freins et pneus par essieu (remplace avant / arrière des anciennes fiches). */
+  remorque_essieux?: TrailerAxle[];
 }
+
+/** Essieu d'une remorque : disques, plaquettes et pneus (état, taille). */
+export interface TrailerAxle {
+  disques?: string;
+  plaquettes?: string;
+  pneus_etat?: string;
+  pneus_taille?: string;
+}
+
+/** Remorque : 3 essieux au départ, ajoutables ou retirables (un au moins). */
+export const TRAILER_DEFAULT_AXLES = 3;
+
+export const TRAILER_AXLE_WEAR = [
+  ['disques', 'Disques de frein'],
+  ['plaquettes', 'Plaquettes'],
+] as const;
+
+export const trailerAxleLabel = (index: number) => `Essieu ${index + 1}`;
+
+/** Essieu laissé vide : considéré comme inexistant (ni point manquant, ni alerte, ni forfait). */
+export const axleFilled = (axle: TrailerAxle) =>
+  Boolean(axle.disques || axle.plaquettes || axle.pneus_etat || axle.pneus_taille?.trim());
+
+/** Ancienne fiche de remorque : avant, arrière et essieux ajoutés (essieux 1, 2, 3…). */
+function legacyTrailerAxles(data: InspectionData | null | undefined): TrailerAxle[] {
+  const clean = (axle: TrailerAxle): TrailerAxle =>
+    Object.fromEntries(Object.entries(axle).filter(([, value]) => value));
+  return [
+    clean({
+      disques: data?.usure?.disques_avant,
+      plaquettes: data?.usure?.plaquettes_avant,
+      pneus_etat: data?.pneus?.avant_etat,
+      pneus_taille: data?.pneus?.avant_taille,
+    }),
+    clean({
+      disques: data?.usure?.disques_arriere,
+      plaquettes: data?.usure?.plaquettes_arriere,
+      pneus_etat: data?.pneus?.arriere_etat,
+      pneus_taille: data?.pneus?.arriere_taille,
+    }),
+    ...(data?.pneus?.essieux ?? []).map((axle) =>
+      clean({ pneus_etat: axle.etat, pneus_taille: axle.taille }),
+    ),
+  ];
+}
+
+/**
+ * Fiche de remorque par essieu : enregistrée ainsi, ou pas encore remplie. Une ancienne fiche
+ * remplie (avant / arrière) garde ses règles tant qu'elle n'est pas modifiée.
+ */
+export const usesTrailerAxles = (data: InspectionData | null | undefined) =>
+  Array.isArray(data?.remorque_essieux) || !legacyTrailerAxles(data).some(axleFilled);
+
+/** Essieux de la remorque à afficher : ceux de la fiche, sinon l'ancienne fiche reprise, au moins 3. */
+export function trailerAxles(data: InspectionData | null | undefined): TrailerAxle[] {
+  if (data?.remorque_essieux?.length) return data.remorque_essieux;
+  const legacy = legacyTrailerAxles(data);
+  while (legacy.length > TRAILER_DEFAULT_AXLES && !axleFilled(legacy.at(-1)!)) legacy.pop();
+  while (legacy.length < TRAILER_DEFAULT_AXLES) legacy.push({});
+  return legacy;
+}
+
+/** Essieux remplis (au moins le premier) : ceux qui comptent pour la fiche complète. */
+const countedAxles = (axles: TrailerAxle[]) => {
+  const filled = axles.filter(axleFilled);
+  return filled.length ? filled : axles.slice(0, 1);
+};
 
 /** Libellé et couleur d'une valeur saisie (« HS » → rouge…). */
 export function optionFor(value: string | undefined, options: ChipOption[]) {
@@ -163,12 +232,20 @@ export function optionFor(value: string | undefined, options: ChipOption[]) {
 /** Nombre de points signalés (HS, 50 %, voyants, problème électrique) : résumé pour le bureau. */
 export function countAlerts(data: InspectionData | null | undefined): number {
   if (!data) return 0;
+  // Remorque par essieu : freins et pneus des essieux, plus ceux de l'ancienne fiche
+  const axles = Array.isArray(data.remorque_essieux) ? data.remorque_essieux : null;
   const values = [
-    ...Object.values(data.usure ?? {}),
-    data.pneus?.avant_etat,
-    data.pneus?.milieu_etat,
-    data.pneus?.arriere_etat,
-    ...(data.pneus?.essieux ?? []).map((axle) => axle.etat),
+    ...Object.entries(data.usure ?? {})
+      .filter(([key]) => !axles || !/^(disques|plaquettes)_/.test(key))
+      .map(([, value]) => value),
+    ...(axles
+      ? axles.flatMap((axle) => [axle.disques, axle.plaquettes, axle.pneus_etat])
+      : [
+          data.pneus?.avant_etat,
+          data.pneus?.milieu_etat,
+          data.pneus?.arriere_etat,
+          ...(data.pneus?.essieux ?? []).map((axle) => axle.etat),
+        ]),
     ...Object.values(data.controles ?? {}),
   ];
   return (
@@ -186,12 +263,18 @@ export function inspectionMissingPoints(
   data: InspectionData | null | undefined,
   vehicleType: VehicleKind | null | undefined = 'pl',
 ): number {
+  const checks = CHECK_FIELDS.filter(([key]) => !['OK', 'HS'].includes(data?.controles?.[key] ?? '')).length;
+  // Remorque par essieu : disques, plaquettes et pneus des essieux remplis (au moins le premier)
+  if (vehicleType === 'remorque' && usesTrailerAxles(data)) {
+    const axles = countedAxles(trailerAxles(data));
+    const states = axles.flatMap((axle) => [axle.disques, axle.plaquettes, axle.pneus_etat]);
+    return states.filter((value) => !['OK', '50', 'HS'].includes(value ?? '')).length + checks;
+  }
   const wear = wearFieldsFor(vehicleType).filter(
     ([key]) => !['OK', '50', 'HS'].includes(data?.usure?.[key] ?? ''),
   ).length;
   const tyres = (['avant_etat', 'arriere_etat'] as const).filter(
     (key) => !['OK', '50', 'HS'].includes(data?.pneus?.[key] ?? ''),
   ).length;
-  const checks = CHECK_FIELDS.filter(([key]) => !['OK', 'HS'].includes(data?.controles?.[key] ?? '')).length;
   return wear + tyres + checks;
 }
