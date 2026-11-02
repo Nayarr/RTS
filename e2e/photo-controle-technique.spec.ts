@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page } from '@playwright/test';
 import { loadEnv } from 'vite';
 import type { Database } from '../src/types/database';
+import { lockLabelScan, unlockLabelScan } from './support/label-scan-lock';
 
 const env = loadEnv('production', process.cwd(), 'VITE_');
 // Comptes de développement créés par supabase/seed.sql (base locale uniquement).
@@ -68,6 +69,19 @@ async function photographTechnicalInspection(page: Page) {
 }
 
 test.describe.configure({ mode: 'serial' }); // réglage commun à toute l'appli
+
+// Réglage aussi basculé par d'autres specs et par l'autre projet (desktop / mobile) : verrou
+test.beforeAll(async () => {
+  test.setTimeout(240_000); // attente des autres specs qui détiennent le réglage
+  await lockLabelScan();
+});
+test.afterAll(async () => {
+  try {
+    await setLabelScan(false);
+  } finally {
+    await unlockLabelScan();
+  }
+});
 
 test('photo du contrôle technique : lecture proposée ; sans clé, saisie à la main', async ({
   page,
