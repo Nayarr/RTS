@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, CircleCheck, IdCard, Loader2, ScanText, TriangleAlert } from 'lucide-react';
+import { Camera, CircleCheck, FileUp, IdCard, Loader2, ScanText, TriangleAlert } from 'lucide-react';
 import { Controller, useWatch, type UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
-import { useUploadFile } from '@/features/files/hooks';
+import { useFileUrl, useIsPdf, useUploadFile } from '@/features/files/hooks';
+import { IMAGE_OR_PDF } from '@/features/files/ImageUploadButton';
+import { PdfTile } from '@/features/files/PdfTile';
 import { StoredImage } from '@/features/files/StoredImage';
 import { fetchLabelScanEnabled } from '@/features/workshop/api';
 import { cn } from '@/lib/utils';
@@ -28,12 +30,28 @@ function LicenseSide({
   onUploaded: (fileId: string) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  // Permis déjà reçu en photo ou en PDF (sans ouvrir l'appareil photo)
+  const importInput = useRef<HTMLInputElement>(null);
   const upload = useUploadFile('other');
+  const isPdf = useIsPdf(fileId);
+  const { url } = useFileUrl(isPdf ? fileId : null);
+  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    upload.mutate(file, { onSuccess: onUploaded, onError: (error) => toast.error(error.message) });
+  };
   return (
     <div className="col gap-2">
       <span className="lbl">{SIDE_LABEL[side]}</span>
       <div className="relative aspect-[172/112] overflow-hidden rounded-[10px] border bg-muted">
-        {fileId ? (
+        {fileId && isPdf ? (
+          <PdfTile
+            url={url}
+            label={`${SIDE_LABEL[side]} du permis`}
+            className="h-full w-full rounded-none border-0"
+          />
+        ) : fileId ? (
           <StoredImage
             fileId={fileId}
             alt={`${SIDE_LABEL[side]} du permis`}
@@ -53,12 +71,15 @@ function LicenseSide({
         capture="environment"
         hidden
         data-testid={`license-${side}`}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = '';
-          if (!file) return;
-          upload.mutate(file, { onSuccess: onUploaded, onError: (error) => toast.error(error.message) });
-        }}
+        onChange={onChange}
+      />
+      <input
+        ref={importInput}
+        type="file"
+        accept={IMAGE_OR_PDF}
+        hidden
+        data-testid={`license-${side}-import`}
+        onChange={onChange}
       />
       <Button
         type="button"
@@ -71,6 +92,16 @@ function LicenseSide({
         {upload.isPending
           ? 'Envoi…'
           : `${fileId ? 'Reprendre' : 'Scanner'} le ${SIDE_LABEL[side].toLowerCase()}`}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        aria-label={`Importer le ${SIDE_LABEL[side].toLowerCase()} (photo ou PDF)`}
+        disabled={upload.isPending}
+        onClick={() => importInput.current?.click()}
+      >
+        <FileUp /> Photo ou PDF
       </Button>
     </div>
   );
@@ -147,7 +178,8 @@ export function LicenseEditor({
         <p className="alert s-blue">
           <IdCard className="i" />
           <span>
-            <b>Obligatoire pour une location.</b> Photographie le recto et le verso
+            <b>Obligatoire pour une location.</b> Photographie le recto et le verso (ou importe-les en photo
+            ou en PDF)
             {scanEnabled.data ? ' : les informations sont lues automatiquement, vérifie-les.' : '.'}
           </span>
         </p>

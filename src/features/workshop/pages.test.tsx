@@ -16,6 +16,7 @@ import type * as RoApi from '@/features/repair-orders/api';
 import { fakeSession, renderRoutes } from '@/test/render';
 import {
   addLine,
+  addPhoto,
   completeRepairOrder,
   deleteLine,
   fetchMyRepairOrders,
@@ -49,6 +50,7 @@ vi.mock('./api', async (importOriginal) => ({
   startTimer: vi.fn(),
   updateMileage: vi.fn(),
   addLine: vi.fn(),
+  addPhoto: vi.fn(),
   updateLine: vi.fn(),
   deleteLine: vi.fn(),
   completeRepairOrder: vi.fn(),
@@ -239,6 +241,20 @@ describe('fiche OR technicien', () => {
     expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
     await waitFor(() => expect(updateMileage).toHaveBeenCalledWith('ro1', 184320), { timeout: 5000 });
     expect(updateMileage).toHaveBeenCalledTimes(1);
+  });
+
+  it('étiquette du hayon importée en PDF : envoyée telle quelle comme photo de l’étiquette', async () => {
+    vi.mocked(addPhoto).mockResolvedValue('f-pdf');
+    setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }) });
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Importer « Étiquette contrôle hayon » (photo ou PDF)' }),
+    );
+    const input = screen.getByTestId('photo-document');
+    expect(input).toHaveAttribute('accept', expect.stringContaining('application/pdf') as string);
+    expect(input).not.toHaveAttribute('capture');
+    const pdf = new File(['%PDF-1.7'], 'hayon.pdf', { type: 'application/pdf' });
+    await userEvent.upload(input, pdf);
+    await waitFor(() => expect(addPhoto).toHaveBeenCalledWith('ro1', pdf, 'Étiquette contrôle hayon'));
   });
 
   it('démarre le badgeage une fois les prérequis remplis', async () => {

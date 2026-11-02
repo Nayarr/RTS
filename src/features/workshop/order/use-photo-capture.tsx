@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { compressImage } from '@/features/files/image';
+import { IMAGE_OR_PDF } from '@/features/files/ImageUploadButton';
 import { addPhoto } from '../api';
 import { useWorkshopMutation } from '../hooks';
 
@@ -15,6 +16,8 @@ export function usePhotoCapture(
 ) {
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
+  // Étiquette lue par l'assistant (hayon, contrôle technique) : photo ou PDF reçu par mail
+  const documentInput = useRef<HTMLInputElement>(null);
   const [label, setLabel] = useState<string | null>(null);
 
   const upload = useWorkshopMutation(
@@ -34,9 +37,9 @@ export function usePhotoCapture(
     for (const file of files) upload.mutate({ file, label });
   };
 
-  const open = (target: 'camera' | 'gallery', photoLabel: string) => {
+  const open = (target: 'camera' | 'gallery' | 'document', photoLabel: string) => {
     setLabel(photoLabel);
-    (target === 'camera' ? camera : gallery).current?.click();
+    ({ camera, gallery, document: documentInput })[target].current?.click();
   };
 
   const inputs = (
@@ -59,6 +62,14 @@ export function usePhotoCapture(
         onChange={onChange}
         data-testid="photo-gallery"
       />
+      <input
+        ref={documentInput}
+        type="file"
+        accept={IMAGE_OR_PDF}
+        hidden
+        onChange={onChange}
+        data-testid="photo-document"
+      />
     </>
   );
 
@@ -66,6 +77,8 @@ export function usePhotoCapture(
     inputs,
     openCamera: (photoLabel: string) => open('camera', photoLabel),
     openGallery: (photoLabel: string) => open('gallery', photoLabel),
+    /** Photo ou PDF (sans ouvrir l'appareil photo) : document lu par l'assistant. */
+    openDocument: (photoLabel: string) => open('document', photoLabel),
     /** Libellé en cours d'envoi (bouton en attente). */
     uploadingLabel: upload.isPending ? upload.variables.label : null,
   };

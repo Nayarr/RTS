@@ -1,4 +1,5 @@
 import { invokeFunction } from '@/lib/functions';
+import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 
 export type FileCategory = Database['public']['Enums']['file_category'];
@@ -9,6 +10,9 @@ interface UploadTicket {
   method: 'PUT';
   headers: Record<string, string>;
 }
+
+/** Type d'un document PDF (contrôle technique, carte grise, permis…), lu par l'assistant comme une photo. */
+export const PDF_TYPE = 'application/pdf';
 
 /**
  * Envoie un fichier dans R2 en trois temps : réservation (droits vérifiés en base),
@@ -36,6 +40,13 @@ export async function uploadFile(
 
   await invokeFunction('files', { action: 'confirm', file_id: ticket.file_id });
   return ticket.file_id;
+}
+
+/** Type d'un fichier enregistré (image ou PDF), null s'il n'est pas lisible. */
+export async function fetchFileMimeType(fileId: string): Promise<string | null> {
+  const { data, error } = await supabase.from('files').select('mime_type').eq('id', fileId).maybeSingle();
+  if (error) throw error;
+  return data?.mime_type ?? null;
 }
 
 /** URL de lecture temporaires (1 h) ; les fichiers non autorisés sont absents du résultat. */
