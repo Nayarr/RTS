@@ -91,6 +91,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
       'Sur l’OR, « Préparer le devis » reprend les travaux à prévoir, calcule la main d’œuvre au taux horaire et applique les forfaits. Ajoute pièces, main d’œuvre, texte et remises.',
       '« Envoyer au client (lien à signer) » prépare un lien : le client consulte et signe en ligne, le devis passe seul en « Accepté ».',
       'Devis accepté (en ligne, sur la borne ou au bureau) : l’OR d’origine passe « Facture à faire » ; « Créer l’OR avec les travaux acceptés » et choisis le technicien.',
+      'Ordre des lignes : attrape la poignée à gauche d’une ligne et fais-la glisser plus haut ou plus bas (au clavier : Espace sur la poignée, flèches, Espace). Sur un devis, la ligne reste dans sa partie (travaux effectués ou à prévoir) ; le PDF suit le nouvel ordre. Devis accepté : ordre figé.',
       'Forfaits des pneus (devis et facture seulement) : sur la fiche OR, affichés avec leur quantité et leur prix unitaire (« 2 × 18,00 € HT »), leur temps de barème ne compte pas.',
       'Devis avec le contrôle du hayon : dès qu’il est envoyé (ou accepté au bureau), l’échéance du hayon du véhicule passe à 6 mois plus tard, le rappel ne part donc pas. Sur la fiche véhicule, « Renouvelé (+6 mois) » fait de même à la main.',
       'Devis envoyé resté sans réponse : le dernier jour travaillé du mois (samedi compris) à 8 h, la réception et la direction sont prévenues, et l’OR d’origine passe « Facture à faire » pour facturer le travail déjà fait. Le devis reste signable par le client.',
@@ -102,6 +103,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     items: [
       'Sur l’OR, « Facturer » prépare un brouillon avec les travaux effectués, les pièces, les consommables, la sous-traitance et le déplacement. Vérifie, ajuste, puis « Émettre la facture ».',
       '« Aperçu pro forma » produit une facture pro forma sans numéro (quantités de main d’œuvre sans l’unité « h »).',
+      'Facture en brouillon : les lignes se déplacent comme sur un devis (poignée à gauche, glisser plus haut ou plus bas).',
       'Une facture émise ne se modifie plus : pour la corriger, « Générer un avoir », puis une nouvelle facture si besoin.',
       'Sur la facture : « Enregistrer un paiement » (même partiel), « Envoyer au client » pour le lien en ligne, « Relancer » quand elle est en retard.',
       'Moyens de paiement : virement, chèque, carte bancaire, espèces, prélèvement (la LCR / traite n’est plus proposée ; les anciens paiements en LCR restent affichés).',

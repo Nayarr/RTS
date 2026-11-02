@@ -210,6 +210,12 @@ export async function updateQuoteLine(id: string, patch: TablesUpdate<'quote_lin
   if (!data.length) throw new Error('Modification non autorisée');
 }
 
+/** Nouvel ordre des lignes d'une section, après un glisser-déposer. */
+export async function reorderQuoteLines(quoteId: string, lineIds: string[]) {
+  const { error } = await supabase.rpc('reorder_quote_lines', { p_quote_id: quoteId, p_line_ids: lineIds });
+  if (error) throw error;
+}
+
 export async function deleteQuoteLine(id: string) {
   const { data, error } = await supabase.from('quote_lines').delete().eq('id', id).select('id');
   if (error) throw error;

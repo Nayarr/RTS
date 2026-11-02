@@ -231,6 +231,15 @@ export async function updateInvoiceLine(id: string, patch: TablesUpdate<'invoice
   if (!data.length) throw new Error('Modification impossible');
 }
 
+/** Nouvel ordre des lignes d'une facture en brouillon, après un glisser-déposer. */
+export async function reorderInvoiceLines(invoiceId: string, lineIds: string[]) {
+  const { error } = await supabase.rpc('reorder_invoice_lines', {
+    p_invoice_id: invoiceId,
+    p_line_ids: lineIds,
+  });
+  if (error) throw error;
+}
+
 export async function deleteInvoiceLine(id: string) {
   const { data, error } = await supabase.from('invoice_lines').delete().eq('id', id).select('id');
   if (error) throw error;

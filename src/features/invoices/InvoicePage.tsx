@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
+import { SortableLines, type LineDrag } from '@/features/documents/SortableLines';
 import { computeTotals, nextPositionOf, offeredTotal } from '@/features/documents/lines';
 import { formatDate } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
@@ -35,6 +36,7 @@ import {
   rebuildInvoiceDraft,
   setInvoiceDueDate,
   updateInvoiceDraft,
+  reorderInvoiceLines,
   updateInvoiceLine,
   type CreditNoteInput,
   type InvoiceDetail,
@@ -65,7 +67,7 @@ import { duplicateInvoice } from './api';
 
 type Dialog = 'issue' | 'payment' | 'credit' | 'due_date' | 'rebuild' | 'delete' | null;
 
-function InvoiceLineItem({ line, locked }: { line: InvoiceLine; locked: boolean }) {
+function InvoiceLineItem({ line, locked, drag }: { line: InvoiceLine; locked: boolean; drag?: LineDrag }) {
   const update = useInvoiceMutation((patch: LinePatch) => updateInvoiceLine(line.id, patch), null);
   const remove = useInvoiceMutation(() => deleteInvoiceLine(line.id), 'Ligne supprimée');
   return (
@@ -75,6 +77,7 @@ function InvoiceLineItem({ line, locked }: { line: InvoiceLine; locked: boolean 
       onSave={(patch) => update.mutate(patch)}
       onDelete={() => remove.mutate(undefined)}
       deleting={remove.isPending}
+      {...(drag && { drag })}
     />
   );
 }
@@ -300,6 +303,7 @@ export function InvoicePage() {
   const close = () => setDialog(null);
 
   const addLine = useInvoiceMutation((line: NewInvoiceLine) => addInvoiceLine(id, line), null);
+  const reorder = useInvoiceMutation((ids: string[]) => reorderInvoiceLines(id, ids), null);
   const setServiceDate = useInvoiceMutation(
     (date: string) => updateInvoiceDraft(id, { service_date: date || null }),
     null,
@@ -453,10 +457,15 @@ export function InvoicePage() {
               <LineColumns />
               {lines.length === 0 ? (
                 <p className="hint px-6 py-3">Aucune ligne : rien à facturer pour l’instant.</p>
+              ) : draft ? (
+                // Brouillon : lignes déplaçables ; facture émise : ordre figé
+                <SortableLines lines={lines} onReorder={(ids) => reorder.mutate(ids)}>
+                  {(line, drag) => <InvoiceLineItem key={line.id} line={line} locked={false} drag={drag} />}
+                </SortableLines>
               ) : (
                 <ul>
                   {lines.map((line) => (
-                    <InvoiceLineItem key={line.id} line={line} locked={!draft} />
+                    <InvoiceLineItem key={line.id} line={line} locked />
                   ))}
                 </ul>
               )}
