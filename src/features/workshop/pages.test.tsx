@@ -221,6 +221,15 @@ describe('fiche OR technicien', () => {
     expect(screen.queryByRole('button', { name: 'Ajouter un essieu' })).toBeNull();
   });
 
+  it('kilométrage enregistré tout seul après la saisie, sans bouton', async () => {
+    vi.mocked(updateMileage).mockResolvedValue();
+    setup('/atelier/or/ro1', { order: order() });
+    await userEvent.type(await screen.findByLabelText('Kilométrage'), '184320');
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+    await waitFor(() => expect(updateMileage).toHaveBeenCalledWith('ro1', 184320), { timeout: 5000 });
+    expect(updateMileage).toHaveBeenCalledTimes(1);
+  });
+
   it('étiquette du hayon importée en PDF : envoyée telle quelle comme photo de l’étiquette', async () => {
     vi.mocked(addPhoto).mockResolvedValue('f-pdf');
     setup('/atelier/or/ro1', { order: order({ status: 'in_progress' }) });
@@ -233,15 +242,6 @@ describe('fiche OR technicien', () => {
     const pdf = new File(['%PDF-1.7'], 'hayon.pdf', { type: 'application/pdf' });
     await userEvent.upload(input, pdf);
     await waitFor(() => expect(addPhoto).toHaveBeenCalledWith('ro1', pdf, 'Étiquette contrôle hayon'));
-  });
-
-  it('kilométrage enregistré tout seul après la saisie, sans bouton', async () => {
-    vi.mocked(updateMileage).mockResolvedValue();
-    setup('/atelier/or/ro1', { order: order() });
-    await userEvent.type(await screen.findByLabelText('Kilométrage'), '184320');
-    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
-    await waitFor(() => expect(updateMileage).toHaveBeenCalledWith('ro1', 184320), { timeout: 5000 });
-    expect(updateMileage).toHaveBeenCalledTimes(1);
   });
 
   it('démarre le badgeage une fois les prérequis remplis', async () => {
