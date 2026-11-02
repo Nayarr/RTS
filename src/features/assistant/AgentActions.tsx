@@ -12,6 +12,7 @@ import {
   Receipt,
   Send,
   UserCheck,
+  Users,
   Wrench,
   X,
   type LucideIcon,
@@ -22,13 +23,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UNDO_SECONDS } from './agent-actions';
-import { cancelAgentAction, editAgentMail, executeAgentAction, sendAgentMail, type AgentAction } from './api';
+import {
+  cancelAgentAction,
+  editAgentMail,
+  editAgentMailing,
+  executeAgentAction,
+  isMailAction,
+  sendAgentMail,
+  type AgentAction,
+} from './api';
 
 const ICONS: Record<AgentAction['kind'], LucideIcon> = {
   appointment: CalendarPlus,
   ro_work: Wrench,
   assign_technician: UserCheck,
   send_mail: Mail,
+  send_mailing: Users,
   vehicle_deadline: CalendarClock,
   schedule_order: CalendarRange,
   appointment_change: CalendarClock,
@@ -73,14 +83,15 @@ export function AgentActions({
   const timer = useRef<number | null>(null);
 
   const mails = actions.filter((action) => action.kind === 'send_mail');
-  const others = actions.filter((action) => action.kind !== 'send_mail');
+  const mailings = actions.filter((action) => action.kind === 'send_mailing');
+  const others = actions.filter((action) => !isMailAction(action));
   const currentMail = mails[Math.min(mailIndex, mails.length - 1)];
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['agent', 'actions'] });
   const execute = useMutation({
     // Un mail part par la fonction d'envoi ; les autres actions par la base
     mutationFn: (action: AgentAction) =>
-      action.kind === 'send_mail' ? sendAgentMail(action) : executeAgentAction(action.id),
+      isMailAction(action) ? sendAgentMail(action) : executeAgentAction(action.id),
     onSuccess: (action) => {
       if (action.status === 'done') toast.success(`Fait : ${action.summary}`);
       else toast.error(action.error ? `Non fait : ${action.error}` : 'Action non faite');
@@ -124,6 +135,23 @@ export function AgentActions({
     const saved = draftOf(action);
     if (draft.to !== saved.to || draft.subject !== saved.subject || draft.text !== saved.text) {
       const updated = await edit.mutateAsync({ id: action.id, draft }).catch(() => null);
+      if (!updated) return;
+    }
+    validate(action);
+  };
+
+  /** Mail groupé relu : modifications enregistrées, puis envoi dans 5 s (annulable). */
+  const sendMailing = async (action: AgentAction, draft: MailingDraft) => {
+    const saved = mailingDraftOf(action);
+    if (
+      draft.subject !== saved.subject ||
+      draft.text !== saved.text ||
+      draft.clientIds.length !== saved.clientIds.length
+    ) {
+      const updated = await editAgentMailing(action.id, draft).catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'Mail groupé non modifié');
+        return null;
+      });
       if (!updated) return;
     }
     validate(action);
@@ -184,6 +212,23 @@ export function AgentActions({
           })}
         </ul>
       )}
+
+      {mailings.map((mailing) => (
+        <section key={mailing.id} className="card col gap-3 px-4 py-3.5" aria-label="Mail groupé">
+          <div className="row flex-wrap items-center gap-2">
+            <Users className="i shrink-0" />
+            <b className="grow text-sm">{mailing.summary}</b>
+          </div>
+          <MailingEditor
+            mailing={mailing}
+            locked={counting !== null || execute.isPending}
+            counting={counting?.id === mailing.id ? counting.left : null}
+            onSend={(draft) => void sendMailing(mailing, draft)}
+            onSkip={() => cancel.mutate(mailing.id)}
+            onUndo={stop}
+          />
+        </section>
+      ))}
 
       {currentMail && (
         <section className="card col gap-3 px-4 py-3.5" aria-label="Mails préparés">
@@ -304,6 +349,125 @@ function MailEditor({
             </Button>
             <Button size="sm" disabled={locked || saving || empty} onClick={() => onSend(draft)}>
               <Send /> Envoyer
+            </Button>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+interface MailingDraft {
+  subject: string;
+  text: string;
+  clientIds: string[];
+}
+
+const mailingDraftOf = (action: AgentAction): MailingDraft => ({
+  subject: action.payload?.subject ?? '',
+  text: action.payload?.text ?? '',
+  clientIds: (action.payload?.recipients ?? []).map((recipient) => recipient.client_id),
+});
+
+/**
+ * Mail groupé : objet et texte modifiables ({client} remplacé par le nom de chaque client), liste
+ * des destinataires à décocher. Chacun reçoit son propre mail.
+ */
+function MailingEditor({
+  mailing,
+  locked,
+  counting,
+  onSend,
+  onSkip,
+  onUndo,
+}: {
+  mailing: AgentAction;
+  locked: boolean;
+  counting: number | null;
+  onSend: (draft: MailingDraft) => void;
+  onSkip: () => void;
+  onUndo: () => void;
+}) {
+  const [draft, setDraft] = useState(() => mailingDraftOf(mailing));
+  const recipients = mailing.payload?.recipients ?? [];
+  const withoutEmail = mailing.payload?.without_email ?? 0;
+  const id = mailing.id.slice(0, 8);
+  const kept = new Set(draft.clientIds);
+  const toggle = (clientId: string) =>
+    setDraft((current) => ({
+      ...current,
+      clientIds: current.clientIds.includes(clientId)
+        ? current.clientIds.filter((value) => value !== clientId)
+        : recipients
+            .map((r) => r.client_id)
+            .filter((value) => value === clientId || current.clientIds.includes(value)),
+    }));
+  const count = draft.clientIds.length;
+  const empty = !draft.subject.trim() || !draft.text.trim() || count === 0;
+
+  return (
+    <>
+      <div className="field">
+        <Label htmlFor={`mailing-subject-${id}`}>Objet</Label>
+        <Input
+          id={`mailing-subject-${id}`}
+          value={draft.subject}
+          maxLength={200}
+          disabled={locked}
+          onChange={(event) => setDraft((current) => ({ ...current, subject: event.target.value }))}
+        />
+      </div>
+      <div className="field">
+        <Label htmlFor={`mailing-text-${id}`}>Texte</Label>
+        <Textarea
+          id={`mailing-text-${id}`}
+          rows={8}
+          value={draft.text}
+          maxLength={5000}
+          disabled={locked}
+          onChange={(event) => setDraft((current) => ({ ...current, text: event.target.value }))}
+        />
+        <span className="hint">{'{client}'} est remplacé par le nom de chaque client.</span>
+      </div>
+      <details className="col gap-2">
+        <summary className="cursor-pointer text-sm font-semibold">
+          Destinataires : {count} sur {recipients.length}
+          {withoutEmail > 0 ? ` (${withoutEmail} sans e-mail, écarté${withoutEmail > 1 ? 's' : ''})` : ''}
+        </summary>
+        <ul className="col mt-2 max-h-64 gap-1 overflow-y-auto" aria-label="Destinataires du mail groupé">
+          {recipients.map((recipient) => (
+            <li key={recipient.client_id}>
+              <label className="row gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={kept.has(recipient.client_id)}
+                  disabled={locked}
+                  onChange={() => toggle(recipient.client_id)}
+                />
+                <span className="grow">{recipient.name}</span>
+                <span className="muted">{recipient.to}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </details>
+      <div className="row flex-wrap items-center gap-2">
+        <span className="hint grow">
+          {counting !== null
+            ? `Envoi dans ${counting} s`
+            : 'Un mail à chaque client, son adresse seule. Rien ne part avant « Envoyer ».'}
+        </span>
+        {counting !== null ? (
+          <Button size="sm" variant="outline" onClick={onUndo}>
+            <X /> Annuler
+          </Button>
+        ) : (
+          <>
+            <Button size="sm" variant="outline" disabled={locked} onClick={onSkip}>
+              <X /> Ne pas envoyer
+            </Button>
+            <Button size="sm" disabled={locked || empty} onClick={() => onSend(draft)}>
+              <Send /> Envoyer à {count} client{count > 1 ? 's' : ''}
             </Button>
           </>
         )}
