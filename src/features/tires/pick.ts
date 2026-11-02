@@ -1,4 +1,4 @@
-import { trailerAxles, type InspectionData } from '@/features/repair-orders/inspection';
+import { axleWheels, trailerAxles, type InspectionData } from '@/features/repair-orders/inspection';
 import type { Enums } from '@/types/database';
 import type { TireLot } from './api';
 import { formatTireSize, isTireSize, type TireCategory, type TireProfile } from './domain';
@@ -38,8 +38,10 @@ export function inspectionPositions(inspection: InspectionData | null, vehicle: 
     state?: string | undefined;
     size?: string | undefined;
     position: 'avant' | 'arriere' | 'essieu';
+    /** Pneus de la position quand la fiche le dit (essieu de remorque : 2 ou 4 jumelées). */
+    wheels?: number;
   };
-  // Remorque par essieu : 2 pneus par essieu
+  // Remorque par essieu : 2 pneus par essieu, 4 s'il est jumelé
   const rows: Row[] = trailer
     ? trailerAxles(inspection).map((axle, index) => ({
         key: `remorque-${index + 1}`,
@@ -47,6 +49,7 @@ export function inspectionPositions(inspection: InspectionData | null, vehicle: 
         state: axle.pneus_etat,
         size: axle.pneus_taille,
         position: 'essieu' as const,
+        wheels: axleWheels(axle),
       }))
     : !pneus
       ? []
@@ -90,7 +93,7 @@ export function inspectionPositions(inspection: InspectionData | null, vehicle: 
         state: row.state,
         size,
         profile: profileFor(vehicle, row.position),
-        quantity: row.position === 'arriere' && vehicle === 'pl' ? 4 : 2,
+        quantity: row.wheels ?? (row.position === 'arriere' && vehicle === 'pl' ? 4 : 2),
       },
     ];
   });
