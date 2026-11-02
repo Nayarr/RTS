@@ -70,6 +70,16 @@ describe('positions relevées sur la fiche', () => {
     ]);
   });
 
+  it('remorque par essieu : 2 pneus, 4 pour un essieu jumelé', () => {
+    const inspection = {
+      remorque_essieux: [
+        { pneus_etat: 'HS', pneus_taille: '38565225', roues: 4 },
+        { pneus_etat: '50', pneus_taille: '38565225' },
+      ],
+    };
+    expect(inspectionPositions(inspection, 'remorque').map((position) => position.quantity)).toEqual([4, 2]);
+  });
+
   it('profil de la position d’abord, désignation de la pièce du lot', () => {
     const lots = [
       lot({ id: 'a', profile: 'arriere', available_qty: 20 }),

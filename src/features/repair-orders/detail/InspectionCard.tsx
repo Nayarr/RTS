@@ -9,6 +9,7 @@ import {
   optionFor,
   tireAxlesFor,
   axleFilled,
+  axleWheels,
   TRAILER_AXLE_WEAR,
   trailerAxles,
   usesTrailerAxles,
@@ -18,7 +19,14 @@ import {
   YES_NO_OPTIONS,
   type ChipOption,
   type InspectionData,
+  type TrailerAxle,
 } from '../inspection';
+
+/** Taille et roues jumelées d'un essieu de remorque : « (385/65/22.5, 4 roues) ». */
+function tireDetails(axle: TrailerAxle) {
+  const details = [axle.pneus_taille, axleWheels(axle) === 4 ? '4 roues' : ''].filter(Boolean);
+  return details.length ? ` (${details.join(', ')})` : '';
+}
 
 function Value({ value, options }: { value: string | undefined; options: ChipOption[] }) {
   const option = optionFor(value, options);
@@ -88,10 +96,7 @@ export function InspectionCard({
                           <Value value={axle[key]} options={WEAR_OPTIONS} />
                         </Row>
                       )),
-                      <Row
-                        key={`${index}-pneus`}
-                        label={`Pneus essieu ${index + 1}${axle.pneus_taille ? ` (${axle.pneus_taille})` : ''}`}
-                      >
+                      <Row key={`${index}-pneus`} label={`Pneus essieu ${index + 1}${tireDetails(axle)}`}>
                         <Value value={axle.pneus_etat} options={WEAR_OPTIONS} />
                       </Row>,
                     ]

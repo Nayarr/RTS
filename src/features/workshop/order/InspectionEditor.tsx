@@ -12,11 +12,13 @@ import {
   OK_HS_OPTIONS,
   tireAxlesFor,
   TRAILER_AXLE_WEAR,
+  axleWheels,
   trailerAxleLabel,
   trailerAxles,
   WARNING_LIGHT_FIELDS,
   wearFieldsFor,
   WEAR_OPTIONS,
+  WHEEL_OPTIONS,
   YES_NO_OPTIONS,
   type ChipOption,
   type FluidKey,
@@ -293,6 +295,14 @@ export function InspectionEditor({
               (value) => setTrailerAxle(index, { pneus_etat: value }),
               (value) => setTrailerAxle(index, { pneus_taille: value }),
             )}
+            <ChipRow
+              label={`Roues essieu ${index + 1}`}
+              options={WHEEL_OPTIONS}
+              value={String(axleWheels(axle))}
+              disabled={locked}
+              // 4 roues jumelées : 4 pneus aux forfaits ; un second appui revient à 2 roues
+              onChange={(value) => setTrailerAxle(index, { roues: value === '4' ? 4 : undefined })}
+            />
           </div>
         ))}
       {trailer && !locked && (

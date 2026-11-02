@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { countAlerts, inspectionMissingPoints, trailerAxles, usesTrailerAxles } from './inspection';
+import {
+  axleFilled,
+  axleWheels,
+  countAlerts,
+  inspectionMissingPoints,
+  trailerAxles,
+  usesTrailerAxles,
+} from './inspection';
 
 const CHECKS_OK = {
   etiquettes: 'OK',
@@ -52,5 +59,11 @@ describe('remorque : fiche de contrôle par essieu', () => {
         remorque_essieux: [{ disques: 'OK', plaquettes: '50' }, { pneus_etat: 'HS' }],
       }),
     ).toBe(2);
+  });
+
+  it('roues : 2 par défaut, 4 pour un essieu jumelé ; le choix seul ne remplit pas l’essieu', () => {
+    expect(axleWheels({})).toBe(2);
+    expect(axleWheels({ roues: 4 })).toBe(4);
+    expect(axleFilled({ roues: 4 })).toBe(false);
   });
 });

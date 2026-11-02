@@ -221,6 +221,19 @@ describe('fiche OR technicien', () => {
     expect(screen.queryByRole('button', { name: 'Ajouter un essieu' })).toBeNull();
   });
 
+  it('remorque : essieu à 4 roues (jumelées) enregistré, 2 roues par défaut', async () => {
+    vi.mocked(saveInspection).mockResolvedValue();
+    setup('/atelier/or/ro1', { order: order({ status: 'in_progress', vehicle_type: 'remorque' }) });
+    const wheels = await screen.findByRole('radiogroup', { name: 'Roues essieu 2' });
+    expect(within(wheels).getByRole('radio', { name: '2 roues' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(within(wheels).getByRole('radio', { name: '4 roues (jumelées)' }));
+    await waitFor(() =>
+      expect(saveInspection).toHaveBeenCalledWith('ro1', {
+        remorque_essieux: [{}, { roues: 4 }, {}],
+      }),
+    );
+  });
+
   it('kilométrage enregistré tout seul après la saisie, sans bouton', async () => {
     vi.mocked(updateMileage).mockResolvedValue();
     setup('/atelier/or/ro1', { order: order() });
