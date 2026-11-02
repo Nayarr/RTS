@@ -236,6 +236,8 @@ describe('éditeur de devis', () => {
     await userEvent.type(price, '95,5');
     await userEvent.tab();
     expect(updateQuoteLine).toHaveBeenCalledWith('l1', { unit_price: 95.5 });
+    // Devis modifiable : ligne déplaçable par sa poignée
+    expect(screen.getByRole('button', { name: /^Déplacer / })).toBeInTheDocument();
   });
 
   it('une saisie invalide est ignorée', async () => {
@@ -324,6 +326,7 @@ describe('éditeur de devis', () => {
     expect(screen.getByRole('textbox', { name: 'Prix unit. HT' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: /Ajouter une ligne/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Accepté$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Déplacer / })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: /Créer l’OR avec les travaux acceptés/ }));
     const dialog = screen.getByRole('dialog', { name: 'Créer l’OR' });

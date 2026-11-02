@@ -8201,6 +8201,8 @@ export type Database = {
       rental_renewal_step: { Args: { p_rate_period: string }; Returns: string };
       rental_signature_request: { Args: { p_rental_id: string }; Returns: Json };
       rental_unit_label: { Args: { p_rate_period: string }; Returns: string };
+      reorder_invoice_lines: { Args: { p_invoice_id: string; p_line_ids: string[] }; Returns: undefined };
+      reorder_quote_lines: { Args: { p_line_ids: string[]; p_quote_id: string }; Returns: undefined };
       repair_order_planned_hours: { Args: { p_end: string; p_id: string; p_start: string }; Returns: number };
       repair_order_signature_request: { Args: { p_repair_order_id: string }; Returns: Json };
       repair_order_status_label: {

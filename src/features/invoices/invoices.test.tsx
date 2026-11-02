@@ -17,6 +17,7 @@ import {
   fetchRepairOrderInvoices,
   issueInvoice,
   recordInvoiceReminder,
+  reorderInvoiceLines,
   setInvoiceDueDate,
   shareInvoice,
   updateInvoiceLine,
@@ -62,6 +63,7 @@ vi.mock('./api', async (importOriginal) => ({
   addCreditNote: vi.fn(),
   shareInvoice: vi.fn(),
   recordInvoiceReminder: vi.fn(),
+  reorderInvoiceLines: vi.fn(),
   setInvoiceDueDate: vi.fn(),
 }));
 vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
@@ -369,6 +371,31 @@ describe('brouillon de facture', () => {
     );
   });
 
+  it('ligne déplacée au clavier (poignée, Espace, flèche, Espace) : nouvel ordre enregistré', async () => {
+    vi.mocked(reorderInvoiceLines).mockResolvedValue();
+    // jsdom ne place rien à l'écran : lignes empilées de 60 px pour le déplacement au clavier
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const item = this.closest('li');
+      const index = item?.parentElement ? [...item.parentElement.children].indexOf(item) : 0;
+      return DOMRect.fromRect({ x: 0, y: index * 60, width: 800, height: 60 });
+    });
+    setupInvoice();
+    const handle = await screen.findByRole('button', { name: 'Déplacer Remplacement disques' });
+    handle.focus();
+    await userEvent.keyboard(' ');
+    await userEvent.keyboard('{ArrowDown}');
+    await userEvent.keyboard(' ');
+    await waitFor(() => expect(reorderInvoiceLines).toHaveBeenCalledWith('i1', ['l2', 'l1']));
+    const designations = screen.getAllByRole('textbox', { name: 'Désignation' });
+    expect(designations.map((field) => (field as HTMLTextAreaElement).value)).toEqual([
+      'Disques',
+      'Remplacement disques',
+    ]);
+    rect.mockRestore();
+  });
+
   it('sans adresse du client : émission bloquée', async () => {
     vi.mocked(issueInvoice).mockClear();
     setupInvoice();
@@ -399,6 +426,7 @@ describe('facture émise', () => {
     expect(await screen.findByText(/Facture émise : elle ne se modifie plus/)).toBeInTheDocument();
     expect(screen.getAllByRole('textbox', { name: 'Prix unit. HT' })[0]).toBeDisabled();
     expect(screen.queryByRole('button', { name: /Ajouter une ligne/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Déplacer / })).toBeNull();
     expect(screen.getByLabelText('Solde')).toHaveTextContent(/Reste dû\s*320,00\s€/);
 
     await userEvent.click(screen.getByRole('button', { name: /Enregistrer un paiement/ }));

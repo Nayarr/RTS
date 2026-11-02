@@ -8,7 +8,15 @@ import { formatDate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
-import { addQuoteLine, deleteQuoteLine, updateQuoteLine, type NewQuoteLine, type QuoteLine } from './api';
+import { SortableLines, type LineDrag } from '@/features/documents/SortableLines';
+import {
+  addQuoteLine,
+  deleteQuoteLine,
+  reorderQuoteLines,
+  updateQuoteLine,
+  type NewQuoteLine,
+  type QuoteLine,
+} from './api';
 import { PreQuoteWorkCard } from '@/features/repair-orders/PreQuoteWorkCard';
 import { offeredTotal } from '@/features/documents/lines';
 import { computeTotals, isQuoteLocked, nextPosition } from './domain';
@@ -17,7 +25,7 @@ import { useQuote, useQuoteMutation } from './hooks';
 import { QuoteStatusBadge } from './QuoteStatusBadge';
 
 /** Ligne du devis : enregistrement et suppression immédiats. */
-function QuoteLineItem({ line, locked }: { line: QuoteLine; locked: boolean }) {
+function QuoteLineItem({ line, locked, drag }: { line: QuoteLine; locked: boolean; drag?: LineDrag }) {
   const update = useQuoteMutation((patch: LinePatch) => updateQuoteLine(line.id, patch), null);
   const remove = useQuoteMutation(() => deleteQuoteLine(line.id), 'Ligne supprimée');
   return (
@@ -27,23 +35,27 @@ function QuoteLineItem({ line, locked }: { line: QuoteLine; locked: boolean }) {
       onSave={(patch) => update.mutate(patch)}
       onDelete={() => remove.mutate(undefined)}
       deleting={remove.isPending}
+      {...(drag && { drag })}
     />
   );
 }
 
 function LinesSection({
+  quoteId,
   title,
   lines,
   locked,
   empty,
   first,
 }: {
+  quoteId: string;
   title: string;
   lines: QuoteLine[];
   locked: boolean;
   empty: string;
   first?: boolean;
 }) {
+  const reorder = useQuoteMutation((ids: string[]) => reorderQuoteLines(quoteId, ids), null);
   return (
     <section aria-label={title}>
       <div className={first ? 'px-6 pt-3.5 pb-1.5' : 'border-t px-6 pt-[18px] pb-1.5'}>
@@ -52,12 +64,17 @@ function LinesSection({
       <LineColumns />
       {lines.length === 0 ? (
         <p className="hint px-6 py-3">{empty}</p>
-      ) : (
+      ) : locked ? (
         <ul>
           {lines.map((line) => (
-            <QuoteLineItem key={line.id} line={line} locked={locked} />
+            <QuoteLineItem key={line.id} line={line} locked />
           ))}
         </ul>
+      ) : (
+        // Devis modifiable : lignes déplaçables dans leur section
+        <SortableLines lines={lines} onReorder={(ids) => reorder.mutate(ids)}>
+          {(line, drag) => <QuoteLineItem key={line.id} line={line} locked={false} drag={drag} />}
+        </SortableLines>
       )}
     </section>
   );
@@ -184,6 +201,7 @@ export function QuotePage() {
 
           {done.length > 0 && (
             <LinesSection
+              quoteId={quote.id}
               title="Travaux déjà effectués"
               lines={done}
               locked={locked}
@@ -192,6 +210,7 @@ export function QuotePage() {
             />
           )}
           <LinesSection
+            quoteId={quote.id}
             title="Travaux à prévoir"
             lines={planned}
             locked={locked}

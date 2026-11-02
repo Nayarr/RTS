@@ -1,10 +1,11 @@
 import { Fragment } from 'react';
-import { Gift, Trash2 } from 'lucide-react';
+import { Gift, GripVertical, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { decimalText, formatEuro, parseDecimal } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
 import { isOfferedLine, lineNet, type EditableLine, type LineType } from './lines';
+import type { LineDrag } from './SortableLines';
 
 const TYPE_LABELS: Partial<Record<LineType, string>> = {
   labor: 'Main d’œuvre',
@@ -88,20 +89,42 @@ export function LineRow({
   onSave,
   onDelete,
   deleting = false,
+  drag,
 }: {
   line: EditableLine;
   locked: boolean;
   onSave: (patch: LinePatch) => void;
   onDelete: () => void;
   deleting?: boolean;
+  /** Ligne déplaçable (document modifiable) : poignée à gauche de la désignation. */
+  drag?: LineDrag;
 }) {
   const isText = line.line_type === 'text';
   const label = TYPE_LABELS[line.line_type];
   const offered = isOfferedLine(line);
 
   return (
-    <li className="grid grid-cols-[1fr_auto] items-center gap-2 border-b px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_4.75rem] md:px-6">
+    <li
+      ref={drag?.ref}
+      style={drag?.style}
+      className={cn(
+        'grid grid-cols-[1fr_auto] items-center gap-2 border-b bg-card px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_4.75rem] md:px-6',
+        drag?.dragging && 'shadow-md',
+      )}
+    >
       <div className="flex min-w-0 flex-wrap items-start gap-x-2">
+        {drag && (
+          <button
+            type="button"
+            className="ibtn sm ghost mt-0.5 shrink-0 cursor-grab touch-none active:cursor-grabbing"
+            aria-label={`Déplacer ${line.description || 'la ligne'}`}
+            title="Glisser pour déplacer la ligne"
+            {...drag.handle.attributes}
+            {...drag.handle.listeners}
+          >
+            <GripVertical className="i s" />
+          </button>
+        )}
         {label && (
           <span className="tag mt-1.5 shrink-0">
             {label}
