@@ -6,7 +6,14 @@ import { AgentActions, type AgentActionsHandle } from './AgentActions';
 import { isGoAhead } from './agent-actions';
 import { AgentTable } from './AgentTable';
 import { tableFileName, tableText } from './agent-table';
-import { cancelAgentAction, editAgentMail, executeAgentAction, sendAgentMail, type AgentAction } from './api';
+import {
+  cancelAgentAction,
+  editAgentMail,
+  editAgentMailing,
+  executeAgentAction,
+  sendAgentMail,
+  type AgentAction,
+} from './api';
 import type * as AssistantApi from './api';
 
 vi.mock('./api', async (importOriginal) => ({
@@ -15,6 +22,7 @@ vi.mock('./api', async (importOriginal) => ({
   sendAgentMail: vi.fn(),
   cancelAgentAction: vi.fn(),
   editAgentMail: vi.fn(),
+  editAgentMailing: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -131,6 +139,45 @@ describe('actions préparées par l’Agent Direction', () => {
       text: 'Bonjour Transports Martin,\nVotre contrôle approche.',
     });
     expect(vi.mocked(sendAgentMail).mock.calls.map(([sent]) => sent.id)).toEqual(['m1']);
+  });
+
+  it('mail groupé : texte relu, destinataire décoché, un seul envoi par la fonction d’envoi', async () => {
+    const mailing: AgentAction = {
+      ...action,
+      id: 'g1',
+      kind: 'send_mailing',
+      summary: 'Mail groupé à 2 clients : « Machine à vendre »',
+      payload: {
+        subject: 'Machine à vendre',
+        text: 'Bonjour {client},\nNotre machine de parallélisme est à vendre.',
+        recipients: [
+          { client_id: 'c1', name: 'Transports Martin', to: 'compta@martin.fr' },
+          { client_id: 'c2', name: 'Frigo Leroy', to: 'atelier@leroy.fr' },
+        ],
+        without_email: 1,
+      },
+    };
+    vi.mocked(editAgentMailing).mockResolvedValue(mailing);
+    vi.mocked(sendAgentMail).mockResolvedValue({ ...mailing, status: 'done' });
+    renderRoutes([{ path: '/', element: <AgentActions actions={[mailing]} /> }]);
+    expect(screen.getByText('Destinataires : 2 sur 2 (1 sans e-mail, écarté)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Frigo Leroy/ }));
+    expect(screen.getByText('Destinataires : 1 sur 2 (1 sans e-mail, écarté)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer à 1 client' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(editAgentMailing).toHaveBeenCalledWith('g1', {
+      subject: 'Machine à vendre',
+      text: 'Bonjour {client},\nNotre machine de parallélisme est à vendre.',
+      clientIds: ['c1'],
+    });
+    expect(screen.getByText('Envoi dans 5 s')).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    expect(vi.mocked(sendAgentMail).mock.calls.map(([sent]) => sent.id)).toEqual(['g1']);
+    expect(executeAgentAction).not.toHaveBeenCalled();
   });
 
   it('tableau de l’agent : affiché, copiable dans un tableur, nommé pour le téléchargement', () => {

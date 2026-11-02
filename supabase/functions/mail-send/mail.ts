@@ -68,6 +68,38 @@ export function agentMailRequest(payload: unknown, idempotencyKey: string): Mail
   return { category, to, subject, text, attachments: [], idempotency_key: idempotencyKey };
 }
 
+/** Mail groupé préparé par l'agent : même texte pour chaque client, {client} remplacé par son nom. */
+export const agentMailingPayloadSchema = z.object({
+  subject: z.string().trim().min(1).max(200),
+  text: z.string().trim().min(1).max(20_000),
+  recipients: z
+    .array(z.object({ client_id: z.guid(), name: z.string().trim().min(1).max(200), to: z.email().max(254) }))
+    .min(1)
+    .max(DAILY_LIMIT),
+});
+
+/** Un message par client du mail groupé (son adresse seule), null si l'action est illisible. */
+export function mailingMessages(payload: unknown): { to: string; subject: string; text: string }[] | null {
+  const parsed = agentMailingPayloadSchema.safeParse(payload);
+  if (!parsed.success) return null;
+  const { subject, text, recipients } = parsed.data;
+  const fill = (value: string, name: string) => value.replaceAll('{client}', name).trim();
+  return recipients.map(({ to, name }) => ({
+    to,
+    subject: fill(subject, name).slice(0, 200),
+    text: fill(text, name),
+  }));
+}
+
+/** Envoi groupé de Resend (POST /emails/batch) : 100 messages par requête au plus. */
+export const BATCH_SIZE = 100;
+
+export function batches<T>(items: T[], size = BATCH_SIZE): T[][] {
+  const result: T[][] = [];
+  for (let at = 0; at < items.length; at += size) result.push(items.slice(at, at + size));
+  return result;
+}
+
 /** Taille réelle (octets) d'un contenu en base64. */
 export function base64Bytes(base64: string): number {
   const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
