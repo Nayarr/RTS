@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { fetchFileUrls, uploadFile, type FileCategory } from './api';
+import { fetchFileMimeType, fetchFileUrls, PDF_TYPE, uploadFile, type FileCategory } from './api';
 import { compressImage } from './image';
 
 /**
@@ -22,6 +22,17 @@ export function useFileUrls(fileIds: (string | null | undefined)[]) {
     staleTime: 45 * 60 * 1000,
     refetchInterval: 45 * 60 * 1000,
   });
+}
+
+/** Fichier PDF (pas d'aperçu image) ; false tant que son type n'est pas connu. */
+export function useIsPdf(fileId: string | null | undefined) {
+  const query = useQuery({
+    queryKey: ['file-mime', fileId],
+    queryFn: () => fetchFileMimeType(fileId ?? ''),
+    enabled: Boolean(fileId),
+    staleTime: Infinity,
+  });
+  return query.data === PDF_TYPE;
 }
 
 export function useFileUrl(fileId: string | null | undefined) {

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Camera, Plus, X } from 'lucide-react';
+import { Camera, FileUp, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -367,21 +367,37 @@ export function InspectionEditor({
             onChange={(value) => setIn('controles', key, value)}
             action={
               (CHECK_PHOTO_FIELDS as readonly string[]).includes(key) && !locked ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className={cn(
-                    'h-auto! min-h-[38px] w-12! shrink-0',
-                    taken && 'text-success',
-                    photoRequired && 'border-destructive text-destructive',
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className={cn(
+                      'h-auto! min-h-[38px] w-12! shrink-0',
+                      taken && 'text-success',
+                      photoRequired && 'border-destructive text-destructive',
+                    )}
+                    aria-label={`Photo de l’étiquette « ${label} »${taken ? ' (déjà prise)' : ''}`}
+                    disabled={capture.uploadingLabel === label}
+                    onClick={() => capture.openCamera(label)}
+                  >
+                    <Camera className="size-5" />
+                  </Button>
+                  {/* Étiquette du hayon lue par l'assistant : aussi depuis une photo ou un PDF déjà reçus */}
+                  {key === 'hayon' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-auto! min-h-[38px] w-12! shrink-0"
+                      aria-label={`Importer « ${label} » (photo ou PDF)`}
+                      disabled={capture.uploadingLabel === label}
+                      onClick={() => capture.openDocument(label)}
+                    >
+                      <FileUp className="size-5" />
+                    </Button>
                   )}
-                  aria-label={`Photo de l’étiquette « ${label} »${taken ? ' (déjà prise)' : ''}`}
-                  disabled={capture.uploadingLabel === label}
-                  onClick={() => capture.openCamera(label)}
-                >
-                  <Camera className="size-5" />
-                </Button>
+                </>
               ) : undefined
             }
           >

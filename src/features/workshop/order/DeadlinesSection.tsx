@@ -1,4 +1,4 @@
-import { Camera } from 'lucide-react';
+import { Camera, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,6 +95,20 @@ export function DeadlinesSection({
                     onClick={() => capture.openCamera(CT_PHOTO_LABEL)}
                   >
                     <Camera className="size-5" />
+                  </Button>
+                )}
+                {key === 'ct_due_date' && !locked && (
+                  // Procès-verbal reçu par mail : PDF ou photo, lu par l'assistant comme la photo
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    aria-label="Importer le contrôle technique (photo ou PDF)"
+                    disabled={capture.uploadingLabel === CT_PHOTO_LABEL}
+                    onClick={() => capture.openDocument(CT_PHOTO_LABEL)}
+                  >
+                    <FileUp className="size-5" />
                   </Button>
                 )}
               </div>

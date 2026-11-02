@@ -3,6 +3,7 @@ import { Camera, ImageOff, TriangleAlert } from 'lucide-react';
 import { PhotoViewer } from '@/components/PhotoViewer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFileUrls } from '@/features/files/hooks';
+import { PdfTile } from '@/features/files/PdfTile';
 import type { RoPhoto } from '../api';
 import { formatDateTime } from '../constants';
 
@@ -20,6 +21,8 @@ export function PhotosCard({
 }) {
   const urls = useFileUrls(photos.map((photo) => photo.file_id));
   const [open, setOpen] = useState<number | null>(null);
+  // Visionneuse : photos seulement (un PDF s'ouvre dans un nouvel onglet)
+  const images = photos.filter((photo) => !photo.is_pdf);
 
   return (
     <section data-slot="card" className="card" aria-labelledby="ro-photos">
@@ -50,12 +53,14 @@ export function PhotosCard({
                 <li key={photo.id} className="col gap-1.5">
                   {urls.isPending ? (
                     <Skeleton className="h-[92px] w-full" />
+                  ) : photo.is_pdf ? (
+                    <PdfTile url={url} label={photo.label} className="h-[92px] w-full" />
                   ) : url ? (
                     <button
                       type="button"
                       className="block w-full cursor-zoom-in"
                       aria-label={`Voir la photo « ${photo.label} » en grand`}
-                      onClick={() => setOpen(photos.indexOf(photo))}
+                      onClick={() => setOpen(images.indexOf(photo))}
                     >
                       <img
                         src={url}
@@ -89,7 +94,7 @@ export function PhotosCard({
       </div>
       {open !== null && (
         <PhotoViewer
-          photos={photos.map((photo) => ({
+          photos={images.map((photo) => ({
             id: photo.id,
             url: urls.data?.[photo.file_id] ?? null,
             label: photo.label,

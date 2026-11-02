@@ -1,3 +1,4 @@
+import { PDF_TYPE } from '@/features/files/api';
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesUpdate } from '@/types/database';
 import type { RepairOrderStatus, VehicleType } from './constants';
@@ -25,7 +26,11 @@ export type RepairOrderOverview = Omit<OverviewRow, Guaranteed> & {
 
 export type RoLine = Tables<'ro_lines'>;
 /** Photo de l'OR ; `author_name` : qui l'a prise (visionneuse). */
-export type RoPhoto = Tables<'ro_photos'> & { author_name?: string | null };
+export type RoPhoto = Tables<'ro_photos'> & {
+  author_name?: string | null;
+  /** Document PDF (contrôle technique, étiquette) plutôt qu'une photo : vignette sans aperçu. */
+  is_pdf?: boolean;
+};
 export type RoEvent = Tables<'ro_events'> & { actor_name: string | null };
 export type TimeEntry = Tables<'time_entries'>;
 
@@ -61,7 +66,7 @@ export async function fetchRepairOrder(id: string): Promise<RepairOrderDetail | 
     supabase.from('ro_lines').select('*').eq('repair_order_id', id).order('kind').order('position'),
     supabase
       .from('ro_photos')
-      .select('*, author:profiles(full_name)')
+      .select('*, author:profiles(full_name), file:files(mime_type)')
       .eq('repair_order_id', id)
       .order('taken_at'),
     supabase.from('inspections').select('data').eq('repair_order_id', id).maybeSingle(),
@@ -72,9 +77,10 @@ export async function fetchRepairOrder(id: string): Promise<RepairOrderDetail | 
   return {
     order: order.data as RepairOrderOverview,
     lines: lines.data ?? [],
-    photos: (photos.data ?? []).map(({ author, ...photo }) => ({
+    photos: (photos.data ?? []).map(({ author, file, ...photo }) => ({
       ...photo,
       author_name: author?.full_name ?? null,
+      is_pdf: file?.mime_type === PDF_TYPE,
     })),
     inspection: (inspection.data?.data as InspectionData | undefined) ?? null,
     timeEntries: timeEntries.data ?? [],

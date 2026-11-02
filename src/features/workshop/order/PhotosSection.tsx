@@ -5,6 +5,7 @@ import { PhotoViewer } from '@/components/PhotoViewer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFileUrls } from '@/features/files/hooks';
+import { PdfTile } from '@/features/files/PdfTile';
 import type { RoPhoto } from '@/features/repair-orders/api';
 import { cn } from '@/lib/utils';
 import { deletePhoto } from '../api';
@@ -35,6 +36,8 @@ export function PhotosSection({
   const urls = useFileUrls(photos.map((photo) => photo.file_id));
   const [toDelete, setToDelete] = useState<RoPhoto | null>(null);
   const [open, setOpen] = useState<number | null>(null);
+  // Visionneuse : photos seulement (un PDF s'ouvre dans un nouvel onglet)
+  const images = photos.filter((photo) => !photo.is_pdf);
   const remove = useWorkshopMutation(
     repairOrderId,
     (photo: RoPhoto) => deletePhoto(photo.id),
@@ -98,12 +101,14 @@ export function PhotosSection({
             const url = urls.data?.[photo.file_id];
             return (
               <li key={photo.id} className="relative">
-                {url ? (
+                {photo.is_pdf ? (
+                  <PdfTile url={url} label={photo.label} className="aspect-4/3 w-full" />
+                ) : url ? (
                   <button
                     type="button"
                     className="block w-full"
                     aria-label={`Voir la photo « ${photo.label} » en grand`}
-                    onClick={() => setOpen(photos.indexOf(photo))}
+                    onClick={() => setOpen(images.indexOf(photo))}
                   >
                     <img
                       src={url}
@@ -132,7 +137,7 @@ export function PhotosSection({
       )}
       {open !== null && (
         <PhotoViewer
-          photos={photos.map((photo) => ({
+          photos={images.map((photo) => ({
             id: photo.id,
             url: urls.data?.[photo.file_id] ?? null,
             label: photo.label,
