@@ -1,4 +1,4 @@
-import type { InspectionData } from '@/features/repair-orders/inspection';
+import { trailerAxles, type InspectionData } from '@/features/repair-orders/inspection';
 import type { Enums } from '@/types/database';
 import type { TireLot } from './api';
 import { formatTireSize, isTireSize, type TireCategory, type TireProfile } from './domain';
@@ -30,43 +30,56 @@ const worn = (state: string | undefined): state is '50' | 'HS' => state === '50'
 /** Positions à remplacer d'après la fiche de contrôle (taille relevée, mise en forme du stock). */
 export function inspectionPositions(inspection: InspectionData | null, vehicle: VehicleType): TirePosition[] {
   const pneus = inspection?.pneus;
-  if (!pneus) return [];
-  const rows: {
+  const trailer = vehicle === 'remorque' && Array.isArray(inspection?.remorque_essieux);
+  if (!pneus && !trailer) return [];
+  type Row = {
     key: string;
     label: string;
-    state?: string;
-    size?: string;
+    state?: string | undefined;
+    size?: string | undefined;
     position: 'avant' | 'arriere' | 'essieu';
-  }[] = [
-    {
-      key: 'avant',
-      label: 'Pneus avant',
-      state: pneus.avant_etat,
-      size: pneus.avant_taille,
-      position: 'avant',
-    },
-    {
-      key: 'milieu',
-      label: 'Pneus milieu',
-      state: pneus.milieu_etat,
-      size: pneus.milieu_taille,
-      position: 'essieu',
-    },
-    {
-      key: 'arriere',
-      label: 'Pneus arrière',
-      state: pneus.arriere_etat,
-      size: pneus.arriere_taille,
-      position: 'arriere',
-    },
-    ...(pneus.essieux ?? []).map((axle, index) => ({
-      key: `essieu-${index + 3}`,
-      label: `Pneus essieu ${index + 3}`,
-      state: axle.etat,
-      size: axle.taille,
-      position: 'essieu' as const,
-    })),
-  ];
+  };
+  // Remorque par essieu : 2 pneus par essieu
+  const rows: Row[] = trailer
+    ? trailerAxles(inspection).map((axle, index) => ({
+        key: `remorque-${index + 1}`,
+        label: `Pneus essieu ${index + 1}`,
+        state: axle.pneus_etat,
+        size: axle.pneus_taille,
+        position: 'essieu' as const,
+      }))
+    : !pneus
+      ? []
+      : [
+          {
+            key: 'avant',
+            label: 'Pneus avant',
+            state: pneus.avant_etat,
+            size: pneus.avant_taille,
+            position: 'avant',
+          },
+          {
+            key: 'milieu',
+            label: 'Pneus milieu',
+            state: pneus.milieu_etat,
+            size: pneus.milieu_taille,
+            position: 'essieu',
+          },
+          {
+            key: 'arriere',
+            label: 'Pneus arrière',
+            state: pneus.arriere_etat,
+            size: pneus.arriere_taille,
+            position: 'arriere',
+          },
+          ...(pneus.essieux ?? []).map((axle, index) => ({
+            key: `essieu-${index + 3}`,
+            label: `Pneus essieu ${index + 3}`,
+            state: axle.etat,
+            size: axle.taille,
+            position: 'essieu' as const,
+          })),
+        ];
   return rows.flatMap((row) => {
     const size = formatTireSize(row.size ?? '');
     if (!worn(row.state) || !isTireSize(size)) return [];

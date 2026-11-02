@@ -42,21 +42,29 @@ async function trailerOrder(testInfo: TestInfo) {
   return data;
 }
 
-test('remorque : fiche sans barres ni kit, essieu ajouté, ligne à prévoir sans temps ni barème', async ({
+test('remorque : fiche par essieu sans barres ni kit, essieu ajouté, ligne à prévoir sans temps ni barème', async ({
   page,
 }, testInfo) => {
   const order = await trailerOrder(testInfo);
   await loginAs(page, 'alice@rts.local');
   await page.goto(`/atelier/or/${order.id}`);
 
-  await expect(page.getByRole('radiogroup', { name: 'Plaquettes avant' })).toBeVisible();
-  for (const absent of ['Barre de direction', 'Barre d’accouplement', 'Kit accessoires', 'Pneus milieu']) {
+  // 3 essieux au départ : disques, plaquettes et pneus de chacun, plus d'avant ni d'arrière
+  await expect(page.getByRole('radiogroup', { name: 'Plaquettes essieu 1' })).toBeVisible();
+  await expect(page.getByRole('radiogroup', { name: 'Pneus essieu 3' })).toBeVisible();
+  for (const absent of [
+    'Barre de direction',
+    'Barre d’accouplement',
+    'Kit accessoires',
+    'Pneus milieu',
+    'Plaquettes avant',
+    'Pneus avant',
+    'Pneus arrière',
+  ]) {
     await expect(page.getByRole('radiogroup', { name: absent })).toHaveCount(0);
   }
-  await expect(page.getByRole('radiogroup', { name: 'Pneus avant' })).toBeVisible();
-  await expect(page.getByRole('radiogroup', { name: 'Pneus arrière' })).toBeVisible();
   await page.getByRole('button', { name: 'Ajouter un essieu' }).click();
-  await expect(page.getByRole('radiogroup', { name: 'Pneus essieu 3' })).toBeVisible();
+  await expect(page.getByRole('radiogroup', { name: 'Disques de frein essieu 4' })).toBeVisible();
 
   // Extincteur HS : ligne « Remplacement … » à prévoir, temps à estimer par le technicien
   await page

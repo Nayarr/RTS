@@ -24,6 +24,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
       'Photographie les étiquettes (contrôle hayon, extincteurs) avec le bouton appareil photo à côté de chacune. Quand l’étiquette du hayon est lue, le mois du prochain contrôle s’affiche entre parenthèses dans la fiche de contrôle de l’OR, côté bureau.',
       'Niveaux (lave-glace, liquide de refroidissement, huile) : en fin de fiche. « Niveau bon », ou l’appoint fait avec les litres ajoutés.',
       'Dans « Échéances du véhicule », renseigne les dates du contrôle technique et du contrôle hayon lues sur le camion. La photo du contrôle technique est obligatoire pour terminer l’OR, sauf pour une remorque (facultative).',
+      'Remorque : pas de barres, de kit accessoires ni de contrôle technique obligatoire. La fiche se remplit par essieu (3 au départ, « Ajouter un essieu » ou « Retirer ») : disques, plaquettes et pneus de chacun. Un essieu laissé vide n’existe pas : il ne bloque pas la fiche complète et n’ajoute rien. Les forfaits sont les mêmes, nommés par essieu (« Disque et plaquette essieu 2 », « Dépose/repose roue (essieu 1) ») ; l’essieu 1 prend les forfaits de l’avant, les suivants ceux de l’arrière, 2 pneus par essieu.',
     ],
   },
   {

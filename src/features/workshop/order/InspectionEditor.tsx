@@ -11,6 +11,9 @@ import {
   inspectionMissingPoints,
   OK_HS_OPTIONS,
   tireAxlesFor,
+  TRAILER_AXLE_WEAR,
+  trailerAxleLabel,
+  trailerAxles,
   WARNING_LIGHT_FIELDS,
   wearFieldsFor,
   WEAR_OPTIONS,
@@ -18,6 +21,7 @@ import {
   type ChipOption,
   type FluidKey,
   type InspectionData,
+  type TrailerAxle,
 } from '@/features/repair-orders/inspection';
 import { cn } from '@/lib/utils';
 import { saveInspection } from '../api';
@@ -162,6 +166,14 @@ export function InspectionEditor({
   const setAxle = (index: number, patch: { taille?: string; etat?: string }) =>
     setAxles(extraAxles.map((axle, at) => (at === index ? { ...axle, ...patch } : axle)));
 
+  // Remorque : freins et pneus par essieu (3 au départ) ; un essieu laissé vide ne compte pas
+  const trailer = vehicleType === 'remorque';
+  const axles = trailerAxles(data);
+  const setTrailerAxles = (recipe: (axles: TrailerAxle[]) => TrailerAxle[]) =>
+    update((current) => ({ ...current, remorque_essieux: recipe(trailerAxles(current)) }));
+  const setTrailerAxle = (index: number, patch: TrailerAxle) =>
+    setTrailerAxles((list) => list.map((axle, at) => (at === index ? { ...axle, ...patch } : axle)));
+
   const tireRow = (
     id: string,
     label: string,
@@ -247,37 +259,90 @@ export function InspectionEditor({
         </p>
       )}
 
-      {wearFieldsFor(vehicleType).map(([key, label]) => (
-        <ChipRow
-          key={key}
-          label={label}
-          options={WEAR_OPTIONS}
-          value={data.usure?.[key]}
-          disabled={locked}
-          onChange={(value) => setIn('usure', key, value)}
-        />
-      ))}
+      {trailer &&
+        axles.map((axle, index) => (
+          <div key={index} className="col gap-3.5" role="group" aria-label={trailerAxleLabel(index)}>
+            <div className="row items-center justify-between gap-2">
+              <h3 className="overline">{trailerAxleLabel(index)}</h3>
+              {!locked && axles.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Retirer : ${trailerAxleLabel(index)}`}
+                  onClick={() => setTrailerAxles((list) => list.filter((_, at) => at !== index))}
+                >
+                  <X /> Retirer
+                </Button>
+              )}
+            </div>
+            {TRAILER_AXLE_WEAR.map(([key, label]) => (
+              <ChipRow
+                key={key}
+                label={`${label} essieu ${index + 1}`}
+                options={WEAR_OPTIONS}
+                value={axle[key]}
+                disabled={locked}
+                onChange={(value) => setTrailerAxle(index, { [key]: value })}
+              />
+            ))}
+            {tireRow(
+              `remorque-${index + 1}`,
+              `Pneus essieu ${index + 1}`,
+              { etat: axle.pneus_etat, taille: axle.pneus_taille },
+              (value) => setTrailerAxle(index, { pneus_etat: value }),
+              (value) => setTrailerAxle(index, { pneus_taille: value }),
+            )}
+          </div>
+        ))}
+      {trailer && !locked && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => setTrailerAxles((list) => [...list, {}])}
+        >
+          <Plus /> Ajouter un essieu
+        </Button>
+      )}
 
-      {tireAxlesFor(data).map(([side, label]) =>
-        tireRow(
-          side,
-          label,
-          { taille: data.pneus?.[`${side}_taille`], etat: data.pneus?.[`${side}_etat`] },
-          (value) => setIn('pneus', `${side}_etat`, value),
-          (value) => setIn('pneus', `${side}_taille`, value),
-        ),
-      )}
-      {extraAxles.map((axle, index) =>
-        tireRow(
-          `essieu-${index + 3}`,
-          extraAxleLabel(index),
-          axle,
-          (value) => setAxle(index, { etat: value }),
-          (value) => setAxle(index, { taille: value }),
-          () => setAxles(extraAxles.filter((_, at) => at !== index)),
-        ),
-      )}
-      {!locked && canAddAxles(vehicleType) && (
+      {/* Remorque : plus de freins avant / arrière (par essieu ci-dessus) */}
+      {wearFieldsFor(vehicleType)
+        .filter(([key]) => !trailer || !/^(disques|plaquettes)_/.test(key))
+        .map(([key, label]) => (
+          <ChipRow
+            key={key}
+            label={label}
+            options={WEAR_OPTIONS}
+            value={data.usure?.[key]}
+            disabled={locked}
+            onChange={(value) => setIn('usure', key, value)}
+          />
+        ))}
+
+      {!trailer &&
+        tireAxlesFor(data).map(([side, label]) =>
+          tireRow(
+            side,
+            label,
+            { taille: data.pneus?.[`${side}_taille`], etat: data.pneus?.[`${side}_etat`] },
+            (value) => setIn('pneus', `${side}_etat`, value),
+            (value) => setIn('pneus', `${side}_taille`, value),
+          ),
+        )}
+      {!trailer &&
+        extraAxles.map((axle, index) =>
+          tireRow(
+            `essieu-${index + 3}`,
+            extraAxleLabel(index),
+            axle,
+            (value) => setAxle(index, { etat: value }),
+            (value) => setAxle(index, { taille: value }),
+            () => setAxles(extraAxles.filter((_, at) => at !== index)),
+          ),
+        )}
+      {!locked && !trailer && canAddAxles(vehicleType) && (
         <Button
           type="button"
           variant="outline"
