@@ -112,7 +112,7 @@ export function LineRow({
         drag?.dragging && 'shadow-md',
       )}
     >
-      <div className="flex min-w-0 flex-wrap items-start gap-x-2">
+      <div className="flex min-w-0 items-start gap-1">
         {drag && (
           <button
             type="button"
@@ -125,34 +125,36 @@ export function LineRow({
             <GripVertical className="i s" />
           </button>
         )}
-        {label && (
-          <span className="tag mt-1.5 shrink-0">
-            {label}
-            {line.line_type === 'labor' &&
-              line.hours !== null &&
-              line.hours !== undefined &&
-              ` · ${decimalText(line.hours)} h`}
-          </span>
-        )}
-        <Textarea
-          aria-label="Désignation"
-          rows={1}
-          className={cn(
-            INLINE_INPUT,
-            'field-sizing-content h-auto min-h-[34px] resize-none py-1.5 leading-snug',
-            isText && 'text-muted-foreground italic',
+        <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-2">
+          {label && (
+            <span className="tag mt-1.5 shrink-0">
+              {label}
+              {line.line_type === 'labor' &&
+                line.hours !== null &&
+                line.hours !== undefined &&
+                ` · ${decimalText(line.hours)} h`}
+            </span>
           )}
-          defaultValue={line.description}
-          key={`${line.id}-${line.description}`}
-          disabled={locked}
-          placeholder={isText ? 'Texte libre (remarque, conditions…)' : 'Prestation / pièce'}
-          onBlur={(event) => {
-            if (event.target.value !== line.description) onSave({ description: event.target.value });
-          }}
-        />
-        {offered && (
-          <span className="badge s-ok mb-1 ml-2 basis-full sm:basis-auto">Offert à titre commercial</span>
-        )}
+          <Textarea
+            aria-label="Désignation"
+            rows={1}
+            className={cn(
+              INLINE_INPUT,
+              'field-sizing-content h-auto min-h-[34px] resize-none py-1.5 leading-snug',
+              isText && 'text-muted-foreground italic',
+            )}
+            defaultValue={line.description}
+            key={`${line.id}-${line.description}`}
+            disabled={locked}
+            placeholder={isText ? 'Texte libre (remarque, conditions…)' : 'Prestation / pièce'}
+            onBlur={(event) => {
+              if (event.target.value !== line.description) onSave({ description: event.target.value });
+            }}
+          />
+          {offered && (
+            <span className="badge s-ok mb-1 ml-2 basis-full sm:basis-auto">Offert à titre commercial</span>
+          )}
+        </div>
       </div>
       <div className="flex justify-end gap-0.5 md:order-last">
         {!isText && (
