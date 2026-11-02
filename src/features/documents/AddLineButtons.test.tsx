@@ -72,7 +72,9 @@ describe('ajout d’une pièce', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Ajouter une pièce' }));
     const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
     await userEvent.type(within(dialog).getByLabelText('Désignation'), 'Disque de frein');
-    await userEvent.type(within(dialog).getByLabelText('Référence pièce'), 'DF-22');
+    await userEvent.type(within(dialog).getByLabelText('Réf. fabricant'), 'DF-22');
+    // Réf. constructeur saisie comme dans l'OR
+    await userEvent.type(within(dialog).getByLabelText('Réf. constructeur'), '21 456 789');
     await userEvent.type(within(dialog).getByLabelText('Prix d’achat HT (€)'), '80');
     await userEvent.type(within(dialog).getByLabelText('Frais de port HT (€)'), '5');
     // Marge saisie : prix de vente recalculé (sur le prix d'achat seul)
@@ -107,6 +109,7 @@ describe('ajout d’une pièce', () => {
         purchase_price: 80,
         shipping_cost: 10,
         manufacturer_ref: 'DF-22',
+        oem_ref: '21 456 789',
         part_id: 'new-part',
       }),
     );

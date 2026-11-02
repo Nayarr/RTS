@@ -77,6 +77,8 @@ export function PartLineDialog({
         oem_ref: input.oem_ref,
         brand: input.brand,
         supplier_name: input.supplier_name,
+        // Référence véhicule laissée vide : celle de la base est gardée
+        ...(values.vehicle_ref.trim() ? { vehicle_ref: values.vehicle_ref.trim() } : {}),
         purchase_price: input.purchase_price,
         sale_price: input.unit_price,
         margin_kind: 'percent',
@@ -122,37 +124,52 @@ export function PartLineDialog({
               }}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Mêmes champs, même ordre que la pièce ajoutée à un devis (PartFields) */}
+          <div className="grid gap-3 sm:grid-cols-2">
             <FormField
-              id="part-line-quantity"
-              label="Quantité"
-              inputMode="decimal"
-              error={errors.quantity?.message}
-              {...register('quantity')}
+              id="part-line-vehicle-ref"
+              label="Référence véhicule"
+              placeholder="Ex : Volvo FH 500"
+              {...register('vehicle_ref')}
             />
             <FormField
-              id="part-line-sale"
-              label="Vente HT (€)"
-              inputMode="decimal"
-              error={errors.unit_price?.message}
-              {...register('unit_price')}
+              id="part-line-manufacturer-ref"
+              label="Réf. fabricant"
+              className="num"
+              {...register('manufacturer_ref')}
             />
+            <FormField
+              id="part-line-oem-ref"
+              label="Réf. constructeur"
+              className="num"
+              {...register('oem_ref')}
+            />
+            <FormField id="part-line-brand" label="Marque" {...register('brand')} />
+            <FormField id="part-line-supplier" label="Fournisseur" {...register('supplier_name')} />
             <FormField
               id="part-line-purchase"
-              label="Achat HT (€)"
+              label="Prix d’achat HT (€)"
               inputMode="decimal"
+              className="num"
               error={errors.purchase_price?.message}
               {...register('purchase_price')}
             />
             <FormField
               id="part-line-shipping"
-              label="Port (€)"
+              label="Frais de port HT (€)"
               inputMode="decimal"
+              className="num"
               error={errors.shipping_cost?.message}
               {...register('shipping_cost')}
             />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField
+              id="part-line-sale"
+              label="Prix de vente HT (€)"
+              inputMode="decimal"
+              className="num"
+              error={errors.unit_price?.message}
+              {...register('unit_price')}
+            />
             <MarginField
               id="part-line-margin"
               purchase={purchasePrice}
@@ -161,16 +178,14 @@ export function PartLineDialog({
               onSale={(sale) => setValue('unit_price', sale, { shouldDirty: true, shouldValidate: true })}
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FormField id="part-line-supplier" label="Fournisseur" {...register('supplier_name')} />
-            <FormField id="part-line-brand" label="Marque" {...register('brand')} />
-            <FormField
-              id="part-line-manufacturer-ref"
-              label="Réf. fabricant"
-              {...register('manufacturer_ref')}
-            />
-            <FormField id="part-line-oem-ref" label="Réf. constructeur" {...register('oem_ref')} />
-          </div>
+          <FormField
+            id="part-line-quantity"
+            label="Quantité"
+            inputMode="decimal"
+            className="num sm:max-w-[10rem]"
+            error={errors.quantity?.message}
+            {...register('quantity')}
+          />
           <Controller
             control={control}
             name="order_status"

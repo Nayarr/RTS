@@ -5,7 +5,8 @@ import { MarginField } from './MarginField';
 import type { PartValues } from './schemas';
 
 /**
- * Champs d'une pièce : références, prix d'achat, frais de port, prix de vente HT et marge.
+ * Champs d'une pièce : références, prix d'achat, frais de port, prix de vente HT et marge. Mêmes champs
+ * et même ordre dans la fenêtre des pièces de l'OR (PartLineDialog).
  * La marge se calcule depuis les deux prix ; modifiée, elle recalcule le prix de vente.
  */
 export function PartFields({
@@ -48,9 +49,15 @@ export function PartFields({
         />
         <FormField
           id={`${idPrefix}-part-ref`}
-          label="Référence pièce"
+          label="Réf. fabricant"
           className="num"
           {...register('manufacturer_ref')}
+        />
+        <FormField
+          id={`${idPrefix}-oem-ref`}
+          label="Réf. constructeur"
+          className="num"
+          {...register('oem_ref')}
         />
         <FormField id={`${idPrefix}-brand`} label="Marque" {...register('brand')} />
         <FormField id={`${idPrefix}-supplier`} label="Fournisseur" {...register('supplier_name')} />
