@@ -163,6 +163,8 @@ export interface TrailerAxle {
   plaquettes?: string;
   pneus_etat?: string;
   pneus_taille?: string;
+  /** 4 : roues jumelées (forfaits des pneus par 4) ; absent : 2 roues. */
+  roues?: number;
 }
 
 /** Remorque : 3 essieux au départ, ajoutables ou retirables (un au moins). */
@@ -174,6 +176,14 @@ export const TRAILER_AXLE_WEAR = [
 ] as const;
 
 export const trailerAxleLabel = (index: number) => `Essieu ${index + 1}`;
+
+/** Roues de l'essieu : 2, ou 4 jumelées ; décide du nombre de pneus des forfaits. */
+export const WHEEL_OPTIONS: ChipOption[] = [
+  { value: '2', label: '2 roues', color: '' },
+  { value: '4', label: '4 roues (jumelées)', color: '' },
+];
+
+export const axleWheels = (axle: TrailerAxle) => (axle.roues === 4 ? 4 : 2);
 
 /** Essieu laissé vide : considéré comme inexistant (ni point manquant, ni alerte, ni forfait). */
 export const axleFilled = (axle: TrailerAxle) =>
