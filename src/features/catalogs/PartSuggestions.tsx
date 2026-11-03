@@ -20,7 +20,7 @@ export function PartSuggestions({
 }) {
   const search = useDebounced(hidden ? '' : text, 250);
   const parts = useParts(search.trim().length >= 2 ? search : '');
-  const suggestions = search.trim().length >= 2 ? (parts.data ?? []).slice(0, 5) : [];
+  const suggestions = search.trim().length >= 2 ? (parts.data ?? []).slice(0, 8) : [];
   if (hidden || suggestions.length === 0) return null;
   return (
     <ul aria-label="Pièces de la base" className="divide-y rounded-md border bg-card">
@@ -34,7 +34,13 @@ export function PartSuggestions({
             <span>
               <span className="font-medium">{part.designation}</span>
               <span className="block text-xs text-muted-foreground">
-                {[part.manufacturer_ref, part.brand, part.vehicle_ref, part.supplier_name]
+                {[
+                  part.oem_ref && `Constructeur ${part.oem_ref}`,
+                  part.manufacturer_ref,
+                  part.brand,
+                  part.vehicle_ref,
+                  part.supplier_name,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </span>

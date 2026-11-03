@@ -136,6 +136,8 @@ const subcontract = (overrides: Partial<Subcontract> = {}): Subcontract =>
   }) as Subcontract;
 
 const catalogPart: Part = {
+  oem_key: null,
+  manufacturer_key: null,
   id: 'p1',
   designation: 'Filtre à huile',
   brand: 'Mann-Filter',

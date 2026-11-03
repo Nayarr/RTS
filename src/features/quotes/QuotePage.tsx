@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { Lock, Mail, Wrench } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
@@ -8,6 +9,8 @@ import { formatDate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
+import type { PartLinePatch } from '@/features/catalogs/schemas';
+import { PartFicheDialog } from '@/features/documents/PartFicheDialog';
 import { SortableLines, type LineDrag } from '@/features/documents/SortableLines';
 import {
   addQuoteLine,
@@ -28,15 +31,27 @@ import { QuoteStatusBadge } from './QuoteStatusBadge';
 function QuoteLineItem({ line, locked, drag }: { line: QuoteLine; locked: boolean; drag?: LineDrag }) {
   const update = useQuoteMutation((patch: LinePatch) => updateQuoteLine(line.id, patch), null);
   const remove = useQuoteMutation(() => deleteQuoteLine(line.id), 'Ligne supprimée');
+  const savePart = useQuoteMutation((patch: PartLinePatch) => updateQuoteLine(line.id, patch), null);
+  const [fiche, setFiche] = useState(false);
   return (
-    <LineRow
-      line={{ ...line, hours: line.estimated_hours }}
-      locked={locked}
-      onSave={(patch) => update.mutate(patch)}
-      onDelete={() => remove.mutate(undefined)}
-      deleting={remove.isPending}
-      {...(drag && { drag })}
-    />
+    <>
+      {fiche && (
+        <PartFicheDialog
+          line={line}
+          onSave={(patch) => savePart.mutateAsync(patch)}
+          onClose={() => setFiche(false)}
+        />
+      )}
+      <LineRow
+        onEditPart={() => setFiche(true)}
+        line={{ ...line, hours: line.estimated_hours }}
+        locked={locked}
+        onSave={(patch) => update.mutate(patch)}
+        onDelete={() => remove.mutate(undefined)}
+        deleting={remove.isPending}
+        {...(drag && { drag })}
+      />
+    </>
   );
 }
 

@@ -69,29 +69,26 @@ export async function removeConsumable(id: string): Promise<'deleted' | 'archive
 
 // ---------------------------------------------------------------- Pièces
 
-/** Caractères spéciaux des filtres PostgREST retirés de la recherche. */
-const searchTerm = (value: string) => value.replace(/[%_,()*\\]/g, ' ').trim();
-
+/** Pièces de la base : une référence trouvée propose aussi ses équivalentes (même réf. constructeur). */
 export async function fetchParts(search: string): Promise<Part[]> {
-  let query = supabase
-    .from('parts')
-    .select('*, supplier:suppliers(name)')
-    .eq('is_active', true)
-    .eq('is_tire', false)
-    .order('designation')
-    .limit(200);
-  const term = searchTerm(search);
-  if (term) {
-    const pattern = `%${term}%`;
-    query = query.or(
-      ['designation', 'brand', 'manufacturer_ref', 'oem_ref', 'vehicle_ref']
-        .map((column) => `${column}.ilike.${pattern}`)
-        .join(','),
-    );
-  }
-  const { data, error } = await query;
+  const { data, error } = await supabase
+    .rpc('search_parts', { p_term: search })
+    .select('*, supplier:suppliers(name)');
   if (error) throw error;
   return data.map(({ supplier, ...part }) => ({ ...part, supplier_name: supplier?.name ?? null }));
+}
+
+/** Fiche d'une pièce (avec son fournisseur). */
+export async function fetchPart(id: string): Promise<Part | null> {
+  const { data, error } = await supabase
+    .from('parts')
+    .select('*, supplier:suppliers(name)')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const { supplier, ...part } = data;
+  return { ...part, supplier_name: supplier?.name ?? null };
 }
 
 /** Fournisseur saisi par son nom : retrouvé ou créé. */
@@ -117,14 +114,16 @@ export async function savePart(id: string | null, { supplier_name, ...input }: P
 }
 
 /**
- * Pièce ajoutée à un devis ou un OR, gardée au catalogue : même désignation, même référence et
- * même marque qu'une pièce existante → ses prix sont mis à jour ; sinon nouvelle pièce.
+ * Pièce ajoutée à un devis ou un OR, gardée au catalogue : mêmes désignation, références, marque et
+ * fournisseur qu'une fiche existante → ses prix sont mis à jour ; sinon nouvelle fiche, l'ancienne ne change pas.
  */
 export async function saveCatalogPart(input: PartInput): Promise<string> {
   const { data: existing, error } = await supabase.rpc('find_catalog_part', {
     p_designation: input.designation,
     p_manufacturer_ref: input.manufacturer_ref ?? '',
     p_brand: input.brand ?? '',
+    p_oem_ref: input.oem_ref ?? '',
+    p_supplier_name: input.supplier_name,
   });
   if (error) throw error;
   return savePart(existing ?? null, { ...input, is_active: true });

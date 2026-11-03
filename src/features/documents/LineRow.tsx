@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Gift, GripVertical, Trash2 } from 'lucide-react';
+import { Gift, GripVertical, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { decimalText, formatEuro, parseDecimal } from '@/lib/numbers';
@@ -72,7 +72,7 @@ function NumberCell({
 /** En-têtes de colonnes (écran large), alignés sur `LineRow`. */
 export function LineColumns() {
   return (
-    <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_4.75rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground md:grid">
+    <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_6.75rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground md:grid">
       <span>Prestation / pièce</span>
       <span className="text-right">Qté</span>
       <span className="text-right">Prix unit. HT</span>
@@ -90,6 +90,7 @@ export function LineRow({
   onDelete,
   deleting = false,
   drag,
+  onEditPart,
 }: {
   line: EditableLine;
   locked: boolean;
@@ -98,6 +99,8 @@ export function LineRow({
   deleting?: boolean;
   /** Ligne déplaçable (document modifiable) : poignée à gauche de la désignation. */
   drag?: LineDrag;
+  /** Pièce : ouvre sa fiche (références, marque, fournisseur, prix). */
+  onEditPart?: () => void;
 }) {
   const isText = line.line_type === 'text';
   const label = TYPE_LABELS[line.line_type];
@@ -108,7 +111,7 @@ export function LineRow({
       ref={drag?.ref}
       style={drag?.style}
       className={cn(
-        'grid grid-cols-[1fr_auto] items-center gap-2 border-b bg-card px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_4.75rem] md:px-6',
+        'grid grid-cols-[1fr_auto] items-center gap-2 border-b bg-card px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_6.75rem] md:px-6',
         drag?.dragging && 'shadow-md',
       )}
     >
@@ -157,6 +160,18 @@ export function LineRow({
         </div>
       </div>
       <div className="flex justify-end gap-0.5 md:order-last">
+        {onEditPart && line.line_type === 'part' && (
+          <button
+            type="button"
+            className="ibtn sm ghost"
+            aria-label={`Modifier la fiche de ${line.description || 'la pièce'}`}
+            title="Modifier la fiche de la pièce"
+            disabled={locked}
+            onClick={onEditPart}
+          >
+            <Pencil className="i s" />
+          </button>
+        )}
         {!isText && (
           <button
             type="button"

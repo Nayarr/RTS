@@ -3245,9 +3245,11 @@ export type Database = {
           is_active: boolean;
           is_tire: boolean;
           legacy_id: string | null;
+          manufacturer_key: string | null;
           manufacturer_ref: string | null;
           margin_kind: Database['public']['Enums']['margin_kind'];
           margin_value: number | null;
+          oem_key: string | null;
           oem_ref: string | null;
           purchase_price: number | null;
           sale_price: number | null;
@@ -3264,9 +3266,11 @@ export type Database = {
           is_active?: boolean;
           is_tire?: boolean;
           legacy_id?: string | null;
+          manufacturer_key?: never;
           manufacturer_ref?: string | null;
           margin_kind?: Database['public']['Enums']['margin_kind'];
           margin_value?: number | null;
+          oem_key?: never;
           oem_ref?: string | null;
           purchase_price?: number | null;
           sale_price?: number | null;
@@ -3283,9 +3287,11 @@ export type Database = {
           is_active?: boolean;
           is_tire?: boolean;
           legacy_id?: string | null;
+          manufacturer_key?: never;
           manufacturer_ref?: string | null;
           margin_kind?: Database['public']['Enums']['margin_kind'];
           margin_value?: number | null;
+          oem_key?: never;
           oem_ref?: string | null;
           purchase_price?: number | null;
           sale_price?: number | null;
@@ -7867,7 +7873,13 @@ export type Database = {
         }[];
       };
       find_catalog_part: {
-        Args: { p_brand: string; p_designation: string; p_manufacturer_ref: string };
+        Args: {
+          p_brand: string;
+          p_designation: string;
+          p_manufacturer_ref: string;
+          p_oem_ref: string;
+          p_supplier_name: string;
+        };
         Returns: string;
       };
       fleet_vehicle_block_reason: {
@@ -8348,6 +8360,36 @@ export type Database = {
           rank: number;
           title: string;
         }[];
+      };
+      search_parts: {
+        Args: { p_limit?: number; p_term: string };
+        Returns: {
+          brand: string | null;
+          created_at: string;
+          designation: string;
+          id: string;
+          is_active: boolean;
+          is_tire: boolean;
+          legacy_id: string | null;
+          manufacturer_key: string | null;
+          manufacturer_ref: string | null;
+          margin_kind: Database['public']['Enums']['margin_kind'];
+          margin_value: number | null;
+          oem_key: string | null;
+          oem_ref: string | null;
+          purchase_price: number | null;
+          sale_price: number | null;
+          shipping_cost: number | null;
+          supplier_id: string | null;
+          updated_at: string;
+          vehicle_ref: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'parts';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       send_test_push: { Args: Record<PropertyKey, never>; Returns: undefined };
       set_client_archived: { Args: { p_archived: boolean; p_client_id: string }; Returns: undefined };
