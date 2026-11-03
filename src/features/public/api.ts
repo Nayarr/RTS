@@ -66,6 +66,8 @@ export interface PublicInvoice {
   totals: { total_ht: number; total_vat: number; total_ttc: number };
   balance_due: number | null;
   legal_mentions: string[] | null;
+  /** Conditions générales de vente et de réparation. */
+  terms?: string | null;
   /** Facture sans TVA : n° de TVA du client et mention d'exonération. */
   client_vat_number?: string | null;
   vat_exempt_mention?: string | null;

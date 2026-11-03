@@ -83,6 +83,15 @@ export function BillingForm({ company }: { company: CompanySettings }) {
         />
       </div>
       <div className="field">
+        <Label htmlFor="invoice_terms">Conditions générales de vente (dernière page de chaque facture)</Label>
+        <Textarea
+          id="invoice_terms"
+          rows={12}
+          aria-invalid={errors.invoice_terms ? true : undefined}
+          {...register('invoice_terms')}
+        />
+      </div>
+      <div className="field">
         <Label htmlFor="vat_exempt_mention_eu">
           Facture sans TVA, client de l’Union européenne (n° vérifié) : mention
         </Label>

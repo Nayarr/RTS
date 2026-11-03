@@ -99,5 +99,6 @@ test('export des factures d’un client : états choisis, ZIP puis PDF unique', 
   const pdfFile = await pdf;
   expect(pdfFile.suggestedFilename()).toMatch(/^Factures_.*\.pdf$/);
   const merged = await PDFDocument.load(readFileSync(await pdfFile.path()));
-  expect(merged.getPageCount()).toBe(2);
+  // 2 factures de 2 pages chacune : la seconde page porte les conditions générales
+  expect(merged.getPageCount()).toBe(4);
 });

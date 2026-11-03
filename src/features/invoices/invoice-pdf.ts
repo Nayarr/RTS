@@ -19,6 +19,7 @@ import {
   drawLinesTable,
   drawMentions,
   drawMeta,
+  drawTerms,
   drawTotals,
   ensureSpace,
   MUTED,
@@ -137,6 +138,7 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   // Facture sans TVA : la mention d'exonération en premier
   const exemption = invoice.vat_exempt && invoice.vat_exempt_mention ? [invoice.vat_exempt_mention] : [];
   drawMentions(doc, [...exemption, ...company.invoice_legal_mentions], totalsEnd + 10);
+  drawTerms(doc, company.invoice_terms);
   drawFooter(doc, proforma ? ['Facture pro forma : document sans valeur comptable.'] : []);
 
   const fileName = proforma
