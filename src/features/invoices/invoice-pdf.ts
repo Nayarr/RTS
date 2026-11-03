@@ -84,7 +84,7 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   const meta: [string, string][] = [
     [proforma ? 'Établie le' : 'Date d’émission', pdfDate(issuedAt)],
     [
-      'Date de la prestation',
+      lines.some((line) => line.line_type === 'vehicle') ? 'Date de la vente' : 'Date de la prestation',
       invoice.service_date ? pdfDate(isoDate(invoice.service_date)) : proforma ? pdfDate(now) : '-',
     ],
     ['Échéance', pdfDate(dueDate)],
@@ -98,7 +98,14 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   const boxEnd = drawClientBox(doc, 'Facturé à', client);
 
   const documentLines = invoiceDocumentLines(lines, Boolean(proforma));
-  let y = drawLinesTable(kit, [{ title: null, lines: documentLines }], Math.max(metaEnd, boxEnd) + 8) + 8;
+  const margin = invoice.vat_scheme === 'margin';
+  let y =
+    drawLinesTable(
+      kit,
+      [{ title: null, lines: documentLines }],
+      Math.max(metaEnd, boxEnd) + 8,
+      margin ? 'TTC' : 'HT',
+    ) + 8;
 
   // Totaux : figés à l'émission, recalculés pour un brouillon
   const computed = computeTotals(lines);
@@ -109,7 +116,7 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
     offered: offeredValue(documentLines),
   };
   y = ensureSpace(doc, y, 42);
-  const totalsEnd = drawTotals(doc, totals, y, company.default_vat_rate);
+  const totalsEnd = drawTotals(doc, totals, y, company.default_vat_rate, margin);
 
   // À gauche des totaux : conditions de paiement et geste commercial
   doc.setFont('helvetica', 'normal');
@@ -135,8 +142,9 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
     doc.text(gesture, MARGIN, below, { maxWidth: 98 });
   }
 
-  // Facture sans TVA : la mention d'exonération en premier
-  const exemption = invoice.vat_exempt && invoice.vat_exempt_mention ? [invoice.vat_exempt_mention] : [];
+  // Facture sans TVA ou TVA sur la marge : la mention du régime en premier
+  const exemption =
+    (invoice.vat_exempt || margin) && invoice.vat_exempt_mention ? [invoice.vat_exempt_mention] : [];
   drawMentions(doc, [...exemption, ...company.invoice_legal_mentions], totalsEnd + 10);
   drawTerms(doc, company.invoice_terms);
   drawFooter(doc, proforma ? ['Facture pro forma : document sans valeur comptable.'] : []);

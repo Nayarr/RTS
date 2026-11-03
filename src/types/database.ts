@@ -1716,6 +1716,105 @@ export type Database = {
           },
         ];
       };
+      fleet_vehicle_sales: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          fleet_vehicle_id: string;
+          id: string;
+          invoice_id: string;
+          mileage: number | null;
+          purchase_price: number | null;
+          sale_price: number;
+          sold_at: string;
+          vat_scheme: string;
+        };
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          fleet_vehicle_id: string;
+          id?: string;
+          invoice_id: string;
+          mileage?: number | null;
+          purchase_price?: number | null;
+          sale_price: number;
+          sold_at: string;
+          vat_scheme: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          fleet_vehicle_id?: string;
+          id?: string;
+          invoice_id?: string;
+          mileage?: number | null;
+          purchase_price?: number | null;
+          sale_price?: number;
+          sold_at?: string;
+          vat_scheme?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_vehicle_sales_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fleet_vehicle_sales_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_clients_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fleet_vehicle_sales_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fleet_vehicle_sales_fleet_vehicle_id_fkey';
+            columns: ['fleet_vehicle_id'];
+            isOneToOne: true;
+            referencedRelation: 'fleet_vehicles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fleet_vehicle_sales_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fleet_vehicle_sales_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'fleet_vehicle_sales_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'fleet_vehicle_sales_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       fleet_vehicles: {
         Row: {
           brand: string;
@@ -1747,6 +1846,7 @@ export type Database = {
           photo_file_id: string | null;
           plate: string;
           plate_key: string | null;
+          sold_on: string | null;
           tank_liters: number | null;
           updated_at: string;
           vin: string | null;
@@ -1784,6 +1884,7 @@ export type Database = {
           photo_file_id?: string | null;
           plate: string;
           plate_key?: never;
+          sold_on?: string | null;
           tank_liters?: number | null;
           updated_at?: string;
           vin?: string | null;
@@ -1821,6 +1922,7 @@ export type Database = {
           photo_file_id?: string | null;
           plate?: string;
           plate_key?: never;
+          sold_on?: string | null;
           tank_liters?: number | null;
           updated_at?: string;
           vin?: string | null;
@@ -2597,6 +2699,8 @@ export type Database = {
           issued_by: string | null;
           legacy_id: string | null;
           maintenance_contract_id: string | null;
+          margin_purchase_price: number | null;
+          margin_vat_rate: number | null;
           mileage: number | null;
           number: string | null;
           pdf_file_id: string | null;
@@ -2611,6 +2715,7 @@ export type Database = {
           updated_at: string;
           vat_exempt: boolean;
           vat_exempt_mention: string | null;
+          vat_scheme: string;
           vehicle_label: string | null;
         };
         Insert: {
@@ -2629,6 +2734,8 @@ export type Database = {
           issued_by?: string | null;
           legacy_id?: string | null;
           maintenance_contract_id?: string | null;
+          margin_purchase_price?: number | null;
+          margin_vat_rate?: number | null;
           mileage?: number | null;
           number?: string | null;
           pdf_file_id?: string | null;
@@ -2643,6 +2750,7 @@ export type Database = {
           updated_at?: string;
           vat_exempt?: boolean;
           vat_exempt_mention?: string | null;
+          vat_scheme?: string;
           vehicle_label?: string | null;
         };
         Update: {
@@ -2661,6 +2769,8 @@ export type Database = {
           issued_by?: string | null;
           legacy_id?: string | null;
           maintenance_contract_id?: string | null;
+          margin_purchase_price?: number | null;
+          margin_vat_rate?: number | null;
           mileage?: number | null;
           number?: string | null;
           pdf_file_id?: string | null;
@@ -2675,6 +2785,7 @@ export type Database = {
           updated_at?: string;
           vat_exempt?: boolean;
           vat_exempt_mention?: string | null;
+          vat_scheme?: string;
           vehicle_label?: string | null;
         };
         Relationships: [
@@ -6476,6 +6587,7 @@ export type Database = {
           issued_at: string | null;
           last_paid_on: string | null;
           last_reminder_at: string | null;
+          margin_purchase_price: number | null;
           mileage: number | null;
           number: string | null;
           paid_ttc: number | null;
@@ -6492,6 +6604,7 @@ export type Database = {
           total_vat: number | null;
           vat_exempt: boolean | null;
           vat_exempt_mention: string | null;
+          vat_scheme: string | null;
           vehicle_label: string | null;
         };
         Relationships: [
@@ -7524,6 +7637,7 @@ export type Database = {
         Returns: boolean;
       };
       cancel_agent_action: { Args: { p_action_id: string }; Returns: undefined };
+      cancel_fleet_vehicle_sale: { Args: { p_vehicle_id: string }; Returns: undefined };
       cancel_rental: { Args: { p_rental_id: string }; Returns: undefined };
       cancel_signature_request: { Args: { p_request_id: string }; Returns: undefined };
       claim_push_batch: { Args: { p_limit?: number }; Returns: Json };
@@ -7909,6 +8023,7 @@ export type Database = {
         Args: { p_account_type: string; p_debit_day: number; p_issued: string; p_terms: number };
         Returns: string;
       };
+      invoice_margin_vat: { Args: { p_purchase: number; p_rate: number; p_ttc: number }; Returns: number };
       invoiced_ro_lines: {
         Args: { p_from: string; p_to: string };
         Returns: {
@@ -8391,6 +8506,18 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      sell_fleet_vehicle: {
+        Args: {
+          p_client_id: string;
+          p_mileage: number;
+          p_price: number;
+          p_purchase_price?: number;
+          p_sold_at: string;
+          p_vat_scheme: string;
+          p_vehicle_id: string;
+        };
+        Returns: string;
+      };
       send_test_push: { Args: Record<PropertyKey, never>; Returns: undefined };
       set_client_archived: { Args: { p_archived: boolean; p_client_id: string }; Returns: undefined };
       set_consumable_stock: {
@@ -8662,7 +8789,16 @@ export type Database = {
       labor_category: 'pl' | 'vul' | 'remorque' | 'tolerie';
       leave_status: 'requested' | 'approved' | 'rejected';
       leave_type: 'paid_leave' | 'sick' | 'training' | 'other';
-      line_type: 'labor' | 'package' | 'part' | 'consumable' | 'subcontract' | 'travel' | 'text' | 'rental';
+      line_type:
+        | 'labor'
+        | 'package'
+        | 'part'
+        | 'consumable'
+        | 'subcontract'
+        | 'travel'
+        | 'text'
+        | 'rental'
+        | 'vehicle';
       margin_kind: 'amount' | 'percent';
       message_channel: 'email' | 'sms' | 'other';
       part_order_status: 'to_order' | 'ordered' | 'received';
@@ -8838,7 +8974,17 @@ export const Constants = {
       labor_category: ['pl', 'vul', 'remorque', 'tolerie'],
       leave_status: ['requested', 'approved', 'rejected'],
       leave_type: ['paid_leave', 'sick', 'training', 'other'],
-      line_type: ['labor', 'package', 'part', 'consumable', 'subcontract', 'travel', 'text', 'rental'],
+      line_type: [
+        'labor',
+        'package',
+        'part',
+        'consumable',
+        'subcontract',
+        'travel',
+        'text',
+        'rental',
+        'vehicle',
+      ],
       margin_kind: ['amount', 'percent'],
       message_channel: ['email', 'sms', 'other'],
       part_order_status: ['to_order', 'ordered', 'received'],

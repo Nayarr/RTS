@@ -52,9 +52,12 @@ export function issueBlockers(client: ClientBilling): string[] {
 
 /** Reste dû en HT (proposé pour un avoir). */
 export const balanceHt = (invoice: InvoiceOverview) =>
-  invoice.total_ttc > 0
-    ? Math.round(((invoice.balance_due ?? 0) * invoice.total_ht * 100) / invoice.total_ttc) / 100
-    : 0;
+  // TVA sur la marge : l'avoir se fait au prix TTC, sans TVA détaillée
+  invoice.vat_scheme === 'margin'
+    ? (invoice.balance_due ?? 0)
+    : invoice.total_ttc > 0
+      ? Math.round(((invoice.balance_due ?? 0) * invoice.total_ht * 100) / invoice.total_ttc) / 100
+      : 0;
 
 /** Taux de TVA dominant de la facture (proposé pour un avoir). */
 export function mainVatRate(lines: InvoiceLine[], fallback: number) {
@@ -153,6 +156,7 @@ export function invoicesCsvRows(invoices: InvoiceOverview[]) {
     'Avoirs',
     'Reste dû',
     'État',
+    'Régime TVA',
   ];
   const rows = invoices.map((invoice) => [
     invoice.number ?? 'Brouillon',
@@ -170,6 +174,7 @@ export function invoicesCsvRows(invoices: InvoiceOverview[]) {
     invoice.status === 'draft' || !invoice.payment_status
       ? 'Brouillon'
       : PAYMENT_STATUS_META[invoice.payment_status].label,
+    invoice.vat_scheme === 'margin' ? 'TVA sur la marge' : 'Normal',
   ]);
   return { headers, rows };
 }

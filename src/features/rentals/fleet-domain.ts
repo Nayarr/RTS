@@ -35,6 +35,7 @@ const frDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.sl
 
 /** Ce qui empêche de louer ou prêter le véhicule à une date (mêmes règles que la base), sinon null. */
 export function blockReason(vehicle: FleetVehicle, on: string): string | null {
+  if (vehicle.sold_on) return 'Véhicule vendu';
   if (!vehicle.is_active) return 'Véhicule retiré de la flotte';
   if (vehicle.in_maintenance) return 'Véhicule en entretien';
   if (vehicle.insurance_due_date && vehicle.insurance_due_date < on) {
@@ -46,8 +47,13 @@ export function blockReason(vehicle: FleetVehicle, on: string): string | null {
   return null;
 }
 
+/** TVA comprise dans la marge (mêmes règles que la base) : marge TTC × taux / (100 + taux), jamais négative. */
+export const marginVat = (price: number, purchase: number, rate: number) =>
+  Math.round((Math.max(price - purchase, 0) * rate * 100) / (100 + rate)) / 100;
+
 /** Disponibilité affichée sur la carte du véhicule (statut et couleur du badge). */
 export function fleetStatus(vehicle: FleetVehicle, today: string): { label: string; tone: string } {
+  if (vehicle.sold_on) return { label: 'Vendu', tone: 's-grey' };
   if (vehicle.in_maintenance) return { label: 'En entretien', tone: 's-warn' };
   if (blockReason(vehicle, today)) return { label: 'Bloqué', tone: 's-bad' };
   return { label: 'Disponible', tone: 's-ok' };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Percent } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { formatEuro } from '@/lib/numbers';
 import { supabase } from '@/lib/supabase';
 import { updateInvoiceDraft, type InvoiceOverview } from './api';
 import { useInvoiceMutation } from './hooks';
@@ -30,6 +31,33 @@ export function InvoiceVatCard({ invoice }: { invoice: InvoiceOverview }) {
   );
   const [mention, setMention] = useState<string | null>(null);
 
+  if (invoice.vat_scheme === 'margin') {
+    const purchase = invoice.margin_purchase_price ?? 0;
+    return (
+      <section data-slot="card" className="card" aria-labelledby="invoice-vat">
+        <div className="card-h">
+          <h2 className="h2" id="invoice-vat">
+            <Percent className="i" /> TVA sur la marge
+          </h2>
+        </div>
+        <div className="card-b col gap-2.5">
+          <dl className="dl grid-cols-[1fr_auto]!">
+            <dt>Prix d’achat</dt>
+            <dd className="num">{formatEuro(purchase)}</dd>
+            <dt>Marge TTC</dt>
+            <dd className="num">{formatEuro(Math.max(invoice.total_ttc - purchase, 0))}</dd>
+            <dt>TVA à reverser</dt>
+            <dd className="num b">{formatEuro(invoice.total_vat)}</dd>
+          </dl>
+          <p className="hint">
+            Chiffres internes pour la comptabilité : la facture de l’acheteur ne montre que le prix TTC et la
+            mention du régime.
+          </p>
+          {invoice.vat_exempt_mention && <p className="hint">{invoice.vat_exempt_mention}</p>}
+        </div>
+      </section>
+    );
+  }
   if (!draft && !invoice.vat_exempt) return null;
   return (
     <section data-slot="card" className="card" aria-labelledby="invoice-vat">

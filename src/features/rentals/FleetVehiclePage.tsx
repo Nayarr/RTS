@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 import {
+  BadgeEuro,
   BookOpen,
   ClipboardCheck,
   CreditCard,
@@ -43,6 +44,7 @@ import {
   vehicleTitle,
 } from './fleet-domain';
 import { useFleetDocuments, useFleetMutation, useFleetVehicle } from './fleet-hooks';
+import { FleetSaleCard, FleetSaleDialog } from './FleetSale';
 import { DocumentUploadButton, Kpi, VehicleVisual } from './ui';
 
 const DOC_ICONS: Record<FleetDocumentKind, LucideIcon> = {
@@ -78,6 +80,8 @@ function FleetVehicleDetail({ vehicle }: { vehicle: FleetVehicle }) {
   const status = fleetStatus(vehicle, today);
   const blocked = blockReason(vehicle, today);
   const engine = hasEngine(vehicle.category);
+  const sold = vehicle.sold_on !== null;
+  const [selling, setSelling] = useState(false);
   const maintenance = useFleetMutation(
     (on: boolean) => saveFleetVehicle(vehicle.id, { in_maintenance: on }),
     vehicle.in_maintenance ? 'Véhicule remis en service' : 'Véhicule mis en entretien',
@@ -100,24 +104,31 @@ function FleetVehicleDetail({ vehicle }: { vehicle: FleetVehicle }) {
           </span>
         }
         actions={
-          <>
-            <Button
-              variant="outline"
-              disabled={maintenance.isPending}
-              onClick={() => maintenance.mutate(!vehicle.in_maintenance)}
-            >
-              <Wrench /> {vehicle.in_maintenance ? 'Remettre en service' : 'Mettre en entretien'}
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to={`/location/flotte/${vehicle.id}/modifier`}>
-                <Pencil /> Modifier
-              </Link>
-            </Button>
-          </>
+          !sold && (
+            <>
+              <Button variant="outline" onClick={() => setSelling(true)}>
+                <BadgeEuro /> Vendre
+              </Button>
+              <Button
+                variant="outline"
+                disabled={maintenance.isPending}
+                onClick={() => maintenance.mutate(!vehicle.in_maintenance)}
+              >
+                <Wrench /> {vehicle.in_maintenance ? 'Remettre en service' : 'Mettre en entretien'}
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to={`/location/flotte/${vehicle.id}/modifier`}>
+                  <Pencil /> Modifier
+                </Link>
+              </Button>
+            </>
+          )
         }
       />
 
-      {blocked && (
+      {selling && <FleetSaleDialog vehicle={vehicle} onClose={() => setSelling(false)} />}
+      {sold && <FleetSaleCard vehicle={vehicle} />}
+      {blocked && !sold && (
         <p className="alert s-bad" role="alert">
           {blocked} : le véhicule ne peut être ni loué ni prêté.
         </p>
