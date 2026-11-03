@@ -1,8 +1,9 @@
 import { Fragment, useContext, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBackDelta } from './nav-history';
 import { PageHeaderSlotContext } from './page-header-slot';
 
 export interface Crumb {
@@ -14,13 +15,33 @@ interface PageHeaderProps {
   /** Fil d'Ariane : la dernière étape est la page ouverte (en gras). */
   crumbs?: Crumb[];
   title: ReactNode;
-  /** Bouton retour à gauche du titre. */
+  /** Bouton retour à gauche du titre : page précédente ; `to` et `label` si la page a été ouverte directement. */
   back?: { to: string; label: string };
   /** Élément entre le bouton retour et le titre (avatar du client…). */
   leading?: ReactNode;
   /** Boutons et informations à droite. */
   actions?: ReactNode;
   className?: string;
+}
+
+/** Retour à la page d'où l'on vient (l'adresse de secours reste pour ouvrir dans un nouvel onglet). */
+function BackButton({ to, label }: { to: string; label: string }) {
+  const navigate = useNavigate();
+  const delta = useBackDelta();
+  return (
+    <Link
+      to={to}
+      className="ibtn"
+      aria-label={delta === null ? label : 'Retour à la page précédente'}
+      onClick={(event) => {
+        if (delta === null || event.ctrlKey || event.metaKey || event.shiftKey) return;
+        event.preventDefault();
+        void navigate(delta);
+      }}
+    >
+      <ArrowLeft className="size-[18px]" />
+    </Link>
+  );
 }
 
 /**
@@ -32,11 +53,7 @@ export function PageHeader({ crumbs, title, back, leading, actions, className }:
   const header = (
     <header className={cn('topbar h-auto! min-h-[68px] flex-wrap px-4 py-2.5 lg:px-7', className)}>
       <div className="flex min-w-0 items-center gap-3.5">
-        {back && (
-          <Link to={back.to} className="ibtn" aria-label={back.label}>
-            <ArrowLeft className="size-[18px]" />
-          </Link>
-        )}
+        {back && <BackButton to={back.to} label={back.label} />}
         {leading}
         <div className="flex min-w-0 flex-col gap-0.5">
           {crumbs && crumbs.length > 0 && (

@@ -36,7 +36,7 @@ test('pneus multi-positions entrés sans indice de charge, ligne au profil multi
   await dialog.getByRole('button', { name: 'Ajouter au stock' }).click();
   await expect(page.getByRole('heading', { name: new RegExp(`Michelin X Multi · ${size}`) })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Retour au stock des pneus' }).click();
+  await page.getByRole('link', { name: 'Retour à la page précédente' }).click();
   await page.getByRole('group', { name: 'Profil' }).getByRole('button', { name: 'Multi-positions' }).click();
   await page.getByRole('searchbox', { name: 'Rechercher une taille' }).fill(`${width}${ratio}`);
   await expect(page.getByRole('row', { name: label })).toContainText('Michelin 2');

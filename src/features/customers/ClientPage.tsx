@@ -565,7 +565,9 @@ function ClientView({ detail }: { detail: ClientDetail }) {
         confirmLabel="Supprimer"
         destructive
         pending={remove.isPending}
-        onConfirm={() => remove.mutate(client.id, { onSuccess: () => void navigate('/clients') })}
+        onConfirm={() =>
+          remove.mutate(client.id, { onSuccess: () => void navigate('/clients', { replace: true }) })
+        }
       />
       {booking && (
         <AppointmentDialog

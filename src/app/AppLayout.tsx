@@ -9,6 +9,7 @@ import { PushBanner } from '@/features/push/PushBanner';
 import { GlobalSearch } from '@/features/search/GlobalSearch';
 import { setTheme, useTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
+import { useNavHistoryTracker } from './nav-history';
 import { PageHeaderSlotContext } from './page-header-slot';
 import { Sidebar } from './Sidebar';
 
@@ -133,6 +134,7 @@ function TechnicianLayout() {
 
 /** Coquille de l'appli connectée, selon le profil. */
 export function AppLayout() {
+  useNavHistoryTracker();
   const { data: profile } = useProfile();
   if (profile?.role === 'technician') return <TechnicianLayout />;
   // Borne de pointage : plein écran, sans menu.
