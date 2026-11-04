@@ -77,7 +77,7 @@ export function TechRepairOrderPage() {
   return (
     <div className="col gap-3 pb-6">
       {capture.inputs}
-      <header className="mbar sticky top-0 z-30 -mx-4 -mt-3.5 print:hidden">
+      <header className="mbar sticky top-[env(safe-area-inset-top)] z-30 -mx-4 -mt-3.5 print:hidden">
         <div className="row min-w-0 gap-2.5">
           <Link to="/" className="ibtn shrink-0" aria-label="Retour à mes OR">
             <ArrowLeft className="size-[18px]" />
