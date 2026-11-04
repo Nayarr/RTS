@@ -44,6 +44,8 @@ const basePart: Part = {
   brand: 'Knorr-Bremse',
   manufacturer_ref: 'K-1137',
   oem_ref: null,
+  oem_key: null,
+  manufacturer_key: null,
   vehicle_ref: 'Volvo FH 500',
   supplier_id: null,
   supplier_name: null,

@@ -17,11 +17,16 @@ import { partFromForm, partSchema, partToForm, type PartValues } from './schemas
 interface PartDialogProps {
   /** Pièce modifiée, ou `null` pour en ajouter une. */
   part: Part | null;
+  /** Nouvelle référence d'une pièce existante : champs de départ (même référence constructeur). */
+  template?: Part | null;
   onClose: () => void;
 }
 
-export function PartDialog({ part, onClose }: PartDialogProps) {
-  const form = useForm<PartValues>({ resolver: zodResolver(partSchema), defaultValues: partToForm(part) });
+export function PartDialog({ part, template = null, onClose }: PartDialogProps) {
+  const form = useForm<PartValues>({
+    resolver: zodResolver(partSchema),
+    defaultValues: partToForm(part ?? template),
+  });
 
   const save = useCatalogMutation(
     partsKey,

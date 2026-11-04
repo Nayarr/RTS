@@ -11,11 +11,11 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');  -- réception
 insert into public.parts (id, designation, manufacturer_ref, brand, purchase_price, sale_price)
 values ('9a000000-0000-0000-0000-000000000001', 'Filtre à huile', 'HU 12 140 x', 'Mann-Filter', 20, 30);
 
-select is(public.find_catalog_part('  filtre à HUILE ', 'hu 12 140 x', 'MANN-FILTER'),
+select is(public.find_catalog_part('  filtre à HUILE ', 'hu 12 140 x', 'MANN-FILTER', '', ''),
           '9a000000-0000-0000-0000-000000000001'::uuid, 'Même pièce, casse et espaces ignorés');
-select is(public.find_catalog_part('Filtre à huile', 'HU 12 140 x', 'Bosch'), null,
+select is(public.find_catalog_part('Filtre à huile', 'HU 12 140 x', 'Bosch', '', ''), null,
           'Autre marque : nouvelle pièce');
-select is(public.find_catalog_part('Filtre à huile', 'HU 12 141', 'Mann-Filter'), null,
+select is(public.find_catalog_part('Filtre à huile', 'HU 12 141', 'Mann-Filter', '', ''), null,
           'Autre référence : nouvelle pièce');
 
 -- Marge sur le prix d'achat seul (port facturé à part)

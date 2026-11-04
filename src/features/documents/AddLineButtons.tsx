@@ -16,7 +16,14 @@ import {
 import { toast } from 'sonner';
 import { saveCatalogPart, type Part } from '@/features/catalogs/api';
 import { PartFields } from '@/features/catalogs/PartFields';
-import { partFromForm, partSchema, partToForm, type PartValues } from '@/features/catalogs/schemas';
+import {
+  partFromForm,
+  partLinePatch,
+  partLineSchema,
+  partToForm,
+  type PartLineValues,
+  type PartValues,
+} from '@/features/catalogs/schemas';
 import { Label } from '@/components/ui/label';
 import { decimalField, decimalText, decimalValue, formatEuro } from '@/lib/numbers';
 import { useLaborRates, useServicePackages } from './hooks';
@@ -44,9 +51,6 @@ type LaborValues = z.infer<typeof laborSchema>;
 
 /** Choix « taux du client » dans la liste des taux (taux propre à sa fiche). */
 const CLIENT_RATE = 'client';
-
-const partLineSchema = partSchema.extend({ quantity: decimalField({ required: true, positive: true }) });
-type PartLineValues = z.infer<typeof partLineSchema>;
 
 /**
  * Main d'œuvre : taux des réglages au choix (poids lourds, utilitaires, tôlerie…), celui du
@@ -239,24 +243,12 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
       return;
     }
     const quantity = decimalValue(values.quantity) ?? 1;
-    const shipping = input.shipping_cost ?? null;
     setSaving(true);
     try {
-      // Même désignation, référence et marque : pièce du catalogue mise à jour ; sinon nouvelle pièce
+      // Mêmes désignation, références, marque et fournisseur : prix mis à jour ; sinon nouvelle pièce
       const partId = await saveCatalogPart(input);
       await queryClient.invalidateQueries({ queryKey: partsKey });
-      await onAdd({
-        line_type: 'part',
-        description: input.designation,
-        unit_price: input.sale_price,
-        quantity,
-        purchase_price: input.purchase_price ?? null,
-        shipping_cost: shipping === null ? null : Math.round(shipping * quantity * 100) / 100,
-        brand: input.brand ?? null,
-        manufacturer_ref: input.manufacturer_ref ?? null,
-        oem_ref: input.oem_ref ?? null,
-        part_id: partId,
-      });
+      await onAdd({ line_type: 'part', ...partLinePatch(input, quantity, partId) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Pièce non enregistrée');
     } finally {
@@ -270,8 +262,9 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
         <DialogHeader>
           <DialogTitle>Ajouter une pièce</DialogTitle>
           <DialogDescription>
-            Choisis une pièce de la base pour repartir de ses informations. Si la désignation, la référence et
-            la marque restent les mêmes, ses prix sont mis à jour ; sinon une nouvelle pièce est créée.
+            Choisis une pièce de la base pour repartir de ses informations. Une autre référence, marque ou un
+            autre fournisseur crée une nouvelle pièce, sous la même référence constructeur : l’ancienne ne
+            change pas. Si seul le prix change, il est mis à jour.
           </DialogDescription>
         </DialogHeader>
         <form id="part-line-form" noValidate className="space-y-4" onSubmit={submit}>

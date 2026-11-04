@@ -61,6 +61,12 @@ export const partSchema = z.object({
 });
 export type PartValues = z.infer<typeof partSchema>;
 
+/** Pièce d'une ligne de document : fiche et quantité. */
+export const partLineSchema = partSchema.extend({
+  quantity: decimalField({ required: true, positive: true }),
+});
+export type PartLineValues = z.infer<typeof partLineSchema>;
+
 export const partToForm = (p: Part | null): PartValues => ({
   designation: p?.designation ?? '',
   vehicle_ref: p?.vehicle_ref ?? '',
@@ -89,3 +95,20 @@ export const partFromForm = (v: PartValues): PartInput => ({
   margin_value: marginPercent(decimalValue(v.purchase_price), decimalValue(v.sale_price)),
   sale_price: decimalValue(v.sale_price),
 });
+
+/** Champs de la ligne repris de la fiche : port de la ligne = port de la pièce × quantité. */
+export function partLinePatch(input: PartInput, quantity: number, partId: string) {
+  const shipping = input.shipping_cost ?? null;
+  return {
+    description: input.designation,
+    unit_price: input.sale_price ?? null,
+    quantity,
+    purchase_price: input.purchase_price ?? null,
+    shipping_cost: shipping === null ? null : Math.round(shipping * quantity * 100) / 100,
+    brand: input.brand ?? null,
+    manufacturer_ref: input.manufacturer_ref ?? null,
+    oem_ref: input.oem_ref ?? null,
+    part_id: partId,
+  };
+}
+export type PartLinePatch = ReturnType<typeof partLinePatch>;

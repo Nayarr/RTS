@@ -21,6 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
+import type { PartLinePatch } from '@/features/catalogs/schemas';
+import { PartFicheDialog } from '@/features/documents/PartFicheDialog';
 import { SortableLines, type LineDrag } from '@/features/documents/SortableLines';
 import { computeTotals, nextPositionOf, offeredTotal } from '@/features/documents/lines';
 import { formatDate } from '@/features/repair-orders/constants';
@@ -70,15 +72,27 @@ type Dialog = 'issue' | 'payment' | 'credit' | 'due_date' | 'rebuild' | 'delete'
 function InvoiceLineItem({ line, locked, drag }: { line: InvoiceLine; locked: boolean; drag?: LineDrag }) {
   const update = useInvoiceMutation((patch: LinePatch) => updateInvoiceLine(line.id, patch), null);
   const remove = useInvoiceMutation(() => deleteInvoiceLine(line.id), 'Ligne supprimée');
+  const savePart = useInvoiceMutation((patch: PartLinePatch) => updateInvoiceLine(line.id, patch), null);
+  const [fiche, setFiche] = useState(false);
   return (
-    <LineRow
-      line={{ ...line, hours: line.billed_hours }}
-      locked={locked}
-      onSave={(patch) => update.mutate(patch)}
-      onDelete={() => remove.mutate(undefined)}
-      deleting={remove.isPending}
-      {...(drag && { drag })}
-    />
+    <>
+      {fiche && (
+        <PartFicheDialog
+          line={line}
+          onSave={(patch) => savePart.mutateAsync(patch)}
+          onClose={() => setFiche(false)}
+        />
+      )}
+      <LineRow
+        onEditPart={() => setFiche(true)}
+        line={{ ...line, hours: line.billed_hours }}
+        locked={locked}
+        onSave={(patch) => update.mutate(patch)}
+        onDelete={() => remove.mutate(undefined)}
+        deleting={remove.isPending}
+        {...(drag && { drag })}
+      />
+    </>
   );
 }
 
