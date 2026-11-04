@@ -1355,6 +1355,7 @@
 
   /* Mobile */
   .mbar {
+    position: relative;
     height: 60px;
     display: flex;
     align-items: center;
@@ -1363,6 +1364,17 @@
     background: var(--card);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+  }
+
+  /* Zone de l'encoche ou de la Dynamic Island au-dessus de la barre : le contenu ne s'y voit pas défiler */
+  .mbar::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: env(safe-area-inset-top);
+    background: var(--card);
   }
 
   /* Technicien : onglets en bas de l'écran (maquette « Technicien : Mes OR ») */
