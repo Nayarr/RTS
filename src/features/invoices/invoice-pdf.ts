@@ -41,8 +41,8 @@ export interface InvoicePdfInput {
   proforma?: { client: ClientBilling; paymentTermsDays: number; now?: Date };
 }
 
-/** Lignes imprimées. Pro forma : quantité de la main d'œuvre sans l'unité « h » (« 6 », pas « 6 h »). */
-export function invoiceDocumentLines(lines: InvoiceLine[], proforma: boolean): DocumentLine[] {
+/** Lignes imprimées. */
+export function invoiceDocumentLines(lines: InvoiceLine[]): DocumentLine[] {
   return lines.map((line) => ({
     line_type: line.line_type,
     description: line.description,
@@ -50,7 +50,6 @@ export function invoiceDocumentLines(lines: InvoiceLine[], proforma: boolean): D
     quantity: line.quantity,
     discount_percent: line.discount_percent,
     net: lineNet(line),
-    ...(proforma ? { plainQuantity: true } : {}),
   }));
 }
 
@@ -97,7 +96,7 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
   const metaEnd = drawMeta(doc, meta);
   const boxEnd = drawClientBox(doc, 'Facturé à', client);
 
-  const documentLines = invoiceDocumentLines(lines, Boolean(proforma));
+  const documentLines = invoiceDocumentLines(lines);
   const margin = invoice.vat_scheme === 'margin';
   let y =
     drawLinesTable(
