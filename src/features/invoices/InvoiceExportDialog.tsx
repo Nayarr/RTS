@@ -21,10 +21,21 @@ import type { InvoiceOverview } from './api';
 import { invoicesCsvRows } from './domain';
 import { SETTLEMENTS, statementInvoices, type Settlement } from './statement';
 
-type Format = 'csv' | 'pdf' | 'zip';
+type Format = 'xlsx' | 'accounting-csv' | 'csv' | 'pdf' | 'zip';
+const isAccounting = (format: Format) => format === 'xlsx' || format === 'accounting-csv';
 
 const FORMATS: { value: Format; label: string; hint: string }[] = [
-  { value: 'csv', label: 'CSV', hint: 'tableau pour la comptabilité (Excel)' },
+  {
+    value: 'xlsx',
+    label: 'Excel comptable',
+    hint: 'synthèse, factures, lignes, TVA, paiements, avoirs, écritures',
+  },
+  {
+    value: 'accounting-csv',
+    label: 'CSV comptable',
+    hint: 'les mêmes tableaux, un fichier CSV chacun (ZIP)',
+  },
+  { value: 'csv', label: 'CSV simple', hint: 'une ligne par facture' },
   { value: 'pdf', label: 'PDF', hint: 'toutes les factures à la suite, en un seul fichier' },
   { value: 'zip', label: 'ZIP', hint: 'un PDF par facture' },
 ];
@@ -60,14 +71,20 @@ export function InvoiceExportDialog({
 
   const selected = useMemo(
     () =>
-      statementInvoices(invoices, { from, to, settlements, credits: false })
+      statementInvoices(invoices, {
+        from,
+        to,
+        // Comptabilité : toutes les factures de la période, quel que soit leur règlement
+        settlements: isAccounting(format) ? SETTLEMENTS.map((option) => option.value) : settlements,
+        credits: false,
+      })
         .filter((invoice) => !clientId || invoice.client_id === clientId)
         .sort(
           (a, b) =>
             (a.issued_at ?? '').localeCompare(b.issued_at ?? '') ||
             (a.number ?? '').localeCompare(b.number ?? '', 'fr', { numeric: true }),
         ),
-    [invoices, from, to, settlements, clientId],
+    [invoices, from, to, settlements, clientId, format],
   );
   const totalTtc = selected.reduce((sum, invoice) => sum + invoice.total_ttc, 0);
   const totalDue = selected.reduce((sum, invoice) => sum + (invoice.balance_due ?? 0), 0);
@@ -75,6 +92,28 @@ export function InvoiceExportDialog({
   const run = useMutation({
     mutationFn: async () => {
       const period = [from && `du_${from}`, to && `au_${to}`].filter(Boolean).join('_') || todayIso();
+      if (isAccounting(format)) {
+        setProgress('Préparation de l’export comptable…');
+        const [{ fetchAccountingData }, accounting] = await Promise.all([
+          import('./accounting-api'),
+          import('./accounting-export'),
+        ]);
+        const sheets = accounting.accountingSheets(
+          await fetchAccountingData({ from, to, clientId, invoices: selected }),
+        );
+        if (format === 'xlsx') {
+          downloadFile(await accounting.buildAccountingWorkbook(sheets), `comptabilite-${period}.xlsx`);
+          return;
+        }
+        const { zipFiles } = await import('./invoice-bundle');
+        const encoder = new TextEncoder();
+        const files = sheets.map((sheet) => {
+          const { headers, rows } = accounting.csvCells(sheet);
+          return { fileName: accounting.sheetFileName(sheet), bytes: encoder.encode(toCsv(headers, rows)) };
+        });
+        downloadFile(await zipFiles(files), `comptabilite-${period}.zip`);
+        return;
+      }
       if (format === 'csv') {
         const { headers, rows } = invoicesCsvRows(selected);
         downloadFile(toCsv(headers, rows), `factures-${period}.csv`);
@@ -105,7 +144,8 @@ export function InvoiceExportDialog({
         <DialogHeader>
           <DialogTitle>Exporter des factures</DialogTitle>
           <DialogDescription>
-            Factures émises, par date de facture. Choisis la période, le client et les états voulus.
+            Factures émises, par date de facture. Export comptable : paiements et avoirs à leur propre date
+            sur la période.
           </DialogDescription>
         </DialogHeader>
         <div className="col gap-3.5">
@@ -140,15 +180,17 @@ export function InvoiceExportDialog({
               ))}
             </select>
           </div>
-          <div className="field">
-            <span className="text-sm font-medium">États</span>
-            <ToggleChips
-              label="États des factures exportées"
-              values={settlements}
-              onChange={setSettlements}
-              options={SETTLEMENTS}
-            />
-          </div>
+          {!isAccounting(format) && (
+            <div className="field">
+              <span className="text-sm font-medium">États</span>
+              <ToggleChips
+                label="États des factures exportées"
+                values={settlements}
+                onChange={setSettlements}
+                options={SETTLEMENTS}
+              />
+            </div>
+          )}
           <fieldset className="field">
             <legend className="text-sm font-medium">Format</legend>
             <div className="col gap-1.5">
@@ -178,7 +220,10 @@ export function InvoiceExportDialog({
           <Button variant="outline" onClick={onClose} disabled={run.isPending}>
             Fermer
           </Button>
-          <Button onClick={() => run.mutate()} disabled={run.isPending || selected.length === 0}>
+          <Button
+            onClick={() => run.mutate()}
+            disabled={run.isPending || (selected.length === 0 && !isAccounting(format))}
+          >
             <Download /> Exporter
           </Button>
         </DialogFooter>
