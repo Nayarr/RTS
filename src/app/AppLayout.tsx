@@ -48,7 +48,7 @@ function OfficeLayout() {
     <div className="flex min-h-dvh">
       <Sidebar className="sticky top-0 hidden h-dvh lg:flex print:hidden" />
       <div className="flex min-w-0 flex-1 flex-col lg:my-2 lg:mr-2 lg:min-h-[calc(100dvh-1rem)] lg:overflow-clip lg:rounded-xl lg:border lg:bg-card">
-        <header className="mbar sticky top-0 z-30 lg:hidden print:hidden">
+        <header className="mbar sticky top-[env(safe-area-inset-top)] z-30 lg:hidden print:hidden">
           <MobileBrand subtitle={profile ? ROLE_LABELS[profile.role] : ''} />
           <div className="row gap-1.5">
             <GlobalSearch variant="icon" />
@@ -66,7 +66,10 @@ function OfficeLayout() {
                   className="fixed inset-y-0 left-0 z-50 flex duration-240 ease-(--ease-out) outline-none data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:slide-out-to-left data-[state=open]:animate-in data-[state=open]:slide-in-from-left"
                 >
                   <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
-                  <Sidebar className="h-dvh max-w-[85vw]" onNavigate={() => setMenuOpen(false)} />
+                  <Sidebar
+                    className="h-dvh max-w-[85vw] pt-[env(safe-area-inset-top)]"
+                    onNavigate={() => setMenuOpen(false)}
+                  />
                 </DialogPrimitive.Content>
               </DialogPrimitive.Portal>
             </DialogPrimitive.Root>
@@ -94,7 +97,9 @@ function TechnicianLayout() {
   const onOrder = useMatch('/atelier/or/:id') !== null;
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className={cn('mbar sticky top-0 z-30 print:hidden', onOrder && 'hidden')}>
+      <header
+        className={cn('mbar sticky top-[env(safe-area-inset-top)] z-30 print:hidden', onOrder && 'hidden')}
+      >
         <MobileBrand subtitle="Technicien" />
         <div className="flex items-center gap-1.5">
           <button
