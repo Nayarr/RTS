@@ -11,7 +11,7 @@ async function loginAs(page: Page, email: string) {
   await expect(page.getByRole('button', { name: 'Se déconnecter' })).toBeVisible();
 }
 
-test('la direction génère le rapport mensuel en PDF', async ({ page }) => {
+test('la direction génère le rapport mensuel en PDF', async ({ page }, testInfo) => {
   test.slow();
   const month = parisDay(0).slice(0, 7);
 
@@ -23,7 +23,12 @@ test('la direction génère le rapport mensuel en PDF', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Générer le rapport PDF' }).click();
 
   const preview = page.getByRole('dialog', { name: 'Aperçu' });
-  await expect(preview.getByTitle('Aperçu du PDF')).toBeVisible();
+  // Téléphone : pages dessinées par l'appli ; ordinateur : lecteur PDF du navigateur
+  await expect(
+    testInfo.project.name.includes('mobile')
+      ? preview.getByRole('img', { name: /^Page 1 sur \d+$/ })
+      : preview.getByTitle('Aperçu du PDF'),
+  ).toBeVisible();
   await expect(preview).toContainText(`Rapport_mensuel_${month}.pdf`);
   const download = page.waitForEvent('download');
   await preview.getByRole('link', { name: 'Télécharger' }).click();
