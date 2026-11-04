@@ -15,6 +15,7 @@ const TYPE_LABELS: Partial<Record<LineType, string>> = {
   consumable: 'Consommable',
   travel: 'Déplacement',
   rental: 'Location',
+  vehicle: 'Véhicule',
 };
 
 /** Champ intégré au tableau (maquette) : sans bord, le bord apparaît au survol. */
@@ -70,14 +71,14 @@ function NumberCell({
 }
 
 /** En-têtes de colonnes (écran large), alignés sur `LineRow`. */
-export function LineColumns() {
+export function LineColumns({ ttc = false }: { ttc?: boolean }) {
   return (
     <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_6.75rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground md:grid">
       <span>Prestation / pièce</span>
       <span className="text-right">Qté</span>
-      <span className="text-right">Prix unit. HT</span>
+      <span className="text-right">Prix unit. {ttc ? 'TTC' : 'HT'}</span>
       <span className="text-right">Remise %</span>
-      <span className="text-right">Net HT</span>
+      <span className="text-right">Net {ttc ? 'TTC' : 'HT'}</span>
     </div>
   );
 }

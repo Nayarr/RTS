@@ -200,6 +200,8 @@ export function drawLinesTable(
   kit: PdfKit,
   sections: { title: string | null; lines: DocumentLine[] }[],
   startY: number,
+  /** Vente en TVA sur la marge : prix sans mention « HT ». */
+  priceSuffix = 'HT',
 ) {
   const { doc, table } = kit;
   const body: RowInput[] = [];
@@ -248,7 +250,7 @@ export function drawLinesTable(
   const finalY = table({
     startY,
     margin: { left: MARGIN, right: MARGIN, bottom: PAGE_H - CONTENT_BOTTOM },
-    head: [['Désignation', 'Qté', 'PU HT', 'Remise', 'Total HT']],
+    head: [['Désignation', 'Qté', `PU ${priceSuffix}`, 'Remise', `Total ${priceSuffix}`]],
     body,
     theme: 'plain',
     styles: {
@@ -324,14 +326,24 @@ export interface DocumentTotals {
 }
 
 /** Cadre gris des totaux à droite. Renvoie l'ordonnée de fin. */
-export function drawTotals(doc: jsPDF, totals: DocumentTotals, top: number, defaultRate: number) {
+export function drawTotals(
+  doc: jsPDF,
+  totals: DocumentTotals,
+  top: number,
+  defaultRate: number,
+  /** Vente en TVA sur la marge : prix TTC seul, ni HT ni TVA. */
+  ttcOnly = false,
+) {
   const x = 120;
   const width = RIGHT - x;
-  const rows: [string, string][] = [['Total HT', docMoney(totals.ht)]];
-  if (totals.offered > 0) rows.push(['Dont offert', docMoney(totals.offered)]);
-  const rates = totals.rates.length ? totals.rates : [{ rate: defaultRate, amount: totals.vat }];
-  for (const { rate, amount } of rates)
-    rows.push([`TVA ${String(rate).replace('.', ',')} %`, docMoney(amount)]);
+  const rows: [string, string][] = [];
+  if (!ttcOnly) {
+    rows.push(['Total HT', docMoney(totals.ht)]);
+    if (totals.offered > 0) rows.push(['Dont offert', docMoney(totals.offered)]);
+    const rates = totals.rates.length ? totals.rates : [{ rate: defaultRate, amount: totals.vat }];
+    for (const { rate, amount } of rates)
+      rows.push([`TVA ${String(rate).replace('.', ',')} %`, docMoney(amount)]);
+  }
   const height = 10 + rows.length * 5.6 + 12;
 
   doc.setFillColor(...PANEL);
@@ -350,7 +362,7 @@ export function drawTotals(doc: jsPDF, totals: DocumentTotals, top: number, defa
   }
   doc.setDrawColor(...RULE);
   doc.setLineWidth(0.25);
-  doc.line(x + 5, y - 2.4, RIGHT - 5, y - 2.4);
+  if (rows.length > 0) doc.line(x + 5, y - 2.4, RIGHT - 5, y - 2.4);
   y += 5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);

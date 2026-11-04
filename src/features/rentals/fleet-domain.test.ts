@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FleetVehicle } from './fleet-api';
-import { blockReason, fleetDeadlines, fleetStatus, worstDeadline } from './fleet-domain';
+import { blockReason, fleetDeadlines, fleetStatus, worstDeadline, marginVat } from './fleet-domain';
 import { emptyFleetVehicle, fleetVehicleFromForm, fleetVehicleSchema } from './fleet-schemas';
 
 /** Espaces insécables des nombres formatés (fr-FR) → espaces simples. */
@@ -39,6 +39,7 @@ const vehicle = (patch: Partial<FleetVehicle> = {}): FleetVehicle => ({
   in_maintenance: false,
   maintenance_note: null,
   is_active: true,
+  sold_on: null,
   notes: null,
   created_at: '2026-10-01T00:00:00Z',
   updated_at: '2026-10-01T00:00:00Z',
@@ -63,6 +64,20 @@ describe('flotte : blocage de la location', () => {
   it('statut de la carte : entretien, sinon bloqué', () => {
     expect(fleetStatus(vehicle({ in_maintenance: true }), '2026-10-03').label).toBe('En entretien');
     expect(fleetStatus(vehicle(), '2027-02-01')).toEqual({ label: 'Bloqué', tone: 's-bad' });
+  });
+});
+
+describe('flotte : vente', () => {
+  it('véhicule vendu : statut et blocage', () => {
+    const sold = vehicle({ sold_on: '2026-11-03', is_active: false });
+    expect(fleetStatus(sold, '2026-11-03').label).toBe('Vendu');
+    expect(blockReason(sold, '2026-11-03')).toBe('Véhicule vendu');
+  });
+
+  it('TVA sur la marge : marge × 20 / 120, jamais négative', () => {
+    expect(marginVat(12000, 9000, 20)).toBe(500);
+    expect(marginVat(8000, 9000, 20)).toBe(0);
+    expect(marginVat(10000.5, 9000, 20)).toBe(166.75);
   });
 });
 

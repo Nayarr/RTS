@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { fetchFleet, fetchFleetDocuments, fetchFleetVehicle } from './fleet-api';
+import { fetchFleet, fetchFleetDocuments, fetchFleetSale, fetchFleetVehicle } from './fleet-api';
 
 export const fleetKey = ['fleet'] as const;
 
@@ -15,6 +15,9 @@ export const useFleetDocuments = (id: string) =>
     queryFn: () => fetchFleetDocuments(id),
     enabled: Boolean(id),
   });
+
+export const useFleetSale = (id: string) =>
+  useQuery({ queryKey: [...fleetKey, id, 'sale'], queryFn: () => fetchFleetSale(id), enabled: Boolean(id) });
 
 /** Écriture sur la flotte : message de réussite, erreur affichée, données rechargées. */
 export function useFleetMutation<T, R = unknown>(fn: (value: T) => Promise<R>, success?: string) {

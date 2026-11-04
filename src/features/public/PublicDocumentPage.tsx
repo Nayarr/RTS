@@ -50,7 +50,7 @@ const PAYMENT_BADGE: Record<PublicPortal['invoices'][number]['payment_status'], 
   overdue: 's-bad',
 };
 
-function LinesTable({ lines, title }: { lines: TableLine[]; title: string }) {
+function LinesTable({ lines, title, ttc = false }: { lines: TableLine[]; title: string; ttc?: boolean }) {
   if (lines.length === 0) return null;
   return (
     <>
@@ -65,8 +65,8 @@ function LinesTable({ lines, title }: { lines: TableLine[]; title: string }) {
             <tr>
               <th className="pl-5! sm:pl-7!">Prestation</th>
               <th className="r">Qté</th>
-              <th className="r">Prix unit. HT</th>
-              <th className="r pr-5! sm:pr-7!">Net HT</th>
+              <th className="r">Prix unit. {ttc ? 'TTC' : 'HT'}</th>
+              <th className="r pr-5! sm:pr-7!">Net {ttc ? 'TTC' : 'HT'}</th>
             </tr>
           </thead>
           <tbody>
@@ -201,14 +201,25 @@ function ResponseForm({ token }: { token: string }) {
   );
 }
 
-function DocumentTotals({ totals }: { totals: { total_ht: number; total_vat: number; total_ttc: number } }) {
+function DocumentTotals({
+  totals,
+  ttcOnly = false,
+}: {
+  totals: { total_ht: number; total_vat: number; total_ttc: number };
+  /** TVA sur la marge : prix TTC seul. */
+  ttcOnly?: boolean;
+}) {
   return (
     <div className="flex justify-end border-t px-5 py-[18px] sm:px-7">
       <dl className="dl grid-cols-[140px_130px]! items-baseline text-right" aria-label="Totaux">
-        <dt>Total HT</dt>
-        <dd className="num">{formatEuro(totals.total_ht)}</dd>
-        <dt>TVA</dt>
-        <dd className="num">{formatEuro(totals.total_vat)}</dd>
+        {!ttcOnly && (
+          <>
+            <dt>Total HT</dt>
+            <dd className="num">{formatEuro(totals.total_ht)}</dd>
+            <dt>TVA</dt>
+            <dd className="num">{formatEuro(totals.total_vat)}</dd>
+          </>
+        )}
         <dt className="b text-base text-foreground!">Total TTC</dt>
         <dd className="num font-display text-[26px] font-bold">{formatEuro(totals.total_ttc)}</dd>
       </dl>
@@ -339,8 +350,8 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
               </span>
             )}
           </div>
-          <LinesTable lines={invoice.lines} title="" />
-          <DocumentTotals totals={invoice.totals} />
+          <LinesTable lines={invoice.lines} title="" ttc={invoice.vat_scheme === 'margin'} />
+          <DocumentTotals totals={invoice.totals} ttcOnly={invoice.vat_scheme === 'margin'} />
           {(invoice.vat_exempt_mention || (invoice.legal_mentions?.length ?? 0) > 0) && (
             <div className="col gap-1 border-t px-5 py-3.5 text-xs text-muted-foreground sm:px-7">
               {invoice.vat_exempt_mention && <p>{invoice.vat_exempt_mention}</p>}

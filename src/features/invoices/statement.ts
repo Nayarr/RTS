@@ -113,8 +113,9 @@ export function statementRows(
     date: day(invoice.issued_at),
     number: invoice.number ?? '',
     ...vehicleOf(invoice),
-    ht: invoice.total_ht,
-    vat: invoice.total_vat,
+    // TVA sur la marge : ni la TVA ni la marge ne sont communiquées à l'acheteur
+    ht: invoice.vat_scheme === 'margin' ? invoice.total_ttc : invoice.total_ht,
+    vat: invoice.vat_scheme === 'margin' ? 0 : invoice.total_vat,
     ttc: invoice.total_ttc,
     paid: invoice.paid_ttc ?? 0,
     due: invoice.balance_due ?? 0,

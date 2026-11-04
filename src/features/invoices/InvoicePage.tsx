@@ -369,6 +369,8 @@ export function InvoicePage() {
   const vatRate = settings.data?.company.default_vat_rate ?? 20;
   const singleOrder = invoice.repair_order_ids.length === 1 ? invoice.repair_order_ids[0] : undefined;
   const grouped = invoice.repair_order_ids.length > 1;
+  const margin = invoice.vat_scheme === 'margin';
+  const vehicleSale = lines.some((line) => line.line_type === 'vehicle');
 
   return (
     <>
@@ -390,12 +392,14 @@ export function InvoicePage() {
                 </Link>
               </Button>
             )}
-            <DuplicateButton
-              label="Dupliquer la facture"
-              duplicate={() => duplicateInvoice(invoice.id)}
-              path={(copy) => `/factures/${copy}`}
-              success="Facture dupliquée en brouillon"
-            />
+            {!vehicleSale && (
+              <DuplicateButton
+                label="Dupliquer la facture"
+                duplicate={() => duplicateInvoice(invoice.id)}
+                path={(copy) => `/factures/${copy}`}
+                success="Facture dupliquée en brouillon"
+              />
+            )}
           </>
         }
       />
@@ -442,7 +446,9 @@ export function InvoicePage() {
             {draft ? (
               <div className="row flex-wrap items-end gap-3.5 border-b px-6 py-3.5">
                 <div className="field w-[220px]">
-                  <Label htmlFor="service-date">Date de la prestation</Label>
+                  <Label htmlFor="service-date">
+                    {vehicleSale ? 'Date de la vente' : 'Date de la prestation'}
+                  </Label>
                   <Input
                     id="service-date"
                     type="date"
@@ -468,7 +474,7 @@ export function InvoicePage() {
             )}
 
             <section aria-label="Lignes de la facture">
-              <LineColumns />
+              <LineColumns ttc={margin} />
               {lines.length === 0 ? (
                 <p className="hint px-6 py-3">Aucune ligne : rien à facturer pour l’instant.</p>
               ) : draft ? (
@@ -484,7 +490,7 @@ export function InvoicePage() {
                 </ul>
               )}
             </section>
-            {draft && (
+            {draft && !margin && (
               <div className="border-t bg-head px-6 py-3">
                 <AddLineButtons
                   vehicleType={data.vehicleType}
@@ -508,10 +514,20 @@ export function InvoicePage() {
               </div>
             )}
             <div className="flex justify-end border-t px-6 py-[18px]">
-              <TotalsList
-                totals={draft ? totals : { ...totals, ht: invoice.total_ht, ttc: invoice.total_ttc }}
-                offered={offeredTotal(lines)}
-              />
+              {margin ? (
+                <dl
+                  className="ml-auto grid w-full max-w-[280px] grid-cols-[1fr_auto] items-baseline gap-x-4 text-right"
+                  aria-label="Totaux"
+                >
+                  <dt className="b">Prix de vente TTC</dt>
+                  <dd className="num font-display text-[22px] font-bold">{formatEuro(invoice.total_ttc)}</dd>
+                </dl>
+              ) : (
+                <TotalsList
+                  totals={draft ? totals : { ...totals, ht: invoice.total_ht, ttc: invoice.total_ttc }}
+                  offered={offeredTotal(lines)}
+                />
+              )}
             </div>
           </section>
           {isDirection && <InvoiceEmployeesCard invoiceId={invoice.id} lines={lines} />}

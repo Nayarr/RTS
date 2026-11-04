@@ -29,13 +29,15 @@ export function FleetPage() {
   const [category, setCategory] = useState<FleetCategory | null>(null);
   const [availability, setAvailability] = useState<Availability | null>(null);
 
-  const vehicles = (fleet.data ?? []).filter((vehicle) => vehicle.is_active);
+  const [showSold, setShowSold] = useState(false);
+  const soldCount = (fleet.data ?? []).filter((vehicle) => vehicle.sold_on).length;
+  const vehicles = (fleet.data ?? []).filter((vehicle) => (showSold ? vehicle.sold_on : vehicle.is_active));
   const available = (vehicle: FleetVehicle) => blockReason(vehicle, today) === null;
   const needle = search.trim().toLowerCase();
   const shown = vehicles.filter(
     (vehicle) =>
       (!category || vehicle.category === category) &&
-      (!availability || available(vehicle) === (availability === 'available')) &&
+      (showSold || !availability || available(vehicle) === (availability === 'available')) &&
       (!needle ||
         `${vehicle.plate} ${vehicle.plate_key} ${vehicle.brand} ${vehicle.model}`
           .toLowerCase()
@@ -106,9 +108,12 @@ export function FleetPage() {
               <button
                 key={value}
                 type="button"
-                className={cn(availability === value && 'on')}
-                aria-pressed={availability === value}
-                onClick={() => setAvailability(availability === value ? null : value)}
+                className={cn(!showSold && availability === value && 'on')}
+                aria-pressed={!showSold && availability === value}
+                onClick={() => {
+                  setShowSold(false);
+                  setAvailability(availability === value ? null : value);
+                }}
               >
                 {label}{' '}
                 <span className="n">
@@ -116,6 +121,19 @@ export function FleetPage() {
                 </span>
               </button>
             ))}
+            {soldCount > 0 && (
+              <button
+                type="button"
+                className={cn(showSold && 'on')}
+                aria-pressed={showSold}
+                onClick={() => {
+                  setAvailability(null);
+                  setShowSold(!showSold);
+                }}
+              >
+                Vendus <span className="n">{soldCount}</span>
+              </button>
+            )}
           </div>
         </div>
 

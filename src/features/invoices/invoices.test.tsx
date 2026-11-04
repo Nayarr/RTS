@@ -265,6 +265,7 @@ describe('règles de facturation', () => {
       60,
       260,
       'Partiellement payée',
+      'Normal',
     ]);
   });
 
