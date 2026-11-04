@@ -28,9 +28,8 @@ const color = (doc: jsPDF, rgb: Rgb) => doc.setTextColor(...rgb);
 /** Montant français : « 1 234,56 € » (espace simple, lisible par la police du PDF). */
 export const docMoney = (value: number) => pdfMoney(value);
 
-/** Quantité : « 2 h » pour la main d'œuvre, « 1,5 » sinon. */
-export const docQuantity = (quantity: number, isLabor: boolean) =>
-  `${String(quantity).replace('.', ',')}${isLabor ? ' h' : ''}`;
+/** Quantité imprimée : « 2 », « 1,5 », sans unité (pas de « h » pour la main d'œuvre). */
+export const docQuantity = (quantity: number) => String(quantity).replace('.', ',');
 
 /** Coordonnées légales sous la raison sociale. */
 function legalLine(company: CompanySettings) {
@@ -177,8 +176,6 @@ export interface DocumentLine {
   quantity: number;
   discount_percent: number;
   net: number;
-  /** Quantité sans l'unité « h » (main d'œuvre d'une pro forma : « 6 » et non « 6 h »). */
-  plainQuantity?: boolean;
 }
 
 /** Ligne offerte (geste commercial) : remise de 100 % sur une ligne chiffrée. */
@@ -239,7 +236,7 @@ export function drawLinesTable(
       if (offered) offeredRows.add(body.length);
       body.push([
         pdfText(line.description) || '-',
-        docQuantity(line.quantity, line.line_type === 'labor' && !line.plainQuantity),
+        docQuantity(line.quantity),
         docMoney(line.unit_price ?? 0),
         line.discount_percent > 0 ? `${String(line.discount_percent).replace('.', ',')} %` : '-',
         docMoney(line.net),

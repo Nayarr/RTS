@@ -99,7 +99,7 @@ export async function buildQuotePdf({
   drawFooter(doc, [
     pdfText(
       `Devis valable ${days} jours${validUntil ? `, jusqu'au ${pdfDate(validUntil)}` : ''}. ` +
-        'Prix hors taxes (HT). Les heures de main d’œuvre sont comptées à l’heure entamée.',
+        'Prix hors taxes (HT).',
     ),
   ]);
 

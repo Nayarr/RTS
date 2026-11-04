@@ -15,20 +15,15 @@ const line = (patch: Partial<InvoiceLine>) =>
     ...patch,
   }) as InvoiceLine;
 
-/** Quantité imprimée, comme dans le tableau des lignes. */
-const printed = (printedLine: ReturnType<typeof invoiceDocumentLines>[number]) =>
-  docQuantity(printedLine.quantity, printedLine.line_type === 'labor' && !printedLine.plainQuantity);
-
 describe('lignes imprimées de la facture', () => {
-  it('pro forma : quantité de main d’œuvre sans « h », prix et total inchangés', () => {
-    const [labor] = invoiceDocumentLines([line({})], true);
+  it('main d’œuvre : prix et total inchangés', () => {
+    const [labor] = invoiceDocumentLines([line({})]);
     expect(labor).toMatchObject({ quantity: 6, unit_price: 90, net: 540 });
-    expect(printed(labor!)).toBe('6');
   });
 
-  it('facture émise : « 6 h » gardé', () => {
-    const [labor] = invoiceDocumentLines([line({})], false);
-    expect(printed(labor!)).toBe('6 h');
+  it('quantité sans unité, virgule française', () => {
+    expect(docQuantity(6)).toBe('6');
+    expect(docQuantity(1.5)).toBe('1,5');
   });
 });
 
