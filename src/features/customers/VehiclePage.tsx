@@ -169,7 +169,9 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
         onConfirm={() =>
           remove.mutate(vehicle.id, {
             onSuccess: () =>
-              void navigate(vehicle.client_id ? `/clients/${vehicle.client_id}` : '/vehicules'),
+              void navigate(vehicle.client_id ? `/clients/${vehicle.client_id}` : '/vehicules', {
+                replace: true,
+              }),
           })
         }
       />

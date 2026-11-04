@@ -72,7 +72,7 @@ test('entrée de pneus, seuil mini avec alerte, sortie avec motif, pneus réserv
   );
 
   // Stock : ligne « À commander », seuil ramené à 2 : OK
-  await page.getByRole('link', { name: 'Retour au stock des pneus' }).click();
+  await page.getByRole('link', { name: 'Retour à la page précédente' }).click();
   await page.getByRole('searchbox', { name: 'Rechercher une taille' }).fill(`${width}${ratio}`);
   const row = page.getByRole('row', { name: label });
   await expect(row.getByText('À commander')).toBeVisible();
