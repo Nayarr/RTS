@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderRoutes } from '@/test/render';
 import { deleteEvent, fetchEvents, saveEvent } from './api';
 import type * as AgendaApi from './api';
@@ -113,7 +113,13 @@ describe('dates de l’agenda', () => {
 });
 
 describe('page de l’agenda', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    // Jour figé, autre que celui affiché : un nouveau rendez-vous démarre à 09:00, quel que soit le jour du test
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-06-15T12:00:00') });
     vi.mocked(fetchEvents).mockReset().mockResolvedValue([event()]);
     vi.mocked(saveEvent).mockReset().mockResolvedValue();
     vi.mocked(deleteEvent).mockReset().mockResolvedValue();
