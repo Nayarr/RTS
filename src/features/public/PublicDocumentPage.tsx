@@ -349,6 +349,14 @@ function InvoiceDocument({ invoice }: { invoice: PublicInvoice }) {
               ))}
             </div>
           )}
+          {invoice.terms?.trim() && (
+            <section className="col gap-2 border-t px-5 py-3.5 text-xs text-muted-foreground sm:px-7">
+              <h2 className="font-semibold text-foreground">
+                Conditions générales de vente et de réparation
+              </h2>
+              <p className="whitespace-pre-line">{invoice.terms}</p>
+            </section>
+          )}
         </article>
 
         {balance > 0.01 ? (

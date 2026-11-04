@@ -396,6 +396,35 @@ export function drawMentions(doc: jsPDF, mentions: string[], top: number) {
   return y;
 }
 
+/** Conditions générales en dernière page : titre centré, titres d'articles en gras (« 1. OBJET… »). */
+export function drawTerms(doc: jsPDF, terms: string) {
+  if (!terms.trim()) return;
+  doc.addPage();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  color(doc, INK);
+  doc.text('CONDITIONS GÉNÉRALES DE VENTE ET DE RÉPARATION', PAGE_W / 2, 20, { align: 'center' });
+  let y = 29;
+  for (const paragraph of terms.split(/\r?\n/)) {
+    if (!paragraph.trim()) {
+      y += 2.2;
+      continue;
+    }
+    const heading = /^\d+\.\s/.test(paragraph);
+    doc.setFont('helvetica', heading ? 'bold' : 'normal');
+    doc.setFontSize(7.6);
+    color(doc, heading ? INK : MUTED);
+    for (const line of doc.splitTextToSize(pdfText(paragraph), RIGHT - MARGIN) as string[]) {
+      if (y + 3.5 > CONTENT_BOTTOM) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.text(line, MARGIN, y);
+      y += 3.5;
+    }
+  }
+}
+
 /** Pied de page : filet, courte mention et pagination sur chaque page. */
 export function drawFooter(doc: jsPDF, mentions: string[]) {
   const pages = doc.getNumberOfPages();

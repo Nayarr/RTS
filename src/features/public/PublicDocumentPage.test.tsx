@@ -209,6 +209,7 @@ describe('facture en ligne (client, sans compte)', () => {
     totals: { total_ht: 270, total_vat: 54, total_ttc: 324 },
     balance_due: 124,
     legal_mentions: ['TVA sur les encaissements.'],
+    terms: '1. OBJET\nConditions de réparation.',
     ...overrides,
   });
 
@@ -222,6 +223,8 @@ describe('facture en ligne (client, sans compte)', () => {
       screen.getByText(/Facture à régler avant le 27\/10\/2026, reste dû : 124,00\s€/),
     ).toBeInTheDocument();
     expect(screen.getByText('TVA sur les encaissements.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Conditions générales de vente/ })).toBeInTheDocument();
+    expect(screen.getByText(/Conditions de réparation/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accepter et signer' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: /Imprimer/ }));
     expect(print).toHaveBeenCalled();

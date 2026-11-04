@@ -82,6 +82,8 @@ export const billingSchema = z.object({
     .max(365),
   /** Une mention par ligne. */
   invoice_legal_mentions: z.string().max(5000),
+  /** Conditions générales imprimées sur chaque facture. */
+  invoice_terms: z.string().max(20000),
   /** Montant HT de la ligne « Fournitures et recyclage » ; vide = aucune ligne. */
   supplies_fee_ht: z
     .string()
@@ -97,6 +99,7 @@ export const billingToForm = (c: CompanySettings): BillingValues => ({
   payment_terms_days: c.payment_terms_days,
   quote_validity_days: c.quote_validity_days,
   invoice_legal_mentions: c.invoice_legal_mentions.join('\n'),
+  invoice_terms: c.invoice_terms,
   supplies_fee_ht: c.supplies_fee_ht === null ? '' : String(c.supplies_fee_ht).replace('.', ','),
   vat_exempt_mention_eu: c.vat_exempt_mention_eu,
   vat_exempt_mention_other: c.vat_exempt_mention_other,

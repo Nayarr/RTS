@@ -1041,6 +1041,7 @@ export type Database = {
           iban: string | null;
           id: boolean;
           invoice_legal_mentions: string[];
+          invoice_terms: string;
           legal_form: string | null;
           legal_name: string;
           logo_file_id: string | null;
@@ -1066,6 +1067,7 @@ export type Database = {
           iban?: string | null;
           id?: boolean;
           invoice_legal_mentions?: string[];
+          invoice_terms?: string;
           legal_form?: string | null;
           legal_name: string;
           logo_file_id?: string | null;
@@ -1091,6 +1093,7 @@ export type Database = {
           iban?: string | null;
           id?: boolean;
           invoice_legal_mentions?: string[];
+          invoice_terms?: string;
           legal_form?: string | null;
           legal_name?: string;
           logo_file_id?: string | null;

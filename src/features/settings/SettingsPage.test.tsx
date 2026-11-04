@@ -48,6 +48,7 @@ const settings: Settings = {
     payment_terms_days: 30,
     quote_validity_days: 30,
     invoice_legal_mentions: ['TVA sur les encaissements.'],
+    invoice_terms: '1. OBJET',
     logo_file_id: null,
     supplies_fee_ht: 15,
     vat_exempt_mention_eu: 'Autoliquidation',

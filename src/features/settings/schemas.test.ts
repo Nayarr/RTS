@@ -77,6 +77,7 @@ describe('billingSchema', () => {
       payment_terms_days: 30,
       quote_validity_days: 30,
       invoice_legal_mentions: ' Pas d’escompte. \n\nTVA sur les encaissements.\n',
+      invoice_terms: '1. OBJET',
       supplies_fee_ht: '',
       vat_exempt_mention_eu: 'Autoliquidation',
       vat_exempt_mention_other: 'Exonération de TVA',
