@@ -26,13 +26,13 @@ test('nouvel OR daté sans heure : la date est gardée, l’OR attend ce jour-l�
   await page.getByLabel('Tâche à faire').fill('Contrôle hayon');
   await page.getByRole('combobox', { name: 'Assigner à' }).click();
   await page.getByRole('option', { name: 'Alice' }).click();
-  await page.getByLabel('Date prévue').fill(tomorrow);
+  await page.getByLabel('Date de début').fill(tomorrow);
   await expect(page.getByLabel('Heure de début')).toHaveValue('');
   await page.getByRole('button', { name: 'Créer l’OR' }).click();
 
   // Fiche de l'OR : la date prévue est enregistrée, sans heure
   await expect(page.getByRole('link', { name: plate, exact: true })).toBeVisible();
-  await expect(page.getByLabel('Date prévue')).toHaveValue(tomorrow);
+  await expect(page.getByLabel('Date de début')).toHaveValue(tomorrow);
   await expect(page.getByLabel('Heure de début')).toHaveValue('');
 
   // Chez le technicien : pas encore visible aujourd'hui (prévu demain)

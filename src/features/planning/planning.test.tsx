@@ -370,6 +370,7 @@ describe('planning : écran', () => {
         planned_date: '2026-10-07',
         planned_start: '14:00',
         planned_end: '16:30',
+        planned_end_date: null,
       }),
     );
   });
@@ -383,7 +384,7 @@ describe('rendez-vous', () => {
     renderPlanning();
     await userEvent.click(await screen.findByRole('button', { name: 'Nouveau rendez-vous' }));
     const dialog = screen.getByRole('dialog', { name: 'Nouveau rendez-vous' });
-    expect(within(dialog).getByLabelText('Date')).toHaveValue('2026-10-07');
+    expect(within(dialog).getByLabelText('Date de début')).toHaveValue('2026-10-07');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
     expect(
       await within(dialog).findByText('Indique au moins le client ou l’immatriculation'),
@@ -402,6 +403,7 @@ describe('rendez-vous', () => {
         scheduled_date: '2026-10-07',
         start_time: '09:00',
         end_time: '10:00',
+        end_date: null,
         reason: 'Freins',
         technician_id: 't2',
       }),

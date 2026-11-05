@@ -39,6 +39,9 @@ const shortDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 /** « Lundi 05/10 » */
 export const dayLabel = (iso: string) => `${DAY_NAMES[weekdayIndex(iso)]} ${shortDate(iso)}`;
 
+/** « Lun 05/10 » */
+export const shortDayLabel = (iso: string) => dayLabel(iso).replace(/^(\p{L}{3})\p{L}*/u, '$1');
+
 export function periodLabel(view: PlanningView, days: string[]): string {
   const first = days[0] ?? '';
   if (view === 'jour') return dayLabel(first);
@@ -84,6 +87,78 @@ export function eventSpan(start: string | null, end: string | null): TimedEvent 
   if (from === null) return null;
   const to = timeToMinutes(end);
   return { start: from, end: to !== null && to > from ? to : from + 60 };
+}
+
+/** Créneau du planning ; `endDate` renseignée : il déborde sur un autre jour. */
+export interface PlannedSlot {
+  date: string;
+  start: string | null;
+  end: string | null;
+  endDate?: string | null;
+}
+
+/** Morceau d'un créneau dans la colonne d'un jour : il peut venir de la veille ou continuer le lendemain. */
+export interface DaySegment extends TimedEvent {
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+}
+
+const MINUTES_IN_DAY = 24 * 60;
+
+export const isMultiDay = (slot: PlannedSlot) => Boolean(slot.endDate && slot.endDate > slot.date);
+
+/**
+ * Heures affichées par la grille : la journée de l'atelier, élargie aux créneaux qui en sortent
+ * (une intervention de 20 h reste visible), à l'heure pleine.
+ */
+export function planningBounds(slots: PlannedSlot[], workday: TimedEvent): TimedEvent {
+  let { start, end } = workday;
+  for (const slot of slots) {
+    const span = eventSpan(slot.start, slot.end);
+    if (!span) continue;
+    start = Math.min(start, span.start);
+    if (isMultiDay(slot)) {
+      // Le premier jour va jusqu'en bas de la grille, le dernier repart du haut.
+      const to = timeToMinutes(slot.end) ?? span.end;
+      end = Math.max(end, span.start + 60, to);
+      start = Math.min(start, to - 60);
+    } else {
+      end = Math.max(end, span.end);
+    }
+  }
+  return {
+    start: start < workday.start ? Math.max(0, Math.floor(start / 60) * 60) : start,
+    end: end > workday.end ? Math.min(MINUTES_IN_DAY, Math.ceil(end / 60) * 60) : end,
+  };
+}
+
+/** Morceau d'un créneau à dessiner ce jour-là (`null` : rien ce jour-là). */
+export function daySegment(slot: PlannedSlot, day: string, bounds: TimedEvent): DaySegment | null {
+  const span = eventSpan(slot.start, slot.end);
+  if (!span) return null;
+  if (!isMultiDay(slot)) {
+    return slot.date === day
+      ? { ...span, end: Math.min(span.end, MINUTES_IN_DAY), continuesBefore: false, continuesAfter: false }
+      : null;
+  }
+  if (day < slot.date || day > (slot.endDate ?? slot.date)) return null;
+  const continuesBefore = day > slot.date;
+  const continuesAfter = day < (slot.endDate ?? slot.date);
+  return {
+    start: continuesBefore ? bounds.start : span.start,
+    end: continuesAfter ? bounds.end : (timeToMinutes(slot.end) ?? bounds.end),
+    continuesBefore,
+    continuesAfter,
+  };
+}
+
+/** Horaires écrits dans un bloc sur plusieurs jours : « 20:00 → Mer 05/11 08:00 », « Suite → 08:00 ». */
+export function multiDayLabel(slot: PlannedSlot, segment: DaySegment): string {
+  const end = shortTime(slot.end);
+  if (segment.continuesBefore) {
+    return segment.continuesAfter ? `Suite → ${shortDayLabel(slot.endDate ?? '')} ${end}` : `Suite → ${end}`;
+  }
+  return `${shortTime(slot.start)} → ${shortDayLabel(slot.endDate ?? '')} ${end}`;
 }
 
 /** Blocs qui se chevauchent placés côte à côte : colonne de chaque bloc et nombre de colonnes du groupe. */

@@ -71,6 +71,7 @@ export const OFFICE_TOPICS: HelpTopic[] = [
     items: [
       'Vue Semaine ou Jour, une colonne par technicien. Clique dans une case vide pour y assigner un OR.',
       '« Nouveau rendez-vous » pour un véhicule attendu. À son arrivée, ouvre le rendez-vous puis « Créer l’OR ». La veille, envoie le rappel au client (la cloche te le rappelle).',
+      'Un véhicule qui commence le soir et finit le lendemain matin : indique la date de fin en plus des heures (rendez-vous, OR, « Assigner un OR »). Le bloc va jusqu’en bas de la colonne du premier jour et reprend en haut de celle du jour de fin.',
       '« En direct » montre les véhicules actuellement à l’atelier et le badgeage en cours.',
       'Rappels et échéances automatiques (Réglages, onglet « Atelier », avec l’envoi depuis l’appli) : le client reçoit le rappel la veille de son rendez-vous, et 48 h avant un contrôle technique, hayon ou antipollution (ou quand l’entretien d’un contrat est à refaire) un e-mail avec un lien pour choisir un créneau. Sa demande arrive dans « Rendez-vous », « Demandes en ligne » : « Confirmer » lui envoie la confirmation par e-mail.',
       'Les absences sont en gris dans le planning ; une absence de quelques heures (matin, après-midi, rendez-vous) apparaît sur sa plage horaire.',
