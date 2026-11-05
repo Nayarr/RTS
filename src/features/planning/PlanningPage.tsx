@@ -15,18 +15,25 @@ import { LEAVE_LABELS } from '@/features/leave/domain';
 import {
   addDays,
   dayLabel,
+  daySegment,
   eventSpan,
+  isMultiDay,
   isSunday,
   layoutDayEvents,
   lunchBreak,
+  multiDayLabel,
   partialLeaves,
   periodDays,
   periodLabel,
+  planningBounds,
+  shortDayLabel,
   shortTime,
   technicianColor,
   technicianOffLabel,
   timeToMinutes,
+  type DaySegment,
   type LeaveSpan,
+  type PlannedSlot,
   type PlanningView,
   type TimedEvent,
 } from './domain';
@@ -39,10 +46,28 @@ const APPOINTMENT_STYLE = {
 
 type Block = TimedEvent &
   (
-    | { order: RepairOrderOverview }
-    | { appointment: Appointment }
+    | { order: RepairOrderOverview; segment: DaySegment }
+    | { appointment: Appointment; segment: DaySegment }
     | { leave: LeaveSpan & { technician_name: string } }
   );
+
+const orderSlot = (order: RepairOrderOverview): PlannedSlot => ({
+  date: order.planned_date ?? '',
+  start: order.planned_start,
+  end: order.planned_end,
+  endDate: order.planned_end_date,
+});
+
+const appointmentSlot = (item: Appointment): PlannedSlot => ({
+  date: item.scheduled_date,
+  start: item.start_time,
+  end: item.end_time,
+  endDate: item.end_date,
+});
+
+/** Bords droits côté jour voisin : le bloc se lit comme continuant dans l'autre colonne. */
+const continuationClass = (segment: DaySegment) =>
+  cn(segment.continuesBefore && 'rounded-t-none', segment.continuesAfter && 'rounded-b-none');
 
 interface Column {
   key: string;
@@ -69,22 +94,24 @@ type OpenDialog =
 function orderBlocks(
   orders: RepairOrderOverview[],
   day: string,
+  bounds: TimedEvent,
   keep: (order: RepairOrderOverview) => boolean,
 ) {
   return orders.flatMap((order) => {
-    const span =
-      order.planned_date === day && keep(order) ? eventSpan(order.planned_start, order.planned_end) : null;
-    return span ? [{ ...span, order }] : [];
+    const segment = keep(order) ? daySegment(orderSlot(order), day, bounds) : null;
+    return segment ? [{ start: segment.start, end: segment.end, segment, order }] : [];
   });
 }
 
-function appointmentBlocks(appointments: Appointment[], day: string, keep: (item: Appointment) => boolean) {
+function appointmentBlocks(
+  appointments: Appointment[],
+  day: string,
+  bounds: TimedEvent,
+  keep: (item: Appointment) => boolean,
+) {
   return appointments.flatMap((appointment) => {
-    const span =
-      appointment.scheduled_date === day && keep(appointment)
-        ? eventSpan(appointment.start_time, appointment.end_time)
-        : null;
-    return span ? [{ ...span, appointment }] : [];
+    const segment = keep(appointment) ? daySegment(appointmentSlot(appointment), day, bounds) : null;
+    return segment ? [{ start: segment.start, end: segment.end, segment, appointment }] : [];
   });
 }
 
@@ -109,6 +136,7 @@ function buildColumns(
   view: PlanningView,
   days: string[],
   data: PlanningData,
+  bounds: TimedEvent,
   onAssign: (date: string, technicianId?: string) => void,
 ): Column[] {
   const { technicians, orders, untimedOrders, appointments, leaves, hours, restReferenceMonday } = data;
@@ -128,7 +156,7 @@ function buildColumns(
         header: (
           <>
             <span className="truncate">
-              {dayLabel(day).replace(/^(\p{L}{3})\p{L}*/u, '$1')}
+              {shortDayLabel(day)}
               {day === todayIso() && ' · aujourd’hui'}
               {closed && ' · fermé'}
             </span>
@@ -150,8 +178,8 @@ function buildColumns(
         blocks: closed
           ? []
           : [
-              ...orderBlocks(orders, day, () => true),
-              ...appointmentBlocks(appointments, day, () => true),
+              ...orderBlocks(orders, day, bounds, () => true),
+              ...appointmentBlocks(appointments, day, bounds, () => true),
               ...leaveBlocks(leaves, technicians, day, () => true),
             ],
         untimed: untimedOrders.filter((order) => order.planned_date === day),
@@ -164,6 +192,7 @@ function buildColumns(
   const unassigned = appointmentBlocks(
     appointments,
     day,
+    bounds,
     (item) => !item.technician_id || !known.has(item.technician_id),
   );
   const columns: Column[] = technicians.map((technician) => {
@@ -197,8 +226,8 @@ function buildColumns(
       blocks: closed
         ? []
         : [
-            ...orderBlocks(orders, day, (order) => order.technician_id === technician.id),
-            ...appointmentBlocks(appointments, day, (item) => item.technician_id === technician.id),
+            ...orderBlocks(orders, day, bounds, (order) => order.technician_id === technician.id),
+            ...appointmentBlocks(appointments, day, bounds, (item) => item.technician_id === technician.id),
             ...leaveBlocks(leaves, technicians, day, (leave) => leave.technician_id === technician.id),
           ],
       untimed: untimedOrders.filter(
@@ -236,8 +265,21 @@ export function PlanningPage() {
     setParams({ vue: next.vue ?? view, date: next.date ?? date }, { replace: true });
   const step = view === 'jour' ? 1 : 7;
 
+  const bounds = useMemo(() => {
+    const data = planning.data;
+    const workday = {
+      start: timeToMinutes(data?.hours.workday_start) ?? 9 * 60,
+      end: timeToMinutes(data?.hours.workday_end) ?? 18 * 60,
+    };
+    if (!data) return workday;
+    return planningBounds(
+      [...data.orders.map(orderSlot), ...data.appointments.map(appointmentSlot)],
+      workday,
+    );
+  }, [planning.data]);
+
   const columns = planning.data
-    ? buildColumns(view, days, planning.data, (day, technicianId) =>
+    ? buildColumns(view, days, planning.data, bounds, (day, technicianId) =>
         setDialog({ kind: 'assign', date: day, technicianId }),
       )
     : [];
@@ -385,8 +427,8 @@ export function PlanningPage() {
             ) : (
               <PlanningGrid
                 columns={columns}
-                dayStart={timeToMinutes(planning.data.hours.workday_start) ?? 9 * 60}
-                dayEnd={timeToMinutes(planning.data.hours.workday_end) ?? 18 * 60}
+                dayStart={bounds.start}
+                dayEnd={bounds.end}
                 detailed={view === 'jour'}
                 onOpenAppointment={(appointment) => setDialog({ kind: 'appointment', appointment })}
               />
@@ -589,17 +631,25 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                 }
                 if ('appointment' in block) {
                   const item = block.appointment;
+                  const slot = appointmentSlot(item);
+                  const times = isMultiDay(slot)
+                    ? multiDayLabel(slot, block.segment)
+                    : shortTime(item.start_time);
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      aria-label={`Rendez-vous ${shortTime(item.start_time)} ${item.plate ?? item.client_name ?? ''}`}
-                      className={cn(className, 'border-2 border-dashed border-white/90')}
+                      aria-label={`Rendez-vous ${times} ${item.plate ?? item.client_name ?? ''}`}
+                      className={cn(
+                        className,
+                        'border-2 border-dashed border-white/90',
+                        continuationClass(block.segment),
+                      )}
                       style={{ ...style, ...APPOINTMENT_STYLE }}
                       onClick={() => onOpenAppointment(item)}
                     >
                       <strong>
-                        <CalendarClock className="inline size-3" /> {shortTime(item.start_time)}
+                        <CalendarClock className="inline size-3" /> {times}
                       </strong>{' '}
                       {item.plate}
                       <br />
@@ -611,11 +661,13 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                   );
                 }
                 const order = block.order;
+                const slot = orderSlot(order);
+                const multiDay = isMultiDay(slot);
                 return (
                   <Link
                     key={order.id}
                     to={`/or/${order.id}`}
-                    className={className}
+                    className={cn(className, continuationClass(block.segment))}
                     style={{
                       ...style,
                       background: technicianColor(
@@ -624,11 +676,21 @@ function PlanningGrid({ columns, dayStart, dayEnd, detailed, onOpenAppointment }
                           : null,
                       ),
                     }}
-                    title={`${order.plate} · ${order.technician_name ?? 'non assigné'} · ${shortTime(order.planned_start)}${order.planned_end ? ` → ${shortTime(order.planned_end)}` : ''}`}
+                    title={`${order.plate} · ${order.technician_name ?? 'non assigné'} · ${
+                      multiDay
+                        ? `${dayLabel(slot.date)} ${shortTime(order.planned_start)} → ${dayLabel(order.planned_end_date ?? '')} ${shortTime(order.planned_end)}`
+                        : `${shortTime(order.planned_start)}${order.planned_end ? ` → ${shortTime(order.planned_end)}` : ''}`
+                    }`}
                   >
                     <strong>
-                      {shortTime(order.planned_start)}
-                      {detailed && order.planned_end ? ` - ${shortTime(order.planned_end)}` : ''}
+                      {multiDay ? (
+                        multiDayLabel(slot, block.segment)
+                      ) : (
+                        <>
+                          {shortTime(order.planned_start)}
+                          {detailed && order.planned_end ? ` - ${shortTime(order.planned_end)}` : ''}
+                        </>
+                      )}
                     </strong>{' '}
                     {order.plate}
                     <br />

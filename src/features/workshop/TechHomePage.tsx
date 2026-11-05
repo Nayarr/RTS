@@ -14,11 +14,16 @@ import { useMyRepairOrders, useSeen } from './hooks';
 function plannedLabel(order: RepairOrderOverview, today: string) {
   if (!order.planned_date) return null;
   const start = order.planned_start?.slice(0, 5);
-  const time = start && (order.planned_end ? `${start} → ${order.planned_end.slice(0, 5)}` : start);
+  // Jour court (« 28/09 »)
+  const shortDay = (iso: string) => {
+    const [, month, dayOfMonth] = iso.split('-');
+    return `${dayOfMonth}/${month}`;
+  };
+  // OR sur plusieurs jours : la fin est datée
+  const endDay = order.planned_end_date ? `${shortDay(order.planned_end_date)} ` : '';
+  const time = start && (order.planned_end ? `${start} → ${endDay}${order.planned_end.slice(0, 5)}` : start);
   if (order.planned_date === today) return time ? `prévu ${time}` : null;
-  // Jour court (« 28/09 ») : l'OR est d'une date passée toute proche.
-  const [, month, dayOfMonth] = order.planned_date.split('-');
-  return `prévu le ${dayOfMonth}/${month}${time ? ` ${time}` : ''}`;
+  return `prévu le ${shortDay(order.planned_date)}${time ? ` ${time}` : ''}`;
 }
 
 function OrderCard({

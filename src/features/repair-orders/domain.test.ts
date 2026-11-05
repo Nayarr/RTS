@@ -80,6 +80,7 @@ describe('nouvel OR', () => {
       planned_date: '2026-10-01',
       planned_start: null,
       planned_end: null,
+      planned_end_date: null,
       signature_file_id: null,
     });
   });

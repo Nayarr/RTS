@@ -5,6 +5,38 @@ import { normalizeKey } from './constants';
 
 const time = z.union([z.literal(''), z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide')]);
 
+/** Créneau du planning ; `endDate` vide : il finit le même jour. */
+interface PlannedSlotFields {
+  date: string;
+  start: string;
+  end: string;
+  endDate: string;
+}
+
+/**
+ * Règles communes d'un créneau : un véhicule peut commencer le soir et finir le lendemain matin,
+ * à condition d'indiquer la date de fin. `paths` : noms des champs du formulaire concerné.
+ */
+export function checkPlannedSlot(
+  ctx: z.RefinementCtx,
+  { date, start, end, endDate }: PlannedSlotFields,
+  paths: { endDate: string; start: string; end: string },
+) {
+  const addIssue = (path: string, message: string) => ctx.addIssue({ code: 'custom', path: [path], message });
+  if (endDate && (!date || endDate < date)) {
+    addIssue(paths.endDate, 'La date de fin doit être après la date de début');
+    return;
+  }
+  if (endDate && endDate > date) {
+    if (!start) addIssue(paths.start, 'Indique l’heure de début');
+    if (!end) addIssue(paths.end, 'Indique l’heure de fin');
+    return;
+  }
+  if (end && start && end <= start) addIssue(paths.end, 'L’heure de fin doit être après le début');
+}
+
+const PLANNED_PATHS = { endDate: 'planned_end_date', start: 'planned_start', end: 'planned_end' };
+
 /** Nouvel OR (bureau) : mêmes règles que l'ancienne appli et que la base. */
 export const newRepairOrderSchema = z
   .object({
@@ -16,19 +48,23 @@ export const newRepairOrderSchema = z
     planned_date: z.string(),
     planned_start: time,
     planned_end: time,
+    planned_end_date: z.string(),
     technician_id: z.string(),
   })
   .superRefine((values, ctx) => {
     if (values.planned_end && !values.planned_start) {
       ctx.addIssue({ code: 'custom', path: ['planned_start'], message: 'Indique l’heure de début' });
     }
-    if (values.planned_end && values.planned_start && values.planned_end <= values.planned_start) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['planned_end'],
-        message: 'L’heure de fin doit être après le début',
-      });
-    }
+    checkPlannedSlot(
+      ctx,
+      {
+        date: values.planned_date,
+        start: values.planned_start,
+        end: values.planned_end,
+        endDate: values.planned_end_date,
+      },
+      PLANNED_PATHS,
+    );
   });
 export type NewRepairOrderValues = z.infer<typeof newRepairOrderSchema>;
 
@@ -46,6 +82,7 @@ export const newRepairOrderDefaults = (): NewRepairOrderValues => ({
   planned_date: todayIso(),
   planned_start: '',
   planned_end: '',
+  planned_end_date: '',
   technician_id: '',
 });
 
@@ -62,6 +99,7 @@ export const toNewRepairOrderInput = (
   planned_date: values.planned_date || null,
   planned_start: values.planned_start || null,
   planned_end: values.planned_start ? values.planned_end || null : null,
+  planned_end_date: values.planned_start ? values.planned_end_date || null : null,
   signature_file_id: signatureFileId,
 });
 
@@ -74,17 +112,21 @@ export const editRepairOrderSchema = z
     planned_date: z.string(),
     planned_start: time,
     planned_end: time,
+    planned_end_date: z.string(),
     technician_id: z.string(),
     status: z.enum(['assigned', 'in_progress', 'work_done', 'quote_pending', 'to_invoice', 'invoiced']),
   })
   .superRefine((values, ctx) => {
-    if (values.planned_end && values.planned_start && values.planned_end <= values.planned_start) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['planned_end'],
-        message: 'L’heure de fin doit être après le début',
-      });
-    }
+    checkPlannedSlot(
+      ctx,
+      {
+        date: values.planned_date,
+        start: values.planned_start,
+        end: values.planned_end,
+        endDate: values.planned_end_date,
+      },
+      PLANNED_PATHS,
+    );
   });
 export type EditRepairOrderValues = z.infer<typeof editRepairOrderSchema>;
 

@@ -201,6 +201,8 @@ export interface NewRepairOrderInput {
   planned_date: string | null;
   planned_start: string | null;
   planned_end: string | null;
+  /** Dernier jour, si l'OR déborde sur un autre jour. */
+  planned_end_date?: string | null;
   signature_file_id: string | null;
   /** Direction : fiche de contrôle complète exigée avant « Travaux terminés ». */
   inspection_required?: boolean;
@@ -217,6 +219,7 @@ export async function createRepairOrder(input: NewRepairOrderInput): Promise<Tab
     p_planned_date: input.planned_date ?? undefined,
     p_planned_start: input.planned_start ?? undefined,
     p_planned_end: input.planned_end ?? undefined,
+    p_planned_end_date: input.planned_end_date ?? undefined,
     p_signature_file_id: input.signature_file_id ?? undefined,
     p_inspection_required: input.inspection_required ?? false,
   });

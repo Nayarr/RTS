@@ -22,6 +22,7 @@ const toForm = (order: RepairOrderOverview): EditRepairOrderValues => ({
   planned_date: order.planned_date ?? '',
   planned_start: hhmm(order.planned_start),
   planned_end: hhmm(order.planned_end),
+  planned_end_date: order.planned_end_date ?? '',
   technician_id: order.technician_id ?? '',
   status: order.status,
 });
@@ -32,6 +33,7 @@ function toPatch({
   planned_date,
   planned_start,
   planned_end,
+  planned_end_date,
   technician_id,
   ...rest
 }: Partial<EditRepairOrderValues>) {
@@ -40,6 +42,7 @@ function toPatch({
   if (planned_date !== undefined) patch.planned_date = planned_date || null;
   if (planned_start !== undefined) patch.planned_start = planned_start || null;
   if (planned_end !== undefined) patch.planned_end = planned_end || null;
+  if (planned_end_date !== undefined) patch.planned_end_date = planned_end_date || null;
   if (technician_id !== undefined) patch.technician_id = technician_id || null;
   return patch;
 }
@@ -180,20 +183,29 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
             error={errors.mileage?.message}
             {...register('mileage')}
           />
-          <FormField id="edit-planned_date" label="Date prévue" type="date" {...register('planned_date')} />
+          <FormField id="edit-planned_date" label="Date de début" type="date" {...register('planned_date')} />
           <FormField
             id="edit-planned_start"
             label="Heure de début"
             type="time"
+            error={errors.planned_start?.message}
             {...register('planned_start')}
           />
           <FormField
+            id="edit-planned_end_date"
+            label="Date de fin"
+            type="date"
+            error={errors.planned_end_date?.message}
+            {...register('planned_end_date')}
+          />
+          <FormField
             id="edit-planned_end"
-            label="Heure de fin prévue"
+            label="Heure de fin"
             type="time"
             error={errors.planned_end?.message}
             {...register('planned_end')}
           />
+          <p className="hint col-span-full">Date de fin : seulement si l’OR finit un autre jour.</p>
         </div>
       </div>
     </SectionCard>

@@ -166,6 +166,7 @@ describe('contrats : écran', () => {
         scheduled_date: addDays(todayIso(), 2),
         start_time: '09:00',
         end_time: '10:00',
+        end_date: null,
         reason: 'Entretien contrat : Vidange + contrôle général',
         technician_id: null,
         maintenance_contract_id: 'k1',

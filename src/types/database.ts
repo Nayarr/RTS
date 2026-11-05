@@ -345,6 +345,7 @@ export type Database = {
           client_id: string | null;
           created_at: string;
           created_by: string | null;
+          end_date: string | null;
           end_time: string | null;
           id: string;
           legacy_id: string | null;
@@ -364,6 +365,7 @@ export type Database = {
           client_id?: string | null;
           created_at?: string;
           created_by?: string | null;
+          end_date?: string | null;
           end_time?: string | null;
           id?: string;
           legacy_id?: string | null;
@@ -383,6 +385,7 @@ export type Database = {
           client_id?: string | null;
           created_at?: string;
           created_by?: string | null;
+          end_date?: string | null;
           end_time?: string | null;
           id?: string;
           legacy_id?: string | null;
@@ -4618,6 +4621,7 @@ export type Database = {
           origin_repair_order_id: string | null;
           planned_date: string | null;
           planned_end: string | null;
+          planned_end_date: string | null;
           planned_start: string | null;
           pre_quote_work_settled_at: string | null;
           requested_work: string;
@@ -4651,6 +4655,7 @@ export type Database = {
           origin_repair_order_id?: string | null;
           planned_date?: string | null;
           planned_end?: string | null;
+          planned_end_date?: string | null;
           planned_start?: string | null;
           pre_quote_work_settled_at?: string | null;
           requested_work?: string;
@@ -4684,6 +4689,7 @@ export type Database = {
           origin_repair_order_id?: string | null;
           planned_date?: string | null;
           planned_end?: string | null;
+          planned_end_date?: string | null;
           planned_start?: string | null;
           pre_quote_work_settled_at?: string | null;
           requested_work?: string;
@@ -6275,6 +6281,7 @@ export type Database = {
           client_name: string | null;
           created_at: string | null;
           created_by: string | null;
+          end_date: string | null;
           end_time: string | null;
           id: string | null;
           legacy_id: string | null;
@@ -7160,6 +7167,7 @@ export type Database = {
           parts_to_order_count: number | null;
           planned_date: string | null;
           planned_end: string | null;
+          planned_end_date: string | null;
           planned_start: string | null;
           plate: string | null;
           plate_key: string | null;
@@ -7754,6 +7762,7 @@ export type Database = {
           origin_repair_order_id: string | null;
           planned_date: string | null;
           planned_end: string | null;
+          planned_end_date: string | null;
           planned_start: string | null;
           pre_quote_work_settled_at: string | null;
           requested_work: string;
@@ -7826,6 +7835,7 @@ export type Database = {
           p_mileage?: number;
           p_planned_date?: string;
           p_planned_end?: string;
+          p_planned_end_date?: string;
           p_planned_start?: string;
           p_plate: string;
           p_requested_work: string;
@@ -7852,6 +7862,7 @@ export type Database = {
           origin_repair_order_id: string | null;
           planned_date: string | null;
           planned_end: string | null;
+          planned_end_date: string | null;
           planned_start: string | null;
           pre_quote_work_settled_at: string | null;
           requested_work: string;
@@ -8188,6 +8199,7 @@ export type Database = {
           origin_repair_order_id: string | null;
           planned_date: string | null;
           planned_end: string | null;
+          planned_end_date: string | null;
           planned_start: string | null;
           pre_quote_work_settled_at: string | null;
           requested_work: string;
@@ -8451,6 +8463,7 @@ export type Database = {
       save_appointment: {
         Args: {
           p_client_name: string;
+          p_end_date?: string;
           p_end_time?: string;
           p_id?: string;
           p_maintenance_contract_id?: string;
@@ -8465,6 +8478,7 @@ export type Database = {
           client_id: string | null;
           created_at: string;
           created_by: string | null;
+          end_date: string | null;
           end_time: string | null;
           id: string;
           legacy_id: string | null;
@@ -8730,6 +8744,7 @@ export type Database = {
           origin_repair_order_id: string | null;
           planned_date: string | null;
           planned_end: string | null;
+          planned_end_date: string | null;
           planned_start: string | null;
           pre_quote_work_settled_at: string | null;
           requested_work: string;

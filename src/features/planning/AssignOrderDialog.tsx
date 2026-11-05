@@ -40,7 +40,9 @@ export function AssignOrderDialog({ date, technicians, technicianId, onClose }: 
     defaultValues: {
       repair_order_id: '',
       technician_id: technicianId ?? '',
+      planned_date: date,
       planned_start: '09:00',
+      planned_end_date: '',
       planned_end: '10:00',
     },
   });
@@ -49,9 +51,10 @@ export function AssignOrderDialog({ date, technicians, technicianId, onClose }: 
     (values: AssignOrderValues) =>
       updateRepairOrder(values.repair_order_id, {
         technician_id: values.technician_id,
-        planned_date: date,
+        planned_date: values.planned_date,
         planned_start: values.planned_start,
         planned_end: values.planned_end,
+        planned_end_date: values.planned_end_date || null,
       }),
     'OR planifié',
   );
@@ -116,11 +119,25 @@ export function AssignOrderDialog({ date, technicians, technicianId, onClose }: 
           )}
           <div className="grid grid-cols-2 gap-3">
             <FormField
+              id="assign-date"
+              label="Date de début"
+              type="date"
+              error={errors.planned_date?.message}
+              {...register('planned_date')}
+            />
+            <FormField
               id="assign-start"
               label="Heure de début"
               type="time"
               error={errors.planned_start?.message}
               {...register('planned_start')}
+            />
+            <FormField
+              id="assign-end-date"
+              label="Date de fin"
+              type="date"
+              error={errors.planned_end_date?.message}
+              {...register('planned_end_date')}
             />
             <FormField
               id="assign-end"
@@ -129,6 +146,7 @@ export function AssignOrderDialog({ date, technicians, technicianId, onClose }: 
               error={errors.planned_end?.message}
               {...register('planned_end')}
             />
+            <p className="hint col-span-full">Date de fin : seulement si l’OR finit un autre jour.</p>
           </div>
         </form>
         <DialogFooter>
