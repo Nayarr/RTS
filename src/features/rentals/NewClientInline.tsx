@@ -9,6 +9,7 @@ import { createClient } from '@/features/customers/api';
 import { newClientFromForm, type NewClientValues } from '@/features/customers/domain';
 import { NewClientFields } from '@/features/repair-orders/NewClientFields';
 import { orNewClientDefaults, orNewClientSchema } from '@/features/repair-orders/schemas';
+import { errorMessage } from '@/lib/error-message';
 
 /**
  * Location ou prêt pour un client pas encore en base : sa fiche complète se remplit ici,
@@ -46,7 +47,7 @@ export function NewClientInline({
       toast.success('Client créé');
       onCreated(id);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'Client non créé'),
+    onError: (error) => toast.error(errorMessage(error, 'Client non créé')),
   });
 
   const submit = async () => {

@@ -22,6 +22,7 @@ import { formatDateTime } from '@/features/repair-orders/constants';
 import { fetchSettings } from '@/features/settings/api';
 import { useSettings } from '@/features/settings/hooks';
 import { downloadFile } from '@/lib/csv';
+import { errorMessage } from '@/lib/error-message';
 import { decimalField, decimalValue, formatEuro } from '@/lib/numbers';
 import { pdfFileName } from '@/lib/pdf';
 import { cn } from '@/lib/utils';
@@ -350,7 +351,7 @@ export function FleetSaleCard({ vehicle }: { vehicle: FleetVehicle }) {
     try {
       await downloadCerfa(vehicle, data);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Certificat de cession indisponible');
+      toast.error(errorMessage(error, 'Certificat de cession indisponible'));
     } finally {
       setDownloading(false);
     }

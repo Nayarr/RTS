@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { fleetKey } from './fleet-hooks';
 import {
   fetchBusyPeriods,
@@ -40,7 +41,7 @@ export function useRentalMutation<T, R = unknown>(fn: (value: T) => Promise<R>, 
         queryClient.invalidateQueries({ queryKey: fleetKey }),
       ]);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'Enregistrement impossible'),
+    onError: (error) => toast.error(errorMessage(error, 'Enregistrement impossible')),
   });
 }
 

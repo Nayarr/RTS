@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { StoredImage } from '@/features/files/StoredImage';
 import { formatDate } from '@/features/repair-orders/constants';
 import { todayIso } from '@/features/repair-orders/schemas';
+import { errorMessage } from '@/lib/error-message';
 import { cn } from '@/lib/utils';
 import { deleteLicense, type DrivingLicense } from './license-api';
 import { licenseState } from './license-domain';
@@ -48,7 +49,7 @@ export function ClientLicensesCard({ client }: { client: ClientIdentity }) {
       setToDelete(null);
       await queryClient.invalidateQueries({ queryKey: licensesKey(client.id) });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'Suppression impossible'),
+    onError: (error) => toast.error(errorMessage(error, 'Suppression impossible')),
   });
   const list = licenses.data ?? [];
   const own = individual ? (list[0] ?? null) : null;

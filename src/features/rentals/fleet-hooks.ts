@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/error-message';
 import { fetchFleet, fetchFleetDocuments, fetchFleetSale, fetchFleetVehicle } from './fleet-api';
 
 export const fleetKey = ['fleet'] as const;
@@ -28,6 +29,6 @@ export function useFleetMutation<T, R = unknown>(fn: (value: T) => Promise<R>, s
       if (success) toast.success(success);
       await queryClient.invalidateQueries({ queryKey: fleetKey });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'Enregistrement impossible'),
+    onError: (error) => toast.error(errorMessage(error, 'Enregistrement impossible')),
   });
 }

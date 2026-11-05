@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { errorMessage } from '@/lib/error-message';
 import { saveLicense, type DrivingLicense } from './license-api';
 import {
   emptyLicense,
@@ -51,7 +52,7 @@ export function LicenseDialog({
       await queryClient.invalidateQueries({ queryKey: licensesKey(clientId) });
       onClose();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'Enregistrement impossible'),
+    onError: (error) => toast.error(errorMessage(error, 'Enregistrement impossible')),
   });
 
   return (
