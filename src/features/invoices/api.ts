@@ -8,6 +8,8 @@ export type VehicleType = Enums<'vehicle_type'>;
 export type InvoiceLine = Tables<'invoice_lines'>;
 /** Paiement avec la personne qui l'a enregistré (horodatage : created_at). */
 export type Payment = Tables<'payments'> & { recorder: { full_name: string } | null };
+/** Ligne de l'historique des règlements : paiement saisi ou supprimé. */
+export type PaymentEvent = Tables<'payment_events'> & { actor: { full_name: string } | null };
 export type DueDateChange = Pick<
   Tables<'invoice_due_date_changes'>,
   'id' | 'old_date' | 'new_date' | 'changed_at'
@@ -48,6 +50,8 @@ export interface InvoiceDetail {
   invoice: InvoiceOverview;
   lines: InvoiceLine[];
   payments: Payment[];
+  /** Paiements saisis et supprimés, du plus ancien au plus récent. */
+  paymentEvents: PaymentEvent[];
   creditNotes: CreditNote[];
   /** Échéances déplacées après l'émission, de la plus ancienne à la plus récente. */
   dueDateChanges: DueDateChange[];
@@ -92,7 +96,7 @@ export async function fetchRepairOrderInvoices(repairOrderId: string): Promise<I
 }
 
 export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
-  const [invoice, lines, payments, creditNotes, dueDates] = await Promise.all([
+  const [invoice, lines, payments, paymentEvents, creditNotes, dueDates] = await Promise.all([
     supabase.from('v_invoices_overview').select('*').eq('id', id).maybeSingle(),
     supabase.from('invoice_lines').select('*').eq('invoice_id', id).order('position'),
     supabase
@@ -101,6 +105,11 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
       .eq('invoice_id', id)
       .order('paid_on')
       .order('created_at'),
+    supabase
+      .from('payment_events')
+      .select('*, actor:profiles!payment_events_actor_id_fkey(full_name)')
+      .eq('invoice_id', id)
+      .order('happened_at'),
     supabase.from('credit_notes').select('*').eq('invoice_id', id).order('issued_at'),
     supabase
       .from('invoice_due_date_changes')
@@ -110,7 +119,7 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
       .eq('invoice_id', id)
       .order('changed_at'),
   ]);
-  for (const result of [invoice, lines, payments, creditNotes, dueDates])
+  for (const result of [invoice, lines, payments, paymentEvents, creditNotes, dueDates])
     if (result.error) throw result.error;
   if (!invoice.data) return null;
   const overview = invoice.data as InvoiceOverview;
@@ -138,6 +147,7 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
     invoice: overview,
     lines: lines.data ?? [],
     payments: payments.data ?? [],
+    paymentEvents: paymentEvents.data ?? [],
     creditNotes: creditNotes.data ?? [],
     dueDateChanges: dueDates.data ?? [],
     accountType: accountChoice({ account_type, direct_debit_day }),
@@ -273,6 +283,15 @@ export interface PaymentInput {
 
 export async function addPayment(invoiceId: string, input: PaymentInput) {
   const { error } = await supabase.from('payments').insert({ ...input, invoice_id: invoiceId });
+  if (error) throw error;
+}
+
+/** Supprime un paiement (direction seule) : le solde se recalcule, l'historique garde la suppression. */
+export async function deletePayment(paymentId: string, reason: string | null) {
+  const { error } = await supabase.rpc('delete_payment', {
+    p_payment_id: paymentId,
+    ...(reason && { p_reason: reason }),
+  });
   if (error) throw error;
 }
 

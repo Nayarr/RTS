@@ -13,6 +13,8 @@ interface ConfirmDialogProps {
   destructive?: boolean;
   pending?: boolean;
   onConfirm: () => void;
+  /** Champ à remplir avant de confirmer (motif…). */
+  children?: ReactNode;
 }
 
 /** Confirmation d'une action sensible (remplace les confirm() natifs de l'ancienne appli). */
@@ -25,6 +27,7 @@ export function ConfirmDialog({
   destructive = false,
   pending = false,
   onConfirm,
+  children,
 }: ConfirmDialogProps) {
   const Icon = destructive ? Trash2 : CircleCheck;
   return (
@@ -46,6 +49,7 @@ export function ConfirmDialog({
             <DialogDescription className="text-[13.5px]!">{description}</DialogDescription>
           </div>
         </div>
+        {children}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler

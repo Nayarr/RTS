@@ -3421,6 +3421,84 @@ export type Database = {
           },
         ];
       };
+      payment_events: {
+        Row: {
+          actor_id: string | null;
+          amount_ttc: number;
+          happened_at: string;
+          id: string;
+          invoice_id: string;
+          kind: string;
+          method: Database['public']['Enums']['payment_method'];
+          note: string | null;
+          paid_on: string;
+          payment_id: string;
+          reason: string | null;
+        };
+        Insert: {
+          actor_id?: string | null;
+          amount_ttc: number;
+          happened_at?: string;
+          id?: string;
+          invoice_id: string;
+          kind: string;
+          method: Database['public']['Enums']['payment_method'];
+          note?: string | null;
+          paid_on: string;
+          payment_id: string;
+          reason?: string | null;
+        };
+        Update: {
+          actor_id?: string | null;
+          amount_ttc?: number;
+          happened_at?: string;
+          id?: string;
+          invoice_id?: string;
+          kind?: string;
+          method?: Database['public']['Enums']['payment_method'];
+          note?: string | null;
+          paid_on?: string;
+          payment_id?: string;
+          reason?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payment_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_events_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_events_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_balances';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'payment_events_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoice_totals';
+            referencedColumns: ['invoice_id'];
+          },
+          {
+            foreignKeyName: 'payment_events_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_invoices_overview';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       payments: {
         Row: {
           amount_ttc: number;
@@ -7891,6 +7969,7 @@ export type Database = {
         };
       };
       delete_leave_request: { Args: { p_id: string }; Returns: undefined };
+      delete_payment: { Args: { p_payment_id: string; p_reason?: string }; Returns: undefined };
       dispatch_push: { Args: Record<PropertyKey, never>; Returns: number };
       duplicate_invoice: { Args: { p_invoice_id: string }; Returns: string };
       duplicate_quote: { Args: { p_quote_id: string }; Returns: string };
