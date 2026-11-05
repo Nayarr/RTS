@@ -108,7 +108,12 @@ export async function sellFleetVehicle(input: {
     p_price: input.price,
     ...(input.purchasePrice === null ? {} : { p_purchase_price: input.purchasePrice }),
   });
-  if (error) throw error;
+  if (error) {
+    // PostgREST ne trouve pas la fonction : migration de la vente absente de cette base
+    if (error.code === 'PGRST202')
+      throw new Error('Vente indisponible : la base de données n’est pas à jour');
+    throw error;
+  }
   return data;
 }
 
