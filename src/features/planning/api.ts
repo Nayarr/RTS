@@ -34,13 +34,18 @@ export interface PlanningData {
 /** Tout ce qu'affiche le planning entre deux dates incluses. */
 export async function fetchPlanning(from: string, to: string): Promise<PlanningData> {
   const [orders, appointments, technicians, leaves, settings] = await Promise.all([
-    supabase.from('v_repair_orders_overview').select('*').gte('planned_date', from).lte('planned_date', to),
+    // Y compris ce qui a commencé avant la période et déborde dessus
+    supabase
+      .from('v_repair_orders_overview')
+      .select('*')
+      .lte('planned_date', to)
+      .or(`planned_date.gte.${from},planned_end_date.gte.${from}`),
     supabase
       .from('v_appointments_overview')
       .select('*')
       .eq('status', 'planned')
-      .gte('scheduled_date', from)
-      .lte('scheduled_date', to),
+      .lte('scheduled_date', to)
+      .or(`scheduled_date.gte.${from},end_date.gte.${from}`),
     supabase
       .from('technicians')
       .select('id, display_name, color, rest_group, profile:profiles(role)')
@@ -111,6 +116,8 @@ export interface AppointmentInput {
   scheduled_date: string;
   start_time: string;
   end_time: string | null;
+  /** Dernier jour, si le rendez-vous déborde sur un autre jour. */
+  end_date?: string | null;
   reason: string;
   technician_id: string | null;
   /** Entretien prévu par un contrat : l'OR créé à l'arrivée du véhicule lui sera rattaché. */
@@ -126,6 +133,7 @@ export async function saveAppointment(id: string | null, input: AppointmentInput
     p_scheduled_date: input.scheduled_date,
     p_start_time: input.start_time,
     p_end_time: input.end_time ?? undefined,
+    p_end_date: input.end_date ?? undefined,
     p_reason: input.reason,
     p_technician_id: input.technician_id ?? undefined,
     p_maintenance_contract_id: input.maintenance_contract_id ?? undefined,

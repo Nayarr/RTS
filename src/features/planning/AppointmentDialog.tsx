@@ -226,28 +226,36 @@ export function AppointmentDialog({ appointment, preset, onClose }: AppointmentD
           {clientEntry.isNewClient && (
             <NewClientFields form={clientEntry.form} onKindChange={clientEntry.changeKind} />
           )}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <FormField
               id="appointment-date"
-              label="Date"
+              label="Date de début"
               type="date"
               error={errors.scheduled_date?.message}
               {...register('scheduled_date')}
             />
             <FormField
               id="appointment-start"
-              label="Heure"
+              label="Heure de début"
               type="time"
               error={errors.start_time?.message}
               {...register('start_time')}
             />
             <FormField
+              id="appointment-end-date"
+              label="Date de fin"
+              type="date"
+              error={errors.end_date?.message}
+              {...register('end_date')}
+            />
+            <FormField
               id="appointment-end"
-              label="Fin prévue"
+              label="Heure de fin"
               type="time"
               error={errors.end_time?.message}
               {...register('end_time')}
             />
+            <p className="hint col-span-full">Date de fin : seulement si le véhicule finit un autre jour.</p>
           </div>
           <FormField
             id="appointment-reason"

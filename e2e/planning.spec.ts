@@ -50,9 +50,9 @@ test('rendez-vous pris au planning, puis OR créé à l’arrivée du véhicule'
   await dialog.getByLabel('Client', { exact: true }).fill(`Client planning ${id}`);
   await fillNewProClient(dialog);
   await dialog.getByLabel('Immatriculation').fill(plate);
-  await dialog.getByLabel('Date').fill(date);
-  await dialog.getByLabel('Heure').fill('10:00');
-  await dialog.getByLabel('Fin prévue').fill('11:30');
+  await dialog.getByLabel('Date de début').fill(date);
+  await dialog.getByLabel('Heure de début').fill('10:00');
+  await dialog.getByLabel('Heure de fin').fill('11:30');
   await dialog.getByLabel('Motif').fill('Vidange + freins');
   await dialog.getByLabel('Technicien (facultatif)').selectOption({ label: 'Alice' });
   await dialog.getByRole('button', { name: 'Enregistrer' }).click();

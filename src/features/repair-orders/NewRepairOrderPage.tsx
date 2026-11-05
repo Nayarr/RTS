@@ -394,8 +394,8 @@ export function NewRepairOrderPage() {
                 <span className="muted font-sans text-sm font-medium">(optionnel)</span>
               </h2>
             </div>
-            <div className="card-b grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <FormField id="planned_date" label="Date prévue" type="date" {...register('planned_date')} />
+            <div className="card-b grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <FormField id="planned_date" label="Date de début" type="date" {...register('planned_date')} />
               <FormField
                 id="planned_start"
                 label="Heure de début"
@@ -404,13 +404,22 @@ export function NewRepairOrderPage() {
                 {...register('planned_start')}
               />
               <FormField
+                id="planned_end_date"
+                label="Date de fin"
+                type="date"
+                disabled={!plannedStart}
+                error={errors.planned_end_date?.message}
+                {...register('planned_end_date')}
+              />
+              <FormField
                 id="planned_end"
-                label="Fin prévue"
+                label="Heure de fin"
                 type="time"
                 disabled={!plannedStart}
                 error={errors.planned_end?.message}
                 {...register('planned_end')}
               />
+              <p className="hint col-span-full">Date de fin : seulement si l’OR finit un autre jour.</p>
             </div>
           </section>
 
