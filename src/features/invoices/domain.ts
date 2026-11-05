@@ -195,10 +195,13 @@ const STAMP = new Intl.DateTimeFormat('fr-FR', {
 });
 
 /** « Enregistré le 23/10/2026 à 14:32 par Réception ». */
-export function recordedLabel(at: string, by: string | null | undefined): string {
+function stampLabel(verb: string, at: string, by: string | null | undefined): string {
   const [date, time] = STAMP.format(new Date(at)).split(' ');
-  return `Enregistré le ${date} à ${time}${by ? ` par ${by}` : ''}`;
+  return `${verb} le ${date} à ${time}${by ? ` par ${by}` : ''}`;
 }
+
+export const recordedLabel = (at: string, by: string | null | undefined) => stampLabel('Enregistré', at, by);
+export const deletedLabel = (at: string, by: string | null | undefined) => stampLabel('Supprimé', at, by);
 
 /** Facture émise payée en partie : un ou plusieurs paiements, reste encore dû. */
 export const isPartiallyPaid = (invoice: Pick<InvoiceOverview, 'status' | 'paid_ttc' | 'balance_due'>) =>

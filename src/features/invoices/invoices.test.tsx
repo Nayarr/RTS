@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 import { describe, expect, it, vi } from 'vitest';
 import { fetchProfile } from '@/features/auth/api';
 import type * as AuthApi from '@/features/auth/api';
@@ -12,6 +13,7 @@ import {
   addInvoiceLine,
   addPayment,
   buildInvoiceDraft,
+  deletePayment,
   fetchInvoice,
   fetchInvoices,
   fetchRepairOrderInvoices,
@@ -60,6 +62,7 @@ vi.mock('./api', async (importOriginal) => ({
   updateInvoiceLine: vi.fn(),
   issueInvoice: vi.fn(),
   addPayment: vi.fn(),
+  deletePayment: vi.fn(),
   addCreditNote: vi.fn(),
   shareInvoice: vi.fn(),
   recordInvoiceReminder: vi.fn(),
@@ -134,12 +137,12 @@ const line = (overrides: Partial<InvoiceLine> = {}): InvoiceLine =>
     ...overrides,
   }) as InvoiceLine;
 
-function mockCommon() {
+function mockCommon(role: 'direction' | 'reception' = 'direction') {
   vi.mocked(fetchProfile).mockResolvedValue({
     id: 'u1',
     email: 'direction@test.fr',
     full_name: 'Direction',
-    role: 'direction',
+    role,
     is_active: true,
     created_at: '2026-09-27T00:00:00Z',
     updated_at: '2026-09-27T00:00:00Z',
@@ -156,8 +159,8 @@ function mockCommon() {
   } as Settings);
 }
 
-function setupInvoice(detail: Partial<InvoiceDetail> = {}) {
-  mockCommon();
+function setupInvoice(detail: Partial<InvoiceDetail> = {}, role: 'direction' | 'reception' = 'direction') {
+  mockCommon(role);
   vi.mocked(fetchInvoice).mockResolvedValue({
     invoice: invoice(),
     lines: [
@@ -172,6 +175,7 @@ function setupInvoice(detail: Partial<InvoiceDetail> = {}) {
       }),
     ],
     payments: [],
+    paymentEvents: [],
     creditNotes: [],
     dueDateChanges: [],
     accountType: 'comptant',
@@ -499,6 +503,136 @@ describe('facture émise', () => {
     await userEvent.clear(amount);
     await userEvent.type(amount, '600');
     expect(within(dialog).getByRole('status')).toHaveTextContent('il restera 50,00 € à payer');
+  });
+
+  describe('suppression d’un paiement', () => {
+    const payment = {
+      id: 'p1',
+      invoice_id: 'i1',
+      amount_ttc: 50,
+      method: 'card',
+      paid_on: '2026-10-01',
+      note: null,
+      recorded_by: 'u1',
+      created_at: '2026-10-01T12:32:00Z',
+      recorder: { full_name: 'Réception' },
+    } as const;
+    const partlyPaid = { invoice: issued({ balance_due: 670, paid_ttc: 50, payment_status: 'partial' }) };
+    const deleteButton = { name: /^Supprimer le paiement de 50,00\s€ \(Carte bancaire\) du 01\/10\/2026$/ };
+
+    it('confirmation avec montant, mode et date ; annuler ne supprime rien', async () => {
+      vi.mocked(deletePayment).mockClear();
+      setupInvoice({ ...partlyPaid, payments: [payment] });
+      await userEvent.click(await screen.findByRole('button', deleteButton));
+      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      expect(dialog).toHaveTextContent(/50,00\s€ · Carte bancaire · payé le 01\/10\/2026/);
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(deletePayment).not.toHaveBeenCalled();
+      expect(screen.getByRole('list', { name: 'Paiements' })).toHaveTextContent('Carte bancaire');
+    });
+
+    it('confirmer supprime ce paiement et recharge la facture', async () => {
+      vi.mocked(deletePayment).mockClear().mockResolvedValue();
+      setupInvoice({ ...partlyPaid, payments: [payment] });
+      await userEvent.click(await screen.findByRole('button', deleteButton));
+
+      // La facture rechargée n'a plus le paiement
+      const current = (await fetchInvoice('i1')) as InvoiceDetail;
+      vi.mocked(fetchInvoice).mockResolvedValue({
+        ...current,
+        invoice: issued({ balance_due: 720, paid_ttc: 0, payment_status: 'pending' }),
+        payments: [],
+      });
+      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
+
+      await waitFor(() => expect(deletePayment).toHaveBeenCalledWith('p1', null));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      await waitFor(() => expect(screen.queryByRole('list', { name: 'Paiements' })).toBeNull());
+      expect(screen.getByLabelText('Solde')).toHaveTextContent(/Reste dû\s*720,00\s€/);
+    });
+
+    it('refus : le message s’affiche et le paiement reste', async () => {
+      vi.mocked(deletePayment).mockClear().mockRejectedValue(new Error('Refus de la base'));
+      setupInvoice({ ...partlyPaid, payments: [payment] });
+      await userEvent.click(await screen.findByRole('button', deleteButton));
+      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Refus de la base'));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(screen.getByRole('list', { name: 'Paiements' })).toHaveTextContent('Carte bancaire');
+    });
+
+    it('le motif facultatif part avec la suppression', async () => {
+      vi.mocked(deletePayment).mockClear().mockResolvedValue();
+      setupInvoice({ ...partlyPaid, payments: [payment] });
+      await userEvent.click(await screen.findByRole('button', deleteButton));
+      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.type(within(dialog).getByLabelText('Motif (facultatif)'), '  Erreur de mode ');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
+      await waitFor(() => expect(deletePayment).toHaveBeenCalledWith('p1', 'Erreur de mode'));
+    });
+
+    it('le motif saisi puis annulé ne revient pas', async () => {
+      setupInvoice({ ...partlyPaid, payments: [payment] });
+      await userEvent.click(await screen.findByRole('button', deleteButton));
+      let dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.type(within(dialog).getByLabelText('Motif (facultatif)'), 'Brouillon');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      await userEvent.click(screen.getByRole('button', deleteButton));
+      dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      expect(within(dialog).getByLabelText('Motif (facultatif)')).toHaveValue('');
+    });
+
+    it('historique : saisie avec le montant, suppression avec la personne et le motif', async () => {
+      const event = {
+        id: 'e1',
+        invoice_id: 'i1',
+        payment_id: 'p1',
+        kind: 'recorded',
+        amount_ttc: 50,
+        method: 'card',
+        paid_on: '2026-10-01',
+        note: null,
+        reason: null,
+        actor_id: 'u2',
+        happened_at: '2026-10-01T12:32:00Z',
+        actor: { full_name: 'Réception' },
+      } as const;
+      setupInvoice({
+        invoice: issued({ balance_due: 720, paid_ttc: 0, payment_status: 'pending' }),
+        paymentEvents: [
+          event,
+          {
+            ...event,
+            id: 'e2',
+            kind: 'deleted',
+            reason: 'Erreur de mode',
+            happened_at: '2026-10-02T08:05:00Z',
+            actor: { full_name: 'Direction' },
+          },
+        ],
+      });
+      const list = await screen.findByRole('list', { name: 'Historique des règlements' });
+      const rows = within(list).getAllByRole('listitem');
+      expect(rows[0]).toHaveTextContent(
+        /Règlement enregistré :\s*50,00\s€.*Carte bancaire · payé le 01\/10\/2026.*Enregistré le 01\/10\/2026 à 14:32 par Réception/,
+      );
+      expect(rows[0]).not.toHaveTextContent('Motif');
+      expect(rows[1]).toHaveTextContent(
+        /Règlement supprimé :\s*50,00\s€.*Supprimé le 02\/10\/2026 à 10:05 par Direction.*Motif : Erreur de mode/,
+      );
+    });
+
+    it('réception : pas de bouton, mais elle sait à qui s’adresser', async () => {
+      setupInvoice({ ...partlyPaid, payments: [payment] }, 'reception');
+      await screen.findByRole('list', { name: 'Paiements' });
+      expect(await screen.findByText(/La direction peut le supprimer/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Supprimer le paiement/ })).toBeNull();
+    });
   });
 
   it('échéance déplacée : jamais avant l’émission, changement gardé', async () => {
