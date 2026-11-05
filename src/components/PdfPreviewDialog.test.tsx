@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openPdf } from '@/lib/pdf-viewer';
 import { PdfPreviewDialog } from './PdfPreviewDialog';
@@ -33,7 +33,8 @@ describe('aperçu du PDF', () => {
     render(<PdfPreviewDialog file={file} onClose={vi.fn()} />);
     expect(await screen.findByRole('img', { name: 'Page 3 sur 3' })).toBeInTheDocument();
     expect(screen.getAllByRole('img', { name: /^Page \d sur 3$/ })).toHaveLength(3);
-    expect(renderPage).toHaveBeenCalledTimes(3);
+    // Le dessin part dans un effet, après l'apparition des pages.
+    await waitFor(() => expect(renderPage).toHaveBeenCalledTimes(3));
     expect(screen.queryByTitle('Aperçu du PDF')).toBeNull();
     expect(screen.getByRole('link', { name: 'Télécharger' })).toHaveAttribute('download', 'Devis_D1.pdf');
   });
