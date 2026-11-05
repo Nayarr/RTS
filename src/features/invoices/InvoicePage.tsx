@@ -155,14 +155,18 @@ function IssuedPanel({
 }) {
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
-  const removePayment = useInvoiceMutation(
-    (payment: Payment) => deletePayment(payment.id, deleteReason.trim() || null),
-    'Paiement supprimé',
-  );
   const askDelete = (payment: Payment | null) => {
     setDeleteReason('');
     setPaymentToDelete(payment);
   };
+  const removePayment = useInvoiceMutation(async (payment: Payment) => {
+    try {
+      await deletePayment(payment.id, deleteReason.trim() || null);
+    } finally {
+      // Fermée dès la réponse de la base, sans attendre le rechargement de la facture
+      askDelete(null);
+    }
+  }, 'Paiement supprimé');
   // « ?envoyer=1 » : facture qui vient d'être émise (travaux avant devis), envoyée au client tout de suite
   const [params, setParams] = useSearchParams();
   const autoSend = params.get('envoyer') === '1';
@@ -377,7 +381,7 @@ function IssuedPanel({
           confirmLabel="Supprimer le paiement"
           destructive
           pending={removePayment.isPending}
-          onConfirm={() => removePayment.mutate(paymentToDelete, { onSettled: () => askDelete(null) })}
+          onConfirm={() => removePayment.mutate(paymentToDelete)}
         >
           <div className="space-y-2">
             <Label htmlFor="payment-delete-reason">Motif (facultatif)</Label>

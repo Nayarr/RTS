@@ -554,6 +554,18 @@ describe('facture émise', () => {
       expect(screen.getByLabelText('Solde')).toHaveTextContent(/Reste dû\s*720,00\s€/);
     });
 
+    it('la fenêtre se ferme dès la suppression, sans attendre le rechargement', async () => {
+      vi.mocked(deletePayment).mockClear().mockResolvedValue();
+      setupInvoice({ ...partlyPaid, payments: [payment] });
+      await userEvent.click(await screen.findByRole('button', deleteButton));
+
+      vi.mocked(fetchInvoice).mockReturnValue(new Promise(() => {}));
+      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    });
+
     it('refus : le message s’affiche et le paiement reste', async () => {
       vi.mocked(deletePayment).mockClear().mockRejectedValue(new Error('Refus de la base'));
       setupInvoice({ ...partlyPaid, payments: [payment] });
