@@ -77,6 +77,7 @@ describe('billingSchema', () => {
       payment_terms_days: 30,
       quote_validity_days: 30,
       invoice_legal_mentions: ' Pas d’escompte. \n\nTVA sur les encaissements.\n',
+      quote_legal_mentions: ' VALABLE SOUS RÉSERVE DE DÉMONTAGE \n\n',
       invoice_terms: '1. OBJET',
       supplies_fee_ht: '',
       vat_exempt_mention_eu: 'Autoliquidation',
@@ -92,6 +93,8 @@ describe('billingSchema', () => {
       'Pas d’escompte.',
       'TVA sur les encaissements.',
     ]);
+    expect(billingFromForm(values).quote_legal_mentions).toEqual(['VALABLE SOUS RÉSERVE DE DÉMONTAGE']);
+    expect(billingFromForm({ ...values, quote_legal_mentions: '' }).quote_legal_mentions).toEqual([]);
   });
 
   it('refuse un taux de TVA hors limites ou un champ vide', () => {

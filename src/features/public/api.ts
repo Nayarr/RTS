@@ -39,6 +39,7 @@ export interface PublicQuote {
   vehicle_plate: string | null;
   lines: PublicQuoteLine[];
   totals: { total_ht: number; total_vat: number; total_ttc: number };
+  legal_mentions: string[] | null;
 }
 
 export interface PublicInvoiceLine {

@@ -5,6 +5,7 @@ import {
   drawDocumentHeader,
   drawFooter,
   drawLinesTable,
+  drawMentions,
   drawMeta,
   drawTotals,
   ensureSpace,
@@ -94,6 +95,8 @@ export async function buildQuotePdf({
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.6);
   doc.text('Date, nom et signature du client', MARGIN + 5, y + 11.5);
+
+  drawMentions(doc, company.quote_legal_mentions, totalsEnd + 10);
 
   const days = company.quote_validity_days;
   drawFooter(doc, [
