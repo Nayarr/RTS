@@ -32,6 +32,13 @@ jobs:
       - name: Installer rclone
         run: sudo apt-get update -qq && sudo apt-get install -y -qq rclone
 
+      # Le serveur FTP d'o2switch n'envoie que son propre certificat, sans l'intermédiaire de
+      # Let's Encrypt : rclone ne peut pas remonter la chaîne seul. La vérification TLS reste active.
+      - name: Ajouter les intermédiaires de Let's Encrypt
+        run: |
+          sudo cp scripts/certificats-lets-encrypt/*.crt /usr/local/share/ca-certificates/
+          sudo update-ca-certificates
+
       - name: Préparer les accès rclone
         env:
           O2_FTP_PASSWORD: ${{ secrets.O2_FTP_PASSWORD }}

@@ -30,6 +30,22 @@ Dans GitHub : dépôt › Settings › Secrets and variables › Actions › « 
 Le serveur FTP est `pendragon.o2switch.net` (inscrit dans le workflow) : c'est le nom porté par
 le certificat TLS d'o2switch, `ftp.rapidtruckservice.fr` serait refusé en connexion chiffrée.
 
+## Certificat du serveur FTP
+
+Le serveur FTP n'envoie que son propre certificat, sans l'intermédiaire de Let's Encrypt, ce qui
+donne l'erreur `x509: certificate signed by unknown authority`. La tâche ajoute donc les
+intermédiaires officiels gardés dans `scripts/certificats-lets-encrypt/`
+(<https://letsencrypt.org/certificates/>), sans désactiver la vérification TLS.
+
+Ils expirent le 2 septembre 2028. Si l'erreur revient avant, le serveur est sans doute passé à un
+autre intermédiaire : l'émetteur se lit avec la commande ci-dessous, et son fichier `.pem`, publié
+sur la même page, s'ajoute au dossier avec l'extension `.crt`.
+
+```bash
+openssl s_client -connect pendragon.o2switch.net:21 -starttls ftp </dev/null 2>/dev/null |
+  openssl x509 -noout -issuer -enddate
+```
+
 ## Restaurer la base
 
 Sur un ordinateur avec `gpg` et `psql` (Git for Windows fournit `gpg`).
@@ -72,6 +88,14 @@ export RCLONE_CONFIG_O2FICHIERS_PASSWORD="$(rclone obscure '<phrase de passe>')"
 
 rclone copy o2fichiers: ./fichiers-restaures          # tout récupérer en clair
 rclone copy o2fichiers:ro/<id>/photo.jpg ./           # ou un seul fichier
+```
+
+Sous Linux, si rclone répond `certificate signed by unknown authority`, lui donner d'abord les
+intermédiaires, depuis la racine du dépôt :
+
+```bash
+cat scripts/certificats-lets-encrypt/*.crt > /tmp/lets-encrypt.pem
+export SSL_CERT_FILE=/tmp/lets-encrypt.pem
 ```
 
 Pour renvoyer les fichiers dans R2, déclarer aussi le distant `r2` (type `s3`, fournisseur
