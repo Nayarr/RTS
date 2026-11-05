@@ -25,6 +25,7 @@ import {
   type PartValues,
 } from '@/features/catalogs/schemas';
 import { Label } from '@/components/ui/label';
+import { errorMessage } from '@/lib/error-message';
 import { decimalField, decimalText, decimalValue, formatEuro } from '@/lib/numbers';
 import { useLaborRates, useServicePackages } from './hooks';
 import {
@@ -237,11 +238,8 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
   };
 
   const submit = form.handleSubmit(async (values) => {
+    // Prix de vente facultatif, comme sur l'OR : il se complète ensuite sur la ligne
     const input = partFromForm(values);
-    if (input.sale_price === null || input.sale_price === undefined) {
-      form.setError('sale_price', { message: 'Indique le prix de vente ou la marge' });
-      return;
-    }
     const quantity = decimalValue(values.quantity) ?? 1;
     setSaving(true);
     try {
@@ -250,7 +248,7 @@ function PartDialog({ onAdd, onClose }: { onAdd: (line: NewLine) => Promise<unkn
       await queryClient.invalidateQueries({ queryKey: partsKey });
       await onAdd({ line_type: 'part', ...partLinePatch(input, quantity, partId) });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Pièce non enregistrée');
+      toast.error(errorMessage(error, 'Pièce non enregistrée'));
     } finally {
       setSaving(false);
     }

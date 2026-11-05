@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 import { describe, expect, it, vi } from 'vitest';
 import { fetchParts, saveCatalogPart, type Part } from '@/features/catalogs/api';
 import type * as CatalogApi from '@/features/catalogs/api';
@@ -13,6 +14,7 @@ vi.mock('@/features/catalogs/api', async (importOriginal) => ({
   fetchParts: vi.fn(),
   saveCatalogPart: vi.fn(),
 }));
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('./hooks', () => ({
   useServicePackages: () => ({ data: [], isSuccess: true }),
   useLaborRates: () => ({ data: laborRates }),
@@ -142,6 +144,41 @@ describe('ajout d’une pièce', () => {
         manufacturer_ref: 'K-1137',
       }),
     );
+  });
+
+  it('pièce hors de la base sans prix de vente : ajoutée, le prix se complète sur la ligne', async () => {
+    vi.mocked(fetchParts).mockResolvedValue([]);
+    vi.mocked(saveCatalogPart).mockResolvedValue('new-part');
+    const onAdd = renderButtons();
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter une pièce' }));
+    const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
+    await userEvent.type(within(dialog).getByLabelText('Désignation'), 'Durite spéciale');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la pièce' }));
+    await waitFor(() =>
+      expect(onAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          line_type: 'part',
+          description: 'Durite spéciale',
+          unit_price: null,
+          part_id: 'new-part',
+        }),
+      ),
+    );
+    expect(screen.queryByRole('dialog', { name: 'Ajouter une pièce' })).toBeNull();
+  });
+
+  it('refus de la base : sa raison est affichée, la fenêtre reste ouverte', async () => {
+    vi.mocked(fetchParts).mockResolvedValue([]);
+    // Erreur de la base : un objet avec un message, pas une Error
+    vi.mocked(saveCatalogPart).mockRejectedValue({ code: '42501', message: 'Accès refusé par la base' });
+    const onAdd = renderButtons();
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter une pièce' }));
+    const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
+    await userEvent.type(within(dialog).getByLabelText('Désignation'), 'Durite');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Ajouter la pièce' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Accès refusé par la base'));
+    expect(onAdd).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Ajouter une pièce' })).toBeInTheDocument();
   });
 });
 
