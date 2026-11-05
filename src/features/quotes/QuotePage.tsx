@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { OfficeLink } from '@/features/auth/OfficeLink';
+import { useProfile } from '@/features/auth/useProfile';
 import { Lock, Mail, Wrench } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -97,6 +99,7 @@ function LinesSection({
 
 /** Édition d'un devis : lignes chiffrées, totaux, PDF, réponse du client, création de l'OR. */
 export function QuotePage() {
+  const { data: profile } = useProfile();
   const { id = '' } = useParams();
   const detail = useQuote(id);
   const settings = useSettings();
@@ -150,7 +153,7 @@ export function QuotePage() {
         }
         actions={
           <>
-            {quote.repair_order_id && (
+            {quote.repair_order_id && profile?.role !== 'accountant' && (
               <Button variant="ghost" asChild>
                 <Link to={`/or/${quote.repair_order_id}`}>
                   <Wrench /> Retour à l’OR {quote.repair_order_number ?? ''}
@@ -192,9 +195,9 @@ export function QuotePage() {
               {quote.resulting_repair_order_id && (
                 <p className="text-[13.5px]">
                   OR créé :{' '}
-                  <Link className="link" to={`/or/${quote.resulting_repair_order_id}`}>
+                  <OfficeLink linkClassName="link" to={`/or/${quote.resulting_repair_order_id}`}>
                     {quote.resulting_repair_order_number}
-                  </Link>
+                  </OfficeLink>
                 </p>
               )}
               {quote.status === 'accepted' && quote.repair_order_id && (

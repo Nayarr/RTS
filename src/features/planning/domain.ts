@@ -289,7 +289,10 @@ export function planningMechanics<T extends { profile?: { role: string } | null 
 ): Omit<T, 'profile'>[] {
   return technicians
     .filter(
-      (technician) => technician.profile?.role !== 'direction' && technician.profile?.role !== 'reception',
+      (technician) =>
+        technician.profile?.role !== 'direction' &&
+        technician.profile?.role !== 'reception' &&
+        technician.profile?.role !== 'accountant',
     )
     .map(({ profile: _profile, ...technician }) => technician);
 }

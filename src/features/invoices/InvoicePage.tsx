@@ -66,6 +66,7 @@ import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
 import { InvoiceEmployeesCard } from './InvoiceEmployeesCard';
 import { InvoiceVatCard } from './InvoiceVatCard';
+import { OfficeLink } from '@/features/auth/OfficeLink';
 import { useProfile } from '@/features/auth/useProfile';
 import { DuplicateButton } from '@/components/DuplicateButton';
 import { duplicateInvoice } from './api';
@@ -153,6 +154,9 @@ function IssuedPanel({
   /** Supprimer un paiement : réservé à la direction (règle de la base). */
   canDeletePayments: boolean;
 }) {
+  // Paiements, avoirs et relances : le comptable les consulte, le bureau les saisit.
+  const { data: profile } = useProfile();
+  const canSettle = profile?.role !== 'accountant';
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
   const askDelete = (payment: Payment | null) => {
@@ -184,13 +188,13 @@ function IssuedPanel({
           </h2>
         </div>
         <div className="card-b col gap-2">
-          {balance > 0.01 && (
+          {canSettle && balance > 0.01 && (
             <Button className="w-full" onClick={() => onDialog('payment')}>
               <Wallet /> Enregistrer un paiement
             </Button>
           )}
           <Button
-            variant={balance > 0.01 ? 'outline' : 'default'}
+            variant={canSettle && balance > 0.01 ? 'outline' : 'default'}
             className="w-full"
             disabled={pdf.invoicePdf.isPending}
             onClick={() => pdf.invoicePdf.mutate({ detail, proforma: false })}
@@ -199,10 +203,11 @@ function IssuedPanel({
           </Button>
           <ShareInvoiceButtons
             invoice={invoice}
+            canRemind={canSettle}
             autoSend={autoSend}
             onAutoSendDone={() => setParams({}, { replace: true })}
           />
-          {credited < invoice.total_ttc - 0.01 && (
+          {canSettle && credited < invoice.total_ttc - 0.01 && (
             <Button variant="outline" className="w-full" onClick={() => onDialog('credit')}>
               <FileMinus /> Générer un avoir
             </Button>
@@ -482,7 +487,7 @@ export function InvoicePage() {
         }
         actions={
           <>
-            {singleOrder && (
+            {singleOrder && profile?.role !== 'accountant' && (
               <Button variant="ghost" asChild>
                 <Link to={`/or/${singleOrder}`}>
                   <ArrowLeft /> Retour à l’OR {invoice.repair_order_numbers[0] ?? ''}
@@ -530,9 +535,9 @@ export function InvoicePage() {
                     {invoice.repair_order_ids.map((orderId, index) => (
                       <span key={orderId}>
                         {index > 0 && ', '}
-                        <Link className="ul" to={`/or/${orderId}`}>
+                        <OfficeLink linkClassName="ul" to={`/or/${orderId}`}>
                           {invoice.repair_order_numbers[index]}
-                        </Link>
+                        </OfficeLink>
                       </span>
                     ))}
                   </span>

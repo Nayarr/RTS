@@ -6,6 +6,7 @@ import { ROLE_VALUES } from './schemas';
 const ROLE_HINTS: Record<AppRole, string> = {
   direction: 'Accès complet, gestion de l’équipe',
   reception: 'OR, planning, devis, factures',
+  accountant: 'Devis, factures ; stats et RH en lecture ; badgeage',
   technician: 'Ses OR, fiche de contrôle, badgeage',
   kiosk: 'Tablette de pointage / écran atelier',
 };

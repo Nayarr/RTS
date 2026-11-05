@@ -143,8 +143,9 @@ export default {
       return fail(503, 'Envoi par l’appli pas encore configuré : passe par ta messagerie');
     }
 
-    const { data: isOffice } = await ctx.supabase.rpc('is_office');
-    if (isOffice !== true) return fail(403, 'Accès réservé au bureau');
+    // Bureau et comptable (devis et factures envoyés par e-mail)
+    const { data: canBill } = await ctx.supabase.rpc('can_bill');
+    if (canBill !== true) return fail(403, 'Accès réservé au bureau');
 
     const { data: settings } = await ctx.supabase
       .from('app_settings')

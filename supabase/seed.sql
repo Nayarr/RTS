@@ -9,6 +9,7 @@
 --   alice@rts.local       Technicienne (Alice)
 --   bruno@rts.local       Technicien (Bruno)
 --   borne@rts.local       Borne de pointage / écran atelier
+--   comptable@rts.local   Comptable (devis et factures ; stats et RH en lecture ; badge à la borne)
 -- =============================================================================
 
 with accounts (id, email, full_name, role) as (
@@ -17,7 +18,8 @@ with accounts (id, email, full_name, role) as (
     ('5eed0000-0000-0000-0000-000000000002'::uuid, 'reception@rts.local', 'Réception RTS', 'reception'::public.app_role),
     ('5eed0000-0000-0000-0000-000000000003'::uuid, 'alice@rts.local', 'Alice Martin', 'technician'::public.app_role),
     ('5eed0000-0000-0000-0000-000000000004'::uuid, 'bruno@rts.local', 'Bruno Petit', 'technician'::public.app_role),
-    ('5eed0000-0000-0000-0000-000000000005'::uuid, 'borne@rts.local', 'Borne atelier', 'kiosk'::public.app_role)
+    ('5eed0000-0000-0000-0000-000000000005'::uuid, 'borne@rts.local', 'Borne atelier', 'kiosk'::public.app_role),
+    ('5eed0000-0000-0000-0000-000000000006'::uuid, 'comptable@rts.local', 'Camille Comptable', 'accountant'::public.app_role)
 ),
 new_users as (
   insert into auth.users (
@@ -46,7 +48,8 @@ join new_users u on u.id = a.id;
 
 insert into public.technicians (profile_id, display_name, color) values
   ('5eed0000-0000-0000-0000-000000000003', 'Alice', '#2A6B52'),
-  ('5eed0000-0000-0000-0000-000000000004', 'Bruno', '#4750B5');
+  ('5eed0000-0000-0000-0000-000000000004', 'Bruno', '#4750B5'),
+  ('5eed0000-0000-0000-0000-000000000006', 'Camille', '#8B3A9E');
 
 -- Catalogues (stock de départ passé par le journal des mouvements)
 insert into public.suppliers (id, name) values

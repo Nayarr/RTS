@@ -101,12 +101,15 @@ export async function fetchRepairOrderEvents(id: string): Promise<RoEvent[]> {
 export async function fetchActiveTechnicians(): Promise<TechnicianOption[]> {
   const { data, error } = await supabase
     .from('technicians')
-    .select('id, display_name, color')
+    .select('id, display_name, color, profile:profiles(role)')
     .eq('is_active', true)
     .order('sort_order')
     .order('display_name');
   if (error) throw error;
-  return data;
+  // Le comptable a une fiche pour badger, mais ne reçoit jamais d'OR.
+  return data
+    .filter((technician) => technician.profile?.role !== 'accountant')
+    .map(({ profile: _profile, ...technician }) => technician);
 }
 
 export async function searchClients(query: string): Promise<{ id: string; name: string }[]> {

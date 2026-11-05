@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { PASSWORD_MIN_LENGTH } from '@/features/auth/schemas';
 import type { CreateAccountInput } from './types';
 
-export const ROLE_VALUES = ['direction', 'reception', 'technician', 'kiosk'] as const;
+export const ROLE_VALUES = ['direction', 'reception', 'accountant', 'technician', 'kiosk'] as const;
 
 /** Couleurs proposées pour le planning (reprises de l'ancienne appli). */
 export const TECHNICIAN_COLORS = [
@@ -79,8 +79,9 @@ export const pinSchema = z
   });
 export type PinValues = z.infer<typeof pinSchema>;
 
-/** Le rôle Technicien implique toujours une fiche technicien. */
-export const mustBeTechnician = (role: (typeof ROLE_VALUES)[number]) => role === 'technician';
+/** Les rôles Technicien et Comptable (qui badge aussi) impliquent toujours une fiche technicien. */
+export const mustBeTechnician = (role: (typeof ROLE_VALUES)[number]) =>
+  role === 'technician' || role === 'accountant';
 
 /** Valeurs du formulaire -> données envoyées à l'Edge Function. */
 export function toCreateAccountInput(values: CreateAccountValues): CreateAccountInput {

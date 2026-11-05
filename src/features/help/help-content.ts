@@ -153,6 +153,18 @@ export const OFFICE_TOPICS: HelpTopic[] = [
   },
 ];
 
+export const ACCOUNTANT_TOPICS: HelpTopic[] = [
+  {
+    title: 'Ton accès comptable',
+    items: [
+      '« Facturation » : tu crées, modifies, émets et envoies les devis et les factures, et tu exportes pour la comptabilité. Paiements, avoirs et relances se consultent ; le bureau les saisit. Les OR et les fiches clients restent au bureau.',
+      '« Pilotage » : statistiques, trésorerie et rentabilité, en lecture. Le rapport mensuel se télécharge depuis ces écrans.',
+      '« Équipe » : pointages, congés et relevé d’heures, en lecture. Le relevé s’exporte pour la paie ; les corrections et la validation des congés restent à la direction.',
+      'Tu badges à la borne avec ton code PIN, comme l’atelier. La direction le définit dans « Équipe ».',
+    ],
+  },
+];
+
 export const DIRECTION_TOPICS: HelpTopic[] = [
   {
     title: 'Équipe',

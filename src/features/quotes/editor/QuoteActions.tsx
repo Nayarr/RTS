@@ -29,6 +29,7 @@ import { useQuotePdf } from '../use-quote-pdf';
 import { QuoteKioskButton } from './QuoteKioskButton';
 import { ShareQuoteButton } from './ShareQuoteButton';
 import { DuplicateButton } from '@/components/DuplicateButton';
+import { useProfile } from '@/features/auth/useProfile';
 import { InspectionRequiredToggle } from '@/features/repair-orders/InspectionRequiredToggle';
 
 type Confirm = 'accepted' | 'refused' | 'delete' | null;
@@ -194,7 +195,11 @@ export function QuoteActions({ quote, hasLines }: { quote: QuoteOverview; hasLin
 
   const answered = quote.status === 'accepted' || quote.status === 'refused';
   const standalone = quote.repair_order_id === null && quote.merged_into_repair_order_id === null;
-  const canCreateOrder = standalone || (quote.status === 'accepted' && !quote.resulting_repair_order_id);
+  // Le comptable fait les devis, mais la création d'un OR reste au bureau.
+  const { data: profile } = useProfile();
+  const canCreateOrder =
+    profile?.role !== 'accountant' &&
+    (standalone || (quote.status === 'accepted' && !quote.resulting_repair_order_id));
 
   return (
     <section data-slot="card" className="card" aria-labelledby="quote-actions">

@@ -115,10 +115,6 @@ export const routes: RouteObject[] = [
                     lazy: page(() => import('@/features/customers/ClientPage'), 'ClientPage'),
                   },
                   {
-                    path: '/clients/:id/extrait',
-                    lazy: page(() => import('@/features/invoices/StatementPage'), 'StatementPage'),
-                  },
-                  {
                     path: '/vehicules',
                     lazy: page(() => import('@/features/customers/VehiclesPage'), 'VehiclesPage'),
                   },
@@ -180,6 +176,27 @@ export const routes: RouteObject[] = [
                     path: '/contrats',
                     lazy: page(() => import('@/features/contracts/ContractsPage'), 'ContractsPage'),
                   },
+                  {
+                    path: '/garanties',
+                    lazy: page(() => import('@/features/warranties/WarrantiesPage'), 'WarrantiesPage'),
+                  },
+                  {
+                    path: '/atelier-en-direct',
+                    lazy: page(
+                      () => import('@/features/workshop-board/LiveWorkshopPage'),
+                      'LiveWorkshopPage',
+                    ),
+                  },
+                ],
+              },
+              // Devis et factures : le bureau et le comptable
+              {
+                element: <RequireRole roles={['direction', 'reception', 'accountant']} />,
+                children: [
+                  {
+                    path: '/clients/:id/extrait',
+                    lazy: page(() => import('@/features/invoices/StatementPage'), 'StatementPage'),
+                  },
                   { path: '/devis', lazy: page(() => import('@/features/quotes/QuotesPage'), 'QuotesPage') },
                   {
                     path: '/devis/nouveau',
@@ -201,23 +218,43 @@ export const routes: RouteObject[] = [
                     path: '/factures/:id',
                     lazy: page(() => import('@/features/invoices/InvoicePage'), 'InvoicePage'),
                   },
-                  {
-                    path: '/garanties',
-                    lazy: page(() => import('@/features/warranties/WarrantiesPage'), 'WarrantiesPage'),
-                  },
-                  {
-                    path: '/atelier-en-direct',
-                    lazy: page(
-                      () => import('@/features/workshop-board/LiveWorkshopPage'),
-                      'LiveWorkshopPage',
-                    ),
-                  },
                 ],
               },
               {
-                element: <RequireRole roles={['direction', 'reception', 'technician']} />,
+                element: <RequireRole roles={['direction', 'reception', 'technician', 'accountant']} />,
                 children: [
                   { path: '/aide', lazy: page(() => import('@/features/help/HelpPage'), 'HelpPage') },
+                ],
+              },
+              // Pointages, congés, relevé d'heures et statistiques financières : le comptable les lit
+              {
+                element: <RequireRole roles={['direction', 'accountant']} />,
+                children: [
+                  {
+                    path: '/pointages',
+                    lazy: page(() => import('@/features/attendance/AttendancePage'), 'AttendancePage'),
+                  },
+                  {
+                    path: '/pointages/conges',
+                    lazy: page(() => import('@/features/leave/LeavePage'), 'LeavePage'),
+                  },
+                  {
+                    path: '/pointages/releve',
+                    lazy: page(() => import('@/features/attendance/TimesheetPage'), 'TimesheetPage'),
+                  },
+                  { path: '/pilotage', element: <Navigate to="/pilotage/statistiques" replace /> },
+                  {
+                    path: '/pilotage/statistiques',
+                    lazy: page(() => import('@/features/reporting/StatisticsPage'), 'StatisticsPage'),
+                  },
+                  {
+                    path: '/pilotage/tresorerie',
+                    lazy: page(() => import('@/features/reporting/TreasuryPage'), 'TreasuryPage'),
+                  },
+                  {
+                    path: '/pilotage/rentabilite',
+                    lazy: page(() => import('@/features/reporting/ProfitabilityPage'), 'ProfitabilityPage'),
+                  },
                 ],
               },
               {
@@ -245,18 +282,6 @@ export const routes: RouteObject[] = [
                     path: '/documentation',
                     lazy: page(() => import('@/features/knowledge/KnowledgePage'), 'KnowledgePage'),
                   },
-                  {
-                    path: '/pointages',
-                    lazy: page(() => import('@/features/attendance/AttendancePage'), 'AttendancePage'),
-                  },
-                  {
-                    path: '/pointages/conges',
-                    lazy: page(() => import('@/features/leave/LeavePage'), 'LeavePage'),
-                  },
-                  {
-                    path: '/pointages/releve',
-                    lazy: page(() => import('@/features/attendance/TimesheetPage'), 'TimesheetPage'),
-                  },
                   // Liens des alertes (cloche)
                   { path: '/equipe/conges', element: <Navigate to="/pointages/conges" replace /> },
                   { path: '/equipe/pointages', element: <Navigate to="/pointages" replace /> },
@@ -276,19 +301,6 @@ export const routes: RouteObject[] = [
                   {
                     path: '/stock/forfaits',
                     lazy: page(() => import('@/features/catalogs/PackagesPage'), 'PackagesPage'),
-                  },
-                  { path: '/pilotage', element: <Navigate to="/pilotage/statistiques" replace /> },
-                  {
-                    path: '/pilotage/statistiques',
-                    lazy: page(() => import('@/features/reporting/StatisticsPage'), 'StatisticsPage'),
-                  },
-                  {
-                    path: '/pilotage/tresorerie',
-                    lazy: page(() => import('@/features/reporting/TreasuryPage'), 'TreasuryPage'),
-                  },
-                  {
-                    path: '/pilotage/rentabilite',
-                    lazy: page(() => import('@/features/reporting/ProfitabilityPage'), 'ProfitabilityPage'),
                   },
                   {
                     path: '/pilotage/performance',

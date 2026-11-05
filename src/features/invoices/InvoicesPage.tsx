@@ -90,7 +90,9 @@ function GroupedInvoiceButton() {
 function InvoiceList() {
   const invoices = useInvoices();
   const { data: profile } = useProfile();
-  const isDirection = profile?.role === 'direction';
+  const isAccountant = profile?.role === 'accountant';
+  // L'export comptable : direction et comptable
+  const canExport = profile?.role === 'direction' || isAccountant;
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -143,12 +145,12 @@ function InvoiceList() {
             <span className="sub hidden max-w-[380px] text-right text-[13px] xl:inline">
               Les factures se préparent depuis l’OR (« Facturer ») ou en regroupant plusieurs OR.
             </span>
-            {isDirection && (
+            {canExport && (
               <Button variant="outline" onClick={() => setExporting(true)}>
                 <Download /> Exporter
               </Button>
             )}
-            {(counts.overdue ?? 0) > 0 && (
+            {!isAccountant && (counts.overdue ?? 0) > 0 && (
               <Button variant="outline" onClick={() => setReminding(true)}>
                 <BellRing /> Relancer les retards
               </Button>

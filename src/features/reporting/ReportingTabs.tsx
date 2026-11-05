@@ -4,6 +4,7 @@ import { FileText } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { SectionNav } from '@/components/SectionNav';
 import { Button } from '@/components/ui/button';
+import { useProfile } from '@/features/auth/useProfile';
 import { MonthlyReportDialog } from './MonthlyReportDialog';
 
 const TABS = [
@@ -13,9 +14,12 @@ const TABS = [
   { to: '/pilotage/performance', label: 'Performance' },
 ];
 
-/** Onglets du pilotage (direction). */
+/** Onglets du pilotage : la performance des techniciens reste à la direction. */
 export function ReportingTabs() {
-  return <SectionNav label="Pilotage" links={TABS} variant="tabs" />;
+  const { data: profile } = useProfile();
+  const links =
+    profile?.role === 'accountant' ? TABS.filter((tab) => tab.to !== '/pilotage/performance') : TABS;
+  return <SectionNav label="Pilotage" links={links} variant="tabs" />;
 }
 
 /** En-tête commun des écrans de pilotage. */

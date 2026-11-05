@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { OfficeLink } from '@/features/auth/OfficeLink';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, TrendingUp, TriangleAlert } from 'lucide-react';
 import { formatEuro } from '@/lib/numbers';
@@ -126,9 +126,9 @@ export function TreasuryPage() {
                       {data.overdue_by_client.map((row) => (
                         <tr key={row.client_id}>
                           <td>
-                            <Link to={`/clients/${row.client_id}`} className="b ul">
+                            <OfficeLink to={`/clients/${row.client_id}`} className="b" linkClassName="ul">
                               {row.client_name}
-                            </Link>
+                            </OfficeLink>
                           </td>
                           <td className="r num">{row.invoice_count}</td>
                           <td className="r num b">{formatEuro(row.amount)}</td>
@@ -172,9 +172,9 @@ export function TreasuryPage() {
                         return (
                           <tr key={row.client_id}>
                             <td>
-                              <Link to={`/clients/${row.client_id}`} className="b ul">
+                              <OfficeLink to={`/clients/${row.client_id}`} className="b" linkClassName="ul">
                                 {row.client_name}
-                              </Link>
+                              </OfficeLink>
                             </td>
                             <td className="r num">{row.invoice_count}</td>
                             <td className={cn('r', TONE_CLASS[tone])}>

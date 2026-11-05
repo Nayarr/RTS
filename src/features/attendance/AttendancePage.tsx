@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFileUrls } from '@/features/files/hooks';
+import { canEditAttendance } from '@/features/auth/roles';
+import { useProfile } from '@/features/auth/useProfile';
 import { LEAVE_LABELS } from '@/features/leave/domain';
 import { addDays, dayLabel } from '@/features/planning/domain';
 import { todayIso } from '@/features/repair-orders/schemas';
@@ -26,8 +28,13 @@ type OpenDialog =
 
 const eventLabel = (event: ClockEvent) => (event.event_type === 'in' ? 'arrivée' : 'départ');
 
-/** Pointages de la borne (direction) : présence du jour, photos, corrections, réglages de la borne. */
+/**
+ * Pointages de la borne : présence du jour, photos, corrections, réglages de la borne.
+ * La direction modifie, le comptable lit.
+ */
 export function AttendancePage() {
+  const { data: profile } = useProfile();
+  const canEdit = canEditAttendance(profile?.role);
   const [params, setParams] = useSearchParams();
   const today = todayIso();
   const requested = params.get('date') ?? '';
@@ -51,13 +58,15 @@ export function AttendancePage() {
         actions={
           <>
             <span className="sub hidden md:inline">Arrivées et départs enregistrés par la borne</span>
-            <Button
-              variant="outline"
-              onClick={() => setDialog({ kind: 'manual' })}
-              disabled={!day.data?.length}
-            >
-              <Plus /> Ajouter une correction
-            </Button>
+            {canEdit && (
+              <Button
+                variant="outline"
+                onClick={() => setDialog({ kind: 'manual' })}
+                disabled={!day.data?.length}
+              >
+                <Plus /> Ajouter une correction
+              </Button>
+            )}
           </>
         }
       />
@@ -98,7 +107,7 @@ export function AttendancePage() {
           </div>
         </div>
 
-        <div className="split grid-cols-1! lg:grid-cols-[minmax(0,1fr)_320px]!">
+        <div className={cn('split grid-cols-1!', canEdit && 'lg:grid-cols-[minmax(0,1fr)_320px]!')}>
           <div className="col gap-3">
             {day.isPending && <p className="text-muted-foreground">Chargement…</p>}
             {day.isError && <p className="text-destructive">Impossible de charger les pointages.</p>}
@@ -108,6 +117,7 @@ export function AttendancePage() {
                 <li key={tech.id}>
                   <TechnicianCard
                     tech={tech}
+                    canEdit={canEdit}
                     isToday={date === today}
                     photoUrls={photos.data ?? {}}
                     onPhoto={(event) =>
@@ -124,7 +134,7 @@ export function AttendancePage() {
               ))}
             </ul>
           </div>
-          <KioskSettingsCard onExitCode={() => setDialog({ kind: 'exit-code' })} />
+          {canEdit && <KioskSettingsCard onExitCode={() => setDialog({ kind: 'exit-code' })} />}
         </div>
       </div>
 
@@ -153,6 +163,8 @@ export function AttendancePage() {
 
 interface TechnicianCardProps {
   tech: TechnicianDay;
+  /** Direction : corrections et lien vers les codes PIN ; comptable : lecture seule. */
+  canEdit: boolean;
   isToday: boolean;
   photoUrls: Record<string, string>;
   onPhoto: (event: ClockEvent) => void;
@@ -187,7 +199,7 @@ function presenceSpans(events: ClockEvent[], isToday: boolean) {
     }));
 }
 
-function TechnicianCard({ tech, isToday, photoUrls, onPhoto, onDelete }: TechnicianCardProps) {
+function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }: TechnicianCardProps) {
   const present = isToday && tech.events[tech.events.length - 1]?.event_type === 'in';
   const attendance = tech.attendance;
   const spans = presenceSpans(tech.events, isToday);
@@ -213,11 +225,14 @@ function TechnicianCard({ tech, isToday, photoUrls, onPhoto, onDelete }: Technic
               Heures sup. : {formatHoursMinutes(attendance.overtime_seconds)}
             </span>
           )}
-          {!tech.hasPin && (
-            <Link to="/equipe" className="text-[13px] font-semibold text-destructive hover:underline">
-              Pas de code PIN
-            </Link>
-          )}
+          {!tech.hasPin &&
+            (canEdit ? (
+              <Link to="/equipe" className="text-[13px] font-semibold text-destructive hover:underline">
+                Pas de code PIN
+              </Link>
+            ) : (
+              <span className="text-[13px] font-semibold text-destructive">Pas de code PIN</span>
+            ))}
         </span>
         <span className="muted num text-[13px]">
           {tech.leaveType && tech.events.length > 0 ? (
@@ -289,7 +304,7 @@ function TechnicianCard({ tech, isToday, photoUrls, onPhoto, onDelete }: Technic
                       {label}
                       {event.source === 'manual' && <span className="tag">Manuel</span>}
                       {event.photo_purged_at && <span className="tag">Photo supprimée</span>}
-                      {event.source === 'manual' && (
+                      {canEdit && event.source === 'manual' && (
                         <button
                           type="button"
                           className="ibtn sm ghost size-6! text-destructive"
