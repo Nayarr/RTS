@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FormField } from '@/components/FormField';
+import { errorMessage } from '@/lib/error-message';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -87,10 +88,6 @@ export function PartFicheDialog({
 
   const submit = form.handleSubmit(async (submitted) => {
     const input = partFromForm(submitted);
-    if (input.sale_price === null || input.sale_price === undefined) {
-      form.setError('sale_price', { message: 'Indique le prix de vente ou la marge' });
-      return;
-    }
     setSaving(true);
     try {
       const partId = await saveCatalogPart(input);
@@ -103,7 +100,7 @@ export function PartFicheDialog({
       );
       onClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Pièce non enregistrée');
+      toast.error(errorMessage(error, 'Pièce non enregistrée'));
     } finally {
       setSaving(false);
     }

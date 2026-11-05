@@ -101,9 +101,16 @@ export async function ensureSupplier(name: string): Promise<string | null> {
 
 export type PartInput = Omit<TablesInsert<'parts'>, 'supplier_id'> & { supplier_name: string };
 
-/** Enregistre la pièce dans la base (création ou mise à jour) et renvoie son identifiant. */
+/**
+ * Enregistre la pièce dans la base (création ou mise à jour) et renvoie son identifiant.
+ * Vendue sous son prix d'achat : la base n'accepte pas de marge négative, le prix saisi est gardé sans marge.
+ */
 export async function savePart(id: string | null, { supplier_name, ...input }: PartInput): Promise<string> {
-  const row = { ...input, supplier_id: await ensureSupplier(supplier_name) };
+  const row = {
+    ...input,
+    ...((input.margin_value ?? 0) < 0 ? { margin_value: null } : {}),
+    supplier_id: await ensureSupplier(supplier_name),
+  };
   const { data, error } = id
     ? await supabase.from('parts').update(row).eq('id', id).select('id')
     : await supabase.from('parts').insert(row).select('id');
@@ -116,6 +123,7 @@ export async function savePart(id: string | null, { supplier_name, ...input }: P
 /**
  * Pièce ajoutée à un devis ou un OR, gardée au catalogue : mêmes désignation, références, marque et
  * fournisseur qu'une fiche existante → ses prix sont mis à jour ; sinon nouvelle fiche, l'ancienne ne change pas.
+ * Ajoutée sans prix de vente : la fiche existante garde le sien.
  */
 export async function saveCatalogPart(input: PartInput): Promise<string> {
   const { data: existing, error } = await supabase.rpc('find_catalog_part', {
@@ -126,7 +134,13 @@ export async function saveCatalogPart(input: PartInput): Promise<string> {
     p_supplier_name: input.supplier_name,
   });
   if (error) throw error;
-  return savePart(existing ?? null, { ...input, is_active: true });
+  const fields: PartInput = { ...input, is_active: true };
+  if (existing && (input.sale_price === null || input.sale_price === undefined)) {
+    delete fields.sale_price;
+    delete fields.margin_kind;
+    delete fields.margin_value;
+  }
+  return savePart(existing ?? null, fields);
 }
 
 /** Pièce de la base avec ses chiffres (factures émises) : utilisations, ventes, marge. */
