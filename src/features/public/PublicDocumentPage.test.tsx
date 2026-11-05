@@ -48,6 +48,7 @@ const quote = (overrides: Partial<PublicQuote> = {}): PublicQuote => ({
   accepted_at: null,
   client_name: 'Transports Martin',
   vehicle_plate: 'GH-512-RT',
+  legal_mentions: ['VALABLE SOUS RÉSERVE DE DÉMONTAGE'],
   lines: [
     {
       section: 'done',
@@ -103,6 +104,17 @@ describe('devis en ligne (client, sans compte)', () => {
     expect(screen.getByText('(remise 10 %)')).toBeInTheDocument();
     expect(screen.getByText('Délai : 48 h')).toBeInTheDocument();
     expect(screen.getByLabelText('Totaux')).toHaveTextContent(/Total TTC\s*464,40\s€/);
+  });
+
+  it('mention du devis affichée', async () => {
+    setup(quote());
+    expect(await screen.findByText('VALABLE SOUS RÉSERVE DE DÉMONTAGE')).toBeInTheDocument();
+  });
+
+  it.each([[[]], [null]])('mention retirée des réglages : rien à afficher (%j)', async (legal_mentions) => {
+    setup(quote({ legal_mentions }));
+    expect(await screen.findByRole('heading', { name: 'DEVIS' })).toBeInTheDocument();
+    expect(screen.queryByText('VALABLE SOUS RÉSERVE DE DÉMONTAGE')).toBeNull();
   });
 
   it('devis expiré : plus de signature en ligne, message au client', async () => {

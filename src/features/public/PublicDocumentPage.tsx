@@ -272,6 +272,13 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
           <LinesTable lines={done} title={done.length ? 'Travaux déjà effectués' : ''} />
           <LinesTable lines={planned} title={done.length ? 'Travaux à prévoir' : ''} />
           <DocumentTotals totals={quote.totals} />
+          {(quote.legal_mentions?.length ?? 0) > 0 && (
+            <div className="col gap-1 border-t px-5 py-3.5 text-xs text-muted-foreground sm:px-7">
+              {quote.legal_mentions?.map((mention) => (
+                <p key={mention}>{mention}</p>
+              ))}
+            </div>
+          )}
         </article>
 
         {quote.status === 'accepted' && (

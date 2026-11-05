@@ -1048,6 +1048,7 @@ export type Database = {
           payment_terms_days: number;
           phone: string | null;
           postal_code: string;
+          quote_legal_mentions: string[];
           quote_validity_days: number;
           rcs: string | null;
           share_capital: string | null;
@@ -1074,6 +1075,7 @@ export type Database = {
           payment_terms_days?: number;
           phone?: string | null;
           postal_code: string;
+          quote_legal_mentions?: string[];
           quote_validity_days?: number;
           rcs?: string | null;
           share_capital?: string | null;
@@ -1100,6 +1102,7 @@ export type Database = {
           payment_terms_days?: number;
           phone?: string | null;
           postal_code?: string;
+          quote_legal_mentions?: string[];
           quote_validity_days?: number;
           rcs?: string | null;
           share_capital?: string | null;

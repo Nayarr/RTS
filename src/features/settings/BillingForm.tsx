@@ -83,6 +83,15 @@ export function BillingForm({ company }: { company: CompanySettings }) {
         />
       </div>
       <div className="field">
+        <Label htmlFor="quote_legal_mentions">Mentions des devis (une par ligne)</Label>
+        <Textarea
+          id="quote_legal_mentions"
+          rows={2}
+          aria-invalid={errors.quote_legal_mentions ? true : undefined}
+          {...register('quote_legal_mentions')}
+        />
+      </div>
+      <div className="field">
         <Label htmlFor="invoice_terms">Conditions générales de vente (dernière page de chaque facture)</Label>
         <Textarea
           id="invoice_terms"
