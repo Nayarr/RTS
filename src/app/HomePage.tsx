@@ -21,6 +21,8 @@ export function HomePage() {
   if ((profile.role === 'kiosk' || profile.role === 'direction') && isTvMode()) {
     return <Navigate to="/tele" replace />;
   }
+  // Pas de tableau de bord atelier pour le comptable : il arrive sur les factures.
+  if (profile.role === 'accountant') return <Navigate to="/factures" replace />;
   return (
     <Suspense
       fallback={

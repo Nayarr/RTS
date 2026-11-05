@@ -7680,6 +7680,8 @@ export type Database = {
         };
         Returns: undefined;
       };
+      assert_accounting_read: { Args: Record<PropertyKey, never>; Returns: undefined };
+      assert_billing: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_confirmed_file: {
         Args: { p_category: Database['public']['Enums']['file_category']; p_file_id: string };
         Returns: undefined;
@@ -7711,6 +7713,8 @@ export type Database = {
       build_contract_invoice_draft: { Args: { p_contract_id: string; p_month?: string }; Returns: string };
       build_invoice_draft: { Args: { p_repair_order_ids: string[] }; Returns: string };
       build_quote_from_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
+      can_bill: { Args: Record<PropertyKey, never>; Returns: boolean };
+      can_read_accounting: { Args: Record<PropertyKey, never>; Returns: boolean };
       can_read_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
       can_tech_edit_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
       can_upload_file: {
@@ -8118,6 +8122,7 @@ export type Database = {
         }[];
       };
       invoke_edge_function: { Args: { p_body?: Json; p_name: string }; Returns: number };
+      is_accountant: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_direction: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_eu_vat_prefix: { Args: { p_prefix: string }; Returns: boolean };
       is_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
@@ -8832,7 +8837,7 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: 'direction' | 'reception' | 'technician' | 'kiosk';
+      app_role: 'direction' | 'reception' | 'technician' | 'kiosk' | 'accountant';
       appointment_status: 'requested' | 'planned' | 'converted' | 'cancelled';
       client_kind: 'pro' | 'individual';
       client_message_type:
@@ -9014,7 +9019,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ['direction', 'reception', 'technician', 'kiosk'],
+      app_role: ['direction', 'reception', 'technician', 'kiosk', 'accountant'],
       appointment_status: ['requested', 'planned', 'converted', 'cancelled'],
       client_kind: ['pro', 'individual'],
       client_message_type: [

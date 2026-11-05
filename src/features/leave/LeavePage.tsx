@@ -5,6 +5,8 @@ import { PageHeader } from '@/app/PageHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { AttendanceTabs } from '@/features/attendance/AttendanceTabs';
+import { canEditAttendance } from '@/features/auth/roles';
+import { useProfile } from '@/features/auth/useProfile';
 import { useActiveTechnicians } from '@/features/repair-orders/hooks';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
@@ -15,8 +17,10 @@ import { LeaveDialog } from './LeaveDialog';
 
 const HISTORY_LIMIT = 60;
 
-/** Congés et absences (direction) : demandes à traiter, absences saisies, historique. */
+/** Congés et absences : demandes à traiter, absences saisies, historique. La direction décide, le comptable lit. */
 export function LeavePage() {
+  const { data: profile } = useProfile();
+  const canEdit = canEditAttendance(profile?.role);
   const leaves = useLeaveRequests();
   const technicians = useActiveTechnicians();
   const [adding, setAdding] = useState(false);
@@ -41,9 +45,11 @@ export function LeavePage() {
         crumbs={[{ label: 'Équipe' }, { label: 'Congés et absences' }]}
         title="Congés et absences"
         actions={
-          <Button disabled={!technicians.data?.length} onClick={() => setAdding(true)}>
-            <Plus /> Ajouter une absence
-          </Button>
+          canEdit && (
+            <Button disabled={!technicians.data?.length} onClick={() => setAdding(true)}>
+              <Plus /> Ajouter une absence
+            </Button>
+          )
         }
       />
 
@@ -95,24 +101,26 @@ export function LeavePage() {
                             {leave.comment ? ` · ${leave.comment}` : ''}
                           </span>
                         </span>
-                        <span className="row gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            disabled={decide.isPending}
-                            onClick={() => decide.mutate({ id: leave.id, approve: false })}
-                          >
-                            Refuser
-                          </Button>
-                          <Button
-                            size="sm"
-                            disabled={decide.isPending}
-                            onClick={() => decide.mutate({ id: leave.id, approve: true })}
-                          >
-                            <Check /> Valider
-                          </Button>
-                        </span>
+                        {canEdit && (
+                          <span className="row gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive"
+                              disabled={decide.isPending}
+                              onClick={() => decide.mutate({ id: leave.id, approve: false })}
+                            >
+                              Refuser
+                            </Button>
+                            <Button
+                              size="sm"
+                              disabled={decide.isPending}
+                              onClick={() => decide.mutate({ id: leave.id, approve: true })}
+                            >
+                              <Check /> Valider
+                            </Button>
+                          </span>
+                        )}
                       </article>
                     </li>
                   ))}
@@ -198,14 +206,16 @@ export function LeavePage() {
                               <span className={cn('badge', meta.badge)}>{meta.label}</span>
                             </td>
                             <td>
-                              <button
-                                type="button"
-                                className="ibtn sm ghost text-destructive"
-                                aria-label="Supprimer"
-                                onClick={() => setToDelete(leave)}
-                              >
-                                <Trash2 className="i s" />
-                              </button>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  className="ibtn sm ghost text-destructive"
+                                  aria-label="Supprimer"
+                                  onClick={() => setToDelete(leave)}
+                                >
+                                  <Trash2 className="i s" />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         );

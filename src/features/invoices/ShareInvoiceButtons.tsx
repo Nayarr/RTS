@@ -34,10 +34,13 @@ const VALID_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export function ShareInvoiceButtons({
   invoice,
+  canRemind = true,
   autoSend = false,
   onAutoSendDone,
 }: {
   invoice: InvoiceOverview;
+  /** Le comptable envoie les factures, mais les relances restent au bureau. */
+  canRemind?: boolean;
   autoSend?: boolean;
   onAutoSendDone?: () => void;
 }) {
@@ -130,7 +133,7 @@ export function ShareInvoiceButtons({
       >
         <Send /> {sending ? 'Envoi de la facture…' : 'Envoyer au client'}
       </Button>
-      {isOverdue(invoice) && (
+      {canRemind && isOverdue(invoice) && (
         <Button
           variant="outline"
           className="w-full text-destructive"

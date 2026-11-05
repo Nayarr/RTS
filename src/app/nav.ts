@@ -82,18 +82,20 @@ export const GROUPS: NavGroup[] = [
   {
     id: 'facturation',
     section: 'ops',
+    roles: ['direction', 'reception', 'accountant'],
     label: 'Facturation',
     icon: Receipt,
     items: [
       { to: '/devis', label: 'Devis', count: (data) => data.quotes_awaiting_response },
       { to: '/factures', label: 'Factures', count: (data) => data.overdue_invoices.count, hot: true },
       { to: '/factures/avoirs', label: 'Avoirs' },
-      { to: '/garanties', label: 'Garanties et retours' },
+      { to: '/garanties', label: 'Garanties et retours', roles: ['direction', 'reception'] },
     ],
   },
   {
     id: 'equipe',
     section: 'mgmt',
+    roles: ['direction', 'accountant'],
     label: 'Équipe',
     icon: Clock,
     items: [
@@ -105,7 +107,7 @@ export const GROUPS: NavGroup[] = [
         hot: true,
       },
       { to: '/pointages/releve', label: 'Relevé d’heures' },
-      { to: '/equipe', label: 'Comptes et rôles' },
+      { to: '/equipe', label: 'Comptes et rôles', roles: ['direction'] },
     ],
   },
   {
@@ -132,13 +134,14 @@ export const GROUPS: NavGroup[] = [
   {
     id: 'pilotage',
     section: 'mgmt',
+    roles: ['direction', 'accountant'],
     label: 'Pilotage',
     icon: ChartColumn,
     items: [
       { to: '/pilotage/statistiques', label: 'Statistiques' },
       { to: '/pilotage/tresorerie', label: 'Trésorerie' },
       { to: '/pilotage/rentabilite', label: 'Rentabilité' },
-      { to: '/pilotage/performance', label: 'Performance' },
+      { to: '/pilotage/performance', label: 'Performance', roles: ['direction'] },
     ],
   },
 ];

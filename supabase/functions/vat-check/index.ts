@@ -56,8 +56,8 @@ async function checkVies(vat: string): Promise<VatResult> {
 export default {
   fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
     if (req.method !== 'POST') return fail(405, 'Méthode non autorisée');
-    const { data: isOffice } = await ctx.supabase.rpc('is_office');
-    if (isOffice !== true) return fail(403, 'Vérification réservée au bureau');
+    const { data: canBill } = await ctx.supabase.rpc('can_bill');
+    if (canBill !== true) return fail(403, 'Vérification réservée au bureau');
 
     const parsed = requestSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return fail(400, 'N° de TVA attendu (ex. DE123456789)');

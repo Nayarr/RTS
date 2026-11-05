@@ -8,7 +8,14 @@ import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { loadPdfContext } from '@/features/documents/pdf-context';
 import { cn } from '@/lib/utils';
-import { DIRECTION_TOPICS, FAQ, OFFICE_TOPICS, TECHNICIAN_TOPICS, type HelpTopic } from './help-content';
+import {
+  ACCOUNTANT_TOPICS,
+  DIRECTION_TOPICS,
+  FAQ,
+  OFFICE_TOPICS,
+  TECHNICIAN_TOPICS,
+  type HelpTopic,
+} from './help-content';
 import { buildTechnicianMemoPdf } from './memo-pdf';
 
 interface TopicGroup {
@@ -32,7 +39,10 @@ export function HelpPage() {
   const role = profile?.role;
   const groups: TopicGroup[] = [
     { title: 'Pour les techniciens', audience: 'Techniciens', topics: TECHNICIAN_TOPICS },
-    ...(role && role !== 'technician'
+    ...(role === 'accountant'
+      ? [{ title: 'Pour la comptabilité', audience: 'Comptable', topics: ACCOUNTANT_TOPICS }]
+      : []),
+    ...(role && role !== 'technician' && role !== 'accountant'
       ? [
           {
             title: 'Pour la réception et la direction',

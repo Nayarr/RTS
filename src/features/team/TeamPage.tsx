@@ -28,6 +28,7 @@ const activeTechnician = (member: TeamMember) => (member.technician?.is_active ?
 const ROLE_BADGE: Record<TeamMember['role'], string> = {
   direction: 's-green',
   reception: 's-blue',
+  accountant: 's-blue',
   technician: 's-grey',
   kiosk: 's-grey',
 };
@@ -35,6 +36,7 @@ const ROLE_BADGE: Record<TeamMember['role'], string> = {
 const ROLE_HINTS: { role: TeamMember['role']; hint: string }[] = [
   { role: 'direction', hint: 'Accès complet, gestion de l’équipe' },
   { role: 'reception', hint: 'OR, planning, devis, factures' },
+  { role: 'accountant', hint: 'Devis, factures ; stats et RH en lecture ; badgeage' },
   { role: 'technician', hint: 'Ses OR, fiche de contrôle, badgeage' },
   { role: 'kiosk', hint: 'Tablette de pointage / écran atelier' },
 ];

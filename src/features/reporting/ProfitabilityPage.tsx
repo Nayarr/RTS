@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { OfficeLink } from '@/features/auth/OfficeLink';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { todayIso } from '@/features/repair-orders/schemas';
@@ -121,9 +121,13 @@ export function ProfitabilityPage() {
                     ? client.vehicles.map((vehicle) => (
                         <tr key={`${key}-${vehicle.vehicle_id}`} className="bg-head">
                           <td className="pl-10!">
-                            <Link to={`/vehicules/${vehicle.vehicle_id}`} className="plate hover:underline">
+                            <OfficeLink
+                              to={`/vehicules/${vehicle.vehicle_id}`}
+                              className="plate"
+                              linkClassName="hover:underline"
+                            >
                               {vehicle.plate}
-                            </Link>
+                            </OfficeLink>
                           </td>
                           <FigureCells figures={vehicle} />
                         </tr>

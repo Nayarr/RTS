@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 z.config(z.locales.fr()); // messages de validation en français
 
-const ROLES = ['direction', 'reception', 'technician', 'kiosk'] as const;
+const ROLES = ['direction', 'reception', 'accountant', 'technician', 'kiosk'] as const;
 const BAN_FOREVER = '876000h'; // ~100 ans : compte bloqué jusqu'à réactivation
 
 const technicianSchema = z.object({
@@ -67,6 +67,9 @@ export default {
     if (request.action === 'create') {
       if (request.role === 'technician' && !request.technician) {
         return fail(400, 'Un compte technicien doit avoir une fiche technicien');
+      }
+      if (request.role === 'accountant' && !request.technician) {
+        return fail(400, 'Un compte comptable doit avoir une fiche technicien pour badger');
       }
       const email = request.email.trim().toLowerCase();
 
