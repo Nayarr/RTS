@@ -70,6 +70,40 @@ export function roadsideTravel(
   return { zone, price: forfait, byTime: false };
 }
 
+const kmLabel = (km: number) => km.toFixed(1).replace('.', ',');
+
+/** Libellé du déplacement (même texte que la base : ligne du devis et de la facture). */
+export function roadsideLabel(travel: RoadsideTravel, km: number, minutes: number, manual: boolean): string {
+  if (travel.zone === 4) return `Déplacement (${kmLabel(km)} km aller-retour)`;
+  if (manual) return `Déplacement zone ${travel.zone}`;
+  if (travel.byTime)
+    return `Déplacement zone ${travel.zone} : ${durationLabel(minutes)} de trajet aller-retour`;
+  return `Forfait déplacement zone ${travel.zone}${travel.zone === 1 ? ' (proximité)' : ''}`;
+}
+
+/** Ce que le client voit en haut du document à signer (sans prix : ligne retirée ou trajet à renseigner). */
+export interface RoadsideSummaryData {
+  address: string | null;
+  label: string | null;
+  price: number | null;
+}
+
+/** Résumé d'un dépannage en cours de saisie (à la création de l'OR), null sans dépannage ou sans lieu. */
+export function roadsideSummary(
+  value: RoadsideValue,
+  s: RoadsideSettings | undefined,
+): RoadsideSummaryData | null {
+  const address = value.address.trim();
+  if (!value.enabled || !address) return null;
+  if (!s || value.km === null || value.minutes === null) return { address, label: null, price: null };
+  const travel = roadsideTravel(value.km, value.minutes, value.manualPrice, s);
+  return {
+    address,
+    label: roadsideLabel(travel, value.km, value.minutes, value.manualPrice !== null),
+    price: travel.price,
+  };
+}
+
 export interface Place {
   label: string;
   lat: number;

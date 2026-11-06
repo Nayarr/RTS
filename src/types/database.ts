@@ -8352,6 +8352,7 @@ export type Database = {
         Returns: number;
       };
       queue_work_push: { Args: { p_event: string; p_repair_order_id: string }; Returns: undefined };
+      quote_roadside_summary: { Args: { p_quote_id: string }; Returns: Json };
       quote_signature_request: { Args: { p_quote_id: string }; Returns: Json };
       receive_tires: {
         Args: {
@@ -8451,6 +8452,7 @@ export type Database = {
       reset_client_portal: { Args: { p_client_id: string }; Returns: string };
       retry_inbox_triage: { Args: Record<PropertyKey, never>; Returns: number };
       return_rental: { Args: { p_rental_id: string; p_returned_at: string }; Returns: undefined };
+      roadside_summary: { Args: { p_repair_order_id: string }; Returns: Json };
       roadside_travel: {
         Args: { p_km: number; p_manual_price: number; p_minutes: number };
         Returns: {
