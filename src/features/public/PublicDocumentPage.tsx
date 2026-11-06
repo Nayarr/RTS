@@ -18,6 +18,7 @@ import {
 import { monthLabel } from '@/lib/month';
 import { PAYMENT_STATUS_META } from '@/features/invoices/domain';
 import { formatDate, formatDateTime } from '@/features/repair-orders/constants';
+import { RoadsideSummary } from '@/features/repair-orders/RoadsideSummary';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { TaskList } from '@/features/repair-orders/TaskList';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
@@ -269,6 +270,9 @@ function QuoteDocument({ quote, token }: { quote: PublicQuote; token: string }) 
               </>
             }
           />
+          {quote.roadside && (
+            <RoadsideSummary roadside={quote.roadside} className="border-b px-5 py-3.5 sm:px-7" />
+          )}
           <LinesTable lines={done} title={done.length ? 'Travaux déjà effectués' : ''} />
           <LinesTable lines={planned} title={done.length ? 'Travaux à prévoir' : ''} />
           <DocumentTotals totals={quote.totals} />
@@ -587,6 +591,9 @@ function SignatureDocument({ request, token }: { request: PublicSignature; token
               </>
             }
           />
+          {request.roadside && (
+            <RoadsideSummary roadside={request.roadside} className="border-b px-5 py-3.5 sm:px-7" />
+          )}
           <div className="col gap-2 px-5 py-5 sm:px-7">
             <span className="overline">Travaux demandés</span>
             <TaskList text={request.requested_work} className="text-[15px] leading-normal" />

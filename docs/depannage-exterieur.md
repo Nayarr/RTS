@@ -24,6 +24,17 @@ Trajet plus long : temps de trajet facturé au taux horaire du trajet (90 € HT
 à la minute. Exemples : zone 1 en 40 min → 90 € ; zone 2 en 1 h 10 → 105 € ; zone 1 en 1 h 20 →
 120 €. Un prix saisi sur l'OR remplace le calcul. La facture reçoit une seule ligne de déplacement.
 
+## Signature et devis
+
+Le lieu et le prix (HT) du déplacement sont affichés en haut de ce que le client signe : à la
+création de l'OR (au-dessus du cadre de signature), sur la borne et sur le lien à distance, pour
+l'OR comme pour le devis. Sur un devis, le prix affiché est celui de sa ligne de déplacement,
+modifiable.
+
+Le devis issu de l'OR reçoit une ligne de déplacement, ajoutée une seule fois. Elle ne passe pas
+sur l'OR créé depuis le devis : c'est l'OR de dépannage qui facture le déplacement. Si le trajet
+change après la création du devis, corriger la ligne dans le devis.
+
 ## Mise en service de TomTom
 
 1. Compte gratuit sur [developer.tomtom.com](https://developer.tomtom.com), puis

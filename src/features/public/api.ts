@@ -1,4 +1,5 @@
 import { invokeFunction } from '@/lib/functions';
+import type { RoadsideSummaryData } from '@/features/repair-orders/roadside';
 import { supabase } from '@/lib/supabase';
 
 export interface PublicCompany {
@@ -28,6 +29,8 @@ export interface PublicQuoteLine {
 
 export interface PublicQuote {
   type: 'quote';
+  /** Devis d'un dépannage extérieur : lieu et prix du déplacement. */
+  roadside?: RoadsideSummaryData | null;
   company: PublicCompany;
   number: string | null;
   issued_at: string | null;
@@ -107,6 +110,8 @@ export interface PublicPortal {
 /** Demande de signature d'un OR (client absent, lien e-mail). */
 export interface PublicSignature {
   type: 'signature';
+  /** Dépannage extérieur : lieu et prix du déplacement. */
+  roadside?: RoadsideSummaryData | null;
   company: PublicCompany;
   number: string;
   status: 'pending' | 'signed' | 'cancelled' | 'expired';

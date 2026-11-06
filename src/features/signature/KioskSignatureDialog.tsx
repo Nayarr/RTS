@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSignaturePad } from '@/components/use-signature-pad';
 import { uploadFile } from '@/features/files/api';
+import { RoadsideSummary } from '@/features/repair-orders/RoadsideSummary';
 import { TaskList } from '@/features/repair-orders/TaskList';
 import { fetchKioskPendingSignature, kioskSign, kioskSignatureKey, type KioskSignatureRequest } from './api';
 import { remainingPercent } from './domain';
@@ -75,6 +76,9 @@ function SignatureForm({
         </div>
         <span className="hint text-right">Cette fenêtre se ferme dans {seconds} s</span>
       </div>
+      {request.roadside && (
+        <RoadsideSummary roadside={request.roadside} className="rounded-[10px] border px-4 py-3" />
+      )}
       <div className="col gap-1 rounded-[10px] border px-4 py-3">
         <span className="row wrap gap-x-3">
           <b className="plate text-lg">{request.vehicle_plate ?? '-'}</b>

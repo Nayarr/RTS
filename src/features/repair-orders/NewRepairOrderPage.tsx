@@ -27,7 +27,8 @@ import type { NewClientValues } from '@/features/customers/domain';
 import { uploadFile } from '@/features/files/api';
 import { useSettings } from '@/features/settings/hooks';
 import { createRepairOrder, updateRepairOrder } from './api';
-import { NO_ROADSIDE, roadsidePatch, roadsideProblem, type RoadsideValue } from './roadside';
+import { NO_ROADSIDE, roadsidePatch, roadsideProblem, roadsideSummary, type RoadsideValue } from './roadside';
+import { RoadsideSummary } from './RoadsideSummary';
 import { RoadsideFields } from './RoadsideFields';
 import { formatPlate, STATUS_META, VEHICLE_TYPES } from './constants';
 import {
@@ -173,6 +174,8 @@ export function NewRepairOrderPage() {
   );
 
   const openOrders = knownVehicle?.open_orders ?? [];
+  // Signature sur cet écran : le client voit le lieu et le prix du déplacement au-dessus du cadre.
+  const signatureRoadside = roadsideSummary(roadside, settings.data?.app);
 
   return (
     <>
@@ -463,6 +466,9 @@ export function NewRepairOrderPage() {
                 ))}
               </div>
               <p className="hint">{SIGNATURE_MODES.find((mode) => mode.value === signatureMode)?.hint}</p>
+              {signatureMode === 'screen' && signatureRoadside && (
+                <RoadsideSummary roadside={signatureRoadside} className="rounded-[10px] border px-3.5 py-3" />
+              )}
               {signatureMode === 'screen' && (
                 <SignaturePad pad={signature} label="Zone de signature du client" showClear={false} />
               )}
