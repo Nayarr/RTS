@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { durationLabel, roadsideProblem, roadsideTravel, type RoadsideSettings } from './roadside';
+import {
+  durationLabel,
+  roadsideLabel,
+  roadsideProblem,
+  roadsideSummary,
+  roadsideTravel,
+  type RoadsideSettings,
+} from './roadside';
 
 const SETTINGS: RoadsideSettings = {
   roadside_flat_fee: 60,
@@ -43,5 +50,38 @@ describe('déplacement du dépannage (mêmes cas que la base)', () => {
       'Indique le lieu d’intervention du dépannage',
     );
     expect(roadsideProblem({ ...base, enabled: false }, SETTINGS)).toBeNull();
+  });
+});
+
+describe('résumé affiché au client (mêmes libellés que la base)', () => {
+  it.each([
+    [8, 25, null, 'Forfait déplacement zone 1 (proximité)'],
+    [30, 60, null, 'Forfait déplacement zone 3'],
+    [15, 70, null, 'Déplacement zone 2 : 1 h 10 de trajet aller-retour'],
+    [30, 60, 75, 'Déplacement zone 3'],
+    [52.4, 80, 210, 'Déplacement (52,4 km aller-retour)'],
+  ])('%s km, %s min, prix saisi %s : %s', (km, minutes, manual, label) => {
+    const travel = roadsideTravel(km, minutes, manual, SETTINGS);
+    expect(roadsideLabel(travel, km, minutes, manual !== null)).toBe(label);
+  });
+
+  const value = { enabled: true, address: ' Roissy ', km: 30, minutes: 60, manualPrice: null };
+
+  it('zone 3 : lieu, libellé et forfait', () => {
+    expect(roadsideSummary(value, SETTINGS)).toEqual({
+      address: 'Roissy',
+      label: 'Forfait déplacement zone 3',
+      price: 130,
+    });
+  });
+
+  it('trajet pas encore renseigné : le lieu seul ; sans dépannage ou sans lieu : rien', () => {
+    expect(roadsideSummary({ ...value, km: null }, SETTINGS)).toEqual({
+      address: 'Roissy',
+      label: null,
+      price: null,
+    });
+    expect(roadsideSummary({ ...value, enabled: false }, SETTINGS)).toBeNull();
+    expect(roadsideSummary({ ...value, address: ' ' }, SETTINGS)).toBeNull();
   });
 });
