@@ -3928,6 +3928,10 @@ export type Database = {
           repair_order_id: string | null;
           response_processed_at: string | null;
           resulting_repair_order_id: string | null;
+          roadside_address: string | null;
+          roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           sent_at: string | null;
           signature_file_id: string | null;
           status: Database['public']['Enums']['quote_status'];
@@ -3953,6 +3957,10 @@ export type Database = {
           repair_order_id?: string | null;
           response_processed_at?: string | null;
           resulting_repair_order_id?: string | null;
+          roadside_address?: string | null;
+          roadside_km?: number | null;
+          roadside_minutes?: number | null;
+          roadside_price_ht?: number | null;
           sent_at?: string | null;
           signature_file_id?: string | null;
           status?: Database['public']['Enums']['quote_status'];
@@ -3978,6 +3986,10 @@ export type Database = {
           repair_order_id?: string | null;
           response_processed_at?: string | null;
           resulting_repair_order_id?: string | null;
+          roadside_address?: string | null;
+          roadside_km?: number | null;
+          roadside_minutes?: number | null;
+          roadside_price_ht?: number | null;
           sent_at?: string | null;
           signature_file_id?: string | null;
           status?: Database['public']['Enums']['quote_status'];
@@ -7813,6 +7825,10 @@ export type Database = {
           repair_order_id: string | null;
           response_processed_at: string | null;
           resulting_repair_order_id: string | null;
+          roadside_address: string | null;
+          roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           sent_at: string | null;
           signature_file_id: string | null;
           status: Database['public']['Enums']['quote_status'];
@@ -8654,6 +8670,10 @@ export type Database = {
           repair_order_id: string | null;
           response_processed_at: string | null;
           resulting_repair_order_id: string | null;
+          roadside_address: string | null;
+          roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
           sent_at: string | null;
           signature_file_id: string | null;
           status: Database['public']['Enums']['quote_status'];
@@ -8668,6 +8688,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      set_quote_roadside: {
+        Args: { p_address: string; p_km: number; p_minutes: number; p_price?: number; p_quote_id: string };
+        Returns: undefined;
       };
       set_technician_pin: { Args: { p_pin: string; p_technician_id: string }; Returns: undefined };
       set_vehicle_archived: { Args: { p_archived: boolean; p_vehicle_id: string }; Returns: undefined };
