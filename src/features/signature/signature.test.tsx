@@ -158,6 +158,24 @@ describe('signature : borne', () => {
     requested_work: 'Freins avant\nVidange',
   };
 
+  it('dépannage en zone 3 : lieu et forfait dans la fenêtre de signature', async () => {
+    vi.mocked(fetchKioskPendingSignature).mockResolvedValue({
+      ...pending,
+      roadside: { address: 'Aire de Roissy', label: 'Forfait déplacement zone 3', price: 130 },
+    });
+    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
+    const summary = await screen.findByRole('group', { name: 'Dépannage extérieur' });
+    expect(summary).toHaveTextContent('Lieu d’intervention : Aire de Roissy');
+    expect(summary).toHaveTextContent(/Forfait déplacement zone 3\s*130,00\s€ HT/);
+  });
+
+  it('OR à l’atelier : pas de lieu dans la fenêtre de signature', async () => {
+    vi.mocked(fetchKioskPendingSignature).mockResolvedValue({ ...pending, roadside: null });
+    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
+    await screen.findByRole('dialog');
+    expect(screen.queryByRole('group', { name: 'Dépannage extérieur' })).toBeNull();
+  });
+
   it('demande affichée avec le temps restant ; signature enregistrée puis merci', async () => {
     vi.mocked(fetchKioskPendingSignature).mockResolvedValue(pending);
     vi.mocked(uploadFile).mockResolvedValue('file1');
@@ -226,6 +244,21 @@ describe('signature : lien e-mail (page publique)', () => {
   });
   const setup = () =>
     renderRoutes([{ path: '/d/:token', element: <PublicDocumentPage /> }], { initialPath: `/d/${TOKEN}` });
+
+  it('dépannage en zone 3 : lieu et forfait en haut du document', async () => {
+    vi.mocked(fetchPublicDocument).mockResolvedValue(
+      document({ roadside: { address: 'Aire de Roissy', label: 'Forfait déplacement zone 3', price: 130 } }),
+    );
+    setup();
+    const summary = await screen.findByRole('group', { name: 'Dépannage extérieur' });
+    expect(summary).toHaveTextContent('Lieu d’intervention : Aire de Roissy');
+    expect(summary).toHaveTextContent(/Forfait déplacement zone 3\s*130,00\s€ HT/);
+    // Avant les travaux demandés
+    expect(
+      summary.compareDocumentPosition(screen.getByText('Travaux demandés')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
 
   it('le client absent signe en ligne, puis voit la confirmation', async () => {
     vi.mocked(fetchPublicDocument).mockResolvedValue(document());

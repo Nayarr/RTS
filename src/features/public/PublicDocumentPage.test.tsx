@@ -106,6 +106,28 @@ describe('devis en ligne (client, sans compte)', () => {
     expect(screen.getByLabelText('Totaux')).toHaveTextContent(/Total TTC\s*464,40\s€/);
   });
 
+  it('devis d’un dépannage : lieu et prix en haut', async () => {
+    setup(
+      quote({ roadside: { address: 'Aire de Roissy', label: 'Forfait déplacement zone 3', price: 130 } }),
+    );
+    const summary = await screen.findByRole('group', { name: 'Dépannage extérieur' });
+    expect(summary).toHaveTextContent('Lieu d’intervention : Aire de Roissy');
+    expect(summary).toHaveTextContent(/Forfait déplacement zone 3\s*130,00\s€ HT/);
+  });
+
+  it('devis d’un dépannage sans ligne de déplacement : le lieu seul', async () => {
+    setup(quote({ roadside: { address: 'Aire de Roissy', label: null, price: null } }));
+    const summary = await screen.findByRole('group', { name: 'Dépannage extérieur' });
+    expect(summary).toHaveTextContent('Lieu d’intervention : Aire de Roissy');
+    expect(summary).not.toHaveTextContent('HT');
+  });
+
+  it('devis sans dépannage : pas de lieu', async () => {
+    setup(quote());
+    await screen.findByRole('heading', { name: 'DEVIS' });
+    expect(screen.queryByRole('group', { name: 'Dépannage extérieur' })).toBeNull();
+  });
+
   it('mention du devis affichée', async () => {
     setup(quote());
     expect(await screen.findByText('VALABLE SOUS RÉSERVE DE DÉMONTAGE')).toBeInTheDocument();
