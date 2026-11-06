@@ -35,6 +35,11 @@ Le devis issu de l'OR reçoit une ligne de déplacement, ajoutée une seule fois
 sur l'OR créé depuis le devis : c'est l'OR de dépannage qui facture le déplacement. Si le trajet
 change après la création du devis, corriger la ligne dans le devis.
 
+Le dépannage peut aussi se choisir sur le devis lui-même (carte « Lieu d'intervention » de
+l'éditeur), même sans OR : sa ligne de déplacement suit le lieu et le trajet saisis, et l'OR créé
+depuis ce devis devient un dépannage, qui facture le déplacement une seule fois. Si l'OR du devis
+est déjà un dépannage, le lieu et le trajet se modifient sur la fiche de l'OR.
+
 ## Mise en service de TomTom
 
 1. Compte gratuit sur [developer.tomtom.com](https://developer.tomtom.com), puis
