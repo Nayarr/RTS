@@ -37,7 +37,7 @@ const OFFICE_SCREENS = [
   '/equipe',
   '/stock/consommables',
   '/stock/pieces',
-  '/stock/forfaits',
+  '/forfaits',
   '/pilotage/statistiques',
   '/pilotage/tresorerie',
   '/pilotage/rentabilite',

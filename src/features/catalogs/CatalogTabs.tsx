@@ -3,7 +3,6 @@ import { SectionNav } from '@/components/SectionNav';
 const LINKS = [
   { to: '/stock/consommables', label: 'Consommables' },
   { to: '/stock/pieces', label: 'Pièces' },
-  { to: '/stock/forfaits', label: 'Forfaits' },
 ];
 
 /**

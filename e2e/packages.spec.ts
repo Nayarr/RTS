@@ -41,7 +41,7 @@ test('la direction crée un forfait, inséré dans un devis, puis le retire', as
   const name = `Forfait e2e ${id}`;
 
   await loginAs(page, 'direction@rts.local');
-  await page.goto('/stock/forfaits');
+  await page.goto('/forfaits');
   await page.getByRole('button', { name: 'Nouveau forfait' }).click();
   const dialog = page.getByRole('dialog', { name: 'Nouveau forfait' });
   await dialog.getByLabel('Nom du forfait').fill(name);
@@ -68,7 +68,7 @@ test('la direction crée un forfait, inséré dans un devis, puis le retire', as
   await expect(page.getByText(/215,00\s€/).first()).toBeVisible();
 
   // Retiré du catalogue : plus proposé
-  await page.goto('/stock/forfaits');
+  await page.goto('/forfaits');
   await card.getByRole('button', { name: `Supprimer ${name}` }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
   await expect(page.getByText('Forfait supprimé')).toBeVisible();
@@ -82,6 +82,6 @@ test('la direction crée un forfait, inséré dans un devis, puis le retire', as
 
 test('la réception n’a pas accès aux forfaits', async ({ page }) => {
   await loginAs(page, 'reception@rts.local');
-  await page.goto('/stock/forfaits');
+  await page.goto('/forfaits');
   await expect(page.getByRole('heading', { name: 'Accès refusé' })).toBeVisible();
 });
