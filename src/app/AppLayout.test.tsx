@@ -96,6 +96,29 @@ describe('AppLayout', () => {
     expect(within(menu()).getAllByRole('link', { name: 'Pneumatiques' })).toHaveLength(1);
   });
 
+  it('forfaits rangés dans le menu Atelier (direction), plus dans le stock', async () => {
+    vi.mocked(fetchProfile).mockResolvedValue(profile('direction'));
+    renderRoutes(routes, { auth: { session: fakeSession() }, initialPath: '/factures' });
+    expect((await screen.findAllByText('Direction')).length).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole('button', { name: 'Atelier' }));
+    expect(await within(menu()).findByRole('link', { name: 'Forfaits' })).toHaveAttribute(
+      'href',
+      '/forfaits',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Stock' }));
+    expect(within(menu()).getByRole('link', { name: 'Pièces' })).toBeInTheDocument();
+    expect(within(menu()).getAllByRole('link', { name: 'Forfaits' })).toHaveLength(1);
+  });
+
+  it('réception : pas de forfaits dans le menu Atelier', async () => {
+    vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
+    renderRoutes(routes, { auth: { session: fakeSession() }, initialPath: '/factures' });
+    expect((await screen.findAllByText('Réception')).length).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole('button', { name: 'Atelier' }));
+    expect(within(menu()).getByRole('link', { name: /Ordres de réparation/ })).toBeInTheDocument();
+    expect(within(menu()).queryByRole('link', { name: 'Forfaits' })).toBeNull();
+  });
+
   it('écran ouvert : son groupe est déplié et l’entrée marquée, avec le compteur en attente', async () => {
     vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
     renderRoutes(routes, { auth: { session: fakeSession() }, initialPath: '/factures' });
