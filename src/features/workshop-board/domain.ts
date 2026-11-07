@@ -81,3 +81,36 @@ export const workshopOrders = (orders: RepairOrderOverview[]) =>
   orders
     .filter((order) => OPEN_STATUSES.includes(order.status))
     .sort((a, b) => (a.technician_name ?? '').localeCompare(b.technician_name ?? '', 'fr'));
+
+type PlannedFields = Pick<
+  RepairOrderOverview,
+  'planned_date' | 'planned_start' | 'planned_end' | 'planned_end_date'
+>;
+
+const WEEKDAYS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+const isoDay = (iso: string) => new Date(`${iso}T12:00:00Z`);
+
+/** « Aujourd'hui », « Demain », « Hier », sinon « lun. 09/11 ». */
+export function plannedDay(iso: string, today: string): string {
+  const offset = Math.round((isoDay(iso).getTime() - isoDay(today).getTime()) / 86_400_000);
+  if (offset === 0) return 'Aujourd’hui';
+  if (offset === 1) return 'Demain';
+  if (offset === -1) return 'Hier';
+  const [, month, day] = iso.split('-');
+  return `${WEEKDAYS[isoDay(iso).getUTCDay()]} ${day}/${month}`;
+}
+
+/**
+ * Opération prévue au planning : « Aujourd'hui 08:00 → 12:00 », « Demain 14:00 »,
+ * « lun. 09/11 08:00 → mer. 11/11 17:00 » (sur plusieurs jours) ; null sans date prévue.
+ */
+export function plannedSlot(order: PlannedFields, today: string): string | null {
+  if (!order.planned_date) return null;
+  const start = hour(order.planned_start);
+  const end = hour(order.planned_end);
+  const endDate =
+    order.planned_end_date && order.planned_end_date !== order.planned_date ? order.planned_end_date : null;
+  const first = [plannedDay(order.planned_date, today), start].filter(Boolean).join(' ');
+  const last = endDate ? [plannedDay(endDate, today), end].filter(Boolean).join(' ') : end;
+  return last ? `${first} → ${last}` : first;
+}
