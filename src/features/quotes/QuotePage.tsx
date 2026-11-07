@@ -47,7 +47,8 @@ function QuoteLineItem({ line, locked, drag }: { line: QuoteLine; locked: boolea
       )}
       <LineRow
         onEditPart={() => setFiche(true)}
-        line={{ ...line, hours: line.estimated_hours }}
+        // Heures facturées (heure entamée) ; le temps estimé du technicien reste pour la performance
+        line={{ ...line, hours: line.quantity }}
         locked={locked}
         onSave={(patch) => update.mutate(patch)}
         onDelete={() => remove.mutate(undefined)}

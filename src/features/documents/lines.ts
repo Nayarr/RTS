@@ -25,7 +25,7 @@ export interface PricedLine {
 export interface EditableLine extends PricedLine {
   id: string;
   description: string;
-  /** Temps affiché à côté du type (estimé sur un devis, facturé sur une facture). */
+  /** Heures facturées affichées à côté du type (main d'œuvre : la quantité, à l'heure entamée). */
   hours?: number | null;
 }
 
