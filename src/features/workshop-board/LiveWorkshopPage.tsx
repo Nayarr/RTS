@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Clock, Truck, Tv, Users, UserX } from 'lucide-react';
+import { CalendarClock, Clock, Truck, Tv, Users, UserX } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { initials } from '@/app/nav';
 import { toast } from 'sonner';
@@ -10,10 +10,11 @@ import { useProfile } from '@/features/auth/useProfile';
 import { formatDuration } from '@/features/repair-orders/constants';
 import { useRepairOrders } from '@/features/repair-orders/hooks';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
+import { todayIso } from '@/features/repair-orders/schemas';
 import { taskSummary } from '@/features/repair-orders/tasks';
 import { cn } from '@/lib/utils';
 import { exitCodeIsSet } from './api';
-import { setTvMode, workshopOrders } from './domain';
+import { plannedSlot, setTvMode, workshopOrders } from './domain';
 
 /** Atelier en direct : véhicules à l'atelier, technicien, badgeage ; accès à l'écran télé. */
 export function LiveWorkshopPage() {
@@ -23,6 +24,7 @@ export function LiveWorkshopPage() {
   const [confirmTv, setConfirmTv] = useState(false);
   const [checking, setChecking] = useState(false);
   const list = workshopOrders(orders.data ?? []);
+  const today = todayIso();
 
   const startTv = async () => {
     setChecking(true);
@@ -129,46 +131,61 @@ export function LiveWorkshopPage() {
               <span className="cnt bg-card">{lane.orders.length}</span>
             </div>
             <ul className="col gap-2.5">
-              {lane.orders.map((order) => (
-                <li key={order.id} className="min-w-0">
-                  <Link
-                    to={`/or/${order.id}`}
-                    aria-label={`${order.plate} · ${order.number}`}
-                    className={cn(
-                      'card col gap-2 px-3.5 py-3 hover:bg-hover',
-                      order.running_since &&
-                        'border-[color-mix(in_srgb,var(--primary)_55%,transparent)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--primary)_12%,transparent)]',
-                    )}
-                  >
-                    <div className="row between gap-2">
-                      <span className="plate truncate">{order.plate}</span>
-                      <StatusBadge
-                        status={order.status}
-                        technicianId={order.technician_id}
-                        className="h-[22px] px-2 text-[11.5px]"
-                      />
-                    </div>
-                    <span className="truncate text-[13px] font-medium">
-                      {order.client_name ?? '-'}
-                      <span className="sr-only"> · Technicien : {order.technician_name ?? '-'}</span>
-                    </span>
-                    {order.requested_work && (
-                      <span className="muted truncate text-[12.5px]">
-                        {taskSummary(order.requested_work)}
+              {lane.orders.map((order) => {
+                const planned = plannedSlot(order, today);
+                return (
+                  <li key={order.id} className="min-w-0">
+                    <Link
+                      to={`/or/${order.id}`}
+                      aria-label={`${order.plate} · ${order.number}`}
+                      className={cn(
+                        'card col gap-2 px-3.5 py-3 hover:bg-hover',
+                        order.running_since &&
+                          'border-[color-mix(in_srgb,var(--primary)_55%,transparent)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--primary)_12%,transparent)]',
+                      )}
+                    >
+                      <div className="row between gap-2">
+                        <span className="plate truncate">{order.plate}</span>
+                        <StatusBadge
+                          status={order.status}
+                          technicianId={order.technician_id}
+                          className="h-[22px] px-2 text-[11.5px]"
+                        />
+                      </div>
+                      <span className="truncate text-[13px] font-medium">
+                        {order.client_name ?? '-'}
+                        <span className="sr-only"> · Technicien : {order.technician_name ?? '-'}</span>
                       </span>
-                    )}
-                    {order.running_since ? (
-                      <span className="row warn-t gap-1.5 text-[12.5px] font-semibold">
-                        <Clock className="i xs" /> Badgeage en cours
-                      </span>
-                    ) : (
-                      <span className="row muted num gap-1.5 text-[12.5px]">
-                        <Clock className="i xs" /> {formatDuration(order.worked_seconds)} · {order.number}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              ))}
+                      {/* Opération prévue au planning : bien visible, sur plusieurs jours si besoin */}
+                      {planned ? (
+                        <span className="row gap-1.5 self-start rounded-md bg-[color-mix(in_srgb,var(--primary)_12%,transparent)] px-2 py-1 text-[13px] font-semibold text-primary">
+                          <CalendarClock className="i xs shrink-0" />
+                          <span className="sr-only">Prévu : </span>
+                          <span className="num">{planned}</span>
+                        </span>
+                      ) : (
+                        <span className="row muted gap-1.5 text-[12.5px]">
+                          <CalendarClock className="i xs" /> Pas de date prévue
+                        </span>
+                      )}
+                      {order.requested_work && (
+                        <span className="muted truncate text-[12.5px]">
+                          {taskSummary(order.requested_work)}
+                        </span>
+                      )}
+                      {order.running_since ? (
+                        <span className="row warn-t gap-1.5 text-[12.5px] font-semibold">
+                          <Clock className="i xs" /> Badgeage en cours
+                        </span>
+                      ) : (
+                        <span className="row muted num gap-1.5 text-[12.5px]">
+                          <Clock className="i xs" /> {formatDuration(order.worked_seconds)} · {order.number}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ))}

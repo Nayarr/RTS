@@ -1,6 +1,7 @@
 import { fetchAllRows } from '@/lib/all-rows';
 import { supabase } from '@/lib/supabase';
 import type { CreditNote, InvoiceLine, InvoiceOverview } from './api';
+import type { DuesClient } from './dues';
 import type { StatementVehicle } from './statement';
 
 /** Identifiants par paquets (adresse de la requête courte). */
@@ -123,4 +124,35 @@ export async function fetchClientStatement(clientId: string): Promise<ClientStat
     fetchInvoiceVehicles(ids),
   ]);
   return { client: client.data, invoices: list, creditNotes, vehicles };
+}
+
+/**
+ * Sommes dues : factures émises encore à régler (reste dû lu maintenant), leurs clients et véhicules.
+ * La période et les types de compte se choisissent ensuite (`duesByClient`).
+ */
+export async function fetchDues() {
+  const invoices = (await fetchAllRows((start, end) =>
+    supabase
+      .from('v_invoices_overview')
+      .select('*')
+      .eq('status', 'issued')
+      .gt('balance_due', 0.01)
+      .order('issued_at')
+      .order('id')
+      .range(start, end),
+  )) as InvoiceOverview[];
+  const clientIds = [
+    ...new Set(invoices.flatMap((invoice) => (invoice.client_id ? [invoice.client_id] : []))),
+  ];
+  const clients: DuesClient[] = [];
+  for (const ids of chunks(clientIds)) {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id, name, billing_address, siret, legacy_key, account_type, direct_debit_day')
+      .in('id', ids);
+    if (error) throw error;
+    clients.push(...data);
+  }
+  const vehicles = await fetchInvoiceVehicles(invoices.map((invoice) => invoice.id));
+  return { invoices, clients, vehicles };
 }

@@ -58,6 +58,7 @@ export function PackageDialog({ pkg, onClose }: { pkg: ServicePackage | null; on
             id="package-name"
             label="Nom du forfait"
             placeholder="Ex : Forfait disques et plaquettes arrière PL"
+            hint="Écrit tout en majuscules, il est enregistré en minuscules avec une majuscule au début ; les sigles (PL, AR, CT, HP…) restent en majuscules."
             error={errors.name?.message}
             {...register('name')}
           />

@@ -63,7 +63,7 @@ test('remorque : essieu à 4 roues jumelées, forfaits des pneus par 4, repassé
   await expect
     .poll(tyrePackages, { timeout: 10_000 })
     .toBe(
-      'DÉPOSE/REPOSE PNEUMATIQUE (essieu 1) x4 | DÉPOSE/REPOSE ROUE (essieu 1) x4 | RECYCLAGE PNEUMATIQUE (essieu 1) x4',
+      'Dépose/repose pneumatique (essieu 1) x4 | Dépose/repose roue (essieu 1) x4 | Recyclage pneumatique (essieu 1) x4',
     );
 
   // Côté bureau : essieu jumelé indiqué sur la fiche
@@ -81,6 +81,6 @@ test('remorque : essieu à 4 roues jumelées, forfaits des pneus par 4, repassé
   await expect
     .poll(tyrePackages, { timeout: 10_000 })
     .toBe(
-      'DÉPOSE/REPOSE PNEUMATIQUE (essieu 1) x2 | DÉPOSE/REPOSE ROUE (essieu 1) x2 | RECYCLAGE PNEUMATIQUE (essieu 1) x2',
+      'Dépose/repose pneumatique (essieu 1) x2 | Dépose/repose roue (essieu 1) x2 | Recyclage pneumatique (essieu 1) x2',
     );
 });
