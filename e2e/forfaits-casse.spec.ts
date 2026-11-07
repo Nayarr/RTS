@@ -12,7 +12,7 @@ test('forfait saisi en majuscules : enregistré en minuscules, sigles gardés', 
   await page.getByRole('button', { name: 'Se connecter' }).click();
   await expect(page.getByRole('button', { name: 'Se déconnecter' }).first()).toBeVisible();
 
-  await page.goto('/stock/forfaits');
+  await page.goto('/forfaits');
   await page.getByRole('button', { name: 'Nouveau forfait' }).click();
   const dialog = page.getByRole('dialog', { name: 'Nouveau forfait' });
   await expect(dialog.getByText(/les sigles \(PL, AR, CT, HP…\) restent en majuscules/)).toBeVisible();

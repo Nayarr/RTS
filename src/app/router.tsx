@@ -299,9 +299,11 @@ export const routes: RouteObject[] = [
                     lazy: page(() => import('@/features/catalogs/PartsPage'), 'PartsPage'),
                   },
                   {
-                    path: '/stock/forfaits',
+                    path: '/forfaits',
                     lazy: page(() => import('@/features/catalogs/PackagesPage'), 'PackagesPage'),
                   },
+                  // Ancienne adresse (liens gardés) : les forfaits sont passés du stock à l'atelier
+                  { path: '/stock/forfaits', element: <Navigate to="/forfaits" replace /> },
                   {
                     path: '/pilotage/performance',
                     lazy: page(() => import('@/features/reporting/PerformancePage'), 'PerformancePage'),

@@ -112,7 +112,7 @@ test('forfaits des pneus dans Stock › Forfaits : prix, barème et « devis et 
   page,
 }) => {
   await loginAs(page, 'direction@rts.local');
-  await page.goto('/stock/forfaits');
+  await page.goto('/forfaits');
   await page.getByRole('group', { name: 'Type de véhicule' }).getByRole('button', { name: 'PL' }).click();
   const card = page.getByRole('article', { name: 'Dépose/repose roue' });
   await expect(card).toBeVisible();

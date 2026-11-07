@@ -47,7 +47,7 @@ beforeEach(() => {
 });
 
 const renderPage = () =>
-  renderRoutes([{ path: '/stock/forfaits', element: <PackagesPage /> }], { initialPath: '/stock/forfaits' });
+  renderRoutes([{ path: '/forfaits', element: <PackagesPage /> }], { initialPath: '/forfaits' });
 
 describe('forfaits : règles', () => {
   it('mots-clés, catégorie, aller-retour du formulaire', () => {
@@ -82,7 +82,8 @@ describe('forfaits : écran', () => {
     expect(card).toHaveTextContent('Mots-clés :disque arrièreplaquette arrière');
     expect(card).toHaveTextContent('Fiche de contrôle : Disques de frein arrière, Plaquettes arrière');
     expect(screen.getByRole('article', { name: 'Vidange' })).toHaveTextContent('Toutes catégories3 h barème');
-    expect(screen.getByRole('link', { name: 'Forfaits' })).toHaveAttribute('aria-current', 'page');
+    // Plus d'onglets du stock : les forfaits sont rangés dans l'atelier
+    expect(screen.queryByRole('link', { name: 'Consommables' })).toBeNull();
   });
 
   it('nouveau forfait : barème obligatoire, cases cochées, enregistrement', async () => {
