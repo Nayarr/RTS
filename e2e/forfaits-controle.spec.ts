@@ -88,7 +88,7 @@ test('disques à refaire : forfait disques et plaquettes seul, barème caché au
     .filter({ has: page.getByRole('heading', { name: 'Pièces / réparations à prévoir (devis)' }) });
   const tasks = planned.getByRole('textbox', { name: 'Description de la tâche' });
   await expect(tasks).toHaveCount(1);
-  await expect(tasks.first()).toHaveValue(/DISQUES ET PLAQUETTE AR/);
+  await expect(tasks.first()).toHaveValue(/^Disques et plaquette AR/);
   // Ni « Forfait », ni barème : le technicien donne son temps estimé
   await expect(planned.getByText('Forfait', { exact: true })).toHaveCount(0);
   await expect(planned.getByRole('option', { name: /Barème/ })).toHaveCount(0);

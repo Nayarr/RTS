@@ -360,7 +360,7 @@ describe('fiche OR technicien', () => {
     const [removePackage] = within(done).getAllByRole('button', { name: 'Supprimer la tâche' });
     await userEvent.click(removePackage!);
     const confirm = screen.getByRole('dialog', { name: 'Retirer ce travail ?' });
-    expect(confirm).toHaveTextContent('« vidange PL » n’a finalement pas été fait');
+    expect(confirm).toHaveTextContent('« Vidange PL » n’a finalement pas été fait');
     await userEvent.click(within(confirm).getByRole('button', { name: 'Retirer' }));
     await waitFor(() => expect(deleteLine).toHaveBeenCalledWith('q1'));
   });

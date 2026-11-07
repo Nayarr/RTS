@@ -19,9 +19,12 @@ import { useWorkshopMutation } from '../hooks';
 
 const EDITABLE_TYPES: RoLine['line_type'][] = ['labor', 'text'];
 
-/** Libellé d'un forfait sans le mot « forfait » côté atelier (comme l'ancienne appli). */
-const displayDescription = (line: RoLine) =>
-  line.line_type === 'package' ? line.description.replace(/forfait\s*/gi, '').trim() : line.description;
+/** Libellé d'un forfait sans le mot « forfait » côté atelier (comme l'ancienne appli), majuscule au début. */
+const displayDescription = (line: RoLine) => {
+  if (line.line_type !== 'package') return line.description;
+  const text = line.description.replace(/forfait\s*/gi, '').trim();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 function LineRow({ line, locked, repairOrderId }: { line: RoLine; locked: boolean; repairOrderId: string }) {
   const update = useWorkshopMutation(repairOrderId, (patch: LinePatch) => updateLine(line.id, patch));
