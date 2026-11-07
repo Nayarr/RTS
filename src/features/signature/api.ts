@@ -1,4 +1,5 @@
 import { invokeFunction } from '@/lib/functions';
+import type { RoadsideSummaryData } from '@/features/repair-orders/roadside';
 import { supabase } from '@/lib/supabase';
 
 export type SignatureChannel = 'kiosk' | 'email';
@@ -29,6 +30,8 @@ export interface KioskSignatureRequest extends SignatureRequest {
   vehicle_plate: string | null;
   client_name: string | null;
   requested_work: string;
+  /** Dépannage extérieur : lieu et prix du déplacement. */
+  roadside?: RoadsideSummaryData | null;
 }
 
 export const signatureRequestKey = (repairOrderId: string) => ['signature-request', repairOrderId] as const;

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Enums, Tables, TablesInsert, TablesUpdate } from '@/types/database';
+import type { RoadsideValue } from '@/features/repair-orders/roadside';
 import type { SignatureRequest } from '@/features/signature/api';
 
 export type QuoteStatus = Enums<'quote_status'>;
@@ -102,6 +103,47 @@ export async function createQuote(input: NewQuoteInput): Promise<string> {
   });
   if (error) throw error;
   return data.id;
+}
+
+/** Dépannage porté par le devis, et lieu de son OR si cet OR est déjà un dépannage. */
+export async function fetchQuoteRoadside(id: string, repairOrderId: string | null) {
+  const [quote, order] = await Promise.all([
+    supabase
+      .from('quotes')
+      .select('roadside_address, roadside_km, roadside_minutes, roadside_price_ht')
+      .eq('id', id)
+      .single(),
+    repairOrderId
+      ? supabase
+          .from('repair_orders')
+          .select('roadside_address')
+          .eq('id', repairOrderId)
+          .eq('intervention_type', 'roadside')
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  if (quote.error) throw quote.error;
+  if (order.error) throw order.error;
+  const own: RoadsideValue = {
+    enabled: quote.data.roadside_address !== null,
+    address: quote.data.roadside_address ?? '',
+    km: quote.data.roadside_km,
+    minutes: quote.data.roadside_minutes,
+    manualPrice: quote.data.roadside_price_ht,
+  };
+  return { own, orderAddress: order.data ? (order.data.roadside_address ?? '') : null };
+}
+
+/** Pose ou retire le dépannage du devis, et tient à jour sa ligne de déplacement. */
+export async function saveQuoteRoadside(id: string, value: RoadsideValue) {
+  const { error } = await supabase.rpc('set_quote_roadside', {
+    p_quote_id: id,
+    p_address: value.enabled ? value.address : '',
+    p_km: value.km ?? 0,
+    p_minutes: value.minutes ?? 0,
+    ...(value.manualPrice !== null && { p_price: value.manualPrice }),
+  });
+  if (error) throw error;
 }
 
 /** Crée ou reprend le devis de l'OR, avec ses travaux chiffrés. Renvoie l'id du devis. */

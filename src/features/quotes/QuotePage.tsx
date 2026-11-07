@@ -26,6 +26,7 @@ import { PreQuoteWorkCard } from '@/features/repair-orders/PreQuoteWorkCard';
 import { offeredTotal } from '@/features/documents/lines';
 import { computeTotals, isQuoteLocked, nextPosition } from './domain';
 import { QuoteActions, QuoteDocumentActions } from './editor/QuoteActions';
+import { QuoteRoadsideSection } from './editor/QuoteRoadsideSection';
 import { useQuote, useQuoteMutation } from './hooks';
 import { QuoteStatusBadge } from './QuoteStatusBadge';
 
@@ -216,6 +217,8 @@ export function QuotePage() {
               )}
             </div>
           )}
+
+          <QuoteRoadsideSection quote={quote} locked={locked} />
 
           {done.length > 0 && (
             <LinesSection
