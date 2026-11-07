@@ -75,8 +75,8 @@ test('remorque : deux essieux remplis, le troisième vide ignoré, forfaits des 
              and (line_type = 'package' or description like 'Remplacement%')`),
     )
     .toBe(
-      'DÉPOSE/REPOSE PNEUMATIQUE (essieu 2) x2 | DÉPOSE/REPOSE ROUE (essieu 2) x2 | ' +
-        'RECYCLAGE PNEUMATIQUE (essieu 2) x2 | Remplacement Disques de frein essieu 1 x1 | Remplacement Pneus essieu 2 x1',
+      'Dépose/repose pneumatique (essieu 2) x2 | Dépose/repose roue (essieu 2) x2 | ' +
+        'Recyclage pneumatique (essieu 2) x2 | Remplacement Disques de frein essieu 1 x1 | Remplacement Pneus essieu 2 x1',
     );
 
   // Côté bureau : essieux remplis seulement
