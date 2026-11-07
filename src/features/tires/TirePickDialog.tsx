@@ -26,6 +26,7 @@ const MANUAL = 'autre';
 const DOCUMENT = {
   devis: { to: 'au devis', this: 'ce devis' },
   facture: { to: 'à la facture', this: 'cette facture' },
+  or: { to: 'à l’OR', this: 'cet OR' },
 } as const;
 
 /**
@@ -44,7 +45,7 @@ export function TirePickDialog({
   vehicleType: Enums<'vehicle_type'>;
   repairOrderId: string | null;
   repairOrderNumber: string | null;
-  documentLabel: 'devis' | 'facture';
+  documentLabel: keyof typeof DOCUMENT;
   onAdd: (line: NewLine) => Promise<unknown>;
   onClose: () => void;
 }) {
