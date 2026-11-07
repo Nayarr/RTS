@@ -5,6 +5,7 @@ import { SectionCard } from '@/components/SectionCard';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useProfile } from '@/features/auth/useProfile';
 import { useAutoSave } from '@/lib/use-auto-save';
 import type { TablesUpdate } from '@/types/database';
 import { updateRepairOrder, type RepairOrderOverview } from '../api';
@@ -53,6 +54,10 @@ function toPatch({
  */
 export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
   const technicians = useActiveTechnicians();
+  const { data: profile } = useProfile();
+  // OR facturé : tout est verrouillé par la facture, sauf le kilométrage que la direction corrige encore
+  const invoiced = order.status === 'invoiced';
+  const mileageLocked = invoiced && profile?.role !== 'direction';
   const form = useForm<EditRepairOrderValues>({
     resolver: zodResolver(editRepairOrderSchema),
     values: toForm(order),
@@ -90,6 +95,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
             id="edit-requested_work"
             rows={5}
             className="h-full"
+            disabled={invoiced}
             aria-invalid={errors.requested_work ? true : undefined}
             {...register('requested_work')}
           />
@@ -131,6 +137,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
                 <Select
                   value={field.value || UNASSIGNED}
                   onValueChange={(value) => field.onChange(value === UNASSIGNED ? '' : value)}
+                  disabled={invoiced}
                 >
                   <SelectTrigger id="edit-technician" className="w-full">
                     <SelectValue />
@@ -160,7 +167,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
             render={({ field }) => (
               <div className="field">
                 <Label htmlFor="edit-vehicle_type">Type de véhicule</Label>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={field.value} onValueChange={field.onChange} disabled={invoiced}>
                   <SelectTrigger id="edit-vehicle_type" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -180,14 +187,27 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
             label="Kilométrage"
             inputMode="numeric"
             className="num"
+            disabled={mileageLocked}
+            hint={
+              invoiced
+                ? 'OR facturé : seul le kilométrage se corrige encore (la facture émise garde le sien).'
+                : 'Erreur du technicien : corrige-le ici, c’est noté dans l’historique.'
+            }
             error={errors.mileage?.message}
             {...register('mileage')}
           />
-          <FormField id="edit-planned_date" label="Date de début" type="date" {...register('planned_date')} />
+          <FormField
+            id="edit-planned_date"
+            label="Date de début"
+            type="date"
+            disabled={invoiced}
+            {...register('planned_date')}
+          />
           <FormField
             id="edit-planned_start"
             label="Heure de début"
             type="time"
+            disabled={invoiced}
             error={errors.planned_start?.message}
             {...register('planned_start')}
           />
@@ -195,6 +215,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
             id="edit-planned_end_date"
             label="Date de fin"
             type="date"
+            disabled={invoiced}
             error={errors.planned_end_date?.message}
             {...register('planned_end_date')}
           />
@@ -202,6 +223,7 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
             id="edit-planned_end"
             label="Heure de fin"
             type="time"
+            disabled={invoiced}
             error={errors.planned_end?.message}
             {...register('planned_end')}
           />
