@@ -24,9 +24,9 @@ test('menu : « Pneumatiques » au même niveau que Stock et Pilotage, hors des 
   await expect(page.getByRole('heading', { name: 'Pneumatiques' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Catalogues' })).toHaveCount(0);
 
-  // Stock : consommables, pièces et forfaits seulement
+  // Stock : consommables et pièces seulement (les forfaits sont dans l'atelier)
   await goTo(page, 'Stock', 'Pièces');
   const tabs = page.getByRole('navigation', { name: 'Catalogues' });
-  await expect(tabs.getByRole('link', { name: 'Forfaits' })).toBeVisible();
+  await expect(tabs.getByRole('link', { name: 'Forfaits' })).toHaveCount(0);
   await expect(tabs.getByRole('link', { name: 'Pneumatiques' })).toHaveCount(0);
 });

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { formatHours } from '@/features/repair-orders/constants';
 import { formatEuro } from '@/lib/numbers';
 import { removePackage, type ServicePackage } from './api';
-import { CatalogTabs } from './CatalogTabs';
 import { packagesKey, useCatalogMutation, usePackages } from './hooks';
 import { PackageDialog } from './PackageDialog';
 import { categoryLabel, wearFieldLabel } from './package-form';
@@ -34,7 +33,7 @@ export function PackagesPage() {
   return (
     <>
       <PageHeader
-        crumbs={[{ label: 'Stock et catalogues' }, { label: 'Forfaits' }]}
+        crumbs={[{ label: 'Atelier' }, { label: 'Forfaits' }]}
         title="Forfaits"
         actions={
           <>
@@ -50,7 +49,6 @@ export function PackagesPage() {
 
       <div className="col gap-4">
         <div className="toolbar flex-wrap">
-          <CatalogTabs />
           <div className="seg" role="group" aria-label="Type de véhicule">
             {CATEGORY_FILTERS.map((option) => (
               <button

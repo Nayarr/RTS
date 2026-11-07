@@ -50,6 +50,7 @@ export const GROUPS: NavGroup[] = [
       { to: '/atelier-en-direct', label: 'Atelier en direct' },
       { to: '/planning', label: 'Planning' },
       { to: '/rendez-vous', label: 'Rendez-vous', count: (data) => data.reminders_to_send, hot: true },
+      { to: '/forfaits', label: 'Forfaits', roles: ['direction'] },
       // Aide au diagnostic masquée pour le moment : la page reste joignable par son adresse
       ...(DIAGNOSTIC_HELP_ENABLED
         ? [{ to: '/documentation', label: 'Documentation technique', roles: ['direction'] as AppRole[] }]
@@ -118,7 +119,6 @@ export const GROUPS: NavGroup[] = [
     items: [
       { to: '/stock/consommables', label: 'Consommables' },
       { to: '/stock/pieces', label: 'Pièces' },
-      { to: '/stock/forfaits', label: 'Forfaits' },
     ],
   },
   {
