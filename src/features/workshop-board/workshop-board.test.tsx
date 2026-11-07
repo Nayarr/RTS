@@ -11,7 +11,15 @@ import type * as RepairOrdersApi from '@/features/repair-orders/api';
 import { fakeSession, renderRoutes } from '@/test/render';
 import { exitCodeIsSet, fetchWorkshopBoard, type BoardOrder, type WorkshopBoard } from './api';
 import type * as BoardApi from './api';
-import { boardColumns, cardMeta, expectedVehicles, isTvMode, setTvMode, workshopOrders } from './domain';
+import {
+  boardColumns,
+  cardMeta,
+  expectedVehicles,
+  isTvMode,
+  plannedSlot,
+  setTvMode,
+  workshopOrders,
+} from './domain';
 import { LiveWorkshopPage } from './LiveWorkshopPage';
 import { TvPage } from './TvPage';
 
@@ -238,5 +246,90 @@ describe('atelier en direct', () => {
     renderLive();
     await screen.findByRole('link', { name: 'AB-123-CD · OR00012' });
     expect(screen.queryByRole('button', { name: 'Écran atelier (télé)' })).toBeNull();
+  });
+});
+
+describe('atelier en direct : opération prévue', () => {
+  const planned = (fields: Partial<RepairOrderOverview>) =>
+    ({
+      planned_date: null,
+      planned_start: null,
+      planned_end: null,
+      planned_end_date: null,
+      ...fields,
+    }) as RepairOrderOverview;
+
+  it('jour relatif, heures, plusieurs jours ; rien sans date', () => {
+    const today = '2026-11-07';
+    expect(plannedSlot(planned({}), today)).toBeNull();
+    expect(plannedSlot(planned({ planned_date: today }), today)).toBe('Aujourd’hui');
+    expect(
+      plannedSlot(
+        planned({ planned_date: today, planned_start: '08:00:00', planned_end: '12:00:00' }),
+        today,
+      ),
+    ).toBe('Aujourd’hui 08:00 → 12:00');
+    expect(plannedSlot(planned({ planned_date: '2026-11-08', planned_start: '14:00:00' }), today)).toBe(
+      'Demain 14:00',
+    );
+    expect(plannedSlot(planned({ planned_date: '2026-11-06', planned_start: '07:30:00' }), today)).toBe(
+      'Hier 07:30',
+    );
+    expect(
+      plannedSlot(
+        planned({
+          planned_date: '2026-11-09',
+          planned_start: '08:00:00',
+          planned_end_date: '2026-11-11',
+          planned_end: '17:00:00',
+        }),
+        today,
+      ),
+    ).toBe('lun. 09/11 08:00 → mer. 11/11 17:00');
+    // Fin le même jour : la date n'est pas répétée
+    expect(
+      plannedSlot(
+        planned({
+          planned_date: '2026-11-10',
+          planned_start: '08:00:00',
+          planned_end_date: '2026-11-10',
+          planned_end: '10:00:00',
+        }),
+        today,
+      ),
+    ).toBe('mar. 10/11 08:00 → 10:00');
+  });
+
+  it('carte : créneau prévu bien visible, « Pas de date prévue » sinon', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-07T10:00:00') });
+    vi.mocked(fetchProfile).mockResolvedValue(profile('reception'));
+    vi.mocked(fetchRepairOrders).mockResolvedValue([
+      planned({
+        id: 'ro1',
+        number: 'OR00012',
+        status: 'assigned',
+        plate: 'AB-123-CD',
+        technician_name: 'Alice',
+        worked_seconds: 0,
+        planned_date: '2026-11-07',
+        planned_start: '08:00:00',
+        planned_end_date: '2026-11-09',
+        planned_end: '12:00:00',
+      }),
+      planned({ id: 'ro2', number: 'OR00013', status: 'assigned', plate: 'EF-456-GH', worked_seconds: 0 }),
+    ]);
+    try {
+      renderRoutes([{ path: '/atelier-en-direct', element: <LiveWorkshopPage /> }], {
+        initialPath: '/atelier-en-direct',
+        auth: { session: fakeSession() },
+      });
+      const card = await screen.findByRole('link', { name: 'AB-123-CD · OR00012' });
+      expect(card).toHaveTextContent('Prévu : Aujourd’hui 08:00 → lun. 09/11 12:00');
+      expect(screen.getByRole('link', { name: 'EF-456-GH · OR00013' })).toHaveTextContent(
+        'Pas de date prévue',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
