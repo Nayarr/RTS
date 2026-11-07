@@ -8,7 +8,6 @@ import {
   canAddAxles,
   extraAxleLabel,
   FLUID_FIELDS,
-  inspectionMissingPoints,
   OK_HS_OPTIONS,
   tireAxlesFor,
   TRAILER_AXLE_WEAR,
@@ -113,7 +112,6 @@ export function InspectionEditor({
   locked,
   vehicleId,
   vehicleType,
-  required = false,
   tailgateScan,
   onTailgateScanDone,
 }: {
@@ -126,14 +124,11 @@ export function InspectionEditor({
   vehicleId: string;
   /** Type du véhicule : éléments d'usure et essieux proposés en dépendent. */
   vehicleType: 'pl' | 'vul' | 'remorque';
-  /** Fiche complète exigée par la direction : tous les points OK / 50 % / HS avant de terminer. */
-  required?: boolean;
   /** Photo de l'étiquette du hayon à lire automatiquement (réglage de la direction). */
   tailgateScan?: string | null;
   onTailgateScanDone?: () => void;
 }) {
   const [data, setData] = useState<InspectionData>(initial ?? {});
-  const missingPoints = inspectionMissingPoints(data, vehicleType);
   const save = useWorkshopMutation(repairOrderId, (next: InspectionData) =>
     saveInspection(repairOrderId, next),
   );
@@ -253,13 +248,6 @@ export function InspectionEditor({
             : 'Enregistrée automatiquement. HS ou 50 % ajoute la réparation à prévoir.'}
         </span>
       </div>
-      {required && (
-        <p className={cn('alert', missingPoints ? 's-warn' : 's-ok')} role="status">
-          {missingPoints
-            ? `Fiche complète exigée par la direction : ${missingPoints} point${missingPoints > 1 ? 's' : ''} OK / 50 % / HS à renseigner.`
-            : 'Fiche complète exigée par la direction : tous les points sont renseignés.'}
-        </p>
-      )}
 
       {trailer &&
         axles.map((axle, index) => (
