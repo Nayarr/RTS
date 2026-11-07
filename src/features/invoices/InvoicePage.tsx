@@ -89,7 +89,8 @@ function InvoiceLineItem({ line, locked, drag }: { line: InvoiceLine; locked: bo
       )}
       <LineRow
         onEditPart={() => setFiche(true)}
-        line={{ ...line, hours: line.billed_hours }}
+        // Heures facturées (heure entamée), comme la quantité de la ligne
+        line={{ ...line, hours: line.quantity }}
         locked={locked}
         onSave={(patch) => update.mutate(patch)}
         onDelete={() => remove.mutate(undefined)}
