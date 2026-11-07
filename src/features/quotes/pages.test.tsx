@@ -19,7 +19,9 @@ import {
   createQuote,
   createRepairOrderFromQuote,
   fetchQuote,
+  fetchQuoteRoadside,
   fetchQuotes,
+  saveQuoteRoadside,
   setQuoteResponse,
   shareQuote,
   updateQuoteLine,
@@ -59,6 +61,8 @@ vi.mock('./api', async (importOriginal) => ({
   fetchQuote: vi.fn(),
   fetchRepairOrderQuotes: vi.fn(),
   buildQuoteFromRepairOrder: vi.fn(),
+  fetchQuoteRoadside: vi.fn(),
+  saveQuoteRoadside: vi.fn(),
   createQuote: vi.fn(),
   addQuoteLine: vi.fn(),
   updateQuoteLine: vi.fn(),
@@ -353,6 +357,41 @@ describe('éditeur de devis', () => {
       }),
     );
     expect(await screen.findByRole('heading', { name: 'Fiche OR' })).toBeInTheDocument();
+  });
+});
+
+describe('dépannage extérieur sur le devis', () => {
+  const none = { enabled: false, address: '', km: null, minutes: null, manualPrice: null };
+  const renderEditor = async (roadside: Awaited<ReturnType<typeof fetchQuoteRoadside>>) => {
+    vi.mocked(fetchQuoteRoadside).mockResolvedValue(roadside);
+    setup('/devis/q1');
+    return screen.findByRole('region', { name: 'Lieu d’intervention' });
+  };
+
+  it('coché, lieu et trajet saisis : enregistré sur le devis', async () => {
+    vi.mocked(saveQuoteRoadside).mockResolvedValue();
+    const section = await renderEditor({ own: none, orderAddress: null });
+    await userEvent.click(within(section).getByRole('checkbox', { name: /Dépannage extérieur/ }));
+    await userEvent.type(within(section).getByLabelText('Lieu d’intervention'), 'Roissy');
+    await userEvent.type(within(section).getByLabelText('Distance aller-retour (km)'), '30');
+    await userEvent.type(within(section).getByLabelText('Trajet aller-retour (min)'), '60');
+    await userEvent.click(within(section).getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(saveQuoteRoadside).toHaveBeenCalledWith('q1', {
+        enabled: true,
+        address: 'Roissy',
+        km: 30,
+        minutes: 60,
+        manualPrice: null,
+      }),
+    );
+  });
+
+  it('OR déjà en dépannage : lieu affiché, à modifier sur l’OR', async () => {
+    const section = await renderEditor({ own: none, orderAddress: 'Aire de Roissy' });
+    expect(section).toHaveTextContent('Dépannage extérieur : Aire de Roissy');
+    expect(within(section).getByRole('link', { name: 'à modifier sur l’OR' })).toBeInTheDocument();
+    expect(within(section).queryByRole('checkbox')).toBeNull();
   });
 });
 
