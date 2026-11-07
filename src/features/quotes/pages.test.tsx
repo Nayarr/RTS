@@ -244,6 +244,12 @@ describe('éditeur de devis', () => {
     expect(screen.getByRole('button', { name: /^Déplacer / })).toBeInTheDocument();
   });
 
+  it('main d’œuvre estimée 0,5 h par le technicien : 1 h facturée affichée (heure entamée)', async () => {
+    setup('/devis/q1', { lines: [line({ section: 'done', quantity: 1, estimated_hours: 0.5 })] });
+    expect(await screen.findByText('Main d’œuvre · 1 h')).toBeInTheDocument();
+    expect(screen.queryByText(/0,5 h/)).toBeNull();
+  });
+
   it('une saisie invalide est ignorée', async () => {
     setup('/devis/q1');
     const quantity = await screen.findByRole('textbox', { name: 'Quantité' });
