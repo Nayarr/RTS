@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
-import { BellRing, ChevronRight, Download, Info, Layers } from 'lucide-react';
+import { BellRing, ChevronRight, Download, HandCoins, Info, Layers } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { FilterChips, Pager, SearchField, TableFooterBar } from '@/components/ListControls';
 import { SectionNav } from '@/components/SectionNav';
@@ -13,6 +13,7 @@ import { useIsDesktop } from '@/lib/use-media-query';
 import { usePagination } from '@/lib/use-pagination';
 import type { InvoiceOverview } from './api';
 import { isPartiallyPaid } from './domain';
+import { DuesExportDialog } from './DuesExportDialog';
 import { GroupedInvoiceDialog } from './GroupedInvoiceDialog';
 import { InvoiceExportDialog } from './InvoiceExportDialog';
 import { OverdueRemindersDialog } from './OverdueRemindersDialog';
@@ -105,6 +106,7 @@ function InvoiceList() {
   const [sort, setSort] = useState<Sort>('date_desc');
   const [reminding, setReminding] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingDues, setExportingDues] = useState(false);
 
   const list = useMemo(() => {
     const filtered = (invoices.data ?? []).filter(
@@ -145,6 +147,9 @@ function InvoiceList() {
             <span className="sub hidden max-w-[380px] text-right text-[13px] xl:inline">
               Les factures se préparent depuis l’OR (« Facturer ») ou en regroupant plusieurs OR.
             </span>
+            <Button variant="outline" onClick={() => setExportingDues(true)}>
+              <HandCoins /> Sommes dues
+            </Button>
             {canExport && (
               <Button variant="outline" onClick={() => setExporting(true)}>
                 <Download /> Exporter
@@ -331,6 +336,7 @@ function InvoiceList() {
       {reminding && (
         <OverdueRemindersDialog invoices={invoices.data ?? []} onClose={() => setReminding(false)} />
       )}
+      {exportingDues && <DuesExportDialog onClose={() => setExportingDues(false)} />}
       {exporting && (
         <InvoiceExportDialog
           invoices={invoices.data ?? []}
