@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Gift, GripVertical, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,15 +70,29 @@ function NumberCell({
   );
 }
 
-/** En-têtes de colonnes (écran large), alignés sur `LineRow`. */
+/** En-têtes de colonnes (carte assez large), alignés sur `LineRow`. */
 export function LineColumns({ ttc = false }: { ttc?: boolean }) {
   return (
-    <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_6.75rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground md:grid">
-      <span>Prestation / pièce</span>
-      <span className="text-right">Qté</span>
-      <span className="text-right">Prix unit. {ttc ? 'TTC' : 'HT'}</span>
-      <span className="text-right">Remise %</span>
-      <span className="text-right">Net {ttc ? 'TTC' : 'HT'}</span>
+    <div className="@container">
+      <div className="hidden h-[42px] grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_6.75rem] items-center gap-2 border-y bg-head px-6 text-[12.5px] font-semibold text-muted-foreground @[50rem]:grid">
+        <span>Prestation / pièce</span>
+        <span className="text-right">Qté</span>
+        <span className="text-right">Prix unit. {ttc ? 'TTC' : 'HT'}</span>
+        <span className="text-right">Remise %</span>
+        <span className="text-right">Net {ttc ? 'TTC' : 'HT'}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Colonne d'un montant : son titre au-dessus tant que la carte n'a pas la place des en-têtes. */
+function StackedCell({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="col min-w-0 gap-0.5">
+      <span aria-hidden className="hint text-right text-[11.5px] @[50rem]:hidden">
+        {title}
+      </span>
+      {children}
     </div>
   );
 }
@@ -108,110 +122,131 @@ export function LineRow({
   const offered = isOfferedLine(line);
 
   return (
-    <li
-      ref={drag?.ref}
-      style={drag?.style}
-      className={cn(
-        'grid grid-cols-[1fr_auto] items-center gap-2 border-b bg-card px-4 py-2 last:border-0 md:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_6.75rem] md:px-6',
-        drag?.dragging && 'shadow-md',
-      )}
-    >
-      <div className="flex min-w-0 items-start gap-1">
-        {drag && (
-          <button
-            type="button"
-            className="ibtn sm ghost mt-0.5 shrink-0 cursor-grab touch-none active:cursor-grabbing"
-            aria-label={`Déplacer ${line.description || 'la ligne'}`}
-            title="Glisser pour déplacer la ligne"
-            {...drag.handle.attributes}
-            {...drag.handle.listeners}
-          >
-            <GripVertical className="i s" />
-          </button>
+    <li ref={drag?.ref} style={drag?.style} className="@container border-b bg-card last:border-0">
+      {/* Colonnes selon la place de la carte, pas de l'écran : la colonne latérale la réduit. */}
+      <div
+        className={cn(
+          'grid grid-cols-[1fr_auto] items-center gap-2 px-4 py-2 @[50rem]:grid-cols-[1fr_5rem_7.5rem_5.5rem_7rem_6.75rem] @[50rem]:px-6',
+          drag?.dragging && 'shadow-md',
         )}
-        <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-2">
-          {label && (
-            <span className="tag mt-1.5 shrink-0">
-              {label}
-              {line.line_type === 'labor' &&
-                line.hours !== null &&
-                line.hours !== undefined &&
-                ` · ${decimalText(line.hours)} h`}
-            </span>
+      >
+        <div className="flex min-w-0 items-start gap-1">
+          {drag && (
+            <button
+              type="button"
+              className="ibtn sm ghost mt-0.5 shrink-0 cursor-grab touch-none active:cursor-grabbing"
+              aria-label={`Déplacer ${line.description || 'la ligne'}`}
+              title="Glisser pour déplacer la ligne"
+              {...drag.handle.attributes}
+              {...drag.handle.listeners}
+            >
+              <GripVertical className="i s" />
+            </button>
           )}
-          <Textarea
-            aria-label="Désignation"
-            rows={1}
-            className={cn(
-              INLINE_INPUT,
-              'field-sizing-content h-auto min-h-[34px] resize-none py-1.5 leading-snug',
-              isText && 'text-muted-foreground italic',
+          <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-2">
+            {label && (
+              <span className="tag mt-1.5 shrink-0">
+                {label}
+                {line.line_type === 'labor' &&
+                  line.hours !== null &&
+                  line.hours !== undefined &&
+                  ` · ${decimalText(line.hours)} h`}
+              </span>
             )}
-            defaultValue={line.description}
-            key={`${line.id}-${line.description}`}
-            disabled={locked}
-            placeholder={isText ? 'Texte libre (remarque, conditions…)' : 'Prestation / pièce'}
-            onBlur={(event) => {
-              if (event.target.value !== line.description) onSave({ description: event.target.value });
-            }}
-          />
-          {offered && (
-            <span className="badge s-ok mb-1 ml-2 basis-full sm:basis-auto">Offert à titre commercial</span>
-          )}
+            <Textarea
+              aria-label="Désignation"
+              rows={1}
+              className={cn(
+                INLINE_INPUT,
+                'field-sizing-content h-auto min-h-[34px] resize-none py-1.5 leading-snug',
+                isText && 'text-muted-foreground italic',
+              )}
+              defaultValue={line.description}
+              key={`${line.id}-${line.description}`}
+              disabled={locked}
+              placeholder={isText ? 'Texte libre (remarque, conditions…)' : 'Prestation / pièce'}
+              onBlur={(event) => {
+                if (event.target.value !== line.description) onSave({ description: event.target.value });
+              }}
+            />
+            {offered && (
+              <span className="badge s-ok mb-1 ml-2 basis-full sm:basis-auto">Offert à titre commercial</span>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="flex justify-end gap-0.5 md:order-last">
-        {onEditPart && line.line_type === 'part' && (
+        <div className="flex justify-end gap-0.5 @[50rem]:order-last">
+          {onEditPart && line.line_type === 'part' && (
+            <button
+              type="button"
+              className="ibtn sm ghost"
+              aria-label={`Modifier la fiche de ${line.description || 'la pièce'}`}
+              title="Modifier la fiche de la pièce"
+              disabled={locked}
+              onClick={onEditPart}
+            >
+              <Pencil className="i s" />
+            </button>
+          )}
+          {!isText && (
+            <button
+              type="button"
+              className={cn('ibtn sm ghost', offered && 'text-primary')}
+              aria-label={
+                offered
+                  ? `Ne plus offrir ${line.description || 'la ligne'}`
+                  : `Offrir ${line.description || 'la ligne'}`
+              }
+              aria-pressed={offered}
+              title={offered ? 'Ne plus offrir' : 'Offrir (geste commercial)'}
+              disabled={locked}
+              onClick={() => onSave({ discount_percent: offered ? 0 : 100 })}
+            >
+              <Gift className="i s" />
+            </button>
+          )}
           <button
             type="button"
             className="ibtn sm ghost"
-            aria-label={`Modifier la fiche de ${line.description || 'la pièce'}`}
-            title="Modifier la fiche de la pièce"
-            disabled={locked}
-            onClick={onEditPart}
+            aria-label={`Supprimer ${line.description || 'la ligne'}`}
+            disabled={locked || deleting}
+            onClick={onDelete}
           >
-            <Pencil className="i s" />
+            <Trash2 className="i s" />
           </button>
-        )}
-        {!isText && (
-          <button
-            type="button"
-            className={cn('ibtn sm ghost', offered && 'text-primary')}
-            aria-label={
-              offered
-                ? `Ne plus offrir ${line.description || 'la ligne'}`
-                : `Offrir ${line.description || 'la ligne'}`
-            }
-            aria-pressed={offered}
-            title={offered ? 'Ne plus offrir' : 'Offrir (geste commercial)'}
-            disabled={locked}
-            onClick={() => onSave({ discount_percent: offered ? 0 : 100 })}
-          >
-            <Gift className="i s" />
-          </button>
-        )}
-        <button
-          type="button"
-          className="ibtn sm ghost"
-          aria-label={`Supprimer ${line.description || 'la ligne'}`}
-          disabled={locked || deleting}
-          onClick={onDelete}
-        >
-          <Trash2 className="i s" />
-        </button>
-      </div>
-      {isText ? (
-        <span className="hidden md:col-span-4 md:block" />
-      ) : (
-        <div className="col-span-2 grid grid-cols-4 items-center gap-2 md:col-span-4 md:grid-cols-[5rem_7.5rem_5.5rem_7rem]">
-          <NumberCell line={line} field="quantity" label="Quantité" locked={locked} onSave={onSave} />
-          <NumberCell line={line} field="unit_price" label="Prix unit. HT" locked={locked} onSave={onSave} />
-          <NumberCell line={line} field="discount_percent" label="Remise %" locked={locked} onSave={onSave} />
-          <span className="num b text-right" aria-label="Net HT">
-            {formatEuro(lineNet(line))}
-          </span>
         </div>
-      )}
+        {isText ? (
+          <span className="hidden @[50rem]:col-span-4 @[50rem]:block" />
+        ) : (
+          <div className="col-span-2 grid grid-cols-4 items-center gap-2 @[50rem]:col-span-4 @[50rem]:grid-cols-[5rem_7.5rem_5.5rem_7rem]">
+            <StackedCell title="Qté">
+              <NumberCell line={line} field="quantity" label="Quantité" locked={locked} onSave={onSave} />
+            </StackedCell>
+            <StackedCell title="Prix unit.">
+              <NumberCell
+                line={line}
+                field="unit_price"
+                label="Prix unit. HT"
+                locked={locked}
+                onSave={onSave}
+              />
+            </StackedCell>
+            <StackedCell title="Remise %">
+              <NumberCell
+                line={line}
+                field="discount_percent"
+                label="Remise %"
+                locked={locked}
+                onSave={onSave}
+              />
+            </StackedCell>
+            <StackedCell title="Net">
+              <span className="num b text-right" aria-label="Net HT">
+                {formatEuro(lineNet(line))}
+              </span>
+            </StackedCell>
+          </div>
+        )}
+      </div>
     </li>
   );
 }
