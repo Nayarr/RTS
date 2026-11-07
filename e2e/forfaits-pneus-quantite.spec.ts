@@ -47,7 +47,7 @@ test('devis : dépose/repose pneumatique en quantité 2 à 18 € l’unité, sa
   await page.goto(`/devis/${quote.data}`);
   const row = page
     .getByRole('listitem')
-    .filter({ has: page.getByRole('button', { name: 'Supprimer DÉPOSE/REPOSE PNEUMATIQUE (avant)' }) });
+    .filter({ has: page.getByRole('button', { name: 'Supprimer Dépose/repose pneumatique (avant)' }) });
   await expect(row.getByRole('textbox', { name: 'Quantité' })).toHaveValue('2');
   await expect(row.getByRole('textbox', { name: 'Prix unit. HT' })).toHaveValue(/^18([,.]00)?$/);
   await expect(row).toContainText('36,00');

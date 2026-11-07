@@ -282,6 +282,17 @@ describe('fiche OR technicien', () => {
     }
   });
 
+  it('fiche complète exigée : bandeau en haut, juste sous la liste des tâches', async () => {
+    setup('/atelier/or/ro1', { order: order({ inspection_required: true }) });
+    const tasks = await screen.findByRole('region', { name: 'Travaux demandés' });
+    const banner = screen.getByText(/Fiche complète exigée par la direction : \d+ points OK \/ 50 % \/ HS/);
+    // Bandeau placé tout de suite après les tâches, avant le badgeage et la fiche de contrôle
+    expect(tasks.nextElementSibling).toBe(banner.closest('[role="status"]'));
+    const inspection = screen.getByRole('heading', { name: 'Fiche de contrôle véhicule' });
+    expect(banner.compareDocumentPosition(inspection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText(/Fiche complète exigée par la direction/)).toHaveLength(1);
+  });
+
   it('fiche de contrôle : un choix est enregistré automatiquement', async () => {
     vi.mocked(saveInspection).mockResolvedValue();
     setup('/atelier/or/ro1', { order: order() });
@@ -349,7 +360,7 @@ describe('fiche OR technicien', () => {
     const [removePackage] = within(done).getAllByRole('button', { name: 'Supprimer la tâche' });
     await userEvent.click(removePackage!);
     const confirm = screen.getByRole('dialog', { name: 'Retirer ce travail ?' });
-    expect(confirm).toHaveTextContent('« vidange PL » n’a finalement pas été fait');
+    expect(confirm).toHaveTextContent('« Vidange PL » n’a finalement pas été fait');
     await userEvent.click(within(confirm).getByRole('button', { name: 'Retirer' }));
     await waitFor(() => expect(deleteLine).toHaveBeenCalledWith('q1'));
   });

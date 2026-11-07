@@ -29,9 +29,9 @@ values ('50000000-0000-0000-0000-000000000781', '{"pneus": {"avant_etat": "HS"}}
 select set_eq(
   $$ select description, quantity, unit_price, visibility from public.ro_lines
      where repair_order_id = '50000000-0000-0000-0000-000000000781' and kind = 'planned' and line_type = 'package' $$,
-  $$ values ('DÉPOSE/REPOSE PNEUMATIQUE (avant)', 2::numeric, 18.00::numeric, 'quote'),
-            ('DÉPOSE/REPOSE ROUE (avant)', 2, 18.00, 'quote'),
-            ('RECYCLAGE PNEUMATIQUE (avant)', 2, 8.00, 'quote'), ('ÉQUILIBRAGE (avant)', 2, 35.00, 'quote') $$,
+  $$ values ('Dépose/repose pneumatique (avant)', 2::numeric, 18.00::numeric, 'quote'),
+            ('Dépose/repose roue (avant)', 2, 18.00, 'quote'),
+            ('Recyclage pneumatique (avant)', 2, 8.00, 'quote'), ('Équilibrage (avant)', 2, 35.00, 'quote') $$,
   'PL, pneus avant HS : roue, pneumatique, recyclage et équilibrage en quantité 2 au prix unitaire, au devis seulement');
 select results_eq(
   $$ select description, standard_hours, visibility from public.ro_lines
@@ -44,8 +44,8 @@ where repair_order_id = '50000000-0000-0000-0000-000000000781';
 select results_eq(
   $$ select description, quantity, unit_price, standard_hours from public.ro_lines
      where repair_order_id = '50000000-0000-0000-0000-000000000781' and description like '%(arrière)' order by description $$,
-  $$ values ('DÉPOSE/REPOSE PNEUMATIQUE (arrière)', 4::numeric, 18.00::numeric, 0.00::numeric),
-            ('DÉPOSE/REPOSE ROUE (arrière)', 4, 18.00, 1.00), ('RECYCLAGE PNEUMATIQUE (arrière)', 4, 8.00, 0.00) $$,
+  $$ values ('Dépose/repose pneumatique (arrière)', 4::numeric, 18.00::numeric, 0.00::numeric),
+            ('Dépose/repose roue (arrière)', 4, 18.00, 1.00), ('Recyclage pneumatique (arrière)', 4, 8.00, 0.00) $$,
   'Pneus arrière à 50 % : les mêmes prestations en quantité 4, 1 h de barème pour les roues d''un PL');
 select is((select standard_hours from public.ro_lines where repair_order_id = '50000000-0000-0000-0000-000000000781'
            and description = 'Remplacement Pneus arrière'), 1.00::numeric, 'Remplacement Pneus arrière d''un PL : barème 1 h');
@@ -74,7 +74,7 @@ select set_eq(
   format($$ select description, standard_hours from public.ro_lines where repair_order_id = %L and visibility = 'workshop' $$, :'ro2'),
   $$ values ('Remplacement Pneus avant', 0.50::numeric), ('Remplacement Pneus arrière', 1.00) $$,
   'OR du devis : une tâche « Remplacement Pneus … » par position pour le technicien');
-select ok((select requested_work not like '%DÉPOSE%' from public.repair_orders where id = :'ro2'),
+select ok((select requested_work not ilike '%dépose%' from public.repair_orders where id = :'ro2'),
           'Travaux demandés de l''OR : sans les forfaits du devis');
 
 -- ---------------------------------------------------------------- Essieux, retour à OK
@@ -85,8 +85,8 @@ select is((select count(*)::integer from public.ro_lines where repair_order_id =
            and line_type = 'package' and description like '%(avant)'), 0, 'Pneus avant redevenus OK : leurs forfaits sont retirés');
 select is((select string_agg(description, ' | ' order by description) from public.ro_lines
            where repair_order_id = '50000000-0000-0000-0000-000000000781'
-             and (description like 'DÉPOSE/REPOSE ROUE (essieu%' or description like 'Remplacement Pneus essieu%')),
-          'DÉPOSE/REPOSE ROUE (essieu 3) | DÉPOSE/REPOSE ROUE (essieu 4) | Remplacement Pneus essieu 3 | Remplacement Pneus essieu 4',
+             and (description like 'Dépose/repose roue (essieu%' or description like 'Remplacement Pneus essieu%')),
+          'Dépose/repose roue (essieu 3) | Dépose/repose roue (essieu 4) | Remplacement Pneus essieu 3 | Remplacement Pneus essieu 4',
           'Chaque essieu ajouté : son lot de forfaits au devis et sa ligne pour le technicien');
 
 -- ---------------------------------------------------------------- Utilitaire et remorque

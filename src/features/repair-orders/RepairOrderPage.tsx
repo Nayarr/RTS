@@ -129,6 +129,8 @@ export function RepairOrderPage() {
           <LinesCard lines={lines} repairOrderId={order.id} editable={editable} />
           <PartsCard
             repairOrderId={order.id}
+            repairOrderNumber={order.number}
+            vehicleType={order.vehicle_type}
             lines={lines}
             partSuppliers={supplies.data?.partSuppliers ?? {}}
             editable={editable}

@@ -70,13 +70,13 @@ test('pneus avant HS et arrière à 50 % : « Remplacement Pneus » pour le tech
   await expect(tasks).toHaveCount(2);
   await expect(tasks.nth(0)).toHaveValue('Remplacement Pneus avant');
   await expect(tasks.nth(1)).toHaveValue('Remplacement Pneus arrière');
-  await expect(page.getByText(/DÉPOSE\/REPOSE|RECYCLAGE|ÉQUILIBRAGE/)).toHaveCount(0);
+  await expect(page.getByText(/Dépose\/repose|Recyclage pneumatique|Équilibrage/)).toHaveCount(0);
   await logout(page);
 
   // Bureau : sur l'OR, les forfaits sont marqués « devis et facture seulement »
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/or/${order.id}`);
-  await expect(page.getByText('DÉPOSE/REPOSE ROUE (arrière)')).toBeVisible();
+  await expect(page.getByText('Dépose/repose roue (arrière)')).toBeVisible();
   await expect(page.getByText('Devis et facture seulement').first()).toBeVisible();
 
   // Devis préparé depuis l'OR : une ligne par prestation en quantité (2 à l'avant, 4 à l'arrière) au
@@ -95,16 +95,16 @@ test('pneus avant HS et arrière à 50 % : « Remplacement Pneus » pour le tech
       .map((line) => [line.description.split('\n')[0], Number(line.quantity), Number(line.unit_price)])
       .sort(),
   ).toEqual([
-    ['DÉPOSE/REPOSE PNEUMATIQUE (arrière)', 4, 18],
-    ['DÉPOSE/REPOSE PNEUMATIQUE (avant)', 2, 18],
-    ['DÉPOSE/REPOSE ROUE (arrière)', 4, 18],
-    ['DÉPOSE/REPOSE ROUE (avant)', 2, 18],
-    ['RECYCLAGE PNEUMATIQUE (arrière)', 4, 8],
-    ['RECYCLAGE PNEUMATIQUE (avant)', 2, 8],
-    ['ÉQUILIBRAGE (avant)', 2, 35],
+    ['Dépose/repose pneumatique (arrière)', 4, 18],
+    ['Dépose/repose pneumatique (avant)', 2, 18],
+    ['Dépose/repose roue (arrière)', 4, 18],
+    ['Dépose/repose roue (avant)', 2, 18],
+    ['Recyclage pneumatique (arrière)', 4, 8],
+    ['Recyclage pneumatique (avant)', 2, 8],
+    ['Équilibrage (avant)', 2, 35],
   ]);
   await page.goto(`/devis/${quoteId}`);
-  await expect(page.getByText('RECYCLAGE PNEUMATIQUE (arrière)').first()).toBeVisible();
+  await expect(page.getByText('Recyclage pneumatique (arrière)').first()).toBeVisible();
   await expect(page.getByText('Remplacement Pneus avant')).toHaveCount(0);
 });
 
@@ -114,9 +114,9 @@ test('forfaits des pneus dans Stock › Forfaits : prix, barème et « devis et 
   await loginAs(page, 'direction@rts.local');
   await page.goto('/stock/forfaits');
   await page.getByRole('group', { name: 'Type de véhicule' }).getByRole('button', { name: 'PL' }).click();
-  const card = page.getByRole('article', { name: 'DÉPOSE/REPOSE ROUE' });
+  const card = page.getByRole('article', { name: 'Dépose/repose roue' });
   await expect(card).toBeVisible();
-  await card.getByRole('button', { name: 'Modifier DÉPOSE/REPOSE ROUE' }).click();
+  await card.getByRole('button', { name: 'Modifier Dépose/repose roue' }).click();
   const dialog = page.getByRole('dialog');
   // Prix à l'unité (18 € par roue, la fiche met la quantité), barème de 30 min modifiable
   await expect(dialog.getByLabel('Temps barème (heures)')).toHaveValue(/^0[,.]50?$/);

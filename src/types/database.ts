@@ -8277,6 +8277,8 @@ export type Database = {
         Returns: boolean;
       };
       package_is_quote_only: { Args: { p_package_id: string }; Returns: boolean };
+      package_name_case: { Args: { p_name: string }; Returns: string };
+      package_names_to_case: { Args: Record<PropertyKey, never>; Returns: number };
       paris_date: { Args: { p_at: string }; Returns: string };
       part_sale_price: {
         Args: {

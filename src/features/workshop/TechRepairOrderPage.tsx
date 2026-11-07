@@ -18,6 +18,7 @@ import { TechnicalInspectionDialog } from './order/TechnicalInspectionDialog';
 import { FinishSection } from './order/FinishSection';
 import { InspectionEditor } from './order/InspectionEditor';
 import { PartsSection } from './order/PartsSection';
+import { InspectionRequiredBanner } from './order/InspectionRequiredBanner';
 import { PhotosSection } from './order/PhotosSection';
 import { TimerSection } from './order/TimerSection';
 import { usePhotoCapture } from './order/use-photo-capture';
@@ -121,6 +122,11 @@ export function TechRepairOrderPage() {
         )}
       </section>
 
+      {/* Fiche complète exigée par la direction : visible dès le haut de l'OR, sous les tâches */}
+      {order.inspection_required === true && (
+        <InspectionRequiredBanner inspection={inspection} vehicleType={order.vehicle_type} />
+      )}
+
       <TimerSection order={order} loadedAt={detail.dataUpdatedAt} locked={locked} />
       <PhotosSection
         repairOrderId={order.id}
@@ -140,7 +146,6 @@ export function TechRepairOrderPage() {
         locked={locked}
         vehicleId={order.vehicle_id}
         vehicleType={order.vehicle_type}
-        required={order.inspection_required === true}
         tailgateScan={tailgateScan}
         onTailgateScanDone={() => setTailgateScan(null)}
       />

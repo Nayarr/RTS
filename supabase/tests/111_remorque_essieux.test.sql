@@ -30,8 +30,8 @@ select is(public.inspection_missing_points('{}'::jsonb, 'remorque'), 9,
 
 select is((select string_agg(description || ' = ' || (unit_price * quantity)::numeric(12,2)::text, ' | ' order by description)
            from public.ro_lines where repair_order_id = :'ro' and line_type = 'package'),
-          'DÉPOSE/REPOSE PNEUMATIQUE (essieu 2) = 36.00 | DÉPOSE/REPOSE ROUE (essieu 2) = 36.00 | '
-          || 'Disque et plaquette essieu 1 = 320.00 | Plaquettes essieu 2 = 120.00 | RECYCLAGE PNEUMATIQUE (essieu 2) = 16.00',
+          'Dépose/repose pneumatique (essieu 2) = 36.00 | Dépose/repose roue (essieu 2) = 36.00 | '
+          || 'Disque et plaquette essieu 1 = 320.00 | Plaquettes essieu 2 = 120.00 | Recyclage pneumatique (essieu 2) = 16.00',
           'Mêmes forfaits nommés par essieu : freins et pneus de l''arrière d''un poids lourd, pneus 2 par essieu sans équilibrage');
 select is((select string_agg(description, ' | ' order by description) from public.ro_lines
            where repair_order_id = :'ro' and line_type = 'labor' and kind = 'planned'),

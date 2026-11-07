@@ -1,0 +1,47 @@
+# RTS Atelier : application privée de l'atelier (comptes nominatifs), rien à indexer.
+# Les liens envoyés aux clients (/d/..., /rdv/...) ne doivent pas non plus être lus ni indexés.
+
+# Robots d'IA (entraînement, réponses et recherche par IA) : interdits partout
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: OAI-SearchBot
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: Claude-Web
+User-agent: anthropic-ai
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: GoogleOther
+User-agent: Applebot-Extended
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Bytespider
+User-agent: Amazonbot
+User-agent: meta-externalagent
+User-agent: meta-externalfetcher
+User-agent: FacebookBot
+User-agent: Meta-ExternalAgent
+User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
+User-agent: Diffbot
+User-agent: YouBot
+User-agent: Timpibot
+User-agent: omgili
+User-agent: omgilibot
+User-agent: ImagesiftBot
+User-agent: AI2Bot
+User-agent: Ai2Bot-Dolma
+User-agent: DuckAssistBot
+User-agent: MistralAI-User
+User-agent: PetalBot
+User-agent: Kangaroo Bot
+User-agent: PanguBot
+User-agent: Webzio-Extended
+User-agent: img2dataset
+User-agent: Scrapy
+Disallow: /
+
+# Tous les autres robots (moteurs de recherche compris) : rien à explorer
+User-agent: *
+Disallow: /
