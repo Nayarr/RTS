@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { saveCatalogPart } from '@/features/catalogs/api';
+import { fetchPart, saveCatalogPart } from '@/features/catalogs/api';
 import { MarginField } from '@/features/catalogs/MarginField';
 import { PartSuggestions } from '@/features/catalogs/PartSuggestions';
 import { marginPercent } from '@/lib/margin';
@@ -70,6 +70,9 @@ export function PartLineDialog({
   const save = useRepairOrderMutation(
     async (values: PartLineValues) => {
       const input = partLineFromForm(values);
+      // Pneu du stock : la ligne reste celle du lot (réservé, sorti du stock à la facture), hors catalogue
+      const linked = line?.part_id ? await fetchPart(line.part_id) : null;
+      if (line && linked?.is_tire) return updatePartLine(line.id, { ...input, part_id: linked.id });
       // Gardée au catalogue : même désignation, référence et marque → prix mis à jour ; sinon nouvelle pièce
       const partId = await saveCatalogPart({
         designation: input.description,

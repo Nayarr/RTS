@@ -1,4 +1,5 @@
 import { ensureSupplier, type Consumable } from '@/features/catalogs/api';
+import type { NewLine } from '@/features/documents/lines';
 import { supabase } from '@/lib/supabase';
 import type { Enums, Tables } from '@/types/database';
 
@@ -75,6 +76,28 @@ export async function addPartLine(repairOrderId: string, position: number, input
   const { error } = await supabase
     .from('ro_lines')
     .insert({ repair_order_id: repairOrderId, kind: 'done', position, ...(await partRow(input)) });
+  if (error) throw error;
+}
+
+/**
+ * Pneu du stock (module Pneumatiques) : la pièce du lot, réservée pour l'OR. La base la met en
+ * « Reçue » quand le stock disponible suffit, sinon « À commander ».
+ */
+export async function addStockTireLine(repairOrderId: string, position: number, line: NewLine) {
+  const { error } = await supabase.from('ro_lines').insert({
+    repair_order_id: repairOrderId,
+    kind: 'done',
+    position,
+    line_type: 'part',
+    description: line.description ?? '',
+    quantity: line.quantity ?? 1,
+    unit_price: line.unit_price ?? null,
+    purchase_price: line.purchase_price ?? null,
+    brand: line.brand ?? null,
+    supplier_id: line.supplier_id ?? null,
+    part_id: line.part_id ?? null,
+    order_status: 'to_order',
+  });
   if (error) throw error;
 }
 

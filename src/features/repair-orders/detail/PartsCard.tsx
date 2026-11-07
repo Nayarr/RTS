@@ -1,13 +1,16 @@
 import { useState, type CSSProperties } from 'react';
-import { ChevronDown, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
+import { ChevronDown, CircleDot, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
+import { TirePickDialog } from '@/features/tires/TirePickDialog';
 import { WarrantyDialog } from '@/features/warranties/WarrantyDialog';
+import type { Enums } from '@/types/database';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
+import type { NewLine } from '@/features/documents/lines';
 import type { RoLine } from '../api';
 import { useRepairOrderMutation } from '../hooks';
 import { PART_ORDER_META, partLineTotal } from '../supplies';
-import { deletePartLine, setPartOrderStatus, type PartOrderStatus } from '../supplies-api';
+import { addStockTireLine, deletePartLine, setPartOrderStatus, type PartOrderStatus } from '../supplies-api';
 import { PartLineDialog } from './PartLineDialog';
 
 const firstLine = (text: string) => text.split('\n')[0] ?? '';
@@ -102,11 +105,15 @@ function PartRow({
 /** Pièces de l'OR avec leur suivi de commande (À commander → Commandée → Reçue). */
 export function PartsCard({
   repairOrderId,
+  repairOrderNumber,
+  vehicleType,
   lines,
   partSuppliers,
   editable,
 }: {
   repairOrderId: string;
+  repairOrderNumber: string | null;
+  vehicleType: Enums<'vehicle_type'>;
   lines: RoLine[];
   partSuppliers: Record<string, string>;
   editable: boolean;
@@ -115,9 +122,14 @@ export function PartsCard({
   const [editing, setEditing] = useState<RoLine | 'new' | null>(null);
   const [deleting, setDeleting] = useState<RoLine | null>(null);
   const [returning, setReturning] = useState<RoLine | null>(null);
+  const [pickingTires, setPickingTires] = useState(false);
   const remove = useRepairOrderMutation((line: RoLine) => deletePartLine(line.id), 'Pièce retirée');
   const nextPosition =
     Math.max(-1, ...lines.filter((line) => line.kind === 'done').map((line) => line.position)) + 1;
+  const addTires = useRepairOrderMutation(
+    (line: NewLine) => addStockTireLine(repairOrderId, nextPosition, line),
+    'Pneus du stock ajoutés',
+  );
 
   return (
     <section data-slot="card" className="card" aria-labelledby="ro-parts">
@@ -129,9 +141,14 @@ export function PartsCard({
           </span>
         </h2>
         {editable && (
-          <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
-            <Plus /> Ajouter une pièce
-          </Button>
+          <span className="row flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPickingTires(true)}>
+              <CircleDot /> Pneu du stock
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
+              <Plus /> Ajouter une pièce
+            </Button>
+          </span>
         )}
       </div>
       {parts.length === 0 ? (
@@ -169,6 +186,16 @@ export function PartsCard({
           supplierName={editing === 'new' ? null : (partSuppliers[editing.id] ?? null)}
           nextPosition={nextPosition}
           onClose={() => setEditing(null)}
+        />
+      )}
+      {pickingTires && (
+        <TirePickDialog
+          vehicleType={vehicleType}
+          repairOrderId={repairOrderId}
+          repairOrderNumber={repairOrderNumber}
+          documentLabel="or"
+          onAdd={(line) => addTires.mutateAsync(line)}
+          onClose={() => setPickingTires(false)}
         />
       )}
       {returning && (
