@@ -398,3 +398,36 @@ describe('fiche OR : sous-traitance et consommables', () => {
     await waitFor(() => expect(addRoConsumable).toHaveBeenCalledWith('ro1', oil, 32.5));
   });
 });
+
+describe('fiche OR facturé : kilométrage', () => {
+  it('réception : OR facturé verrouillé, kilométrage compris', async () => {
+    setup({ overrides: { status: 'invoiced', mileage: 1234560 } });
+    // Réception
+    expect(await screen.findByLabelText('Kilométrage')).toBeDisabled();
+    expect(screen.getByLabelText('Tâche à faire')).toBeDisabled();
+  });
+
+  it('direction : kilométrage modifiable sur l’OR facturé, le reste verrouillé', async () => {
+    const view = setup({ overrides: { status: 'invoiced', mileage: 1234560 } });
+    vi.mocked(fetchProfile).mockResolvedValue({
+      id: 'u2',
+      email: 'direction@test.fr',
+      full_name: 'Direction',
+      role: 'direction',
+      is_active: true,
+      created_at: '2026-09-27T00:00:00Z',
+      updated_at: '2026-09-27T00:00:00Z',
+    });
+    view.unmount();
+    renderRoutes([{ path: '/or/:id', element: <RepairOrderPage /> }], {
+      initialPath: '/or/ro1',
+      auth: { session: fakeSession() },
+    });
+    const mileage = await screen.findByLabelText('Kilométrage');
+    await waitFor(() => expect(mileage).toBeEnabled());
+    expect(mileage).toHaveValue('1234560');
+    expect(screen.getByText(/seul le kilométrage se corrige encore/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Tâche à faire')).toBeDisabled();
+    expect(screen.getByLabelText('Date de début')).toBeDisabled();
+  });
+});
