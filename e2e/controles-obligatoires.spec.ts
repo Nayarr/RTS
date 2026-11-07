@@ -49,6 +49,12 @@ test('fiche de contrôle complète : posée par la direction, exigée chez le te
   await loginAs(tech, 'alice@rts.local');
   await tech.goto(`/atelier${orderPath}`);
   await expect(tech.getByText(/Fiche complète exigée par la direction : 15 points/)).toBeVisible();
+  // Bandeau en haut de l'OR, juste sous la liste des tâches (avant la fiche de contrôle)
+  const bannerBox = await tech.getByText(/Fiche complète exigée par la direction/).boundingBox();
+  const tasksBox = await tech.getByRole('region', { name: 'Travaux demandés' }).boundingBox();
+  const sheetBox = await tech.getByRole('heading', { name: 'Fiche de contrôle véhicule' }).boundingBox();
+  expect(bannerBox!.y).toBeGreaterThan(tasksBox!.y + tasksBox!.height - 1);
+  expect(bannerBox!.y).toBeLessThan(sheetBox!.y);
   await tech.getByRole('group', { name: 'Devis nécessaire ?' }).getByRole('button', { name: 'NON' }).click();
   await expect(tech.getByRole('status', { name: 'À compléter avant de terminer' })).toContainText(
     'Fiche de contrôle complète exigée : 15 points OK / 50 % / HS non renseignés',
