@@ -1048,6 +1048,9 @@ export type Database = {
           legal_form: string | null;
           legal_name: string;
           logo_file_id: string | null;
+          parking_rate_pl: number;
+          parking_rate_remorque: number;
+          parking_rate_vul: number;
           payment_terms_days: number;
           phone: string | null;
           postal_code: string;
@@ -1075,6 +1078,9 @@ export type Database = {
           legal_form?: string | null;
           legal_name: string;
           logo_file_id?: string | null;
+          parking_rate_pl?: number;
+          parking_rate_remorque?: number;
+          parking_rate_vul?: number;
           payment_terms_days?: number;
           phone?: string | null;
           postal_code: string;
@@ -1102,6 +1108,9 @@ export type Database = {
           legal_form?: string | null;
           legal_name?: string;
           logo_file_id?: string | null;
+          parking_rate_pl?: number;
+          parking_rate_remorque?: number;
+          parking_rate_vul?: number;
           payment_terms_days?: number;
           phone?: string | null;
           postal_code?: string;
@@ -7732,6 +7741,10 @@ export type Database = {
       booking_reason: { Args: { p_kind: string }; Returns: string };
       build_contract_invoice_draft: { Args: { p_contract_id: string; p_month?: string }; Returns: string };
       build_invoice_draft: { Args: { p_repair_order_ids: string[] }; Returns: string };
+      build_parking_invoice_draft: {
+        Args: { p_left_date?: string; p_planned_date: string; p_repair_order_id: string };
+        Returns: string;
+      };
       build_quote_from_repair_order: { Args: { p_repair_order_id: string }; Returns: string };
       can_bill: { Args: Record<PropertyKey, never>; Returns: boolean };
       can_read_accounting: { Args: Record<PropertyKey, never>; Returns: boolean };
@@ -8891,7 +8904,8 @@ export type Database = {
         | 'quote_link'
         | 'invoice_link'
         | 'invoice_reminder'
-        | 'portal_link';
+        | 'portal_link'
+        | 'upcoming_work';
       clock_event_type: 'in' | 'out';
       clock_source: 'kiosk' | 'manual';
       consumable_movement_reason: 'usage' | 'usage_cancel' | 'restock' | 'adjustment';
@@ -9074,6 +9088,7 @@ export const Constants = {
         'invoice_link',
         'invoice_reminder',
         'portal_link',
+        'upcoming_work',
       ],
       clock_event_type: ['in', 'out'],
       clock_source: ['kiosk', 'manual'],

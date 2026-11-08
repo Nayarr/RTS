@@ -73,6 +73,35 @@ export function BillingForm({ company }: { company: CompanySettings }) {
         error={errors.supplies_fee_ht?.message}
         {...register('supplies_fee_ht')}
       />
+      <fieldset className="col gap-2">
+        <legend className="b mb-1">Frais de stationnement (€ HT par jour)</legend>
+        <div className="grid gap-3.5 sm:grid-cols-3">
+          {(
+            [
+              ['parking_rate_pl', 'Poids lourd'],
+              ['parking_rate_remorque', 'Remorque'],
+              ['parking_rate_vul', 'Véhicule utilitaire'],
+            ] as const
+          ).map(([field, label]) => (
+            <FormField
+              key={field}
+              id={field}
+              label={label}
+              type="number"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
+              className="num"
+              error={errors[field]?.message}
+              {...register(field, { valueAsNumber: true })}
+            />
+          ))}
+        </div>
+        <p className="hint">
+          Facturés depuis l’OR (bouton « Frais de stationnement »). Pense à reporter un nouveau tarif dans
+          l’article « Frais de parking » des conditions générales ci-dessous.
+        </p>
+      </fieldset>
       <div className="field">
         <Label htmlFor="invoice_legal_mentions">Mentions légales des factures (une par ligne)</Label>
         <Textarea

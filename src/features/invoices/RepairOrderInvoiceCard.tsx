@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Receipt } from 'lucide-react';
+import { ParkingSquare, Receipt } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
@@ -8,6 +8,7 @@ import { formatEuro } from '@/lib/numbers';
 import { buildInvoiceDraft } from './api';
 import { useInvoiceMutation, useRepairOrderInvoices } from './hooks';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
+import { ParkingInvoiceDialog } from './ParkingInvoiceDialog';
 
 /** Facture de l'OR : préparation du brouillon (« Facturer ») et suivi. */
 export function RepairOrderInvoiceCard({ order }: { order: RepairOrderOverview }) {
@@ -19,6 +20,7 @@ export function RepairOrderInvoiceCard({ order }: { order: RepairOrderOverview }
   }, null);
 
   const [confirmUnfinished, setConfirmUnfinished] = useState(false);
+  const [parking, setParking] = useState(false);
 
   const list = invoices.data ?? [];
   const draft = list.find((invoice) => invoice.status === 'draft');
@@ -66,7 +68,13 @@ export function RepairOrderInvoiceCard({ order }: { order: RepairOrderOverview }
             <Receipt /> {draft ? 'Reprendre la facture' : issued ? 'Refacturer (après avoir)' : 'Facturer'}
           </Button>
         )}
+        {order.client_id && (
+          <Button variant="outline" className="w-full" onClick={() => setParking(true)}>
+            <ParkingSquare /> Frais de stationnement
+          </Button>
+        )}
       </div>
+      {parking && <ParkingInvoiceDialog order={order} onClose={() => setParking(false)} />}
       <ConfirmDialog
         open={confirmUnfinished}
         onOpenChange={setConfirmUnfinished}
