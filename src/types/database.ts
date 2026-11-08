@@ -8891,7 +8891,8 @@ export type Database = {
         | 'quote_link'
         | 'invoice_link'
         | 'invoice_reminder'
-        | 'portal_link';
+        | 'portal_link'
+        | 'upcoming_work';
       clock_event_type: 'in' | 'out';
       clock_source: 'kiosk' | 'manual';
       consumable_movement_reason: 'usage' | 'usage_cancel' | 'restock' | 'adjustment';
@@ -9074,6 +9075,7 @@ export const Constants = {
         'invoice_link',
         'invoice_reminder',
         'portal_link',
+        'upcoming_work',
       ],
       clock_event_type: ['in', 'out'],
       clock_source: ['kiosk', 'manual'],

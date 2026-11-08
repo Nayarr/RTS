@@ -87,7 +87,7 @@ export async function fetchSentClientMessages(repairOrderId: string): Promise<Se
 /** Trace l'envoi (la base l'ajoute à l'historique de l'OR). */
 export async function recordClientMessage(input: {
   repairOrderId: string;
-  type: ClientMessageType;
+  type: ClientMessageType | 'upcoming_work';
   channel: 'email' | 'sms';
   recipient: string | null;
   message: SendLinkMessage;
