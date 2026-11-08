@@ -1,6 +1,6 @@
 // Actions que l'assistant de la direction peut PRÉPARER : rendez-vous (pris, déplacé ou annulé),
 // travail à ajouter sur un OR, technicien à assigner, date prévue d'un OR, OR passé « Facture à
-// faire », brouillon de facture, échéance d'un véhicule, mails (un seul, un par client à partir
+// faire », brouillon de facture, pièce commandée arrivée (passée « Reçue »), échéance d'un véhicule, mails (un seul, un par client à partir
 // d'un modèle, ou un mail groupé au même texte pour tous les clients ou une partie ; envoyés par
 // mail-send après validation, modifiables avant). Un outil ne fait que lire
 // (vérifier l'OR, le véhicule, le technicien) puis noter l'action proposée dans agent_actions ; elle
@@ -35,7 +35,8 @@ export interface ProposedAction {
     | 'schedule_order'
     | 'appointment_change'
     | 'order_to_invoice'
-    | 'invoice_draft';
+    | 'invoice_draft'
+    | 'part_received';
   summary: string;
 }
 
@@ -947,6 +948,97 @@ ACTION_TOOLS.push(
           0,
           500,
         ),
+      );
+    },
+  }),
+);
+
+/** Texte comparé sans accent ni casse ni ponctuation. */
+const loose = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+/** Mots qui ne désignent pas la pièce (« la pièce », « le », « de »…). */
+const FILLER = new Set(['la', 'le', 'les', 'l', 'de', 'du', 'des', 'd', 'un', 'une', 'piece', 'pieces']);
+
+export interface PartLine {
+  id: string;
+  description: string;
+  manufacturer_ref: string | null;
+  oem_ref: string | null;
+  order_status: string | null;
+}
+
+/**
+ * Pièces de l'OR qui correspondent à ce qui est dit : tous les mots dits se retrouvent dans la
+ * désignation ou une référence, ou la référence est dite telle quelle.
+ */
+export function matchingParts(parts: PartLine[], spoken: string): PartLine[] {
+  const words = loose(spoken)
+    .split(' ')
+    .filter((word) => word && !FILLER.has(word));
+  if (!words.length) return [];
+  const compact = words.join('');
+  return parts.filter((part) => {
+    const refs = [part.manufacturer_ref, part.oem_ref].filter(Boolean).map((ref) =>
+      loose(ref!).replace(/ /g, '')
+    );
+    if (refs.some((ref) => ref === compact)) return true;
+    const haystack = loose([part.description, ...refs].join(' '));
+    return words.every((word) => haystack.includes(word));
+  });
+}
+
+ACTION_TOOLS.push(
+  action({
+    name: 'preparer_piece_recue',
+    description:
+      'Prépare le passage d’une pièce commandée en « Reçue » quand la direction dit qu’elle est arrivée (pièce désignée par son nom ou sa référence, sur l’OR dit ou celui du véhicule). Ne la change pas : la direction valide ensuite.',
+    input_schema: schema(
+      {
+        ...ORDER_PROPERTIES,
+        piece: string('Pièce arrivée, telle que dite (désignation ou référence)'),
+      },
+      ['piece'],
+    ),
+    input: z.object({
+      numero_or: z.string().trim().max(20).optional(),
+      immatriculation: z.string().trim().max(20).optional(),
+      piece: text(120),
+    }),
+    run: async (db, input, conversationId) => {
+      const order = await findOrder(db, input);
+      const { data, error } = await db
+        .from('ro_lines')
+        .select('id, description, manufacturer_ref, oem_ref, order_status')
+        .eq('repair_order_id', order.id)
+        .eq('line_type', 'part')
+        .order('position');
+      if (error) throw new Error(error.message);
+      const parts = (data ?? []) as PartLine[];
+      const where = `l’OR ${order.number}${order.plate ? ` (${order.plate})` : ''}`;
+      if (!parts.length) throw new Error(`aucune pièce sur ${where}`);
+      const names = (list: PartLine[]) => list.map((part) => `« ${part.description} »`).join(', ');
+      const found = matchingParts(parts, input.piece);
+      if (!found.length) throw new Error(`pas de pièce « ${input.piece} » sur ${where} : ${names(parts)}`);
+      const waiting = found.filter((part) => part.order_status !== 'received');
+      if (!waiting.length) {
+        throw new Error(`${names(found)} déjà reçue${found.length > 1 ? 's' : ''} sur ${where}`);
+      }
+      if (waiting.length > 1) {
+        throw new Error(`plusieurs pièces correspondent sur ${where} : ${names(waiting)} ; laquelle ?`);
+      }
+      const part = waiting[0]!;
+      return propose(
+        db,
+        conversationId,
+        'part_received',
+        { repair_order_id: order.id, line_id: part.id, description: part.description },
+        `Pièce « ${part.description} » de ${where} : passer en « Reçue »`,
       );
     },
   }),
