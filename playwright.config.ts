@@ -11,6 +11,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
+  // CI : 2 workers fixes. Playwright en prend la moitié des processeurs du runner, soit 1 seul sur
+  // une machine à 2 cœurs : la suite dépassait alors le temps du job.
+  ...(process.env.CI ? { workers: 2 } : {}),
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
