@@ -39,6 +39,9 @@ import {
 } from './hooks';
 import { InspectionRequiredToggle } from './InspectionRequiredToggle';
 import { NewClientFields } from './NewClientFields';
+import { NewOrderUpcoming } from './NewOrderUpcoming';
+import { mileageValue, NO_DECLARED_OIL, type DeclaredOil } from './upcoming-work';
+import { addOilChange } from './upcoming-work-api';
 import { useClientEntry } from './use-client-entry';
 import {
   newRepairOrderDefaults,
@@ -88,6 +91,7 @@ export function NewRepairOrderPage() {
   const settings = useSettings();
   const technicians = useActiveTechnicians();
   const [pending, setPending] = useState<Submission | null>(null);
+  const [declaredOil, setDeclaredOil] = useState<DeclaredOil>(NO_DECLARED_OIL);
 
   const {
     register,
@@ -105,6 +109,9 @@ export function NewRepairOrderPage() {
   const clientName = useWatch({ control, name: 'client_name' });
   const plannedStart = useWatch({ control, name: 'planned_start' });
   const plannedDate = useWatch({ control, name: 'planned_date' });
+  const vehicleType = useWatch({ control, name: 'vehicle_type' });
+  const mileage = useWatch({ control, name: 'mileage' });
+  const requestedWork = useWatch({ control, name: 'requested_work' });
   // Départ prévu (date et heure du planning) : trafic de ce moment pour le trajet du dépannage
   const departAt =
     plannedDate && plannedStart ? new Date(`${plannedDate}T${plannedStart}`).toISOString() : null;
@@ -137,6 +144,14 @@ export function NewRepairOrderPage() {
       });
       // Dépannage extérieur : lieu, trajet et prix du déplacement posés sur l'OR créé
       if (roadside.enabled) await updateRepairOrder(order.id, roadsidePatch(roadside));
+      // Vidange faite ailleurs, dite par le client : notée sur la fiche du véhicule
+      if (declaredOil.date) {
+        await addOilChange({
+          vehicleId: order.vehicle_id,
+          date: declaredOil.date,
+          mileage: mileageValue(declaredOil.mileage),
+        });
+      }
       return order;
     },
     null, // notification avec le numéro d'OR ci-dessous
@@ -319,6 +334,31 @@ export function NewRepairOrderPage() {
               )}
             </div>
           </section>
+
+          {plate.replace(/[^A-Za-z0-9]/g, '').length >= 4 && (
+            <NewOrderUpcoming
+              vehicleId={knownVehicle?.id ?? null}
+              vehicleType={vehicleType}
+              mileage={mileage ?? ''}
+              requestedWork={requestedWork ?? ''}
+              declaredOil={declaredOil}
+              onDeclaredOilChange={setDeclaredOil}
+              onAddTask={(task) => {
+                const current = (requestedWork ?? '').trimEnd();
+                setValue(
+                  'requested_work',
+                  current
+                    ? `${current}
+${task}`
+                    : task,
+                  {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  },
+                );
+              }}
+            />
+          )}
 
           <section data-slot="card" className="card">
             <div className="card-h">

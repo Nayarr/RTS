@@ -35,7 +35,16 @@ export function UpcomingWorkCard({ order }: { order: RepairOrderOverview }) {
   const atWorkshop = !['to_invoice', 'invoiced'].includes(order.status);
   const upcoming = useQuery({
     queryKey: [...repairOrderKey(order.id), 'upcoming-work'],
-    queryFn: async () => upcomingWork(await fetchUpcomingInput(order), todayIso()),
+    queryFn: async () =>
+      upcomingWork(
+        await fetchUpcomingInput({
+          vehicleId: order.vehicle_id,
+          vehicleType: order.vehicle_type,
+          mileage: order.mileage,
+          orderId: order.id,
+        }),
+        todayIso(),
+      ),
     enabled: atWorkshop,
   });
   const sent = useQuery({
