@@ -405,31 +405,35 @@ export function drawMentions(doc: jsPDF, mentions: string[], top: number) {
   return y;
 }
 
+/** Taille des conditions générales : petits caractères, comme au dos d'une facture papier. */
+export const TERMS_FONT_SIZE = 6.2;
+const TERMS_LINE_HEIGHT = 2.75;
+
 /** Conditions générales en dernière page : titre centré, titres d'articles en gras (« 1. OBJET… »). */
 export function drawTerms(doc: jsPDF, terms: string) {
   if (!terms.trim()) return;
   doc.addPage();
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
+  doc.setFontSize(9);
   color(doc, INK);
   doc.text('CONDITIONS GÉNÉRALES DE VENTE ET DE RÉPARATION', PAGE_W / 2, 20, { align: 'center' });
-  let y = 29;
+  let y = 27;
   for (const paragraph of terms.split(/\r?\n/)) {
     if (!paragraph.trim()) {
-      y += 2.2;
+      y += 1.6;
       continue;
     }
     const heading = /^\d+\.\s/.test(paragraph);
     doc.setFont('helvetica', heading ? 'bold' : 'normal');
-    doc.setFontSize(7.6);
+    doc.setFontSize(TERMS_FONT_SIZE);
     color(doc, heading ? INK : MUTED);
     for (const line of doc.splitTextToSize(pdfText(paragraph), RIGHT - MARGIN) as string[]) {
-      if (y + 3.5 > CONTENT_BOTTOM) {
+      if (y + TERMS_LINE_HEIGHT > CONTENT_BOTTOM) {
         doc.addPage();
         y = 20;
       }
       doc.text(line, MARGIN, y);
-      y += 3.5;
+      y += TERMS_LINE_HEIGHT;
     }
   }
 }
