@@ -61,7 +61,8 @@ import {
   PAYMENT_METHODS,
   recordedLabel,
 } from './domain';
-import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
+import { useBadgedSeconds, useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
+import { unbilledTimeWarning } from './unbilled-time';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
 import { InvoiceEmployeesCard } from './InvoiceEmployeesCard';
@@ -111,6 +112,9 @@ function DraftActions({
   pdf: ReturnType<typeof useInvoicePdf>;
 }) {
   const hasLines = detail.lines.some((line) => line.line_type !== 'text');
+  const orderIds = detail.invoice.repair_order_ids;
+  const badged = useBadgedSeconds(orderIds, true);
+  const unbilled = badged.data === undefined ? null : unbilledTimeWarning(badged.data, detail.lines);
   return (
     <section data-slot="card" className="card" aria-labelledby="invoice-actions">
       <div className="card-h">
@@ -119,6 +123,11 @@ function DraftActions({
         </h2>
       </div>
       <div className="card-b col gap-2">
+        {unbilled && (
+          <p className="alert s-warn px-3 py-2" role="status" aria-label="Temps passé mais non facturé">
+            {unbilled}
+          </p>
+        )}
         <Button className="w-full" disabled={!hasLines} onClick={() => onDialog('issue')}>
           <Send /> Émettre la facture
         </Button>

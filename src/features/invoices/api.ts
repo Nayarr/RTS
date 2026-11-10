@@ -344,3 +344,14 @@ export async function fetchClientEmails(clientIds: string[]): Promise<Record<str
   if (error) throw error;
   return Object.fromEntries(data.map((client) => [client.id, client.email]));
 }
+
+/** Temps badgé par les techniciens sur ces OR (sessions terminées et en cours), en secondes. */
+export async function fetchBadgedSeconds(repairOrderIds: string[]): Promise<number> {
+  if (repairOrderIds.length === 0) return 0;
+  const { data, error } = await supabase
+    .from('v_repair_order_time')
+    .select('worked_seconds')
+    .in('repair_order_id', repairOrderIds);
+  if (error) throw error;
+  return (data ?? []).reduce((sum, row) => sum + (row.worked_seconds ?? 0), 0);
+}
