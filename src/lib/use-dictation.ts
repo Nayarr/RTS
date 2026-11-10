@@ -50,11 +50,23 @@ export function playListenBeep() {
     oscillator.connect(gain).connect(context.destination);
     oscillator.start();
     oscillator.stop(context.currentTime + 0.2);
-    oscillator.onended = () => void context.close().catch(() => {});
+    const close = () => {
+      if (context.state !== 'closed') void context.close().catch(() => {});
+    };
+    oscillator.onended = close;
+    // Son suspendu (iPhone en veille, onglet caché) : fin du bip jamais signalée, on ferme quand même
+    setTimeout(close, 1000);
   } catch {
     // Son bloqué par le navigateur : l'affichage « Parle maintenant » suffit.
   }
 }
+
+/**
+ * Délai laissé au navigateur pour terminer l'écoute après la phrase. Safari sur iPhone ne signale
+ * pas toujours la fin (`onend`) : le micro restait ouvert (voyant orange) et la question suivante
+ * n'était plus écoutée. Passé ce délai, l'écoute est abandonnée et le micro libéré.
+ */
+export const RELEASE_DELAY_MS = 1500;
 
 /** Texte dicté mis en forme pour une ligne de travaux : majuscule, sans point final. */
 export function dictatedText(transcript: string): string {
@@ -106,12 +118,74 @@ export function useDictation({
     handlers.current = { onFinal, onError, keyboard };
   });
 
-  // Fiche quittée en pleine dictée : on coupe le micro.
-  useEffect(() => () => recognition.current?.abort(), []);
+  /** Écoute terminée : plus aucun évènement de cette reconnaissance, prêt pour la suivante. */
+  const release = (rec: SpeechRecognitionLike) => {
+    rec.onresult = null;
+    rec.onerror = null;
+    rec.onaudiostart = null;
+    rec.onend = null;
+    if (recognition.current !== rec) return;
+    recognition.current = null;
+    setListening(false);
+    setReady(false);
+    setInterim('');
+  };
+
+  /** Arrête (ou abandonne) l'écoute, puis libère le micro même si le navigateur ne répond plus. */
+  const close = (rec: SpeechRecognitionLike, how: 'stop' | 'abort') => {
+    try {
+      rec[how]();
+    } catch {
+      // Déjà arrêtée
+    }
+    setTimeout(() => {
+      try {
+        rec.abort();
+      } catch {
+        // Déjà arrêtée
+      }
+      release(rec);
+    }, RELEASE_DELAY_MS);
+  };
+
+  // Fiche quittée en pleine dictée, ou appli passée en arrière-plan : on coupe le micro.
+  useEffect(() => {
+    const abandon = () => {
+      const rec = recognition.current;
+      if (!rec) return;
+      cancelled.current = true;
+      try {
+        rec.abort();
+      } catch {
+        // Déjà arrêtée
+      }
+      release(rec);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') abandon();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', abandon);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', abandon);
+      abandon();
+    };
+  }, []);
 
   const start = () => {
     const Recognition = recognitionConstructor();
-    if (!Recognition || recognition.current) return;
+    if (!Recognition) return;
+    // Écoute précédente jamais terminée (iPhone) : on la coupe au lieu d'ignorer l'appui
+    const previous = recognition.current;
+    if (previous) {
+      try {
+        previous.abort();
+      } catch {
+        // Déjà arrêtée
+      }
+      release(previous);
+    }
     cancelled.current = false;
     const rec = new Recognition();
     rec.lang = 'fr-FR';
@@ -133,7 +207,13 @@ export function useDictation({
       setInterim(pending);
       const text = dictatedText(finalText);
       const variants = others.map(dictatedText).filter((variant) => variant && variant !== text);
-      if (text && !cancelled.current) handlers.current.onFinal(text, variants);
+      if (text && !cancelled.current) {
+        // Une seule phrase par écoute : on ferme tout de suite, sans attendre le navigateur
+        cancelled.current = true;
+        close(rec, 'stop');
+        release(rec);
+        handlers.current.onFinal(text, variants);
+      }
     };
     rec.onerror = (event) => {
       if (event.error !== 'aborted')
@@ -143,12 +223,7 @@ export function useDictation({
       setReady(true);
       if (beep) playListenBeep();
     };
-    rec.onend = () => {
-      recognition.current = null;
-      setListening(false);
-      setReady(false);
-      setInterim('');
-    };
+    rec.onend = () => release(rec);
     recognition.current = rec;
     setListening(true);
     try {
@@ -160,11 +235,13 @@ export function useDictation({
     }
   };
 
-  const stop = () => recognition.current?.stop();
+  const stop = () => {
+    if (recognition.current) close(recognition.current, 'stop');
+  };
   /** Arrête l'écoute sans rien envoyer. */
   const cancel = () => {
     cancelled.current = true;
-    recognition.current?.abort();
+    if (recognition.current) close(recognition.current, 'abort');
   };
 
   return { supported: dictationSupported(), listening, ready, interim, start, stop, cancel };
