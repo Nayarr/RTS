@@ -65,7 +65,7 @@ Deno.test('outils d’action : noms « preparer_… », schémas fermés', () =>
     assert(tool.name.startsWith('preparer_'), tool.name);
     assertEquals(tool.input_schema.additionalProperties, false, tool.name);
   }
-  assertEquals(ACTION_TOOLS.length, 11);
+  assertEquals(ACTION_TOOLS.length, 12);
 });
 
 Deno.test('rendez-vous préparé, pas créé : résumé lisible, technicien reconnu', async () => {
