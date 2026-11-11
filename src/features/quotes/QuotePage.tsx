@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { StoredImage } from '@/features/files/StoredImage';
 import { formatDate, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useSettings } from '@/features/settings/hooks';
+import { OilChangeSuggestion } from '@/features/repair-orders/OilChangeSuggestion';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
 import type { PartLinePatch } from '@/features/catalogs/schemas';
@@ -240,7 +241,24 @@ export function QuotePage() {
             first={done.length === 0}
           />
           {!locked && (
-            <div className="border-t bg-head px-5 py-3">
+            <div className="col gap-3 border-t bg-head px-5 py-3">
+              {quote.repair_order_id && (
+                <OilChangeSuggestion
+                  repairOrderId={quote.repair_order_id}
+                  documentLines={lines.map((line) => line.description)}
+                  laborRate={laborRate}
+                  onAdd={({ hours, ...line }) =>
+                    addLine.mutateAsync({
+                      section: 'planned',
+                      position: nextPosition(lines, 'planned'),
+                      vat_rate: settings.data?.company.default_vat_rate ?? 20,
+                      discount_percent: clientDiscount,
+                      estimated_hours: hours ?? null,
+                      ...line,
+                    })
+                  }
+                />
+              )}
               <AddLineButtons
                 vehicleType={quote.vehicle_type}
                 laborRate={laborRate}

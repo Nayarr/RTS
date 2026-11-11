@@ -182,8 +182,13 @@ export async function buildCreditNotePdf({ creditNote, invoice, company, logo }:
   );
   y += 8;
   doc.setFont('helvetica', 'bold');
-  doc.text(pdfText(`Client : ${invoice.client_name ?? '-'}`), MARGIN, y);
-  y += 6;
+  // Nom long : à la ligne plutôt que hors de la page
+  const clientLines = doc.splitTextToSize(
+    pdfText(`Client : ${invoice.client_name ?? '-'}`),
+    PAGE_W - 2 * MARGIN,
+  ) as string[];
+  doc.text(clientLines, MARGIN, y);
+  y += 6 + (clientLines.length - 1) * 4.5;
   doc.text(pdfText(`Véhicule : ${invoice.vehicle_label ?? '-'}`), MARGIN, y);
   y += 10;
 

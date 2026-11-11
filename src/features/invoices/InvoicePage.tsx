@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { OilChangeSuggestion } from '@/features/repair-orders/OilChangeSuggestion';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
 import type { PartLinePatch } from '@/features/catalogs/schemas';
@@ -61,7 +62,8 @@ import {
   PAYMENT_METHODS,
   recordedLabel,
 } from './domain';
-import { useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
+import { useBadgedSeconds, useInvoice, useInvoiceMutation, useInvoicePdf } from './hooks';
+import { unbilledTimeWarning } from './unbilled-time';
 import { InvoiceStatusBadge } from './PaymentStatusBadge';
 import { ShareInvoiceButtons } from './ShareInvoiceButtons';
 import { InvoiceEmployeesCard } from './InvoiceEmployeesCard';
@@ -111,6 +113,9 @@ function DraftActions({
   pdf: ReturnType<typeof useInvoicePdf>;
 }) {
   const hasLines = detail.lines.some((line) => line.line_type !== 'text');
+  const orderIds = detail.invoice.repair_order_ids;
+  const badged = useBadgedSeconds(orderIds, true);
+  const unbilled = badged.data === undefined ? null : unbilledTimeWarning(badged.data, detail.lines);
   return (
     <section data-slot="card" className="card" aria-labelledby="invoice-actions">
       <div className="card-h">
@@ -119,6 +124,11 @@ function DraftActions({
         </h2>
       </div>
       <div className="card-b col gap-2">
+        {unbilled && (
+          <p className="alert s-warn px-3 py-2" role="status" aria-label="Temps passé mais non facturé">
+            {unbilled}
+          </p>
+        )}
         <Button className="w-full" disabled={!hasLines} onClick={() => onDialog('issue')}>
           <Send /> Émettre la facture
         </Button>
@@ -594,7 +604,24 @@ export function InvoicePage() {
               )}
             </section>
             {draft && !margin && (
-              <div className="border-t bg-head px-6 py-3">
+              <div className="col gap-3 border-t bg-head px-6 py-3">
+                {singleOrder && (
+                  <OilChangeSuggestion
+                    repairOrderId={singleOrder}
+                    documentLines={lines.map((line) => line.description)}
+                    laborRate={data.laborRate}
+                    onAdd={({ hours, ...line }) =>
+                      addLine.mutateAsync({
+                        repair_order_id: singleOrder,
+                        position: nextPositionOf(lines),
+                        vat_rate: vatRate,
+                        discount_percent: data.clientDiscount,
+                        billed_hours: hours ?? null,
+                        ...line,
+                      })
+                    }
+                  />
+                )}
                 <AddLineButtons
                   vehicleType={data.vehicleType}
                   laborRate={data.laborRate}

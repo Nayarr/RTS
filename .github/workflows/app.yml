@@ -87,7 +87,8 @@ jobs:
   e2e:
     name: Types de la base à jour et tests end-to-end
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Marge pour une suite qui grandit (environ 13 min avec 2 workers)
+    timeout-minutes: 35
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4

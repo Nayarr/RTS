@@ -5981,6 +5981,62 @@ export type Database = {
         };
         Relationships: [];
       };
+      vehicle_oil_changes: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          done_on: string;
+          id: string;
+          mileage: number | null;
+          vehicle_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          done_on: string;
+          id?: string;
+          mileage?: number | null;
+          vehicle_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          done_on?: string;
+          id?: string;
+          mileage?: number | null;
+          vehicle_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vehicle_oil_changes_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_oil_changes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'vehicle_oil_changes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_oil_changes_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       vehicle_owner_changes: {
         Row: {
           changed_at: string;

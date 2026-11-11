@@ -1,3 +1,4 @@
+import { DeclaredOilChangesCard } from './DeclaredOilChangesCard';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -328,6 +329,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
               </div>
             )}
           </section>
+          {vehicle.vehicle_type !== 'remorque' && <DeclaredOilChangesCard vehicleId={vehicle.id} />}
         </div>
 
         <div className="col gap-5">
