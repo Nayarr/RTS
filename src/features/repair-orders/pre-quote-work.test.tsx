@@ -36,6 +36,7 @@ const work: PreQuoteWork = {
       offered_hours: 0,
       billed_hours: 1,
       suggested_price: 90,
+      full_price: 90,
     },
     {
       id: 'l2',
@@ -45,6 +46,7 @@ const work: PreQuoteWork = {
       offered_hours: 0,
       billed_hours: null,
       suggested_price: 60,
+      full_price: 60,
     },
   ],
 };
@@ -63,6 +65,7 @@ const longWork: PreQuoteWork = {
       offered_hours: 0.5,
       billed_hours: 0,
       suggested_price: 45,
+      full_price: 45,
     },
     {
       id: 'e2',
@@ -72,6 +75,7 @@ const longWork: PreQuoteWork = {
       offered_hours: 0.5,
       billed_hours: 0.5,
       suggested_price: 45,
+      full_price: 90,
     },
     {
       id: 'e3',
@@ -81,6 +85,7 @@ const longWork: PreQuoteWork = {
       offered_hours: 0,
       billed_hours: 1,
       suggested_price: 90,
+      full_price: 90,
     },
     {
       id: 'e4',
@@ -90,6 +95,7 @@ const longWork: PreQuoteWork = {
       offered_hours: 0,
       billed_hours: null,
       suggested_price: 60,
+      full_price: 60,
     },
   ],
 };
@@ -141,8 +147,8 @@ describe('travaux réalisés avant le devis', () => {
 
     await waitFor(() =>
       expect(settlePreQuoteWork).toHaveBeenCalledWith('ro1', [
-        { line_id: 'l1', decision: 'billed', price: 120.5 },
-        { line_id: 'l2', decision: 'offered', price: 60 },
+        { line_id: 'l1', decision: 'billed', first_hour: true, price: 120.5 },
+        { line_id: 'l2', decision: 'offered', first_hour: true, price: 60 },
       ]),
     );
     expect(await screen.findByRole('heading', { name: 'Facture' })).toBeInTheDocument();
@@ -163,7 +169,7 @@ describe('travaux réalisés avant le devis', () => {
     expect(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' })).toBeDisabled();
   });
 
-  it('plus d’1 h d’expertise : facturée moins 1 h, la première heure offerte d’office', async () => {
+  it('plus d’1 h d’expertise : 1re heure offerte par défaut, chaque ligne reste au choix', async () => {
     vi.mocked(fetchPreQuoteWork).mockResolvedValue(longWork);
     vi.mocked(settlePreQuoteWork).mockResolvedValue({
       invoice_id: 'inv2',
@@ -174,36 +180,59 @@ describe('travaux réalisés avant le devis', () => {
     renderCard(true);
     const dialog = await screen.findByRole('dialog', { name: 'Travaux réalisés avant le devis' });
     expect(within(dialog).getByRole('note')).toHaveTextContent(
-      'Expertise de 2,5 h : facturée moins 1 h. La première heure est offerte',
+      'Expertise de 2,5 h : la première heure est offerte par défaut',
     );
 
-    // Main-d'œuvre : décision imposée
+    // Par défaut : la 1re heure offerte, mais rien n'est bloqué
     const first = within(dialog).getByLabelText('Décision pour « Lecture valise »');
-    expect(first).toBeDisabled();
+    expect(first).toBeEnabled();
     expect(first).toHaveValue('offered');
     expect(within(dialog).queryByLabelText('Prix HT de « Lecture valise »')).toBeNull();
     expect(
       within(dialog).getByText('Offert : compris dans la première heure d’expertise.'),
     ).toBeInTheDocument();
-    expect(within(dialog).getByLabelText('Décision pour « Recherche de fuite »')).toHaveValue('billed');
+    const second = within(dialog).getByLabelText('Décision pour « Recherche de fuite »');
+    expect(second).toHaveValue('billed');
     expect(within(dialog).getByLabelText('Prix HT de « Recherche de fuite »')).toHaveValue('45,00');
     expect(
       within(dialog).getByText('0,5 h facturée(s), 0,5 h offerte(s) (1re heure d’expertise).'),
     ).toBeInTheDocument();
 
-    // « Tout offrir » : seulement le forfait, laissé au choix
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Tout offrir' }));
-    expect(within(dialog).getByLabelText('Décision pour « Contrôle sécurité »')).toHaveValue('offered');
-    expect(within(dialog).getByLabelText('Décision pour « Essai routier »')).toHaveValue('billed');
+    // 1re heure repassée en payante : prix de la ligne entière
+    await userEvent.selectOptions(second, 'billed_full');
+    expect(within(dialog).getByLabelText('Prix HT de « Recherche de fuite »')).toHaveValue('90,00');
+    // La 2e ligne d'1 h offerte aussi
+    await userEvent.selectOptions(
+      within(dialog).getByLabelText('Décision pour « Essai routier »'),
+      'offered',
+    );
     await userEvent.click(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' }));
     await waitFor(() =>
       expect(settlePreQuoteWork).toHaveBeenCalledWith('ro1', [
-        { line_id: 'e1', decision: 'offered', price: 45 },
-        { line_id: 'e2', decision: 'billed', price: 45 },
-        { line_id: 'e3', decision: 'billed', price: 90 },
-        { line_id: 'e4', decision: 'offered', price: 60 },
+        { line_id: 'e1', decision: 'offered', first_hour: true, price: 45 },
+        { line_id: 'e2', decision: 'billed', first_hour: false, price: 90 },
+        { line_id: 'e3', decision: 'offered', first_hour: true, price: 90 },
+        { line_id: 'e4', decision: 'billed', first_hour: true, price: 60 },
       ]),
     );
+  });
+
+  it('plus d’1 h : « Tout offrir » offre tout, « Tout facturer » revient à la 1re heure offerte', async () => {
+    vi.mocked(fetchPreQuoteWork).mockResolvedValue(longWork);
+    renderCard(true);
+    const dialog = await screen.findByRole('dialog', { name: 'Travaux réalisés avant le devis' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Tout offrir' }));
+    for (const select of within(dialog).getAllByRole('combobox')) expect(select).toHaveValue('offered');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Tout facturer' }));
+    expect(within(dialog).getByLabelText('Décision pour « Lecture valise »')).toHaveValue('offered');
+    expect(within(dialog).getByLabelText('Décision pour « Recherche de fuite »')).toHaveValue('billed');
+    expect(within(dialog).getByLabelText('Décision pour « Essai routier »')).toHaveValue('billed');
+    // La ligne comprise dans la 1re heure peut être facturée
+    await userEvent.selectOptions(
+      within(dialog).getByLabelText('Décision pour « Lecture valise »'),
+      'billed_full',
+    );
+    expect(within(dialog).getByLabelText('Prix HT de « Lecture valise »')).toHaveValue('45,00');
   });
 
   it('messages de confirmation', () => {

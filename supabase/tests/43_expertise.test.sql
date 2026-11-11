@@ -38,11 +38,8 @@ select results_eq(
   $$ values (0.5, 0.0, 0.00), (0.5, 0.5, 45.00), (0.0, 1.0, 90.00) $$,
   'L''heure offerte couvre les premières lignes ; le reste est facturé');
 
--- Décision imposée : « tout offrir » demandé, l'expertise est quand même facturée moins 1 h
-select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000043',
-  '[{"line_id": "51000000-0000-0000-0000-000000000431", "decision": "offered"},
-    {"line_id": "51000000-0000-0000-0000-000000000432", "decision": "offered"},
-    {"line_id": "51000000-0000-0000-0000-000000000433", "decision": "offered"}]') as settled \gset
+-- Sans décision du bureau : la règle s'applique, l'expertise est facturée moins 1 h
+select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000043', '[]') as settled \gset
 select results_eq(
   format($$ select total_ht from public.invoices where id = %L $$, :'settled'::jsonb ->> 'invoice_id'),
   $$ values (135.00::numeric) $$,
