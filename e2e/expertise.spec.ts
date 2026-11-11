@@ -106,3 +106,27 @@ test('expertise de plus d’1 h : la première heure offerte par défaut sur la 
   await page.goto(`/or/${order.id}`);
   await expect(page.getByText(/expertise de 2 h, 1re heure offerte/)).toBeVisible();
 });
+
+test('expertise de plus d’1 h : le bureau peut aussi offrir la deuxième ligne', async ({
+  page,
+}, testInfo) => {
+  test.slow();
+  const plate = `EY${String(Date.now()).slice(-6)}${testInfo.project.name.includes('mobile') ? 'M' : 'D'}`;
+  const { quoteId } = await expertiseWithQuote(plate);
+
+  await loginAs(page, 'reception@rts.local');
+  await page.goto(`/devis/${quoteId}`);
+  await page.getByRole('button', { name: 'Accepté' }).click();
+  await page.getByRole('button', { name: 'Enregistrer l’accord' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Travaux réalisés avant le devis' });
+  await dialog.getByLabel('Décision pour « Recherche de fuite turbo »').selectOption('offered');
+  await expect(dialog.getByText('Offert en entier (geste commercial).')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Valider' }).click();
+
+  // Tout offert : facture à 0 €, les deux lignes visibles avec 100 % de remise
+  await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+/);
+  await expect(page.getByText(/^Lecture valise · 1re heure d.expertise offerte$/)).toBeVisible();
+  await expect(page.getByText(/^Recherche de fuite turbo · offert \(geste commercial\)$/)).toBeVisible();
+  await expect(page.getByText(/Total HT\s*0,00\s€/).first()).toBeVisible();
+});
