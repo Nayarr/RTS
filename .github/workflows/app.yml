@@ -148,7 +148,18 @@ jobs:
           echo "VITE_VAPID_PUBLIC_KEY=$(sed -n 's/^VAPID_PUBLIC_KEY = "\(.*\)"$/\1/p' supabase/config.toml)" >> "$GITHUB_ENV"
 
       - name: Installer Chromium (Playwright)
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Les miroirs apt d'Ubuntu ne répondent parfois pas depuis le runner (« Temporary failure
+          # resolving »). Les bibliothèques système de Chromium sont déjà sur l'image : seules des
+          # polices d'écritures étrangères manquent. 2 essais de 4 min au plus avec les dépendances
+          # (le job est limité à 35 min), puis repli sur le navigateur seul.
+          for attempt in 1 2; do
+            timeout 240 npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium avec ses dépendances échouée (essai $attempt/2)"
+            sleep 15
+          done
+          echo "::warning::Miroirs apt injoignables : Chromium installé sans les paquets système"
+          npx playwright install chromium
 
       - name: Tests end-to-end (desktop + mobile)
         run: npm run test:e2e
