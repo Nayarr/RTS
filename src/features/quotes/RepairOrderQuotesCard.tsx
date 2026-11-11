@@ -69,7 +69,7 @@ export function RepairOrderQuotesCard({ order }: { order: RepairOrderOverview })
                   {quote.number ?? 'Devis sans numéro'}
                 </Link>
                 <span className="num text-[13px]">{formatEuro(quote.total_ttc)}</span>
-                <QuoteStatusBadge status={quote.status} />
+                <QuoteStatusBadge status={quote.status} orderCreated={quote.order_created} />
               </li>
             ))}
           </ul>

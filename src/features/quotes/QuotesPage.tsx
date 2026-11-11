@@ -12,19 +12,25 @@ import { addDays } from '@/features/planning/domain';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
 import type { QuoteOverview, QuoteStatus } from './api';
-import { QUOTE_STATUS_META, QUOTE_STATUS_ORDER } from './domain';
+import { CONVERTED_META, QUOTE_STATUS_META, QUOTE_STATUS_ORDER, quoteDisplayStatus } from './domain';
 import { useQuotes } from './hooks';
 import { QuoteStatusBadge } from './QuoteStatusBadge';
 
-type Filter = 'all' | 'no_order' | QuoteStatus;
+type Filter = 'all' | 'no_order' | 'converted' | QuoteStatus;
 
 const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'all', label: 'Tous' },
-  ...QUOTE_STATUS_ORDER.map((status) => ({
-    value: status,
-    label: status === 'sent' ? 'Devis envoyés' : QUOTE_STATUS_META[status].label,
-    color: QUOTE_STATUS_META[status].color,
-  })),
+  ...QUOTE_STATUS_ORDER.flatMap((status) => {
+    const option = {
+      value: status,
+      label: status === 'sent' ? 'Devis envoyés' : QUOTE_STATUS_META[status].label,
+      color: QUOTE_STATUS_META[status].color,
+    };
+    // Juste après « Accepté » (à transformer) : les devis dont l'OR est créé
+    return status === 'accepted'
+      ? [option, { value: 'converted' as const, label: 'Transformés en OR', color: CONVERTED_META.color }]
+      : [option];
+  }),
   { value: 'no_order', label: 'Sans OR' },
 ];
 
@@ -33,7 +39,7 @@ const PAGE_SIZE = 20;
 function matchesFilter(quote: QuoteOverview, filter: Filter) {
   if (filter === 'all') return true;
   if (filter === 'no_order') return !quote.repair_order_number;
-  return quote.status === filter;
+  return quoteDisplayStatus(quote) === filter;
 }
 
 function matchesSearch(quote: QuoteOverview, search: string) {
@@ -93,7 +99,7 @@ export function QuotesPage() {
     },
     {
       icon: <CircleCheck className="i s" />,
-      value: String(all.filter((q) => q.status === 'accepted' && !q.repair_order_number).length),
+      value: String(all.filter((q) => quoteDisplayStatus(q) === 'accepted').length),
       label: 'Acceptés à transformer en OR',
       tone: 'up',
     },
@@ -198,7 +204,7 @@ export function QuotesPage() {
                       </td>
                       <td>{quote.client_name ?? '-'}</td>
                       <td>
-                        <QuoteStatusBadge status={quote.status} />
+                        <QuoteStatusBadge status={quote.status} orderCreated={quote.order_created} />
                       </td>
                       <td className="r num b">{formatEuro(quote.total_ttc)}</td>
                       <td className="num">{formatDate(quote.created_at)}</td>
@@ -235,7 +241,7 @@ export function QuotesPage() {
                             {quote.client_name ?? '-'} · {quote.plate ?? 'sans véhicule'}
                           </span>
                         </div>
-                        <QuoteStatusBadge status={quote.status} />
+                        <QuoteStatusBadge status={quote.status} orderCreated={quote.order_created} />
                       </div>
                       <div className="row between text-[13px]">
                         <span className="muted">{formatDate(quote.created_at)}</span>
