@@ -85,11 +85,15 @@ test('client sur place : signature demandée sur la borne, reçue sur la fiche O
   await panel.getByRole('button', { name: 'Faire signer sur la borne' }).click();
   await expect(panel.getByRole('status')).toContainText(/En attente sur la borne… \d+ s/);
 
-  // Borne : la fenêtre apparaît par-dessus le pointage, avec le temps restant
+  // Borne de signature : l'OR dans la liste, le client touche « Signer » ; temps restant affiché
   const kiosk = await newPage(browser, testInfo);
-  await login(kiosk.page, 'borne@rts.local');
+  await login(kiosk.page, 'signature@rts.local');
+  const card = kiosk.page.getByRole('listitem').filter({ hasText: plate });
+  await card
+    .getByRole('button', { name: /^Signer : Ordre de réparation OR\d{5}$/ })
+    .click({ timeout: 15_000 });
   const dialog = kiosk.page.getByRole('dialog', { name: /Signature de l’ordre de réparation OR\d{5}/ });
-  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  await expect(dialog).toBeVisible();
   await expect(dialog).toContainText(plate);
   await expect(dialog.getByRole('timer')).toHaveAccessibleName(/Temps restant : \d+ secondes/);
   await expect(dialog.getByRole('listitem')).toHaveText(['Freins avant', 'Vidange']);

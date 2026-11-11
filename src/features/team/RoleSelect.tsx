@@ -9,6 +9,7 @@ const ROLE_HINTS: Record<AppRole, string> = {
   accountant: 'Devis, factures ; stats et RH en lecture ; badgeage',
   technician: 'Ses OR, fiche de contrôle, badgeage',
   kiosk: 'Tablette de pointage / écran atelier',
+  kiosk_signature: 'Tablette de l’accueil : signature des devis et OR par le client',
 };
 
 interface RoleSelectProps {

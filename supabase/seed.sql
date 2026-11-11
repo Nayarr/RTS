@@ -19,7 +19,8 @@ with accounts (id, email, full_name, role) as (
     ('5eed0000-0000-0000-0000-000000000003'::uuid, 'alice@rts.local', 'Alice Martin', 'technician'::public.app_role),
     ('5eed0000-0000-0000-0000-000000000004'::uuid, 'bruno@rts.local', 'Bruno Petit', 'technician'::public.app_role),
     ('5eed0000-0000-0000-0000-000000000005'::uuid, 'borne@rts.local', 'Borne atelier', 'kiosk'::public.app_role),
-    ('5eed0000-0000-0000-0000-000000000006'::uuid, 'comptable@rts.local', 'Camille Comptable', 'accountant'::public.app_role)
+    ('5eed0000-0000-0000-0000-000000000006'::uuid, 'comptable@rts.local', 'Camille Comptable', 'accountant'::public.app_role),
+    ('5eed0000-0000-0000-0000-000000000007'::uuid, 'signature@rts.local', 'Borne signature', 'kiosk_signature'::public.app_role)
 ),
 new_users as (
   insert into auth.users (

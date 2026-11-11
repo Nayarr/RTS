@@ -102,12 +102,14 @@ test('client sur place : devis signé sur la borne, accepté au bureau', async (
     /Sur la borne : \d+ s/,
   );
 
-  // Borne : le devis à signer, avec les travaux et le total TTC
+  // Borne de signature : le devis dans la liste, le client touche « Signer »
   const kiosk = await newPage(browser, testInfo);
-  await login(kiosk.page, 'borne@rts.local');
-  // Borne partagée entre tests : une demande d'un autre test peut passer avant (1 minute au plus)
+  await login(kiosk.page, 'signature@rts.local');
+  // Borne partagée entre tests : les demandes des autres tests sont dans la même liste
+  const card = kiosk.page.getByRole('listitem').filter({ hasText: plate });
+  await card.getByRole('button', { name: /^Signer : Devis / }).click({ timeout: 15_000 });
   const dialog = kiosk.page.getByRole('dialog', { name: /Signature du devis / }).filter({ hasText: plate });
-  await expect(dialog).toBeVisible({ timeout: 75_000 });
+  await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Remplacement plaquettes avant');
   await expect(dialog).toContainText(/204,00\s€/);
   await dialog.getByLabel('Votre nom (facultatif)').fill('Paul Client');

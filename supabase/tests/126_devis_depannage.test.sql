@@ -54,7 +54,7 @@ select results_eq(
   $$ values ('Aire de Roissy'::text, 130.00::numeric) $$,
   'Lien du devis : lieu et prix');
 select (public.request_quote_signature('60000000-0000-0000-0000-000000001261')) ->> 'id' as request \gset
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');  -- borne
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');  -- borne
 select results_eq(
   $$ select public.kiosk_pending_signature() -> 'roadside' ->> 'address',
             (public.kiosk_pending_signature() -> 'roadside' ->> 'price')::numeric $$,

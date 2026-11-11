@@ -9,11 +9,17 @@ const OfficeDashboardPage = lazy(() =>
   import('@/features/dashboard/OfficeDashboardPage').then((m) => ({ default: m.OfficeDashboardPage })),
 );
 const KioskPage = lazy(() => import('@/features/kiosk/KioskPage').then((m) => ({ default: m.KioskPage })));
+const SignatureKioskPage = lazy(() =>
+  import('@/features/signature/SignatureKioskPage').then((m) => ({ default: m.SignatureKioskPage })),
+);
 const TechHomePage = lazy(() =>
   import('@/features/workshop/TechHomePage').then((m) => ({ default: m.TechHomePage })),
 );
 
-/** Accueil selon le profil : tableau de bord du bureau, OR du technicien, borne de pointage (ou télé). */
+/**
+ * Accueil selon le profil : tableau de bord du bureau, OR du technicien, borne de pointage (ou télé),
+ * borne de signature.
+ */
 export function HomePage() {
   const { data: profile } = useProfile();
   if (!profile) return null;
@@ -33,6 +39,8 @@ export function HomePage() {
         <TechHomePage />
       ) : profile.role === 'kiosk' ? (
         <KioskPage />
+      ) : profile.role === 'kiosk_signature' ? (
+        <SignatureKioskPage />
       ) : (
         <OfficeDashboardPage />
       )}

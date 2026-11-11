@@ -35,7 +35,7 @@ export interface KioskSignatureRequest extends SignatureRequest {
 }
 
 export const signatureRequestKey = (repairOrderId: string) => ['signature-request', repairOrderId] as const;
-export const kioskSignatureKey = ['kiosk', 'pending-signature'] as const;
+export const kioskSignatureKey = ['kiosk', 'pending-signatures'] as const;
 
 export async function requestSignature(repairOrderId: string, channel: SignatureChannel) {
   const { data, error } = await supabase.rpc('request_repair_order_signature', {
@@ -60,11 +60,11 @@ export async function fetchSignatureRequest(repairOrderId: string) {
   return (data as unknown as SignatureRequest | null) ?? null;
 }
 
-/** Borne : demande en cours à afficher, ou null. */
-export async function fetchKioskPendingSignature() {
-  const { data, error } = await supabase.rpc('kiosk_pending_signature');
+/** Borne de signature : toutes les demandes en cours (1 minute chacune), de la plus ancienne à la plus récente. */
+export async function fetchKioskPendingSignatures(): Promise<KioskSignatureRequest[]> {
+  const { data, error } = await supabase.rpc('kiosk_pending_signatures');
   if (error) throw error;
-  return (data as unknown as KioskSignatureRequest | null) ?? null;
+  return (data as unknown as KioskSignatureRequest[] | null) ?? [];
 }
 
 export async function kioskSign(requestId: string, signerName: string, signatureFileId: string) {

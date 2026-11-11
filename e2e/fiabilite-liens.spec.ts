@@ -58,9 +58,9 @@ test('borne allumée : le bureau la voit en ligne avant de lui envoyer une signa
   });
   if (error) throw error;
 
-  // La borne s'allume : écran de pointage, signal de présence envoyé tout de suite.
+  // La borne de signature s'allume : signal de présence envoyé tout de suite.
   const kiosk = await newPage(browser, testInfo);
-  await loginAs(kiosk.page, 'borne@rts.local');
+  await loginAs(kiosk.page, 'signature@rts.local');
   await expect(kiosk.page.getByRole('button', { name: 'Quitter la borne' })).toBeVisible();
 
   await loginAs(page, 'reception@rts.local');

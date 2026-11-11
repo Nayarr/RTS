@@ -27,7 +27,7 @@ select throws_ok($$select public.kiosk_ping()$$, '42501', null, 'Seule la borne 
 select throws_ok($$select public.kiosk_status()$$, '42501', null, 'Technicien : état de la borne refusé');
 
 -- ---------------------------------------------------------------- Borne
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');
 select lives_ok($$select public.kiosk_ping()$$, 'La borne signale sa présence');
 select lives_ok($$select public.kiosk_ping()$$, 'Deuxième signal : mise à jour');
 

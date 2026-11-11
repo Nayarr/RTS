@@ -24,7 +24,7 @@ select isnt((select number from public.quotes where id = :'quote'), null, 'Numé
 select is((public.quote_signature_request(:'quote')) ->> 'status', 'pending', 'Bureau : demande en attente');
 
 -- La borne affiche le devis
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');  -- borne
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');  -- borne
 select results_eq(
   $$ select public.kiosk_pending_signature() ->> 'kind', public.kiosk_pending_signature() ->> 'requested_work' $$,
   $$ values ('quote'::text, 'Remplacement plaquettes'::text) $$,
