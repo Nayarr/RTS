@@ -54,6 +54,9 @@ const settings: Settings = {
     supplies_fee_ht: 15,
     vat_exempt_mention_eu: 'Autoliquidation',
     vat_exempt_mention_other: 'Exonération de TVA',
+    parking_rate_pl: 30,
+    parking_rate_vul: 15,
+    parking_rate_remorque: 20,
     updated_at: '2026-09-28T00:00:00Z',
   },
   laborRates: [

@@ -82,6 +82,9 @@ describe('billingSchema', () => {
       supplies_fee_ht: '',
       vat_exempt_mention_eu: 'Autoliquidation',
       vat_exempt_mention_other: 'Exonération de TVA',
+      parking_rate_pl: 30,
+      parking_rate_vul: 15,
+      parking_rate_remorque: 20,
     };
     expect(billingSchema.safeParse(values).success).toBe(true);
     expect(billingFromForm(values).supplies_fee_ht).toBeNull();

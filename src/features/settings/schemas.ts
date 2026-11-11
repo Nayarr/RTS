@@ -90,6 +90,10 @@ export const billingSchema = z.object({
   supplies_fee_ht: z
     .string()
     .regex(/^\s*(\d{1,6}([.,]\d{1,2})?)?\s*$/, 'Montant en euros (ex : 15 ou 12,50)'),
+  /** Frais de stationnement HT par jour, selon le type de véhicule. */
+  parking_rate_pl: money,
+  parking_rate_vul: money,
+  parking_rate_remorque: money,
   /** Mentions d'une facture sans TVA : autoliquidation (Union européenne), exonération (hors Union). */
   vat_exempt_mention_eu: z.string().trim().min(1, 'Indique la mention').max(500),
   vat_exempt_mention_other: z.string().trim().min(1, 'Indique la mention').max(500),
@@ -106,6 +110,9 @@ export const billingToForm = (c: CompanySettings): BillingValues => ({
   supplies_fee_ht: c.supplies_fee_ht === null ? '' : String(c.supplies_fee_ht).replace('.', ','),
   vat_exempt_mention_eu: c.vat_exempt_mention_eu,
   vat_exempt_mention_other: c.vat_exempt_mention_other,
+  parking_rate_pl: c.parking_rate_pl,
+  parking_rate_vul: c.parking_rate_vul,
+  parking_rate_remorque: c.parking_rate_remorque,
 });
 
 const mentionLines = (text: string) =>
