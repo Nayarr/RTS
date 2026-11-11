@@ -26,6 +26,7 @@ import {
   type KioskMessage,
   type KioskTone,
 } from './domain';
+import { useActivity } from './use-activity';
 import { useCamera } from './use-camera';
 import { useKioskMode } from './use-kiosk-mode';
 
@@ -48,11 +49,15 @@ function useNow() {
   return now;
 }
 
-/** Borne de pointage : code PIN + photo, arrivée ou départ. */
+/**
+ * Borne de pointage : code PIN + photo, arrivée ou départ. La caméra s'allume au premier geste
+ * sur la borne et s'éteint après 45 s sans activité.
+ */
 export function KioskPage() {
   useKioskMode();
   const now = useNow();
-  const { videoRef, state: cameraState, capture } = useCamera();
+  const awake = useActivity();
+  const { videoRef, state: cameraState, capture } = useCamera(awake);
   const company = useQuery({
     queryKey: ['kiosk', 'company-name'],
     queryFn: fetchCompanyName,
@@ -154,11 +159,13 @@ export function KioskPage() {
             </span>
           ) : (
             <p className="relative max-w-sm p-6 text-center text-sm">
-              {cameraState === 'starting'
-                ? 'Activation de la caméra…'
-                : cameraState === 'denied'
-                  ? 'Caméra indisponible : autorise la caméra pour cette page, sinon le pointage est bloqué.'
-                  : 'Caméra non prise en charge sur cet appareil.'}
+              {cameraState === 'off'
+                ? 'Caméra en veille : touche l’écran ou tape ton code pour l’allumer.'
+                : cameraState === 'starting'
+                  ? 'Activation de la caméra…'
+                  : cameraState === 'denied'
+                    ? 'Caméra indisponible : autorise la caméra pour cette page, sinon le pointage est bloqué.'
+                    : 'Caméra non prise en charge sur cet appareil.'}
             </p>
           )}
         </div>
