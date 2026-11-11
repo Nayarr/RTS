@@ -1,12 +1,17 @@
+import { formatQuantity } from '@/lib/numbers';
 import { supabase } from '@/lib/supabase';
 
 /**
  * Travaux réalisés avant le devis (expertise : diagnostic, contrôle…) : une fois le devis
  * accepté, le bureau décide pour chaque ligne de la facturer ou de l'offrir (geste commercial,
  * visible sur la facture avec 100 % de remise). La facture est émise et envoyée dans tous les cas.
- * Plus d'1 h d'expertise : facturée moins 1 h, la première heure est offerte d'office.
+ * Plus d'1 h d'expertise : la première heure est offerte par défaut, mais chaque ligne reste au choix
+ * du bureau (facturée en entier, ou offerte en entier).
  */
 export type PreQuoteDecision = 'billed' | 'offered';
+
+/** Choix affiché pour une ligne : facturée (part de la 1re heure offerte), facturée en entier, offerte. */
+export type PreQuoteChoiceKind = 'billed' | 'billed_full' | 'offered';
 
 export interface PreQuoteLine {
   id: string;
@@ -19,6 +24,8 @@ export interface PreQuoteLine {
   billed_hours: number | null;
   /** Prix proposé de la part facturée. */
   suggested_price: number;
+  /** Prix de la ligne entière (facturée sans heure offerte, ou valeur du geste commercial). */
+  full_price: number;
 }
 
 export interface PreQuoteWork {
@@ -33,17 +40,70 @@ export interface PreQuoteWork {
   lines: PreQuoteLine[];
 }
 
-/** Ligne dont la décision est imposée par la règle de l'expertise (plus d'1 h). */
-export const isForced = (work: PreQuoteWork, line: PreQuoteLine) => work.first_hour_offered && line.is_labor;
+/** Ligne concernée par la 1re heure offerte (expertise de plus d'1 h). */
+export const hasOfferedHour = (work: PreQuoteWork, line: PreQuoteLine) =>
+  work.first_hour_offered && line.is_labor && line.offered_hours > 0;
 
-/** Décision imposée : facturée s'il reste du temps après la première heure offerte. */
-export const forcedDecision = (line: PreQuoteLine): PreQuoteDecision =>
-  (line.billed_hours ?? 0) > 0 ? 'billed' : 'offered';
+/** Choix par défaut : la 1re heure offerte, le reste facturé. */
+export const defaultChoice = (work: PreQuoteWork, line: PreQuoteLine): PreQuoteChoiceKind =>
+  hasOfferedHour(work, line) && (line.billed_hours ?? 0) <= 0 ? 'offered' : 'billed';
+
+/** Choix proposés pour la ligne, avec leur libellé. */
+export function choiceOptions(
+  work: PreQuoteWork,
+  line: PreQuoteLine,
+): { value: PreQuoteChoiceKind; label: string }[] {
+  if (!hasOfferedHour(work, line)) {
+    return [
+      { value: 'billed', label: 'Facturer' },
+      { value: 'offered', label: 'Offrir (geste commercial)' },
+    ];
+  }
+  if ((line.billed_hours ?? 0) <= 0) {
+    return [
+      { value: 'offered', label: 'Offrir (1re heure d’expertise)' },
+      { value: 'billed_full', label: 'Facturer' },
+    ];
+  }
+  return [
+    { value: 'billed', label: 'Facturer, 1re heure offerte' },
+    { value: 'billed_full', label: 'Facturer tout' },
+    { value: 'offered', label: 'Offrir (geste commercial)' },
+  ];
+}
+
+/** Prix proposé pour un choix : la part facturée, ou la ligne entière. */
+export const choicePrice = (work: PreQuoteWork, line: PreQuoteLine, choice: PreQuoteChoiceKind) =>
+  choice === 'billed' && hasOfferedHour(work, line) ? line.suggested_price : line.full_price;
+
+/** Ce qui est envoyé au serveur pour ce choix. */
+export const toDecision = (
+  choice: PreQuoteChoiceKind,
+): { decision: PreQuoteDecision; first_hour: boolean } => ({
+  decision: choice === 'offered' ? 'offered' : 'billed',
+  first_hour: choice !== 'billed_full',
+});
+
+/** Explication sous la ligne concernée par la 1re heure offerte. */
+export function choiceHint(line: PreQuoteLine, choice: PreQuoteChoiceKind) {
+  const billed = formatQuantity(line.billed_hours ?? 0);
+  const offered = formatQuantity(line.offered_hours);
+  if (choice === 'billed_full')
+    return `${formatQuantity(line.hours ?? 0)} h facturée(s), 1re heure repassée en payante.`;
+  if (choice === 'offered') {
+    return (line.billed_hours ?? 0) <= 0
+      ? 'Offert : compris dans la première heure d’expertise.'
+      : 'Offert en entier (geste commercial).';
+  }
+  return `${billed} h facturée(s), ${offered} h offerte(s) (1re heure d’expertise).`;
+}
 
 export interface PreQuoteChoice {
   line_id: string;
   decision: PreQuoteDecision;
   price: number | null;
+  /** false : la 1re heure offerte est repassée en payante sur cette ligne. */
+  first_hour: boolean;
 }
 
 export interface PreQuoteResult {

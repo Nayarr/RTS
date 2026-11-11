@@ -73,7 +73,7 @@ async function expertiseWithQuote(plate: string) {
   return { order, quoteId };
 }
 
-test('expertise de plus d’1 h : facturée moins 1 h, la première heure offerte sur la facture', async ({
+test('expertise de plus d’1 h : la première heure offerte par défaut sur la facture', async ({
   page,
 }, testInfo) => {
   test.slow();
@@ -86,9 +86,11 @@ test('expertise de plus d’1 h : facturée moins 1 h, la première heure offert
   await page.getByRole('button', { name: 'Enregistrer l’accord' }).click();
 
   const dialog = page.getByRole('dialog', { name: 'Travaux réalisés avant le devis' });
-  await expect(dialog.getByRole('note')).toContainText('Expertise de 2 h : facturée moins 1 h.');
+  await expect(dialog.getByRole('note')).toContainText(
+    'Expertise de 2 h : la première heure est offerte par défaut',
+  );
   // 1re heure : la lecture valise (0,5 h) puis 0,5 h de la recherche de fuite
-  await expect(dialog.getByLabel('Décision pour « Lecture valise »')).toBeDisabled();
+  await expect(dialog.getByLabel('Décision pour « Lecture valise »')).toBeEnabled();
   await expect(dialog.getByLabel('Décision pour « Lecture valise »')).toHaveValue('offered');
   await expect(dialog.getByLabel('Prix HT de « Lecture valise »')).toHaveCount(0);
   await expect(dialog.getByText('1 h facturée(s), 0,5 h offerte(s) (1re heure d’expertise).')).toBeVisible();
