@@ -152,3 +152,19 @@ test('la réception n’a pas accès aux pointages', async ({ page }) => {
   await page.goto('/pointages');
   await expect(page.getByRole('heading', { name: 'Accès refusé' })).toBeVisible();
 });
+
+test('caméra de la borne en veille, allumée au premier toucher', async ({ page }) => {
+  await loginAs(page, 'borne@rts.local');
+  await expect(page.getByText('Borne de pointage')).toBeVisible();
+  // Personne devant la borne : caméra éteinte
+  await expect(
+    page.getByText('Caméra en veille : touche l’écran ou tape ton code pour l’allumer.'),
+  ).toBeVisible();
+  await expect(page.getByText('REC', { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => Boolean(document.querySelector('video')?.srcObject))).toBe(false);
+
+  // Premier toucher : la caméra s'allume
+  await page.getByRole('button', { name: 'Effacer' }).click();
+  await expect(page.getByText('REC', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => Boolean(document.querySelector('video')?.srcObject))).toBe(true);
+});
