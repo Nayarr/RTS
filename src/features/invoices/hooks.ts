@@ -5,6 +5,7 @@ import type { PdfFile } from '@/components/PdfPreviewDialog';
 import { loadPdfContext } from '@/features/documents/pdf-context';
 import { repairOrdersKey } from '@/features/repair-orders/hooks';
 import {
+  fetchBadgedSeconds,
   fetchBillableOrders,
   fetchCreditNotes,
   fetchInvoice,
@@ -25,6 +26,15 @@ export function useInvoices() {
 
 export function useInvoice(id: string) {
   return useQuery({ queryKey: invoiceKey(id), queryFn: () => fetchInvoice(id) });
+}
+
+/** Temps badgé sur les OR de la facture (alerte « temps passé mais non facturé »). */
+export function useBadgedSeconds(repairOrderIds: string[], enabled: boolean) {
+  return useQuery({
+    queryKey: [...invoicesKey, 'badged', ...repairOrderIds],
+    queryFn: () => fetchBadgedSeconds(repairOrderIds),
+    enabled: enabled && repairOrderIds.length > 0,
+  });
 }
 
 export function useRepairOrderInvoices(repairOrderId: string) {

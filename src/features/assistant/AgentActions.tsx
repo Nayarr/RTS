@@ -9,6 +9,7 @@ import {
   ChevronRight,
   FileText,
   Mail,
+  PackageCheck,
   Receipt,
   Send,
   UserCheck,
@@ -44,6 +45,7 @@ const ICONS: Record<AgentAction['kind'], LucideIcon> = {
   appointment_change: CalendarClock,
   order_to_invoice: Receipt,
   invoice_draft: FileText,
+  part_received: PackageCheck,
 };
 
 /** Poignée de la page : « vas-y » à la voix valide la première action en attente. */

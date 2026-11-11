@@ -113,6 +113,36 @@ export function drawMeta(doc: jsPDF, rows: [string, string][], top = 41) {
   return y;
 }
 
+/** Interligne du nom du client à sa taille normale (10,5 pt). */
+const NAME_LINE_HEIGHT = 4.6;
+
+/**
+ * Nom du client dans la largeur du cadre : 10,5 pt sur une ou deux lignes, sinon police réduite
+ * (9 pt sur trois lignes, 8 pt sur quatre, 7 pt sur cinq) ; au-delà, la fin est coupée par « ... ».
+ * La police (gras) doit être choisie avant l'appel.
+ */
+export function clientNameLines(doc: jsPDF, name: string, width: number) {
+  const text = pdfText(name.trim() || '-');
+  const steps = [
+    { size: 10.5, maxLines: 2, lineHeight: NAME_LINE_HEIGHT },
+    { size: 9, maxLines: 3, lineHeight: 3.9 },
+    { size: 8, maxLines: 4, lineHeight: 3.5 },
+    { size: 7, maxLines: 5, lineHeight: 3.1 },
+  ];
+  for (const step of steps) {
+    doc.setFontSize(step.size);
+    const lines = doc.splitTextToSize(text, width) as string[];
+    if (lines.length <= step.maxLines) return { ...step, lines };
+  }
+  const last = steps[steps.length - 1]!;
+  doc.setFontSize(last.size);
+  const lines = (doc.splitTextToSize(text, width) as string[]).slice(0, last.maxLines);
+  let end = lines[last.maxLines - 1] ?? '';
+  while (end && doc.getTextWidth(`${end}...`) > width) end = end.slice(0, -1);
+  lines[last.maxLines - 1] = `${end.trimEnd()}...`;
+  return { ...last, lines };
+}
+
 /** Cadre gris du client (« FACTURÉ À », « DEVIS POUR »). Renvoie l'ordonnée de fin. */
 export function drawClientBox(
   doc: jsPDF,
@@ -136,7 +166,12 @@ export function drawClientBox(
     .flatMap((part) => doc.splitTextToSize(pdfText(part).trim(), width - 10) as string[])
     .filter(Boolean)
     .slice(0, 3);
-  const height = 21 + address.length * 3.8 + (client.siret ? 4.5 : 0) + (client.vat_number ? 4.5 : 0);
+  doc.setFont('helvetica', 'bold');
+  const name = clientNameLines(doc, client.name || '-', width - 10);
+  doc.setFont('helvetica', 'normal');
+  const nameExtra = name.lines.length * name.lineHeight - NAME_LINE_HEIGHT;
+  const height =
+    21 + nameExtra + address.length * 3.8 + (client.siret ? 4.5 : 0) + (client.vat_number ? 4.5 : 0);
 
   doc.setFillColor(...PANEL);
   doc.roundedRect(x, top, width, height, 3, 3, 'F');
@@ -144,12 +179,12 @@ export function drawClientBox(
   doc.setFontSize(6.3);
   color(doc, MUTED);
   doc.text(title.toUpperCase(), inner, top + 7);
-  doc.setFontSize(10.5);
+  doc.setFontSize(name.size);
   color(doc, INK);
-  doc.text(pdfText(client.name || '-'), inner, top + 13, { maxWidth: width - 10 });
+  name.lines.forEach((line, index) => doc.text(line, inner, top + 13 + index * name.lineHeight));
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.3);
-  let y = top + 18.5;
+  let y = top + 18.5 + nameExtra;
   for (const line of address) {
     doc.text(line, inner, y);
     y += 3.8;
@@ -405,31 +440,35 @@ export function drawMentions(doc: jsPDF, mentions: string[], top: number) {
   return y;
 }
 
+/** Taille des conditions générales : petits caractères, comme au dos d'une facture papier. */
+export const TERMS_FONT_SIZE = 6.2;
+const TERMS_LINE_HEIGHT = 2.75;
+
 /** Conditions générales en dernière page : titre centré, titres d'articles en gras (« 1. OBJET… »). */
 export function drawTerms(doc: jsPDF, terms: string) {
   if (!terms.trim()) return;
   doc.addPage();
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
+  doc.setFontSize(9);
   color(doc, INK);
   doc.text('CONDITIONS GÉNÉRALES DE VENTE ET DE RÉPARATION', PAGE_W / 2, 20, { align: 'center' });
-  let y = 29;
+  let y = 27;
   for (const paragraph of terms.split(/\r?\n/)) {
     if (!paragraph.trim()) {
-      y += 2.2;
+      y += 1.6;
       continue;
     }
     const heading = /^\d+\.\s/.test(paragraph);
     doc.setFont('helvetica', heading ? 'bold' : 'normal');
-    doc.setFontSize(7.6);
+    doc.setFontSize(TERMS_FONT_SIZE);
     color(doc, heading ? INK : MUTED);
     for (const line of doc.splitTextToSize(pdfText(paragraph), RIGHT - MARGIN) as string[]) {
-      if (y + 3.5 > CONTENT_BOTTOM) {
+      if (y + TERMS_LINE_HEIGHT > CONTENT_BOTTOM) {
         doc.addPage();
         y = 20;
       }
       doc.text(line, MARGIN, y);
-      y += 3.5;
+      y += TERMS_LINE_HEIGHT;
     }
   }
 }

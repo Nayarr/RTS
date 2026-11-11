@@ -45,7 +45,8 @@ export type AgentAction = Pick<
     | 'schedule_order'
     | 'appointment_change'
     | 'order_to_invoice'
-    | 'invoice_draft';
+    | 'invoice_draft'
+    | 'part_received';
   result: { link?: string } | null;
   /** Mail préparé : destinataire, objet et texte relus par la direction avant l'envoi. */
   payload: {
