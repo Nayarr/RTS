@@ -9,6 +9,17 @@ export type VehicleType = Enums<'vehicle_type'>;
 export type LaborCategory = Enums<'labor_category'>;
 export type ServicePackage = Tables<'service_packages'>;
 
+/** Couleur de chaque catégorie de main d'œuvre : pastille des lignes et CA par catégorie. */
+export const LABOR_CATEGORY_COLORS: Record<LaborCategory, string> = {
+  pl: '#4750B5',
+  vul: '#2A6B52',
+  remorque: '#C98A00',
+  tolerie: '#9B3D8F',
+};
+
+/** Ligne de main d'œuvre sans catégorie enregistrée : mécanique poids lourds. */
+export const DEFAULT_LABOR_CATEGORY: LaborCategory = 'pl';
+
 /** Valeur d'un taux horaire dans une liste : sa catégorie pour un taux de base, son identifiant sinon. */
 export const laborRateKey = (rate: { id: string; category: LaborCategory | null }) =>
   rate.category ?? rate.id;
@@ -27,6 +38,8 @@ export interface EditableLine extends PricedLine {
   description: string;
   /** Heures facturées affichées à côté du type (main d'œuvre : la quantité, à l'heure entamée). */
   hours?: number | null;
+  /** Main d'œuvre : catégorie (mécanique PL, VUL, soudure…), pastille de couleur sur la ligne. */
+  labor_category?: LaborCategory | null;
 }
 
 /** Nouvelle ligne proposée par les boutons d'ajout (le document y ajoute section, position…). */
