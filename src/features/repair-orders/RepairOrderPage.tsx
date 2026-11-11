@@ -9,6 +9,7 @@ import { PrepareQuoteButton, RepairOrderQuotesCard } from '@/features/quotes/Rep
 import { RepairOrderLoanCard } from '@/features/rentals/RepairOrderLoanCard';
 import { updateRepairOrder, type RepairOrderOverview } from './api';
 import { ClientMessagesCard } from './detail/ClientMessagesCard';
+import { UpcomingWorkCard } from './detail/UpcomingWorkCard';
 import { ConsumablesCard } from './detail/ConsumablesCard';
 import { DirectionCard } from './detail/DirectionCard';
 import { HistoryCard } from './detail/HistoryCard';
@@ -166,6 +167,7 @@ export function RepairOrderPage() {
           <RepairOrderInvoiceCard order={order} />
           <RepairOrderLoanCard repairOrderId={order.id} clientId={order.client_id} editable={editable} />
           <RepairOrderQuotesCard order={order} />
+          <UpcomingWorkCard order={order} />
           <ClientMessagesCard order={order} />
           <HistoryCard repairOrderId={order.id} />
           {isDirection && <DirectionCard order={order} />}

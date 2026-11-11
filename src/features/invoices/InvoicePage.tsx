@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { OilChangeSuggestion } from '@/features/repair-orders/OilChangeSuggestion';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
 import type { PartLinePatch } from '@/features/catalogs/schemas';
@@ -603,7 +604,24 @@ export function InvoicePage() {
               )}
             </section>
             {draft && !margin && (
-              <div className="border-t bg-head px-6 py-3">
+              <div className="col gap-3 border-t bg-head px-6 py-3">
+                {singleOrder && (
+                  <OilChangeSuggestion
+                    repairOrderId={singleOrder}
+                    documentLines={lines.map((line) => line.description)}
+                    laborRate={data.laborRate}
+                    onAdd={({ hours, ...line }) =>
+                      addLine.mutateAsync({
+                        repair_order_id: singleOrder,
+                        position: nextPositionOf(lines),
+                        vat_rate: vatRate,
+                        discount_percent: data.clientDiscount,
+                        billed_hours: hours ?? null,
+                        ...line,
+                      })
+                    }
+                  />
+                )}
                 <AddLineButtons
                   vehicleType={data.vehicleType}
                   laborRate={data.laborRate}
