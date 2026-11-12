@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { KeyRound, Settings } from 'lucide-react';
 import { FormField } from '@/components/FormField';
@@ -12,12 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { signOut } from '@/features/auth/api';
 import { uploadFile } from '@/features/files/api';
-import { KioskSignatureDialog } from '@/features/signature/KioskSignatureDialog';
-import { setTvMode } from '@/features/workshop-board/domain';
 import { cn } from '@/lib/utils';
-import { fetchCompanyName, kioskChangePin, kioskClock, verifyExitCode } from './api';
+import { fetchCompanyName, kioskChangePin, kioskClock } from './api';
+import { ExitDialog } from './ExitDialog';
 import {
   CAMERA_MESSAGE,
   IDLE_MESSAGE,
@@ -29,6 +26,7 @@ import {
 import { useActivity } from './use-activity';
 import { useCamera } from './use-camera';
 import { useKioskMode } from './use-kiosk-mode';
+import { useNow } from './use-now';
 
 const MAX_PIN = 6;
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'] as const;
@@ -39,15 +37,6 @@ const TONE_CLASS: Record<KioskTone, string> = {
   warning: 's-warn',
   error: 's-bad',
 };
-
-function useNow() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return now;
-}
 
 /**
  * Borne de pointage : code PIN + photo, arrivée ou départ. La caméra s'allume au premier geste
@@ -113,7 +102,7 @@ export function KioskPage() {
   useEffect(() => {
     if (exitOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      // Saisie dans un champ (nom du client dans la fenêtre de signature) : pas pour le code PIN.
+      // Saisie dans un champ (changement de code, code de sortie) : pas pour le code PIN.
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, [role="dialog"]'))
         return;
       if (/^\d$/.test(event.key)) press(event.key);
@@ -229,8 +218,6 @@ export function KioskPage() {
       </button>
       {exitOpen && <ExitDialog onClose={() => setExitOpen(false)} />}
       {changeOpen && <ChangePinDialog onClose={() => setChangeOpen(false)} />}
-      {/* Signature demandée par l'accueil (client sur place) */}
-      <KioskSignatureDialog />
     </div>
   );
 }
@@ -315,75 +302,6 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
               Enregistrer
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/** Sortie de la borne : code de sortie choisi par la direction, puis déconnexion ou écran télé. */
-function ExitDialog({ onClose }: { onClose: () => void }) {
-  const navigate = useNavigate();
-  const [code, setCode] = useState('');
-  const [error, setError] = useState<string | undefined>();
-  const [pending, setPending] = useState(false);
-
-  /** « Quitter » : déconnexion ; « Écran atelier (télé) » : la borne devient la télé de l'atelier. */
-  const submit = async (event: FormEvent, target: 'sign-out' | 'tv' = 'sign-out') => {
-    event.preventDefault();
-    setPending(true);
-    try {
-      if (await verifyExitCode(code)) {
-        if (target === 'tv') {
-          setTvMode(true);
-          void navigate('/tele', { replace: true });
-        } else {
-          await signOut();
-        }
-        return;
-      }
-      setError('Code incorrect');
-    } catch {
-      setError('Vérification impossible : vérifie la connexion');
-    }
-    setPending(false);
-    setCode('');
-  };
-
-  return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Quitter la borne</DialogTitle>
-          <DialogDescription>Code de sortie réservé à la direction.</DialogDescription>
-        </DialogHeader>
-        <form id="kiosk-exit" onSubmit={(event) => void submit(event)}>
-          <FormField
-            id="kiosk-exit-code"
-            label="Code de sortie"
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            autoFocus
-            value={code}
-            error={error}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-          />
-        </form>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button
-            variant="outline"
-            disabled={pending || code.length < 4}
-            onClick={(event) => void submit(event, 'tv')}
-          >
-            Écran atelier (télé)
-          </Button>
-          <Button type="submit" form="kiosk-exit" disabled={pending || code.length < 4}>
-            Quitter
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

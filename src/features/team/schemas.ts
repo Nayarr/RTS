@@ -2,7 +2,14 @@ import { z } from 'zod';
 import { PASSWORD_MIN_LENGTH } from '@/features/auth/schemas';
 import type { CreateAccountInput } from './types';
 
-export const ROLE_VALUES = ['direction', 'reception', 'accountant', 'technician', 'kiosk'] as const;
+export const ROLE_VALUES = [
+  'direction',
+  'reception',
+  'accountant',
+  'technician',
+  'kiosk',
+  'kiosk_signature',
+] as const;
 
 /** Couleurs proposées pour le planning (reprises de l'ancienne appli). */
 export const TECHNICIAN_COLORS = [

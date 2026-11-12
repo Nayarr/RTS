@@ -26,7 +26,7 @@ select results_eq(
 
 -- Borne
 select public.request_repair_order_signature('50000000-0000-0000-0000-000000001251', 'kiosk');
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');  -- borne
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');  -- borne
 select results_eq(
   $$ select public.kiosk_pending_signature() -> 'roadside' ->> 'address',
             (public.kiosk_pending_signature() -> 'roadside' ->> 'price')::numeric $$,
@@ -69,7 +69,7 @@ update public.quote_lines set unit_price = 130 where quote_id = :'quote' and lin
 
 -- Devis sur la borne
 select (public.request_quote_signature(:'quote')) ->> 'id' as request \gset
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');
 select results_eq(
   $$ select public.kiosk_pending_signature() ->> 'kind', public.kiosk_pending_signature() -> 'roadside' ->> 'address',
             (public.kiosk_pending_signature() -> 'roadside' ->> 'price')::numeric $$,

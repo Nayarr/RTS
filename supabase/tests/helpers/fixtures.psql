@@ -9,14 +9,16 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e1', 'reception@test.fr'),
   ('00000000-0000-0000-0000-0000000000a1', 'tech.alice@test.fr'),
   ('00000000-0000-0000-0000-0000000000b1', 'tech.bruno@test.fr'),
-  ('00000000-0000-0000-0000-0000000000c1', 'borne@test.fr');
+  ('00000000-0000-0000-0000-0000000000c1', 'borne@test.fr'),
+  ('00000000-0000-0000-0000-0000000000c2', 'borne.signature@test.fr');
 
 insert into public.profiles (id, email, full_name, role) values
   ('00000000-0000-0000-0000-0000000000d1', 'direction@test.fr', 'Direction', 'direction'),
   ('00000000-0000-0000-0000-0000000000e1', 'reception@test.fr', 'Réception', 'reception'),
   ('00000000-0000-0000-0000-0000000000a1', 'tech.alice@test.fr', 'Alice', 'technician'),
   ('00000000-0000-0000-0000-0000000000b1', 'tech.bruno@test.fr', 'Bruno', 'technician'),
-  ('00000000-0000-0000-0000-0000000000c1', 'borne@test.fr', 'Borne', 'kiosk');
+  ('00000000-0000-0000-0000-0000000000c1', 'borne@test.fr', 'Borne', 'kiosk'),
+  ('00000000-0000-0000-0000-0000000000c2', 'borne.signature@test.fr', 'Borne signature', 'kiosk_signature');
 
 insert into public.technicians (id, profile_id, display_name, legacy_email) values
   ('10000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'Alice', 'tech.alice@test.fr'),

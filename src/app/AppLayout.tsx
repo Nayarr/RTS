@@ -142,8 +142,8 @@ export function AppLayout() {
   useNavHistoryTracker();
   const { data: profile } = useProfile();
   if (profile?.role === 'technician') return <TechnicianLayout />;
-  // Borne de pointage : plein écran, sans menu.
-  if (profile?.role === 'kiosk') {
+  // Bornes (pointage, signature) : plein écran, sans menu.
+  if (profile?.role === 'kiosk' || profile?.role === 'kiosk_signature') {
     return (
       <main className="min-h-dvh">
         <Outlet />

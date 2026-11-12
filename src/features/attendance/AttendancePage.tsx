@@ -344,7 +344,7 @@ function KioskSettingsCard({ onExitCode }: { onExitCode: () => void }) {
       </div>
       <div className="card-b col gap-4">
         <p className="hint">
-          Sur la tablette de l’atelier, connecte-toi avec le compte « Borne atelier » : l’écran de pointage
+          Sur la tablette de l’atelier, connecte-toi avec le compte « Borne badgeage » : l’écran de pointage
           s’ouvre en plein écran. Les codes PIN des techniciens se règlent dans{' '}
           <Link to="/equipe" className="link">
             Équipe

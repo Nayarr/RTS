@@ -8225,6 +8225,7 @@ export type Database = {
       is_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_migration_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_office: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_signature_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_system_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_tailgate_check_line: { Args: { p_description: string; p_package_id: string }; Returns: boolean };
       is_valid_siret: { Args: { p_siret: string }; Returns: boolean };
@@ -8234,11 +8235,13 @@ export type Database = {
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
       kiosk_exit_code_is_set: { Args: Record<PropertyKey, never>; Returns: boolean };
       kiosk_pending_signature: { Args: Record<PropertyKey, never>; Returns: Json };
+      kiosk_pending_signatures: { Args: Record<PropertyKey, never>; Returns: Json };
       kiosk_ping: { Args: Record<PropertyKey, never>; Returns: undefined };
       kiosk_sign_repair_order: {
         Args: { p_request_id: string; p_signature_file_id: string; p_signer_name: string };
         Returns: undefined;
       };
+      kiosk_signature_json: { Args: { p_request_id: string }; Returns: Json };
       kiosk_status: { Args: Record<PropertyKey, never>; Returns: Json };
       kiosk_too_many_attempts: { Args: Record<PropertyKey, never>; Returns: boolean };
       labor_rate_for: {
@@ -8959,7 +8962,7 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: 'direction' | 'reception' | 'technician' | 'kiosk' | 'accountant';
+      app_role: 'direction' | 'reception' | 'technician' | 'kiosk' | 'accountant' | 'kiosk_signature';
       appointment_status: 'requested' | 'planned' | 'converted' | 'cancelled';
       client_kind: 'pro' | 'individual';
       client_message_type:
@@ -9142,7 +9145,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ['direction', 'reception', 'technician', 'kiosk', 'accountant'],
+      app_role: ['direction', 'reception', 'technician', 'kiosk', 'accountant', 'kiosk_signature'],
       appointment_status: ['requested', 'planned', 'converted', 'cancelled'],
       client_kind: ['pro', 'individual'],
       client_message_type: [

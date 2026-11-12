@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 z.config(z.locales.fr()); // messages de validation en français
 
-const ROLES = ['direction', 'reception', 'accountant', 'technician', 'kiosk'] as const;
+const ROLES = ['direction', 'reception', 'accountant', 'technician', 'kiosk', 'kiosk_signature'] as const;
 const BAN_FOREVER = '876000h'; // ~100 ans : compte bloqué jusqu'à réactivation
 
 const technicianSchema = z.object({

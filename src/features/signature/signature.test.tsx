@@ -9,7 +9,7 @@ import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { fetchSettings } from '@/features/settings/api';
 import { renderRoutes } from '@/test/render';
 import {
-  fetchKioskPendingSignature,
+  fetchKioskPendingSignatures,
   fetchSignatureRequest,
   kioskSign,
   requestSignature,
@@ -18,7 +18,7 @@ import {
   type SignatureRequest,
 } from './api';
 import { remainingPercent, secondsLeft, signatureShareMessage } from './domain';
-import { KioskSignatureDialog } from './KioskSignatureDialog';
+import { SignatureKioskPage } from './SignatureKioskPage';
 import { SignatureRequestPanel } from './SignatureRequestPanel';
 
 vi.mock('./api', async (importOriginal) => ({
@@ -26,7 +26,7 @@ vi.mock('./api', async (importOriginal) => ({
   requestSignature: vi.fn(),
   cancelSignatureRequest: vi.fn(),
   fetchSignatureRequest: vi.fn(),
-  fetchKioskPendingSignature: vi.fn(),
+  fetchKioskPendingSignatures: vi.fn(),
   kioskSign: vi.fn(),
   signOnline: vi.fn(),
 }));
@@ -40,6 +40,11 @@ vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   fetchClientContact: vi.fn().mockResolvedValue({ email: 'compta@dupont.fr', phone: '0612345678' }),
   updateClientContact: vi.fn(),
+}));
+// Borne de signature : plein écran et présence simulés, nom de l'atelier
+vi.mock('@/features/kiosk/use-kiosk-mode', () => ({ useKioskMode: vi.fn() }));
+vi.mock('@/features/kiosk/api', () => ({
+  fetchCompanyName: vi.fn().mockResolvedValue('RAPID TRUCK SERVICE'),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 // Zone de signature simulée : le dessin au doigt n'existe pas dans jsdom.
@@ -149,7 +154,7 @@ describe('signature : bureau', () => {
   });
 });
 
-describe('signature : borne', () => {
+describe('signature : borne de signature', () => {
   const pending: KioskSignatureRequest = {
     ...request({ seconds_left: 45 }),
     number: 'OR00512',
@@ -157,30 +162,40 @@ describe('signature : borne', () => {
     client_name: 'Transports Dupont',
     requested_work: 'Freins avant\nVidange',
   };
+  const renderKiosk = () => renderRoutes([{ path: '/', element: <SignatureKioskPage /> }]);
+  /** Le client touche « Signer » sur son document : la fenêtre de signature s'ouvre. */
+  const openSignature = async (name: string) => {
+    await userEvent.click(await screen.findByRole('button', { name: `Signer : ${name}` }));
+  };
 
   it('dépannage en zone 3 : lieu et forfait dans la fenêtre de signature', async () => {
-    vi.mocked(fetchKioskPendingSignature).mockResolvedValue({
-      ...pending,
-      roadside: { address: 'Aire de Roissy', label: 'Forfait déplacement zone 3', price: 130 },
-    });
-    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
+    vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([
+      {
+        ...pending,
+        roadside: { address: 'Aire de Roissy', label: 'Forfait déplacement zone 3', price: 130 },
+      },
+    ]);
+    renderKiosk();
+    await openSignature('Ordre de réparation OR00512');
     const summary = await screen.findByRole('group', { name: 'Dépannage extérieur' });
     expect(summary).toHaveTextContent('Lieu d’intervention : Aire de Roissy');
     expect(summary).toHaveTextContent(/Forfait déplacement zone 3\s*130,00\s€ HT/);
   });
 
   it('OR à l’atelier : pas de lieu dans la fenêtre de signature', async () => {
-    vi.mocked(fetchKioskPendingSignature).mockResolvedValue({ ...pending, roadside: null });
-    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
+    vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([{ ...pending, roadside: null }]);
+    renderKiosk();
+    await openSignature('Ordre de réparation OR00512');
     await screen.findByRole('dialog');
     expect(screen.queryByRole('group', { name: 'Dépannage extérieur' })).toBeNull();
   });
 
   it('demande affichée avec le temps restant ; signature enregistrée puis merci', async () => {
-    vi.mocked(fetchKioskPendingSignature).mockResolvedValue(pending);
+    vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([pending]);
     vi.mocked(uploadFile).mockResolvedValue('file1');
     vi.mocked(kioskSign).mockResolvedValue();
-    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
+    renderKiosk();
+    await openSignature('Ordre de réparation OR00512');
 
     const dialog = await screen.findByRole('dialog', { name: 'Signature de l’ordre de réparation OR00512' });
     expect(within(dialog).getByRole('timer')).toHaveAccessibleName(/Temps restant : 4\d secondes/);
@@ -190,7 +205,7 @@ describe('signature : borne', () => {
         .map((item) => item.textContent),
     ).toEqual(['Freins avant', 'Vidange']);
     await userEvent.type(within(dialog).getByLabelText('Votre nom (facultatif)'), 'Paul Dupont');
-    vi.mocked(fetchKioskPendingSignature).mockResolvedValue(null);
+    vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([]);
     await userEvent.click(within(dialog).getByRole('button', { name: 'Valider ma signature' }));
     await waitFor(() => expect(kioskSign).toHaveBeenCalledWith('sr1', 'Paul Dupont', 'file1'));
     expect(uploadFile).toHaveBeenCalledWith(expect.any(Blob), {
@@ -201,14 +216,17 @@ describe('signature : borne', () => {
   });
 
   it('devis à signer : titre du devis, travaux et total TTC', async () => {
-    vi.mocked(fetchKioskPendingSignature).mockResolvedValue({
-      ...pending,
-      kind: 'quote',
-      number: 'DV00042',
-      total_ttc: 1234.5,
-      requested_work: 'Remplacement plaquettes',
-    });
-    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
+    vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([
+      {
+        ...pending,
+        kind: 'quote',
+        number: 'DV00042',
+        total_ttc: 1234.5,
+        requested_work: 'Remplacement plaquettes',
+      },
+    ]);
+    renderKiosk();
+    await openSignature('Devis DV00042');
     const dialog = await screen.findByRole('dialog', { name: 'Signature du devis DV00042' });
     expect(
       within(dialog).getByText('En signant, vous acceptez ce devis et les travaux ci-dessous.'),
@@ -217,10 +235,10 @@ describe('signature : borne', () => {
     expect(within(dialog).getByText(/1\s234,50\s€/)).toBeInTheDocument();
   });
 
-  it('rien à signer : pas de fenêtre', async () => {
-    vi.mocked(fetchKioskPendingSignature).mockResolvedValue(null);
-    renderRoutes([{ path: '/', element: <KioskSignatureDialog /> }]);
-    await waitFor(() => expect(fetchKioskPendingSignature).toHaveBeenCalled());
+  it('rien à signer : écran d’attente, pas de fenêtre', async () => {
+    vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([]);
+    renderKiosk();
+    expect(await screen.findByText('Aucun document à signer pour le moment')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

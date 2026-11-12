@@ -7,7 +7,8 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   direction: 'Direction',
   reception: 'Réception',
   technician: 'Technicien',
-  kiosk: 'Borne atelier',
+  kiosk: 'Borne badgeage',
+  kiosk_signature: 'Borne signature',
   accountant: 'Comptable',
 };
 

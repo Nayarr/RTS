@@ -120,9 +120,11 @@ test('zone 3 : lieu et forfait au-dessus de la signature à la création, puis s
   await expect(panel.getByRole('status')).toContainText(/En attente sur la borne/);
 
   const kiosk = await newPage(browser, testInfo);
-  await login(kiosk.page, 'borne@rts.local');
+  await login(kiosk.page, 'signature@rts.local');
+  const kioskCard = kiosk.page.getByRole('listitem').filter({ hasText: plate });
+  await kioskCard.getByRole('button', { name: /^Signer : Ordre de réparation / }).click({ timeout: 15_000 });
   const dialog = kiosk.page.getByRole('dialog', { name: /Signature de l’ordre de réparation OR\d{5}/ });
-  await expect(dialog).toContainText(plate, { timeout: 15_000 });
+  await expect(dialog).toContainText(plate);
   await expectRoadside(kiosk.page);
   await kiosk.close();
   await panel.getByRole('button', { name: 'Annuler la demande' }).click();

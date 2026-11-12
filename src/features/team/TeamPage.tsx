@@ -31,6 +31,7 @@ const ROLE_BADGE: Record<TeamMember['role'], string> = {
   accountant: 's-blue',
   technician: 's-grey',
   kiosk: 's-grey',
+  kiosk_signature: 's-grey',
 };
 
 const ROLE_HINTS: { role: TeamMember['role']; hint: string }[] = [

@@ -23,7 +23,7 @@ select throws_ok($$ select public.request_repair_order_signature('50000000-0000-
   '42501', null, 'Seul le bureau demande une signature');
 select throws_ok($$ select public.kiosk_pending_signature() $$, '42501', null, 'La demande ne s''affiche que sur la borne');
 
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');  -- borne
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');  -- borne
 select public.kiosk_pending_signature() as pending \gset
 select results_eq(
   $$ select x ->> 'vehicle_plate', x ->> 'client_name', x ->> 'requested_work' from (select public.kiosk_pending_signature() x) s $$,
@@ -55,7 +55,7 @@ update public.signature_requests set expires_at = now() - interval '1 minute' wh
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
 select is(public.repair_order_signature_request('50000000-0000-0000-0000-000000000053') ->> 'status', 'expired',
           'Pas signé dans la minute : demande expirée pour le bureau');
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000c2');
 select is(public.kiosk_pending_signature(), null, 'La fenêtre a disparu de la borne');
 select pg_temp.fake_file('signature') as late_sig \gset
 select throws_ok(format($$ select public.kiosk_sign_repair_order(%L, '', %L) $$, :'late'::jsonb ->> 'id', :'late_sig'),
