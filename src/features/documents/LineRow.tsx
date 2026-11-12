@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { decimalText, formatEuro, parseDecimal } from '@/lib/numbers';
 import { cn } from '@/lib/utils';
+import { LaborCategoryPill } from './LaborCategoryPill';
 import { isOfferedLine, lineNet, type EditableLine, type LineType } from './lines';
 import type { LineDrag } from './SortableLines';
 
@@ -23,7 +24,7 @@ const INLINE_INPUT =
   'h-[34px] rounded-lg border-transparent bg-transparent px-2 hover:border-input focus-visible:border-ring disabled:opacity-100';
 
 type NumericField = 'unit_price' | 'quantity' | 'discount_percent';
-export type LinePatch = Partial<Pick<EditableLine, 'description' | NumericField>>;
+export type LinePatch = Partial<Pick<EditableLine, 'description' | 'labor_category' | NumericField>>;
 
 /** Valeur saisie → valeur enregistrable (undefined = saisie refusée, on garde l'ancienne). */
 function parseField(field: NumericField, text: string): number | null | undefined {
@@ -144,14 +145,25 @@ export function LineRow({
             </button>
           )}
           <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-2">
-            {label && (
-              <span className="tag mt-1.5 shrink-0">
-                {label}
-                {line.line_type === 'labor' &&
-                  line.hours !== null &&
-                  line.hours !== undefined &&
-                  ` · ${decimalText(line.hours)} h`}
-              </span>
+            {line.line_type === 'labor' && line.labor_category !== undefined ? (
+              <LaborCategoryPill
+                category={line.labor_category}
+                hours={line.hours}
+                unitPrice={line.unit_price}
+                description={line.description}
+                locked={locked}
+                onChange={onSave}
+              />
+            ) : (
+              label && (
+                <span className="tag mt-1.5 shrink-0">
+                  {label}
+                  {line.line_type === 'labor' &&
+                    line.hours !== null &&
+                    line.hours !== undefined &&
+                    ` · ${decimalText(line.hours)} h`}
+                </span>
+              )
             )}
             <Textarea
               aria-label="Désignation"

@@ -51,8 +51,8 @@ test('extincteur estimé 0,5 h : 0,5 h au devis et à la facture ; autre travail
 
   for (const path of [`/devis/${quote.data}`, `/factures/${invoice.data}`]) {
     await page.goto(path);
-    await expect(page.getByText('Main d’œuvre · 0,5 h')).toHaveCount(1);
-    await expect(page.getByText('Main d’œuvre · 1 h')).toHaveCount(1);
+    await expect(page.getByText(/^MO .+ · 0,5 h$/)).toHaveCount(1);
+    await expect(page.getByText(/^MO .+ · 1 h$/)).toHaveCount(1);
     await expect(page.getByRole('textbox', { name: 'Désignation' }).nth(1)).toHaveValue(
       'Remplacement Extincteur 6 kg camion',
     );

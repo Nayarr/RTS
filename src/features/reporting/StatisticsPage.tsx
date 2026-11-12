@@ -1,5 +1,8 @@
+import type { CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchMonthlyStatistics } from './api';
+import { LABOR_CATEGORY_COLORS } from '@/features/documents/lines';
+import { decimalText } from '@/lib/numbers';
+import { fetchLaborRevenue, fetchMonthlyStatistics } from './api';
 import { BarChart } from './BarChart';
 import { compactAmount, formatEuroRounded, monthLabel, monthLongLabel } from './domain';
 import { ReportingHeader } from './ReportingTabs';
@@ -10,6 +13,7 @@ const PARTS_FILL = 'color-mix(in srgb, var(--primary) 40%, var(--card))';
 /** Statistiques mensuelles : chiffre d'affaires des 12 derniers mois. */
 export function StatisticsPage() {
   const stats = useQuery({ queryKey: ['reporting', 'monthly-statistics'], queryFn: fetchMonthlyStatistics });
+  const labor = useQuery({ queryKey: ['reporting', 'labor-revenue'], queryFn: fetchLaborRevenue });
   const months = stats.data ?? [];
   const sum = (pick: (m: (typeof months)[number]) => number) =>
     months.reduce((total, m) => total + pick(m), 0);
@@ -47,6 +51,30 @@ export function StatisticsPage() {
               <span className="kpi-v">{sum((m) => m.invoice_count)}</span>
             </li>
           </ul>
+
+          {labor.isSuccess && labor.data.length > 0 && (
+            <section aria-labelledby="stats-labor" className="col gap-2.5">
+              <h2 className="h2" id="stats-labor">
+                CA main d’œuvre par catégorie · 12 derniers mois
+              </h2>
+              <ul className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+                {labor.data.map((item) => (
+                  <li key={item.category} className="card kpi">
+                    <span className="kpi-l row gap-1.5">
+                      <i
+                        aria-hidden
+                        className="inline-block size-2.5 rounded-full bg-(--c)"
+                        style={{ '--c': LABOR_CATEGORY_COLORS[item.category] } as CSSProperties}
+                      />
+                      Main d’œuvre {item.label}
+                    </span>
+                    <span className="kpi-v">{formatEuroRounded(item.amount_ht)}</span>
+                    <span className="hint">{decimalText(item.hours)} h facturées</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section data-slot="card" className="card" aria-labelledby="stats-chart">
             <div className="card-h flex-wrap">

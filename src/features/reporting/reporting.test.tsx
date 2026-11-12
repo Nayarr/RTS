@@ -15,7 +15,11 @@ import {
 import { StatisticsPage } from './StatisticsPage';
 import { TreasuryPage } from './TreasuryPage';
 
-vi.mock('./api', () => ({ fetchMonthlyStatistics: vi.fn(), fetchTreasury: vi.fn() }));
+vi.mock('./api', () => ({
+  fetchMonthlyStatistics: vi.fn(),
+  fetchTreasury: vi.fn(),
+  fetchLaborRevenue: vi.fn().mockResolvedValue([]),
+}));
 
 const month = (value: string, overrides: Partial<MonthlyStatistics> = {}): MonthlyStatistics => ({
   month: value,

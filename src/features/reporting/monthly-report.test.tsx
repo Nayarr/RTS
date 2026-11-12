@@ -19,6 +19,7 @@ import { StatisticsPage } from './StatisticsPage';
 
 vi.mock('./api', () => ({
   fetchMonthlyStatistics: vi.fn().mockResolvedValue([]),
+  fetchLaborRevenue: vi.fn().mockResolvedValue([]),
   fetchMonthlyReport: vi.fn(),
   fetchProfitability: vi.fn(),
   fetchTechnicianPerformance: vi.fn(),

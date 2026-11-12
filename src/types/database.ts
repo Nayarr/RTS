@@ -6900,6 +6900,7 @@ export type Database = {
           merged_into_repair_order_id: string | null;
           notes: string | null;
           number: string | null;
+          order_created: boolean | null;
           plate: string | null;
           public_token: string | null;
           refused_at: string | null;
@@ -8246,6 +8247,15 @@ export type Database = {
       labor_rate_for: {
         Args: { p_client_id: string; p_vehicle_type: Database['public']['Enums']['vehicle_type'] };
         Returns: number;
+      };
+      labor_revenue_by_category: {
+        Args: { p_months?: number };
+        Returns: {
+          amount_ht: number;
+          category: Database['public']['Enums']['labor_category'];
+          hours: number;
+          label: string;
+        }[];
       };
       last_working_day_of_month: { Args: { p_day: string }; Returns: string };
       license_block_reason: {
