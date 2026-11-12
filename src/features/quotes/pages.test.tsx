@@ -189,6 +189,37 @@ describe('liste des devis', () => {
     expect(screen.queryByText(/Transports Martin/)).toBeNull();
   });
 
+  it('devis accepté dont l’OR est créé : « Transformé en OR », hors des devis à transformer', async () => {
+    vi.mocked(fetchQuotes).mockResolvedValue([
+      quote({
+        id: 'q4',
+        number: 'DV00004',
+        status: 'accepted',
+        client_name: 'À transformer',
+        order_created: false,
+      }),
+      quote({
+        id: 'q5',
+        number: 'DV00005',
+        status: 'accepted',
+        client_name: 'Déjà en atelier',
+        order_created: true,
+      }),
+    ]);
+    setup('/devis');
+    expect(await screen.findByText(/Déjà en atelier/)).toBeInTheDocument();
+    expect(screen.getByText('Transformé en OR', { selector: '.badge' })).toBeInTheDocument();
+    expect(screen.getByText('Acceptés à transformer en OR').previousElementSibling).toHaveTextContent('1');
+
+    await userEvent.click(screen.getByRole('button', { name: /^Accepté/ }));
+    expect(screen.getByText(/À transformer/)).toBeInTheDocument();
+    expect(screen.queryByText(/Déjà en atelier/)).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: /^Transformés en OR/ }));
+    expect(screen.getByText(/Déjà en atelier/)).toBeInTheDocument();
+    expect(screen.queryByText(/À transformer/)).toBeNull();
+  });
+
   it('nouveau devis sans OR, puis ouverture de l’éditeur', async () => {
     vi.mocked(findClientByName).mockResolvedValue({ id: 'c1', name: 'Garage Nouveau' });
     vi.mocked(createQuote).mockResolvedValue('q9');
