@@ -63,7 +63,7 @@ Deno.test('« la pièce disque de frein de l’OR 488 est arrivée » : passage 
   const { db, inserts } = fakeDb({ v_repair_orders_overview: [ORDER], ro_lines: PARTS });
   const result = await runAction(
     db,
-    'preparer_piece_recue',
+    'preparer_statut_piece',
     { numero_or: '488', piece: 'disque de frein' },
     null,
   );
@@ -73,6 +73,7 @@ Deno.test('« la pièce disque de frein de l’OR 488 est arrivée » : passage 
     repair_order_id: 'ro1',
     line_id: 'l1',
     description: 'Disque de frein avant',
+    status: 'received',
   });
   assertEquals(
     inserts[0]?.summary,
@@ -82,17 +83,17 @@ Deno.test('« la pièce disque de frein de l’OR 488 est arrivée » : passage 
 
 Deno.test('pièce introuvable, ambiguë ou déjà reçue : rien de préparé, l’agent sait pourquoi', async () => {
   const { db, inserts } = fakeDb({ v_repair_orders_overview: [ORDER], ro_lines: PARTS });
-  const missing = await runAction(db, 'preparer_piece_recue', { numero_or: '488', piece: 'turbo' }, null);
+  const missing = await runAction(db, 'preparer_statut_piece', { numero_or: '488', piece: 'turbo' }, null);
   assertStringIncludes(missing.content, 'pas de pièce « turbo »');
   assertStringIncludes(missing.content, '« Plaquettes de frein avant »');
-  const both = await runAction(db, 'preparer_piece_recue', { numero_or: '488', piece: 'frein' }, null);
+  const both = await runAction(db, 'preparer_statut_piece', { numero_or: '488', piece: 'frein' }, null);
   assertStringIncludes(both.content, 'plusieurs pièces correspondent');
   const received = await runAction(
     db,
-    'preparer_piece_recue',
+    'preparer_statut_piece',
     { numero_or: '488', piece: 'filtre à air' },
     null,
   );
-  assertStringIncludes(received.content, 'déjà reçue');
+  assertStringIncludes(received.content, 'déjà en « Reçue »');
   assertEquals(inserts, []);
 });
