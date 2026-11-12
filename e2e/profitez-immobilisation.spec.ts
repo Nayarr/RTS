@@ -40,11 +40,11 @@ test('camion à l’atelier : échéances proposées sur l’OR, mail modèle mo
   const id = String(Date.now()).slice(-6);
   const plate = `PI-${id}`;
   const client = `Transports Martin ${id}`;
-  // Véhicule : contrôle technique dans 20 jours ; vidange faite il y a 58 000 km
+  // Véhicule : contrôle technique dans 20 jours (jour de Paris, comme l’appli) ; vidange faite il y a 58 000 km
   const order = sql(
     `with c as (insert into public.clients (name, email) values ('${client}', 'contact.${id}@e2e.fr') returning id),
           v as (insert into public.vehicles (plate, vehicle_type, client_id, ct_due_date)
-                select '${plate}', 'pl', id, current_date + 20 from c returning id, client_id),
+                select '${plate}', 'pl', id, public.paris_date(now()) + 20 from c returning id, client_id),
           old as (insert into public.repair_orders (vehicle_id, client_id, requested_work, status, mileage, created_at)
                   select id, client_id, 'Vidange moteur', 'assigned', 400000, now() - interval '8 months' from v
                   returning id),
@@ -94,9 +94,9 @@ test('création d’OR : échéances du véhicule connu ajoutées aux tâches', 
   sql(
     `with c as (insert into public.clients (name) values ('Transports Création ${id}') returning id),
           v as (insert into public.vehicles (plate, vehicle_type, client_id, ct_due_date)
-                select '${plate}', 'pl', id, current_date + 10 from c returning id)
+                select '${plate}', 'pl', id, public.paris_date(now()) + 10 from c returning id)
      insert into public.vehicle_oil_changes (vehicle_id, done_on, mileage)
-     select id, current_date - 400, 380000 from v`,
+     select id, public.paris_date(now()) - 400, 380000 from v`,
   );
 
   await loginAs(page, 'reception@rts.local');
@@ -157,7 +157,7 @@ test('devis : plus de 40 000 km depuis la dernière vidange, vidange proposée p
           v as (insert into public.vehicles (plate, vehicle_type, client_id) select '${plate}', 'pl', id from c
                 returning id, client_id),
           d as (insert into public.vehicle_oil_changes (vehicle_id, done_on, mileage)
-                select id, current_date - 90, 400000 from v)
+                select id, public.paris_date(now()) - 90, 400000 from v)
      insert into public.repair_orders (vehicle_id, client_id, requested_work, status, mileage)
      select id, client_id, 'Disques et plaquettes avant', 'in_progress', 441000 from v returning id`,
   ).split('\n')[0];
