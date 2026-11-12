@@ -6900,6 +6900,7 @@ export type Database = {
           merged_into_repair_order_id: string | null;
           notes: string | null;
           number: string | null;
+          order_created: boolean | null;
           plate: string | null;
           public_token: string | null;
           refused_at: string | null;

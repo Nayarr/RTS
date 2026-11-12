@@ -151,7 +151,7 @@ export function QuotePage() {
         title={
           <>
             <span>Devis{quote.plate ? ` · ${quote.plate}` : ''}</span>
-            <QuoteStatusBadge status={quote.status} />
+            <QuoteStatusBadge status={quote.status} orderCreated={quote.order_created} />
           </>
         }
         actions={

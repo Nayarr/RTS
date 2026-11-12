@@ -30,7 +30,7 @@ export type ClientInvoice = Pick<
 >;
 export type ClientQuote = Pick<
   Tables<'v_quotes_overview'>,
-  'id' | 'number' | 'status' | 'created_at' | 'total_ttc' | 'plate'
+  'id' | 'number' | 'status' | 'created_at' | 'total_ttc' | 'plate' | 'order_created'
 >;
 
 // ---------------------------------------------------------------- Clients
@@ -83,7 +83,7 @@ export async function fetchClient(id: string): Promise<ClientDetail | null> {
       .order('created_at', { ascending: false }),
     supabase
       .from('v_quotes_overview')
-      .select('id, number, status, created_at, total_ttc, plate')
+      .select('id, number, status, created_at, total_ttc, plate, order_created')
       .eq('client_id', id)
       .order('created_at', { ascending: false }),
     supabase

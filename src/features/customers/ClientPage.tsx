@@ -510,7 +510,9 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                       </b>
                       <span>{formatEuro(quote.total_ttc)} TTC</span>
                     </span>
-                    {quote.status && <QuoteStatusBadge status={quote.status} />}
+                    {quote.status && (
+                      <QuoteStatusBadge status={quote.status} orderCreated={quote.order_created} />
+                    )}
                   </Link>
                 </li>
               ))}
