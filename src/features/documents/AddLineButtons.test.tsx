@@ -146,6 +146,24 @@ describe('ajout d’une pièce', () => {
     );
   });
 
+  it('liste des pièces de la base fermée par un clic ailleurs, rouverte à la saisie', async () => {
+    vi.mocked(fetchParts).mockResolvedValue([basePart]);
+    renderButtons();
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter une pièce' }));
+    const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
+    const designation = within(dialog).getByLabelText('Désignation');
+    await userEvent.type(designation, 'plaq');
+    expect(await within(dialog).findByRole('list', { name: 'Pièces de la base' })).toBeInTheDocument();
+
+    // Clic sur un autre champ : la liste se ferme pour laisser la place
+    await userEvent.click(within(dialog).getByLabelText('Quantité'));
+    expect(within(dialog).queryByRole('list', { name: 'Pièces de la base' })).toBeNull();
+
+    // La saisie de la désignation reprend : la liste revient
+    await userEvent.type(designation, 'u');
+    expect(await within(dialog).findByRole('list', { name: 'Pièces de la base' })).toBeInTheDocument();
+  });
+
   it('pièce hors de la base sans prix de vente : ajoutée, le prix se complète sur la ligne', async () => {
     vi.mocked(fetchParts).mockResolvedValue([]);
     vi.mocked(saveCatalogPart).mockResolvedValue('new-part');
