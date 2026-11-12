@@ -1,6 +1,6 @@
 // Actions que l'assistant de la direction peut PRÉPARER : rendez-vous (pris, déplacé ou annulé),
 // travail à ajouter sur un OR, technicien à assigner, date prévue d'un OR, OR passé « Facture à
-// faire », brouillon de facture, pièce commandée arrivée (passée « Reçue »), échéance d'un véhicule, mails (un seul, un par client à partir
+// faire », brouillon de facture, statut d'une pièce (à commander, commandée, reçue), échéance d'un véhicule, mails (un seul, un par client à partir
 // d'un modèle, ou un mail groupé au même texte pour tous les clients ou une partie ; envoyés par
 // mail-send après validation, modifiables avant). Un outil ne fait que lire
 // (vérifier l'OR, le véhicule, le technicien) puis noter l'action proposée dans agent_actions ; elle
@@ -993,15 +993,29 @@ export function matchingParts(parts: PartLine[], spoken: string): PartLine[] {
   });
 }
 
+/** Statuts d'une pièce, tels que dits à l'agent, et leur nom dans la base et dans l'appli. */
+export const PART_STATUSES = {
+  a_commander: { status: 'to_order', label: 'À commander' },
+  commandee: { status: 'ordered', label: 'Commandée' },
+  recue: { status: 'received', label: 'Reçue' },
+} as const;
+type SpokenStatus = keyof typeof PART_STATUSES;
+const SPOKEN_STATUSES = Object.keys(PART_STATUSES) as [SpokenStatus, ...SpokenStatus[]];
+
 ACTION_TOOLS.push(
   action({
-    name: 'preparer_piece_recue',
+    name: 'preparer_statut_piece',
     description:
-      'Prépare le passage d’une pièce commandée en « Reçue » quand la direction dit qu’elle est arrivée (pièce désignée par son nom ou sa référence, sur l’OR dit ou celui du véhicule). Ne la change pas : la direction valide ensuite.',
+      'Prépare le changement de statut d’une pièce d’un OR : « À commander », « Commandée » (la direction dit qu’elle l’a commandée) ou « Reçue » (elle est arrivée). Pièce désignée par son nom ou sa référence, sur l’OR dit ou celui du véhicule. Ne la change pas : la direction valide ensuite.',
     input_schema: schema(
       {
         ...ORDER_PROPERTIES,
-        piece: string('Pièce arrivée, telle que dite (désignation ou référence)'),
+        piece: string('Pièce, telle que dite (désignation ou référence)'),
+        statut: {
+          type: 'string',
+          enum: SPOKEN_STATUSES,
+          description: 'Statut voulu : a_commander, commandee ou recue (arrivée). Par défaut : recue.',
+        },
       },
       ['piece'],
     ),
@@ -1009,8 +1023,10 @@ ACTION_TOOLS.push(
       numero_or: z.string().trim().max(20).optional(),
       immatriculation: z.string().trim().max(20).optional(),
       piece: text(120),
+      statut: z.enum(SPOKEN_STATUSES).default('recue'),
     }),
     run: async (db, input, conversationId) => {
+      const target = PART_STATUSES[input.statut];
       const order = await findOrder(db, input);
       const { data, error } = await db
         .from('ro_lines')
@@ -1025,20 +1041,20 @@ ACTION_TOOLS.push(
       const names = (list: PartLine[]) => list.map((part) => `« ${part.description} »`).join(', ');
       const found = matchingParts(parts, input.piece);
       if (!found.length) throw new Error(`pas de pièce « ${input.piece} » sur ${where} : ${names(parts)}`);
-      const waiting = found.filter((part) => part.order_status !== 'received');
-      if (!waiting.length) {
-        throw new Error(`${names(found)} déjà reçue${found.length > 1 ? 's' : ''} sur ${where}`);
+      const toChange = found.filter((part) => part.order_status !== target.status);
+      if (!toChange.length) {
+        throw new Error(`${names(found)} déjà en « ${target.label} » sur ${where}`);
       }
-      if (waiting.length > 1) {
-        throw new Error(`plusieurs pièces correspondent sur ${where} : ${names(waiting)} ; laquelle ?`);
+      if (toChange.length > 1) {
+        throw new Error(`plusieurs pièces correspondent sur ${where} : ${names(toChange)} ; laquelle ?`);
       }
-      const part = waiting[0]!;
+      const part = toChange[0]!;
       return propose(
         db,
         conversationId,
         'part_received',
-        { repair_order_id: order.id, line_id: part.id, description: part.description },
-        `Pièce « ${part.description} » de ${where} : passer en « Reçue »`,
+        { repair_order_id: order.id, line_id: part.id, description: part.description, status: target.status },
+        `Pièce « ${part.description} » de ${where} : passer en « ${target.label} »`,
       );
     },
   }),

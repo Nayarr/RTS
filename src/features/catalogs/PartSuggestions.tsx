@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useDebounced } from '@/lib/use-debounced';
 import { formatEuro } from '@/lib/numbers';
 import type { Part } from './api';
@@ -6,6 +7,8 @@ import { useParts } from './hooks';
 /**
  * Pièces de la base proposées pendant la saisie de la désignation (ou de la référence) : un clic
  * remplit la fenêtre, pour repartir d'une pièce connue et ne changer que ce qu'il faut.
+ * Un clic ailleurs dans la fenêtre ferme la liste, pour atteindre les autres champs ;
+ * elle revient dès que la saisie change.
  */
 export function PartSuggestions({
   text,
@@ -21,9 +24,22 @@ export function PartSuggestions({
   const search = useDebounced(hidden ? '' : text, 250);
   const parts = useParts(search.trim().length >= 2 ? search : '');
   const suggestions = search.trim().length >= 2 ? (parts.data ?? []).slice(0, 8) : [];
-  if (hidden || suggestions.length === 0) return null;
+  const listRef = useRef<HTMLUListElement>(null);
+  // Saisie pour laquelle la liste a été fermée : rouverte quand la saisie change.
+  const [closedFor, setClosedFor] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && listRef.current?.contains(event.target)) return;
+      setClosedFor(text);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [text]);
+
+  if (hidden || suggestions.length === 0 || closedFor === text) return null;
   return (
-    <ul aria-label="Pièces de la base" className="divide-y rounded-md border bg-card">
+    <ul ref={listRef} aria-label="Pièces de la base" className="divide-y rounded-md border bg-card">
       {suggestions.map((part) => (
         <li key={part.id}>
           <button
