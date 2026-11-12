@@ -10,6 +10,15 @@ export async function fetchMonthlyStatistics(): Promise<MonthlyStatistics[]> {
   return data;
 }
 
+export type LaborRevenue = Database['public']['Functions']['labor_revenue_by_category']['Returns'][number];
+
+/** CA HT de la main d'œuvre par catégorie (PL, VUL…) sur les 12 derniers mois. */
+export async function fetchLaborRevenue(): Promise<LaborRevenue[]> {
+  const { data, error } = await supabase.rpc('labor_revenue_by_category');
+  if (error) throw error;
+  return data;
+}
+
 export interface ClientOverdue {
   client_id: string;
   client_name: string;

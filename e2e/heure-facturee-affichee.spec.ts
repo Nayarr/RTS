@@ -42,8 +42,8 @@ test('0,5 h estimée par le technicien : 1 h facturée et affichée sur le devis
 
   for (const path of [`/devis/${quote.data}`, `/factures/${invoice.data}`]) {
     await page.goto(path);
-    await expect(page.getByText('Main d’œuvre · 1 h')).toBeVisible();
-    await expect(page.getByText(/Main d’œuvre · 0,5 h/)).toHaveCount(0);
+    await expect(page.getByText(/^MO .+ · 1 h$/)).toBeVisible();
+    await expect(page.getByText(/MO .+ · 0,5 h/)).toHaveCount(0);
     await expect(page.getByRole('textbox', { name: 'Quantité' }).first()).toHaveValue('1');
   }
 
