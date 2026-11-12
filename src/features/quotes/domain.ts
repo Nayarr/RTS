@@ -11,6 +11,19 @@ export const QUOTE_STATUS_META: Record<QuoteStatus, { label: string; color: stri
 
 export const QUOTE_STATUS_ORDER: QuoteStatus[] = ['draft', 'in_progress', 'sent', 'accepted', 'refused'];
 
+/** Statut affiché : un devis accepté dont l'OR est créé passe dans « Transformé en OR ». */
+export type QuoteDisplayStatus = QuoteStatus | 'converted';
+
+export const CONVERTED_META = { label: 'Transformé en OR', color: '#3F6F8F' };
+
+export const quoteDisplayStatus = (quote: {
+  status: QuoteStatus;
+  order_created?: boolean | null;
+}): QuoteDisplayStatus => (quote.status === 'accepted' && quote.order_created ? 'converted' : quote.status);
+
+export const quoteStatusMeta = (status: QuoteDisplayStatus) =>
+  status === 'converted' ? CONVERTED_META : QUOTE_STATUS_META[status];
+
 export { computeTotals, lineNet, packageFitsVehicle, packagesFor } from '@/features/documents/lines';
 
 /** « Travaux déjà effectués » imprimés sur le devis : seulement ceux qui ont un prix (comme l'ancienne appli). */
