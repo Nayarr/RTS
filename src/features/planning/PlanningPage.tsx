@@ -252,7 +252,8 @@ function buildColumns(
 /** Planning de l'atelier : OR planifiés et rendez-vous, par semaine ou par jour. */
 export function PlanningPage() {
   const [params, setParams] = useSearchParams();
-  const view: PlanningView = params.get('vue') === 'jour' ? 'jour' : 'semaine';
+  // Vue du jour par défaut ; la semaine sur demande
+  const view: PlanningView = params.get('vue') === 'semaine' ? 'semaine' : 'jour';
   const requested = params.get('date') ?? '';
   const date = /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : todayIso();
   const days = periodDays(view, date);
@@ -350,7 +351,7 @@ export function PlanningPage() {
             </Button>
           </div>
           <div className="seg" role="group" aria-label="Affichage">
-            {(['semaine', 'jour'] as const).map((value) => (
+            {(['jour', 'semaine'] as const).map((value) => (
               <button
                 key={value}
                 type="button"
