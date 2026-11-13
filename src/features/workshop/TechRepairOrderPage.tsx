@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { OPEN_STATUSES, VEHICLE_TYPES } from '@/features/repair-orders/constants';
 import { useRepairOrder } from '@/features/repair-orders/hooks';
+import { SavBadge } from '@/features/repair-orders/sav';
 import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { DiagnosticHelp } from '@/features/knowledge/DiagnosticHelp';
 import { DIAGNOSTIC_HELP_ENABLED } from '@/features/knowledge/flags';
@@ -92,7 +93,10 @@ export function TechRepairOrderPage() {
             </span>
           </div>
         </div>
-        <StatusBadge status={order.status} />
+        <span className="row gap-1.5">
+          <SavBadge order={order} />
+          <StatusBadge status={order.status} />
+        </span>
       </header>
 
       {locked && (

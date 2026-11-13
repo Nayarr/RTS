@@ -842,6 +842,10 @@
   .s-orange {
     --c: #e8551e;
   }
+  /* SAV : OR de reprise non facturé */
+  .s-sav {
+    --c: #7c3aed;
+  }
   .tag {
     display: inline-flex;
     align-items: center;

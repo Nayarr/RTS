@@ -4654,6 +4654,8 @@ export type Database = {
           roadside_minutes: number | null;
           roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
+          sav_of_repair_order_id: string | null;
+          sav_responsible_technician_id: string | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
           technician_note: string | null;
@@ -4689,6 +4691,8 @@ export type Database = {
           roadside_minutes?: number | null;
           roadside_price_ht?: number | null;
           roadside_travel_hours?: number | null;
+          sav_of_repair_order_id?: string | null;
+          sav_responsible_technician_id?: string | null;
           status?: Database['public']['Enums']['repair_order_status'];
           technician_id?: string | null;
           technician_note?: string | null;
@@ -4724,6 +4728,8 @@ export type Database = {
           roadside_minutes?: number | null;
           roadside_price_ht?: number | null;
           roadside_travel_hours?: number | null;
+          sav_of_repair_order_id?: string | null;
+          sav_responsible_technician_id?: string | null;
           status?: Database['public']['Enums']['repair_order_status'];
           technician_id?: string | null;
           technician_note?: string | null;
@@ -4835,6 +4841,34 @@ export type Database = {
             columns: ['origin_repair_order_id'];
             isOneToOne: false;
             referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_of_repair_order_id_fkey';
+            columns: ['sav_of_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_of_repair_order_id_fkey';
+            columns: ['sav_of_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_of_repair_order_id_fkey';
+            columns: ['sav_of_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_responsible_technician_id_fkey';
+            columns: ['sav_responsible_technician_id'];
+            isOneToOne: false;
+            referencedRelation: 'technicians';
             referencedColumns: ['id'];
           },
           {
@@ -7262,6 +7296,10 @@ export type Database = {
           roadside_km: number | null;
           roadside_travel_hours: number | null;
           running_since: string | null;
+          sav_of_number: string | null;
+          sav_of_repair_order_id: string | null;
+          sav_responsible_name: string | null;
+          sav_responsible_technician_id: string | null;
           status: Database['public']['Enums']['repair_order_status'] | null;
           technician_color: string | null;
           technician_id: string | null;
@@ -7376,6 +7414,34 @@ export type Database = {
             columns: ['origin_repair_order_id'];
             isOneToOne: false;
             referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_of_repair_order_id_fkey';
+            columns: ['sav_of_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_of_repair_order_id_fkey';
+            columns: ['sav_of_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_of_repair_order_id_fkey';
+            columns: ['sav_of_repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_sav_responsible_technician_id_fkey';
+            columns: ['sav_responsible_technician_id'];
+            isOneToOne: false;
+            referencedRelation: 'technicians';
             referencedColumns: ['id'];
           },
           {
@@ -7867,6 +7933,8 @@ export type Database = {
           roadside_minutes: number | null;
           roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
+          sav_of_repair_order_id: string | null;
+          sav_responsible_technician_id: string | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
           technician_note: string | null;
@@ -7972,6 +8040,8 @@ export type Database = {
           roadside_minutes: number | null;
           roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
+          sav_of_repair_order_id: string | null;
+          sav_responsible_technician_id: string | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
           technician_note: string | null;
@@ -8222,6 +8292,7 @@ export type Database = {
         Args: { p_account_type: string; p_debit_day: number; p_issued: string; p_terms: number };
         Returns: string;
       };
+      invoice_is_sav: { Args: { p_invoice_id: string }; Returns: boolean };
       invoice_margin_vat: { Args: { p_purchase: number; p_rate: number; p_ttc: number }; Returns: number };
       invoiced_ro_lines: {
         Args: { p_from: string; p_to: string };
@@ -8241,6 +8312,7 @@ export type Database = {
       is_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_migration_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_office: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_sav_repair_order: { Args: { p_repair_order_id: string }; Returns: boolean };
       is_signature_kiosk: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_system_context: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_tailgate_check_line: { Args: { p_description: string; p_package_id: string }; Returns: boolean };
@@ -8322,6 +8394,8 @@ export type Database = {
           roadside_minutes: number | null;
           roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
+          sav_of_repair_order_id: string | null;
+          sav_responsible_technician_id: string | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
           technician_note: string | null;
@@ -8339,6 +8413,56 @@ export type Database = {
       mark_files_purged: { Args: { p_ids: string[] }; Returns: number };
       mark_in_progress_if_technician: { Args: { p_repair_order_id: string }; Returns: undefined };
       mark_orphan_files: { Args: { p_grace?: string }; Returns: number };
+      mark_repair_order_sav: {
+        Args: {
+          p_origin_repair_order_id: string;
+          p_repair_order_id: string;
+          p_responsible_technician_id?: string;
+        };
+        Returns: {
+          appointment_id: string | null;
+          assignment_changed_at: string;
+          client_id: string | null;
+          completed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_signature_file_id: string | null;
+          id: string;
+          inspection_required: boolean;
+          intervention_type: Database['public']['Enums']['intervention_type'];
+          legacy_id: string | null;
+          maintenance_contract_id: string | null;
+          mileage: number | null;
+          number: string;
+          origin_quote_id: string | null;
+          origin_repair_order_id: string | null;
+          planned_date: string | null;
+          planned_end: string | null;
+          planned_end_date: string | null;
+          planned_start: string | null;
+          pre_quote_work_settled_at: string | null;
+          requested_work: string;
+          roadside_address: string | null;
+          roadside_km: number | null;
+          roadside_minutes: number | null;
+          roadside_price_ht: number | null;
+          roadside_travel_hours: number | null;
+          sav_of_repair_order_id: string | null;
+          sav_responsible_technician_id: string | null;
+          status: Database['public']['Enums']['repair_order_status'];
+          technician_id: string | null;
+          technician_note: string | null;
+          updated_at: string;
+          vehicle_id: string;
+          vehicle_type: Database['public']['Enums']['vehicle_type'];
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'repair_orders';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       merge_quote_into_repair_order: {
         Args: { p_quote_id: string; p_repair_order_id: string };
         Returns: undefined;
@@ -8880,6 +9004,8 @@ export type Database = {
           roadside_minutes: number | null;
           roadside_price_ht: number | null;
           roadside_travel_hours: number | null;
+          sav_of_repair_order_id: string | null;
+          sav_responsible_technician_id: string | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
           technician_note: string | null;
@@ -8907,6 +9033,9 @@ export type Database = {
           presence_hours: number;
           ro_count: number;
           sales_margin_ht: number;
+          sav_cost_ht: number;
+          sav_count: number;
+          sav_hours: number;
           technician_id: string;
           worked_hours: number;
         }[];

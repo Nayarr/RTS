@@ -7,6 +7,7 @@ import {
   periodRange,
   scoreTechnicians,
   scoreTone,
+  technicianNetRevenue,
   technicianRevenue,
   type Period,
   type TechnicianScore,
@@ -51,6 +52,16 @@ function TechnicianCard({ tech }: { tech: TechnicianScore }) {
         <Figure label="CA MO" value={formatEuroRounded(tech.labor_ht)} />
         <Figure label="Ventes (marge)" value={formatEuroRounded(tech.sales_margin_ht)} />
         <Figure label="CA total" value={formatEuroRounded(technicianRevenue(tech))} />
+        <Figure
+          label="SAV causés"
+          value={
+            tech.sav_count > 0 || tech.sav_hours > 0
+              ? `${tech.sav_count} · ${tech.sav_hours.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} h`
+              : '0'
+          }
+        />
+        <Figure label="Coût des SAV" value={formatEuroRounded(-tech.sav_cost_ht)} />
+        <Figure label="CA net" value={formatEuroRounded(technicianNetRevenue(tech))} />
         <Figure label="OR facturés" value={String(tech.ro_count)} />
         <Figure label="Rendement" value={percent(tech.efficiency)} />
         <Figure label="Occupation" value={percent(tech.occupancy)} />
@@ -104,10 +115,12 @@ export function PerformancePage() {
       <p className="hint">
         Chaque ligne de facture compte pour le salarié indiqué dessus : main d’œuvre dans le CA MO, pièces,
         fournitures et recyclage, sous-traitance pour leur marge (vente − achat) dans les ventes. CA total =
-        CA MO + ventes. Rendement = heures facturées ÷ heures badgées. Occupation = heures badgées ÷ heures de
-        présence (pointage). Précision = écart moyen entre l’estimation et le temps badgé. Délai = de
-        l’ouverture de l’OR à sa facture. Note : rendement 35 %, occupation 25 %, CA total 25 %, précision 15
-        %.
+        CA MO + ventes. SAV causés : OR de reprise dont il est responsable, le temps passé par le collègue (au
+        taux horaire) et le prix d’achat des pièces forment leur coût ; CA net = CA total − coût des SAV. Le
+        temps passé sur un SAV ne pénalise pas celui qui le fait. Rendement = heures facturées ÷ heures
+        badgées. Occupation = heures badgées ÷ heures de présence (pointage). Précision = écart moyen entre
+        l’estimation et le temps badgé. Délai = de l’ouverture de l’OR à sa facture. Note : rendement 35 %,
+        occupation 25 %, CA total 25 %, précision 15 %.
       </p>
     </>
   );

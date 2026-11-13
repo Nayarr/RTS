@@ -24,6 +24,8 @@ import { SubcontractsCard } from './detail/SubcontractsCard';
 import { TimeCard } from './detail/TimeCard';
 import { useRepairOrder, useRepairOrderMutation, useRepairOrderSupplies } from './hooks';
 import { PreQuoteWorkCard } from './PreQuoteWorkCard';
+import { SavButton, SavCard } from './sav';
+import { canOpenSav } from './sav-rules';
 import type { SignatureChannel } from '@/features/signature/api';
 import { DuplicateButton } from '@/components/DuplicateButton';
 import { duplicateRepairOrder } from './api';
@@ -112,6 +114,7 @@ export function RepairOrderPage() {
       {header(
         order.number,
         <>
+          {canOpenSav(order.status) && <SavButton orders={[{ id: order.id, number: order.number }]} />}
           {editable && <PrepareQuoteButton order={order} variant="outline" />}
           <DuplicateButton
             label="Dupliquer l’OR"
@@ -123,6 +126,7 @@ export function RepairOrderPage() {
         </>,
       )}
       <OrderHeader order={order} autoSignature={autoSignature} />
+      <SavCard order={order} canEdit={editable || isDirection} />
       <OfficeInfoForm order={order} />
       <div className="split grid-cols-1! xl:grid-cols-[minmax(0,1fr)_380px]!">
         <div className="col gap-5">

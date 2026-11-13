@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { OilChangeSuggestion } from '@/features/repair-orders/OilChangeSuggestion';
+import { SavButton } from '@/features/repair-orders/sav';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
 import { LineColumns, LineRow, TotalsList, type LinePatch } from '@/features/documents/LineRow';
 import type { PartLinePatch } from '@/features/catalogs/schemas';
@@ -504,6 +505,15 @@ export function InvoicePage() {
                   <ArrowLeft /> Retour à l’OR {invoice.repair_order_numbers[0] ?? ''}
                 </Link>
               </Button>
+            )}
+            {/* SAV : nouvel OR de reprise de l'OR facturé (au choix si la facture en groupe plusieurs) */}
+            {!draft && profile?.role !== 'accountant' && (
+              <SavButton
+                orders={invoice.repair_order_ids.map((id, index) => ({
+                  id,
+                  number: invoice.repair_order_numbers[index] ?? '',
+                }))}
+              />
             )}
             {!vehicleSale && (
               <DuplicateButton

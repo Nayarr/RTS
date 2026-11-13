@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import {
   AlertTriangle,
@@ -44,6 +45,9 @@ import { NewOrderUpcoming } from './NewOrderUpcoming';
 import { mileageValue, NO_DECLARED_OIL, type DeclaredOil } from './upcoming-work';
 import { addOilChange } from './upcoming-work-api';
 import { useClientEntry } from './use-client-entry';
+// SAV : OR de reprise d'un autre OR
+import { fetchSavOrigin, markRepairOrderSav } from './api';
+import { SavResponsibleSelect } from './sav';
 import {
   newRepairOrderDefaults,
   newRepairOrderSchema,
@@ -106,6 +110,24 @@ export function NewRepairOrderPage() {
     defaultValues: newRepairOrderDefaults(),
   });
 
+  // SAV (bouton « SAV » d'un OR ou d'une facture) : même véhicule et client que l'OR d'origine
+  const [params] = useSearchParams();
+  const savOriginId = params.get('sav');
+  const savOrigin = useQuery({
+    queryKey: ['repair-orders', 'sav-origin', savOriginId],
+    queryFn: () => fetchSavOrigin(savOriginId ?? ''),
+    enabled: Boolean(savOriginId),
+  });
+  const origin = savOrigin.data ?? null;
+  const [savResponsible, setSavResponsible] = useState<string | null>(null);
+  const responsible = savResponsible ?? origin?.technician_id ?? null;
+  useEffect(() => {
+    if (!origin) return;
+    if (!getFieldState('plate').isDirty) setValue('plate', origin.plate ?? '');
+    if (origin.vehicle_type) setValue('vehicle_type', origin.vehicle_type);
+    if (!getFieldState('client_name').isDirty) setValue('client_name', origin.client_name ?? '');
+  }, [origin, getFieldState, setValue]);
+
   const plate = useWatch({ control, name: 'plate' });
   const clientName = useWatch({ control, name: 'client_name' });
   const plannedStart = useWatch({ control, name: 'planned_start' });
@@ -159,6 +181,8 @@ export function NewRepairOrderPage() {
           mileage: mileageValue(declaredOil.mileage),
         });
       }
+      // SAV : rattaché à l'OR d'origine, gratuit pour le client
+      if (origin?.id) await markRepairOrderSav(order.id, origin.id, responsible);
       return order;
     },
     null, // notification avec le numéro d'OR ci-dessous
@@ -204,7 +228,7 @@ export function NewRepairOrderPage() {
       <PageHeader
         back={{ to: '/or', label: 'Retour aux ordres de réparation' }}
         crumbs={[{ label: 'Atelier' }, { label: 'Ordres de réparation', to: '/or' }, { label: 'Nouveau' }]}
-        title="Nouvel ordre de réparation"
+        title={origin ? 'Nouvel OR de SAV' : 'Nouvel ordre de réparation'}
         actions={
           <>
             <Button variant="ghost" asChild>
@@ -224,6 +248,26 @@ export function NewRepairOrderPage() {
         className="split w-full max-w-[1176px] grid-cols-1! lg:grid-cols-[minmax(0,1fr)_400px]!"
       >
         <div className="col gap-5">
+          {origin && (
+            <section
+              data-slot="card"
+              className="card sec col gap-3 border-l-4 border-l-[#7c3aed]"
+              aria-label="SAV"
+            >
+              <p className="row flex-wrap gap-2">
+                <span className="badge s-sav h-6 text-xs">SAV</span>
+                <span>
+                  Reprise de l’OR <b>{origin.number}</b> : décris les tâches comme pour un OR normal. Rien ne
+                  sera facturé au client (main d’œuvre, pièces, fournitures).
+                </span>
+              </p>
+              <SavResponsibleSelect id="sav-responsible" value={responsible} onChange={setSavResponsible} />
+              <p className="hint">
+                Le temps passé sur ce SAV et le prix d’achat des pièces comptent dans la performance du
+                responsable, pas de celui qui fait la reprise.
+              </p>
+            </section>
+          )}
           <section data-slot="card" className="card" aria-labelledby="new-ro-vehicle">
             <div className="card-h">
               <h2 className="h2" id="new-ro-vehicle">
