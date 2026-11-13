@@ -186,6 +186,7 @@ export const workshopSchema = z
     lunch_end: time,
     workday_end: time,
     overtime_start: time,
+    earliest_clock_in: time,
     expected_arrival: time,
     late_tolerance: time,
     daily_hours: hours,
@@ -230,6 +231,7 @@ export const workshopSchema = z
       ['lunch_start', 'lunch_end', 'La pause doit finir après son début'],
       ['lunch_end', 'workday_end', 'La fermeture doit suivre la pause'],
       ['workday_end', 'overtime_start', 'Les heures sup. commencent après la fermeture'],
+      ['earliest_clock_in', 'expected_arrival', 'Le badgeage doit ouvrir avant l’arrivée attendue'],
       ['expected_arrival', 'late_tolerance', 'La tolérance doit suivre l’heure d’arrivée'],
     ];
     for (const [before, after, message] of order) {
@@ -254,6 +256,7 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
   lunch_end: hhmm(a.lunch_end),
   workday_end: hhmm(a.workday_end),
   overtime_start: hhmm(a.overtime_start),
+  earliest_clock_in: hhmm(a.earliest_clock_in),
   expected_arrival: hhmm(a.expected_arrival),
   late_tolerance: hhmm(a.late_tolerance),
   daily_hours: a.daily_hours,

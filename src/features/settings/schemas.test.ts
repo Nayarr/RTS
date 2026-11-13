@@ -122,6 +122,7 @@ describe('workshopSchema', () => {
     lunch_end: '14:00',
     workday_end: '18:00',
     overtime_start: '18:30',
+    earliest_clock_in: '08:55',
     expected_arrival: '09:00',
     late_tolerance: '09:05',
     daily_hours: 8,

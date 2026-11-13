@@ -102,6 +102,7 @@ const settings: Settings = {
     friday_hours: 7.5,
     saturday_hours: 8,
     overtime_start: '18:30:00',
+    earliest_clock_in: '08:55:00',
     expected_arrival: '09:00:00',
     late_tolerance: '09:05:00',
     rest_reference_monday: null,

@@ -21,6 +21,7 @@ const HOUR_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
 ];
 
 const CLOCK_FIELDS: { name: keyof WorkshopValues; label: string }[] = [
+  { name: 'earliest_clock_in', label: 'Badgeage dès' },
   { name: 'expected_arrival', label: 'Arrivée attendue' },
   { name: 'late_tolerance', label: 'Retard après' },
   { name: 'overtime_start', label: 'Heures sup. dès' },
