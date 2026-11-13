@@ -22,14 +22,17 @@ export function RoleSelect({ value, onChange }: RoleSelectProps) {
     <div className="space-y-2">
       <Label htmlFor="role">Rôle</Label>
       <Select value={value} onValueChange={(role) => onChange(role as AppRole)}>
-        <SelectTrigger id="role" className="w-full">
-          <SelectValue />
+        {/* Champ fermé : le nom du rôle seul (l'explication déborderait de la fenêtre) */}
+        <SelectTrigger id="role" className="w-full min-w-0">
+          <SelectValue>{ROLE_LABELS[value]}</SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-w-[calc(100vw-2rem)]">
           {ROLE_VALUES.map((role) => (
-            <SelectItem key={role} value={role}>
-              <span className="font-medium">{ROLE_LABELS[role]}</span>
-              <span className="text-muted-foreground"> · {ROLE_HINTS[role]}</span>
+            <SelectItem key={role} value={role} className="whitespace-normal">
+              <span className="col items-start gap-0.5">
+                <span className="font-medium">{ROLE_LABELS[role]}</span>
+                <span className="text-xs text-muted-foreground">{ROLE_HINTS[role]}</span>
+              </span>
             </SelectItem>
           ))}
         </SelectContent>

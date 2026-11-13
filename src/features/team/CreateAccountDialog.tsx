@@ -18,6 +18,7 @@ import { useTeamMutation } from './hooks';
 import { RoleSelect } from './RoleSelect';
 import {
   createAccountSchema,
+  isKioskRole,
   mustBeTechnician,
   TECHNICIAN_COLORS,
   toCreateAccountInput,
@@ -80,6 +81,8 @@ export function CreateAccountDialog({
   // Le rôle Technicien implique une fiche technicien.
   useEffect(() => {
     if (mustBeTechnician(role)) setValue('is_technician', true);
+    // Tablette : ni planning ni pointage
+    if (isKioskRole(role)) setValue('is_technician', false);
   }, [role, setValue]);
 
   // Nom au planning = prénom, tant qu'il n'a pas été modifié à la main.
@@ -129,13 +132,15 @@ export function CreateAccountDialog({
             name="role"
             render={({ field }) => <RoleSelect value={field.value} onChange={field.onChange} />}
           />
-          <TechnicianFields
-            control={control}
-            register={register}
-            errors={errors}
-            isTechnician={isTechnician}
-            locked={mustBeTechnician(role)}
-          />
+          {!isKioskRole(role) && (
+            <TechnicianFields
+              control={control}
+              register={register}
+              errors={errors}
+              isTechnician={isTechnician}
+              locked={mustBeTechnician(role)}
+            />
+          )}
 
           <Controller
             control={control}

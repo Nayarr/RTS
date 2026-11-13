@@ -17,7 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { saveTechnician, setTechnicianActive, updateProfile } from './api';
 import { useTeamMutation } from './hooks';
 import { RoleSelect } from './RoleSelect';
-import { editAccountSchema, mustBeTechnician, TECHNICIAN_COLORS, type EditAccountValues } from './schemas';
+import {
+  editAccountSchema,
+  isKioskRole,
+  mustBeTechnician,
+  TECHNICIAN_COLORS,
+  type EditAccountValues,
+} from './schemas';
 import { TechnicianFields } from './TechnicianFields';
 import type { TeamMember } from './types';
 
@@ -106,13 +112,16 @@ export function EditAccountDialog({ member, onOpenChange }: EditAccountDialogPro
             name="role"
             render={({ field }) => <RoleSelect value={field.value} onChange={field.onChange} />}
           />
-          <TechnicianFields
-            control={control}
-            register={register}
-            errors={errors}
-            isTechnician={isTechnician}
-            locked={Boolean(role) && mustBeTechnician(role)}
-          />
+          {/* Tablette sans fiche : rien à régler (une ancienne fiche reste modifiable) */}
+          {!(role && isKioskRole(role) && !isTechnician) && (
+            <TechnicianFields
+              control={control}
+              register={register}
+              errors={errors}
+              isTechnician={isTechnician}
+              locked={Boolean(role) && mustBeTechnician(role)}
+            />
+          )}
 
           {isTechnician && (
             <fieldset className="space-y-4 rounded-lg border p-4">

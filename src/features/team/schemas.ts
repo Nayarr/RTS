@@ -90,6 +90,10 @@ export type PinValues = z.infer<typeof pinSchema>;
 export const mustBeTechnician = (role: (typeof ROLE_VALUES)[number]) =>
   role === 'technician' || role === 'accountant';
 
+/** Comptes de borne (tablettes de pointage et de signature) : pas de fiche technicien. */
+export const isKioskRole = (role: (typeof ROLE_VALUES)[number]) =>
+  role === 'kiosk' || role === 'kiosk_signature';
+
 /** Valeurs du formulaire -> données envoyées à l'Edge Function. */
 export function toCreateAccountInput(values: CreateAccountValues): CreateAccountInput {
   return {
