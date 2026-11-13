@@ -1,5 +1,11 @@
 import { assertEquals, assertMatch } from '@std/assert';
-import { inspectionReadingPrompt, validPlate, validVin } from './inspection-reading.ts';
+import {
+  INSPECTION_READING_SCHEMA,
+  inspectionReadingPrompt,
+  validPlate,
+  validVin,
+  vehicleText,
+} from './inspection-reading.ts';
 import { addMonthsToMonth, nextDueMonth, tailgateReadingPrompt, validDate, validMonth } from './reading.ts';
 import { checkedLicense, licenseReadingPrompt } from './license-reading.ts';
 import { checkedRegistration, registrationReadingPrompt } from './registration-reading.ts';
@@ -63,6 +69,18 @@ Deno.test('contrôle technique : VIN de 17 caractères sans I, O ni Q', () => {
   const prompt = inspectionReadingPrompt(TODAY);
   assertEquals(prompt.includes('à présenter avant le'), true);
   assertEquals(prompt.includes('VIN'), true);
+});
+
+Deno.test('contrôle technique : marque (D.1) et modèle (D.3, sinon D.2) demandés et nettoyés', () => {
+  const prompt = inspectionReadingPrompt(TODAY);
+  assertEquals(prompt.includes('la marque (rubrique D.1)'), true);
+  assertEquals(prompt.includes('D.3, sinon type D.2'), true);
+  assertEquals(INSPECTION_READING_SCHEMA.required.includes('brand'), true);
+  assertEquals(INSPECTION_READING_SCHEMA.required.includes('model'), true);
+  assertEquals(vehicleText('  RENAULT   TRUCKS '), 'RENAULT TRUCKS');
+  assertEquals(vehicleText(''), null);
+  assertEquals(vehicleText(undefined), null);
+  assertEquals(vehicleText('x'.repeat(80))?.length, 60);
 });
 
 Deno.test('vignette : immatriculation et VIN seulement, « numéro de série » = VIN', () => {
