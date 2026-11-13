@@ -126,9 +126,9 @@ test('OR créé depuis un devis : début prévu, temps réel saisi (facturé au 
   await expect(
     page.getByText('Travail retiré par le technicien (non fait) : Remplacement Extincteur 6 kg camion'),
   ).toBeVisible();
-  // Intervention : temps réel du technicien, facturé au temps du devis
+  // Intervention : temps réel du technicien, facturé au temps du devis accepté (1,5 h arrondie à 2 h sur le devis)
   const work = page.getByRole('region', { name: 'Intervention atelier' });
   await expect(work.getByRole('listitem').filter({ hasText: 'Vidange moteur et filtres' })).toContainText(
-    '2 h réelfacturé 1,5 h',
+    '2 h réelfacturé 2 h',
   );
 });
