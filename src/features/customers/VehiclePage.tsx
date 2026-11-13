@@ -40,6 +40,7 @@ import {
 import { useCustomerMutation, useVehicle } from './hooks';
 import { buildMaintenanceBookPdf } from './maintenance-book-pdf';
 import { addMonths } from '@/lib/month';
+import { vinBrand } from '@/lib/vin';
 
 const selectClass = 'inp';
 
@@ -72,6 +73,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { errors, isDirty },
   } = useForm<VehicleValues>({ resolver: zodResolver(vehicleSchema), defaultValues: vehicleToForm(vehicle) });
   const [ctDue, tailgateDue, antipollutionDue, vehicleType] = useWatch({
@@ -102,6 +104,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
   };
 
   const plateField = register('plate');
+  const vinField = register('vin');
 
   const model = [vehicle.brand, vehicle.model].filter(Boolean).join(' ');
 
@@ -211,7 +214,13 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
                   id="vehicle-vin"
                   label="N° de série (VIN)"
                   className="num uppercase"
-                  {...register('vin')}
+                  {...vinField}
+                  onChange={(event) => {
+                    void vinField.onChange(event);
+                    // Marque vide : déduite du VIN (code constructeur)
+                    const brand = vinBrand(event.target.value);
+                    if (brand && !getValues('brand').trim()) setValue('brand', brand, { shouldDirty: true });
+                  }}
                 />
                 <FormField
                   id="vehicle-first-registration"

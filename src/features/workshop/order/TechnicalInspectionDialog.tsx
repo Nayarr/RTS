@@ -17,13 +17,15 @@ import { formatDate, normalizeKey } from '@/features/repair-orders/constants';
 import { readTechnicalInspection, updateDeadlines } from '../api';
 import { isVin, normalizeVin } from '../domain';
 import { READING_FAILED, readingFailedMessage } from '@/lib/reading';
+import { vinBrand } from '@/lib/vin';
 
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Enregistrement impossible : réessaie';
 
 /**
- * Lecture automatique du contrôle technique qui vient d'être photographié : VIN proposé (et date du
- * prochain contrôle sur un procès-verbal), modifiables, puis enregistrés sur la fiche véhicule.
+ * Lecture automatique du contrôle technique qui vient d'être photographié : VIN, marque et modèle
+ * proposés (et date du prochain contrôle sur un procès-verbal), modifiables, puis enregistrés sur la
+ * fiche véhicule (marque et modèle seulement s'ils y manquent).
  * La plaque lue est comparée à celle de l'OR.
  */
 export function TechnicalInspectionDialog({
@@ -50,18 +52,31 @@ export function TechnicalInspectionDialog({
   // Valeurs modifiées par le technicien ; sinon celles lues sur le document.
   const [editedDate, setEditedDate] = useState<string | null>(null);
   const [editedVin, setEditedVin] = useState<string | null>(null);
+  const [editedBrand, setEditedBrand] = useState<string | null>(null);
+  const [editedModel, setEditedModel] = useState<string | null>(null);
   const date = editedDate ?? reading.data?.next_due_date ?? '';
   const vin = normalizeVin(editedVin ?? reading.data?.vin ?? '');
   const vinError = vin && !isVin(vin) ? 'VIN : 17 caractères (lettres sauf I, O, Q, et chiffres)' : null;
+  // Marque lue sur le procès-verbal, sinon déduite du VIN ; modèle seulement lu (le VIN ne le donne pas)
+  // (valeurs saisies affichées telles quelles, espaces retirés seulement à l'enregistrement)
+  const brandInput = editedBrand ?? reading.data?.brand ?? vinBrand(vin) ?? '';
+  const modelInput = editedModel ?? reading.data?.model ?? '';
+  const brand = brandInput.trim();
+  const model = modelInput.trim();
   const readPlate = reading.data?.plate ?? null;
   const otherPlate = readPlate && plate && normalizeKey(readPlate) !== normalizeKey(plate);
 
   const save = useMutation({
     mutationFn: () =>
-      updateDeadlines(repairOrderId, { ...(date ? { ct_due_date: date } : {}), ...(vin ? { vin } : {}) }),
+      updateDeadlines(repairOrderId, {
+        ...(date ? { ct_due_date: date } : {}),
+        ...(vin ? { vin } : {}),
+        ...(brand ? { brand } : {}),
+        ...(model ? { model } : {}),
+      }),
     onSuccess: async () => {
       toast.success('Contrôle technique enregistré sur le véhicule');
-      await queryClient.invalidateQueries({ queryKey: ['vehicles', vehicleId, 'deadlines'] });
+      await queryClient.invalidateQueries({ queryKey: ['vehicles', vehicleId] });
       onClose();
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -103,7 +118,7 @@ export function TechnicalInspectionDialog({
                 Contrôle du : <b>{formatDate(reading.data.last_control_date)}</b>
               </p>
             )}
-            {!reading.data.next_due_date && !reading.data.vin ? (
+            {!reading.data.next_due_date && !reading.data.vin && !reading.data.brand ? (
               <p className="alert s-warn" role="alert">
                 {READING_FAILED}
               </p>
@@ -143,6 +158,33 @@ export function TechnicalInspectionDialog({
                 </p>
               )}
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="field">
+                <Label htmlFor="ct-scan-brand">Marque</Label>
+                <Input
+                  id="ct-scan-brand"
+                  maxLength={60}
+                  autoComplete="off"
+                  value={brandInput}
+                  placeholder="Non lue"
+                  onChange={(event) => setEditedBrand(event.target.value)}
+                />
+              </div>
+              <div className="field">
+                <Label htmlFor="ct-scan-model">Modèle</Label>
+                <Input
+                  id="ct-scan-model"
+                  maxLength={60}
+                  autoComplete="off"
+                  value={modelInput}
+                  placeholder="Non lu"
+                  onChange={(event) => setEditedModel(event.target.value)}
+                />
+              </div>
+            </div>
+            <p className="hint">
+              Marque et modèle remplissent la fiche du véhicule s’ils n’y sont pas encore.
+            </p>
           </div>
         )}
 
@@ -151,7 +193,10 @@ export function TechnicalInspectionDialog({
             {reading.isSuccess ? 'Annuler' : 'Fermer'}
           </Button>
           {reading.isSuccess && (
-            <Button disabled={(!date && !vin) || !!vinError || save.isPending} onClick={() => save.mutate()}>
+            <Button
+              disabled={(!date && !vin && !brand && !model) || !!vinError || save.isPending}
+              onClick={() => save.mutate()}
+            >
               Valider
             </Button>
           )}
