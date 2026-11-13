@@ -71,6 +71,9 @@ export default {
       if (request.role === 'accountant' && !request.technician) {
         return fail(400, 'Un compte comptable doit avoir une fiche technicien pour badger');
       }
+      if (request.role === 'reception' && !request.technician) {
+        return fail(400, 'Un compte réception doit avoir une fiche technicien pour badger');
+      }
       const email = request.email.trim().toLowerCase();
 
       const created = request.password

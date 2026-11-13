@@ -86,9 +86,13 @@ export const pinSchema = z
   });
 export type PinValues = z.infer<typeof pinSchema>;
 
-/** Les rôles Technicien et Comptable (qui badge aussi) impliquent toujours une fiche technicien. */
+/** Les rôles Technicien, Comptable et Réception (qui badgent aussi) impliquent toujours une fiche technicien. */
 export const mustBeTechnician = (role: (typeof ROLE_VALUES)[number]) =>
-  role === 'technician' || role === 'accountant';
+  role === 'technician' || role === 'accountant' || role === 'reception';
+
+/** Comptable et réception : la fiche sert à badger, pas au planning. */
+export const badgesOnly = (role: (typeof ROLE_VALUES)[number]) =>
+  role === 'accountant' || role === 'reception';
 
 /** Comptes de borne (tablettes de pointage et de signature) : pas de fiche technicien. */
 export const isKioskRole = (role: (typeof ROLE_VALUES)[number]) =>
@@ -101,7 +105,12 @@ export function toCreateAccountInput(values: CreateAccountValues): CreateAccount
     full_name: values.full_name.trim(),
     role: values.role,
     technician: values.is_technician
-      ? { display_name: values.display_name.trim(), color: values.color }
+      ? {
+          display_name: values.display_name.trim(),
+          color: values.color,
+          // Réception : hors planning au départ (la direction peut l'y mettre ensuite)
+          ...(values.role === 'reception' ? { exclude_from_planning: true } : {}),
+        }
       : null,
     ...(values.access === 'password' ? { password: values.password } : {}),
   };

@@ -5,7 +5,7 @@
 --
 -- Comptes de test (mot de passe commun : atelier-dev-2026)
 --   direction@rts.local   Direction
---   reception@rts.local   Réception
+--   reception@rts.local   Réception (badge à la borne, hors planning)
 --   alice@rts.local       Technicienne (Alice)
 --   bruno@rts.local       Technicien (Bruno)
 --   borne@rts.local       Borne de pointage / écran atelier
@@ -51,6 +51,9 @@ insert into public.technicians (profile_id, display_name, color) values
   ('5eed0000-0000-0000-0000-000000000003', 'Alice', '#2A6B52'),
   ('5eed0000-0000-0000-0000-000000000004', 'Bruno', '#4750B5'),
   ('5eed0000-0000-0000-0000-000000000006', 'Camille', '#8B3A9E');
+-- La réception badge aussi : fiche hors planning
+insert into public.technicians (profile_id, display_name, color, exclude_from_planning) values
+  ('5eed0000-0000-0000-0000-000000000002', 'Réception', '#B5453A', true);
 
 -- Catalogues (stock de départ passé par le journal des mouvements)
 insert into public.suppliers (id, name) values

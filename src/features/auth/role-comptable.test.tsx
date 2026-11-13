@@ -47,7 +47,7 @@ describe('rôle comptable', () => {
 
   it('la fiche technicien est imposée : il badge', () => {
     expect(mustBeTechnician('accountant')).toBe(true);
-    expect(mustBeTechnician('reception')).toBe(false);
+    expect(mustBeTechnician('direction')).toBe(false);
   });
 
   it('lien vers un écran du bureau : simple texte pour lui, lien pour le bureau', () => {

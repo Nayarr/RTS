@@ -18,6 +18,7 @@ import { useTeamMutation } from './hooks';
 import { RoleSelect } from './RoleSelect';
 import {
   createAccountSchema,
+  badgesOnly,
   isKioskRole,
   mustBeTechnician,
   TECHNICIAN_COLORS,
@@ -49,6 +50,8 @@ const ACCESS_OPTIONS = [
     hint: 'Pour une tablette partagée ou sans accès e-mail.',
   },
 ] as const;
+
+const BADGE_HINT = 'Obligatoire : pointe sur la borne avec son code PIN, hors planning au départ.';
 
 export function CreateAccountDialog({
   open,
@@ -139,6 +142,7 @@ export function CreateAccountDialog({
               errors={errors}
               isTechnician={isTechnician}
               locked={mustBeTechnician(role)}
+              hint={badgesOnly(role) ? BADGE_HINT : undefined}
             />
           )}
 
