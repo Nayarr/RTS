@@ -157,6 +157,29 @@ describe('travaux réalisés avant le devis', () => {
     );
   });
 
+  it('tout offert : brouillon ouvert, jamais émis ni envoyé au client', async () => {
+    vi.mocked(settlePreQuoteWork).mockResolvedValue({
+      invoice_id: 'inv3',
+      invoice_number: null,
+      billed: 0,
+      offered: 2,
+    });
+    const { router } = renderCard(true);
+    const dialog = await screen.findByRole('dialog', { name: 'Travaux réalisés avant le devis' });
+    expect(dialog).toHaveTextContent('Rien n’est envoyé au client.');
+    expect(within(dialog).queryByRole('button', { name: /envoyer/i })).toBeNull();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Tout offrir' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Préparer la facture' }));
+
+    expect(await screen.findByRole('heading', { name: 'Facture' })).toBeInTheDocument();
+    // Brouillon ouvert sans demande d'envoi (plus de « ?envoyer=1 »)
+    expect(router.state.location.pathname).toBe('/factures/inv3');
+    expect(router.state.location.search).toBe('');
+    expect(toast.success).toHaveBeenCalledWith(
+      'Brouillon de facture à 0 € préparé : tout est offert, à relire avant d’émettre',
+    );
+  });
+
   it('« Tout offrir » puis « Tout facturer » ; prix obligatoire pour facturer', async () => {
     renderCard(true);
     const dialog = await screen.findByRole('dialog', { name: 'Travaux réalisés avant le devis' });
