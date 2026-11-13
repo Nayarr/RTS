@@ -88,8 +88,8 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
         queryClient.invalidateQueries({ queryKey: quotesKey }),
         queryClient.invalidateQueries({ queryKey: invoicesKey }),
       ]);
-      // Facture émise : ouverte et envoyée tout de suite au client.
-      if (result.invoice_id) await navigate(`/factures/${result.invoice_id}?envoyer=1`);
+      // Brouillon ouvert : la direction le relit (Fournitures et recyclage, offres) puis l'émet elle-même.
+      if (result.invoice_id) await navigate(`/factures/${result.invoice_id}`);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -107,8 +107,9 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
           <DialogDescription>
             Le devis {work.quote_number ?? ''} est accepté. Pour chaque travail déjà fait sur l’OR{' '}
             {work.repair_order_number} (diagnostic, contrôle…), choisis de le <strong>facturer</strong> ou de
-            l’<strong>offrir</strong> à titre commercial. La facture part ensuite au client, avec les travaux
-            offerts. Le prix proposé est modifiable.
+            l’<strong>offrir</strong> à titre commercial. Un brouillon de facture est préparé avec les travaux
+            offerts : tu le relis et le modifies (fournitures et recyclage comprises), puis tu l’émets quand
+            tu veux. Rien n’est envoyé au client. Le prix proposé est modifiable.
           </DialogDescription>
         </DialogHeader>
 
@@ -191,7 +192,7 @@ function DecisionDialog({ work, onClose }: { work: PreQuoteWork; onClose: () => 
             Plus tard
           </Button>
           <Button disabled={missingPrice || settle.isPending} onClick={() => settle.mutate()}>
-            Valider et envoyer la facture
+            Préparer la facture
           </Button>
         </DialogFooter>
       </DialogContent>

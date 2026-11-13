@@ -47,14 +47,14 @@ select results_eq(
   $$ values ('Diagnostic · 1re heure d''expertise offerte', 90.00::numeric, 100.00::numeric),
             ('Essai routier · offert (geste commercial)', 90.00, 100.00) $$,
   'La 2e heure peut aussi être offerte : geste commercial');
-select is((select total_ttc from public.invoices where id = (:'s135'::jsonb ->> 'invoice_id')::uuid), 0.00::numeric,
+select is((select total_ttc from public.v_invoice_totals where invoice_id = (:'s135'::jsonb ->> 'invoice_id')::uuid), 0.00::numeric,
           'Tout offert : facture à 0 €');
 
 -- 1re heure repassée en payante : les deux lignes facturées en entier
 select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000136',
   '[{"line_id": "51000000-0000-0000-0000-000000001361", "decision": "billed", "price": 90, "first_hour": false},
     {"line_id": "51000000-0000-0000-0000-000000001362", "decision": "billed", "price": 90}]') as s136 \gset
-select is((select total_ht from public.invoices where id = (:'s136'::jsonb ->> 'invoice_id')::uuid), 180.00::numeric,
+select is((select total_ht from public.v_invoice_totals where invoice_id = (:'s136'::jsonb ->> 'invoice_id')::uuid), 180.00::numeric,
           'Première heure facturée aussi : 2 h × 90 €/h');
 select ok(not exists (select 1 from public.ro_events where repair_order_id = '50000000-0000-0000-0000-000000000136'
                       and label like '%1re heure offerte%'),
@@ -65,7 +65,7 @@ select is((:'s136'::jsonb ->> 'first_hour_offered')::boolean, false, 'Réponse :
 select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000137',
   '[{"line_id": "51000000-0000-0000-0000-000000001371", "decision": "billed", "first_hour": false},
     {"line_id": "51000000-0000-0000-0000-000000001372", "decision": "billed", "price": 90}]') as s137 \gset
-select is((select total_ht from public.invoices where id = (:'s137'::jsonb ->> 'invoice_id')::uuid), 180.00::numeric,
+select is((select total_ht from public.v_invoice_totals where invoice_id = (:'s137'::jsonb ->> 'invoice_id')::uuid), 180.00::numeric,
           'Sans prix saisi, la ligne facturée en entier prend le prix de la ligne entière');
 
 select * from finish();

@@ -58,10 +58,12 @@ select throws_ok($$ select public.settle_pre_quote_work('50000000-0000-0000-0000
 select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000001',
   '[{"line_id": "51000000-0000-0000-0000-000000000001", "decision": "billed", "price": 120},
     {"line_id": "51000000-0000-0000-0000-000000000002", "decision": "offered", "price": 60}]') as settled \gset
-select ok((:'settled'::jsonb ->> 'invoice_number') is not null, 'Facture séparée émise tout de suite');
+select ok((:'settled'::jsonb ->> 'invoice_id') is not null and (:'settled'::jsonb ->> 'invoice_number') is null,
+          'Facture séparée préparée en brouillon, pas émise');
 select results_eq(
-  format($$ select status::text, total_ht from public.invoices where id = %L $$, :'settled'::jsonb ->> 'invoice_id'),
-  $$ values ('issued', 120.00::numeric) $$,
+  format($$ select i.status::text, t.total_ht from public.invoices i join public.v_invoice_totals t on t.invoice_id = i.id
+            where i.id = %L $$, :'settled'::jsonb ->> 'invoice_id'),
+  $$ values ('draft', 120.00::numeric) $$,
   'Montant : seulement la ligne facturée, au prix saisi');
 select results_eq(
   format($$ select description, unit_price, discount_percent from public.invoice_lines where invoice_id = %L order by position $$,
@@ -70,8 +72,8 @@ select results_eq(
             ('Diagnostic freinage · 1re heure d''expertise offerte', 90.00::numeric, 100.00::numeric),
             ('Contrôle sécurité · offert (geste commercial)', 60.00::numeric, 100.00::numeric) $$,
   'Lignes offertes (1re heure d''expertise, forfait) visibles avec 100 % de remise');
-select is((select status::text from public.repair_orders where id = '50000000-0000-0000-0000-000000000001'), 'invoiced',
-          'OR de diagnostic facturé');
+select is((select status::text from public.repair_orders where id = '50000000-0000-0000-0000-000000000001'), 'quote_pending',
+          'OR de diagnostic facturé seulement quand la direction émet le brouillon');
 select is((select done_line_decision::text from public.quote_lines
            where source_ro_line_id = '51000000-0000-0000-0000-000000000001'), 'billed',
           'Décision notée sur la ligne du devis');
@@ -83,11 +85,12 @@ select throws_ok($$ select public.settle_pre_quote_work('50000000-0000-0000-0000
 select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000002',
   '[{"line_id": "51000000-0000-0000-0000-000000000005", "decision": "offered", "price": 45}]') as offered \gset
 select results_eq(
-  format($$ select i.status::text, i.total_ttc, l.unit_price, l.discount_percent
-            from public.invoices i join public.invoice_lines l on l.invoice_id = i.id where i.id = %L $$,
+  format($$ select i.status::text, t.total_ttc, l.unit_price, l.discount_percent
+            from public.invoices i join public.v_invoice_totals t on t.invoice_id = i.id
+            join public.invoice_lines l on l.invoice_id = i.id where i.id = %L $$,
          :'offered'::jsonb ->> 'invoice_id'),
-  $$ values ('issued'::text, 0.00::numeric, 45.00::numeric, 100.00::numeric) $$,
-  'Tout offert : facture émise à 0 €, le travail offert y figure avec son prix et 100 % de remise');
+  $$ values ('draft'::text, 0.00::numeric, 45.00::numeric, 100.00::numeric) $$,
+  'Tout offert : brouillon à 0 €, le travail offert y figure avec son prix et 100 % de remise');
 
 -- ---------------------------------------------------------------- Droits
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');  -- technicien

@@ -95,7 +95,7 @@ test('expertise de plus d’1 h : la première heure offerte par défaut sur la 
   await expect(dialog.getByLabel('Prix HT de « Lecture valise »')).toHaveCount(0);
   await expect(dialog.getByText('1 h facturée(s), 0,5 h offerte(s) (1re heure d’expertise).')).toBeVisible();
   await expect(dialog.getByLabel('Prix HT de « Recherche de fuite turbo »')).toHaveValue('90,00');
-  await dialog.getByRole('button', { name: 'Valider' }).click();
+  await dialog.getByRole('button', { name: 'Préparer la facture' }).click();
 
   // Facture : 1 h facturée, l'heure offerte visible avec 100 % de remise
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
@@ -122,7 +122,7 @@ test('expertise de plus d’1 h : le bureau peut aussi offrir la deuxième ligne
   const dialog = page.getByRole('dialog', { name: 'Travaux réalisés avant le devis' });
   await dialog.getByLabel('Décision pour « Recherche de fuite turbo »').selectOption('offered');
   await expect(dialog.getByText('Offert en entier (geste commercial).')).toBeVisible();
-  await dialog.getByRole('button', { name: 'Valider' }).click();
+  await dialog.getByRole('button', { name: 'Préparer la facture' }).click();
 
   // Tout offert : facture à 0 €, les deux lignes visibles avec 100 % de remise
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+/);

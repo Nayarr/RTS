@@ -121,10 +121,10 @@ describe('travaux réalisés avant le devis', () => {
     expect(screen.queryByText('Travaux réalisés avant le devis')).toBeNull();
   });
 
-  it('facturer une ligne à un prix corrigé, offrir l’autre ; la facture émise s’ouvre', async () => {
+  it('facturer une ligne à un prix corrigé, offrir l’autre ; le brouillon de facture s’ouvre', async () => {
     vi.mocked(settlePreQuoteWork).mockResolvedValue({
       invoice_id: 'inv1',
-      invoice_number: 'F11890',
+      invoice_number: null,
       billed: 1,
       offered: 1,
     });
@@ -143,7 +143,7 @@ describe('travaux réalisés avant le devis', () => {
       within(dialog).getByLabelText('Décision pour « Contrôle sécurité »'),
       'offered',
     );
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Préparer la facture' }));
 
     await waitFor(() =>
       expect(settlePreQuoteWork).toHaveBeenCalledWith('ro1', [
@@ -153,7 +153,7 @@ describe('travaux réalisés avant le devis', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Facture' })).toBeInTheDocument();
     expect(toast.success).toHaveBeenCalledWith(
-      'Facture F11890 émise (travaux offerts inclus avec 100 % de remise)',
+      'Brouillon de facture préparé (travaux offerts inclus avec 100 % de remise), à relire avant d’émettre',
     );
   });
 
@@ -166,14 +166,14 @@ describe('travaux réalisés avant le devis', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Tout facturer' }));
     await userEvent.clear(within(dialog).getByLabelText('Prix HT de « Contrôle sécurité »'));
     expect(within(dialog).getByText('Indique un prix pour chaque ligne à facturer.')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Préparer la facture' })).toBeDisabled();
   });
 
   it('plus d’1 h d’expertise : 1re heure offerte par défaut, chaque ligne reste au choix', async () => {
     vi.mocked(fetchPreQuoteWork).mockResolvedValue(longWork);
     vi.mocked(settlePreQuoteWork).mockResolvedValue({
       invoice_id: 'inv2',
-      invoice_number: 'F11891',
+      invoice_number: null,
       billed: 2,
       offered: 2,
     });
@@ -206,7 +206,7 @@ describe('travaux réalisés avant le devis', () => {
       within(dialog).getByLabelText('Décision pour « Essai routier »'),
       'offered',
     );
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider et envoyer la facture' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Préparer la facture' }));
     await waitFor(() =>
       expect(settlePreQuoteWork).toHaveBeenCalledWith('ro1', [
         { line_id: 'e1', decision: 'offered', first_hour: true, price: 45 },
@@ -236,11 +236,11 @@ describe('travaux réalisés avant le devis', () => {
   });
 
   it('messages de confirmation', () => {
-    expect(settlementMessage({ invoice_id: 'i', invoice_number: 'F1', billed: 2, offered: 0 })).toBe(
-      'Facture F1 émise',
+    expect(settlementMessage({ invoice_id: 'i', invoice_number: null, billed: 2, offered: 0 })).toBe(
+      'Brouillon de facture préparé, à relire avant d’émettre',
     );
-    expect(settlementMessage({ invoice_id: 'i', invoice_number: 'F2', billed: 0, offered: 2 })).toBe(
-      'Facture F2 émise à 0 € : tout est offert, mention sur la facture',
+    expect(settlementMessage({ invoice_id: 'i', invoice_number: null, billed: 0, offered: 2 })).toBe(
+      'Brouillon de facture à 0 € préparé : tout est offert, à relire avant d’émettre',
     );
   });
 });
