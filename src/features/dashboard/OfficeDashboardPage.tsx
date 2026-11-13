@@ -179,7 +179,7 @@ export function OfficeDashboardPage() {
                 />
               ))}
               <Tile
-                to="/or?filtre=parts"
+                to="/or?filtre=a-commander"
                 value={data.parts_to_order}
                 label="Pièces à commander"
                 color="#B5453A"

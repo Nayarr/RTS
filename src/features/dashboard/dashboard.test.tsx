@@ -75,7 +75,7 @@ describe('tableau de bord du bureau', () => {
     expect(tile(orders, 'Assigné')).toHaveAttribute('href', '/or?filtre=assigned');
     expect(tile(orders, 'Assigné')).toHaveTextContent('3');
     expect(tile(orders, 'Terminé atelier')).toHaveTextContent('0');
-    expect(tile(orders, 'Pièces à commander')).toHaveAttribute('href', '/or?filtre=parts');
+    expect(tile(orders, 'Pièces à commander')).toHaveAttribute('href', '/or?filtre=a-commander');
     expect(within(orders).queryByRole('link', { name: /Facturé/ })).toBeNull();
   });
 

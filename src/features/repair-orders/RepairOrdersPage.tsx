@@ -20,7 +20,7 @@ import { useRepairOrders } from './hooks';
 import { StatusBadge } from './StatusBadge';
 import { taskSummary } from './tasks';
 
-type Filter = 'active' | 'all' | 'parts' | RepairOrderCategory;
+type Filter = 'active' | 'all' | 'parts' | 'a-commander' | RepairOrderCategory;
 
 const FILTERS: { value: Filter; label: string; color?: string }[] = [
   { value: 'active', label: 'En cours de traitement' },
@@ -30,6 +30,7 @@ const FILTERS: { value: Filter; label: string; color?: string }[] = [
     color: CATEGORY_META[category].color,
   })),
   { value: 'parts', label: 'Pièces en attente', color: '#B5453A' },
+  { value: 'a-commander', label: 'Pièces à commander', color: '#C98A00' },
   { value: 'all', label: 'Tous' },
 ];
 
@@ -39,6 +40,7 @@ function matchesFilter(order: RepairOrderOverview, filter: Filter) {
   if (filter === 'active') return order.status !== 'invoiced';
   if (filter === 'all') return true;
   if (filter === 'parts') return (order.parts_pending_count ?? 0) > 0;
+  if (filter === 'a-commander') return (order.parts_to_order_count ?? 0) > 0;
   return orderCategory(order) === filter;
 }
 
@@ -64,9 +66,17 @@ function Technician({ order }: { order: RepairOrderOverview }) {
   );
 }
 
+/** Pièces en attente, et à droite celles qui restent à commander (le bureau voit quel OR attend sa commande). */
 function PartsBadge({ order }: { order: RepairOrderOverview }) {
   if (!order.parts_pending_count) return null;
-  return <span className="badge s-bad h-6 text-xs">Attente pièces ({order.parts_pending_count})</span>;
+  return (
+    <span className="row flex-wrap gap-1.5">
+      <span className="badge s-bad h-6 text-xs">Attente pièces ({order.parts_pending_count})</span>
+      {(order.parts_to_order_count ?? 0) > 0 && (
+        <span className="badge s-warn h-6 text-xs">À commander ({order.parts_to_order_count})</span>
+      )}
+    </span>
+  );
 }
 
 /** Tableau de bord des OR (bureau) : filtres par statut, recherche, accès à la fiche. */
