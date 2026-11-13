@@ -140,6 +140,39 @@ describe('liste des OR', () => {
     expect(screen.queryByText('GH-512-RT')).not.toBeInTheDocument();
   });
 
+  it('pièces à commander : pastille à droite de « Attente pièces », filtre ouvert depuis le tableau de bord', async () => {
+    vi.mocked(fetchRepairOrders).mockResolvedValue([
+      order({ parts_pending_count: 3, parts_to_order_count: 2 }),
+      order({
+        id: 'ro2',
+        number: 'OR00002',
+        plate: 'AB-123-CD',
+        plate_key: 'AB123CD',
+        parts_pending_count: 1,
+        parts_to_order_count: 0,
+      }),
+      order({ id: 'ro3', number: 'OR00003', plate: 'EF-456-GH', plate_key: 'EF456GH' }),
+    ]);
+    render('/or?filtre=a-commander');
+
+    expect(await screen.findByText('GH-512-RT')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Pièces à commander/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByText('AB-123-CD')).not.toBeInTheDocument();
+    const waiting = screen.getByText('Attente pièces (3)');
+    const toOrder = screen.getByText('À commander (2)');
+    // À droite : juste après dans le même groupe
+    expect(waiting.nextElementSibling).toBe(toOrder);
+
+    // Pièces toutes commandées : seulement « Attente pièces »
+    await userEvent.click(screen.getByRole('button', { name: /^Pièces en attente/ }));
+    expect(screen.getByText('Attente pièces (1)')).toBeInTheDocument();
+    expect(screen.queryByText('À commander (0)')).not.toBeInTheDocument();
+    expect(screen.queryByText('EF-456-GH')).not.toBeInTheDocument();
+  });
+
   it('OR sans technicien : dans « Non assigné », pas dans « Assigné »', async () => {
     vi.mocked(fetchRepairOrders).mockResolvedValue([
       order(),
