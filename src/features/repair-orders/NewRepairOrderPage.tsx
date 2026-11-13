@@ -142,8 +142,14 @@ export function NewRepairOrderPage() {
         ...toNewRepairOrderInput({ ...values, client_name: clientName }, signatureFileId),
         inspection_required: inspectionRequired,
       });
-      // Dépannage extérieur : lieu, trajet et prix du déplacement posés sur l'OR créé
-      if (roadside.enabled) await updateRepairOrder(order.id, roadsidePatch(roadside));
+      // Dépannage extérieur (lieu, trajet, prix) et note pour le technicien posés sur l'OR créé
+      const note = values.technician_note.trim();
+      if (roadside.enabled || note) {
+        await updateRepairOrder(order.id, {
+          ...(roadside.enabled ? roadsidePatch(roadside) : {}),
+          ...(note ? { technician_note: note } : {}),
+        });
+      }
       // Vidange faite ailleurs, dite par le client : notée sur la fiche du véhicule
       if (declaredOil.date) {
         await addOilChange({
@@ -388,6 +394,26 @@ ${task}`
                 {errors.requested_work && (
                   <p id="requested_work-error" className="err">
                     {errors.requested_work.message}
+                  </p>
+                )}
+              </div>
+              <div className="field">
+                <Label htmlFor="technician_note">Note pour le technicien (optionnel)</Label>
+                <Textarea
+                  id="technician_note"
+                  rows={2}
+                  placeholder="Ex. : clés au bureau, client qui attend sur place…"
+                  aria-invalid={errors.technician_note ? true : undefined}
+                  aria-describedby={errors.technician_note ? 'technician_note-error' : 'technician_note-hint'}
+                  {...register('technician_note')}
+                />
+                {errors.technician_note ? (
+                  <p id="technician_note-error" className="err">
+                    {errors.technician_note.message}
+                  </p>
+                ) : (
+                  <p id="technician_note-hint" className="hint">
+                    Pas une tâche : une consigne affichée en haut de sa fiche OR.
                   </p>
                 )}
               </div>

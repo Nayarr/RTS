@@ -43,6 +43,7 @@ export const newRepairOrderSchema = z
     plate: z.string().refine((value) => normalizeKey(value).length >= 2, 'Indique l’immatriculation'),
     client_name: z.string().trim().max(120),
     requested_work: z.string().trim().min(1, 'Indique la tâche à faire').max(2000),
+    technician_note: z.string().trim().max(1000, '1 000 caractères au plus'),
     vehicle_type: z.enum(['pl', 'vul', 'remorque']),
     mileage: z.string().regex(/^\d{0,7}$/, 'Kilométrage en chiffres'),
     planned_date: z.string(),
@@ -77,6 +78,7 @@ export const newRepairOrderDefaults = (): NewRepairOrderValues => ({
   plate: '',
   client_name: '',
   requested_work: '',
+  technician_note: '',
   vehicle_type: 'pl',
   mileage: '',
   planned_date: todayIso(),
@@ -107,6 +109,7 @@ export const toNewRepairOrderInput = (
 export const editRepairOrderSchema = z
   .object({
     requested_work: z.string().trim().min(1, 'Indique la tâche à faire').max(2000),
+    technician_note: z.string().trim().max(1000, '1 000 caractères au plus'),
     vehicle_type: z.enum(['pl', 'vul', 'remorque']),
     mileage: z.string().regex(/^\d{0,7}$/, 'Kilométrage en chiffres'),
     planned_date: z.string(),

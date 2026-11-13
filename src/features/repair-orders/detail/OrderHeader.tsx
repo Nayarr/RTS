@@ -8,6 +8,7 @@ import {
   Gauge,
   Hash,
   Package,
+  StickyNote,
 } from 'lucide-react';
 import { StoredImage } from '@/features/files/StoredImage';
 import type { SignatureChannel } from '@/features/signature/api';
@@ -71,6 +72,12 @@ export function OrderHeader({
           </div>
 
           <TaskList text={order.requested_work} className="text-[15px] leading-normal" />
+          {order.technician_note && (
+            <p className="row muted gap-1.5 text-[13.5px]" aria-label="Note pour le technicien">
+              <StickyNote className="i xs shrink-0" />
+              <span className="whitespace-pre-line">{order.technician_note}</span>
+            </p>
+          )}
 
           <div className="row wrap muted gap-[18px] text-[13.5px]">
             <span className="row gap-1.5">
