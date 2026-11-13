@@ -8906,6 +8906,7 @@ export type Database = {
           name: string;
           presence_hours: number;
           ro_count: number;
+          sales_margin_ht: number;
           technician_id: string;
           worked_hours: number;
         }[];

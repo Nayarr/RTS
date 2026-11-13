@@ -68,6 +68,7 @@ const tech = (overrides: Partial<TechnicianPerformanceRow> = {}): TechnicianPerf
   name: 'Alice',
   color: '#137017',
   labor_ht: 1000,
+  sales_margin_ht: 0,
   ro_count: 4,
   billed_hours: 9,
   worked_hours: 10,
