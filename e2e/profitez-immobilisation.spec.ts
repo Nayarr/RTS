@@ -110,9 +110,10 @@ test('création d’OR : échéances du véhicule connu ajoutées aux tâches', 
   await page.getByLabel('Tâche à faire').fill('Disques et plaquettes avant');
   await upcoming.getByRole('button', { name: 'Ajouter aux tâches : Contrôle technique' }).click();
   await upcoming.getByRole('button', { name: 'Ajouter aux tâches : Vidange' }).click();
-  await expect(page.getByLabel('Tâche à faire')).toHaveValue(
-    'Disques et plaquettes avant\nContrôle technique\nVidange',
-  );
+  // Chaque échéance ajoutée prend sa ligne
+  await expect(page.getByLabel('Tâche à faire')).toHaveValue('Disques et plaquettes avant');
+  await expect(page.getByLabel('Tâche 2', { exact: true })).toHaveValue('Contrôle technique');
+  await expect(page.getByLabel('Tâche 3', { exact: true })).toHaveValue('Vidange');
   // Déjà dans les tâches : plus proposées
   await expect(items).not.toContainText('Contrôle technique');
 });
