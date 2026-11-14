@@ -227,6 +227,7 @@ describe('clients et véhicules : règles', () => {
       billing_address: '1 rue du Port, 95190 Goussainville',
       account_type: 'comptant',
       direct_debit_day: null,
+      no_auto_reminders: false,
       siret: '12345678900015',
       notes: null,
     });

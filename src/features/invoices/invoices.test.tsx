@@ -183,6 +183,7 @@ function setupInvoice(detail: Partial<InvoiceDetail> = {}, role: 'direction' | '
     vehicleType: 'pl',
     laborRate: 90,
     clientDiscount: 5,
+    autoReminders: { invoiceOff: false, clientOff: false },
     ...detail,
   });
   return renderRoutes(

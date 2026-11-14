@@ -112,6 +112,8 @@ const settings: Settings = {
     agent_memo: '',
     mail_send_enabled: false,
     auto_mails_enabled: true,
+    overdue_reminders_enabled: false,
+    last_overdue_reminders_on: null,
     mail_domain: null,
     mail_billing_local: 'facturation',
     mail_workshop_local: 'atelier',

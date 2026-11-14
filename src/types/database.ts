@@ -227,6 +227,7 @@ export type Database = {
           friday_lunch_start: string;
           id: boolean;
           label_scan_enabled: boolean;
+          last_overdue_reminders_on: string | null;
           late_tolerance: string;
           lunch_end: string;
           lunch_start: string;
@@ -235,6 +236,7 @@ export type Database = {
           mail_send_enabled: boolean;
           mail_signature_local: string;
           mail_workshop_local: string;
+          overdue_reminders_enabled: boolean;
           overtime_start: string;
           rest_reference_monday: string | null;
           roadside_flat_fee: number;
@@ -269,6 +271,7 @@ export type Database = {
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
+          last_overdue_reminders_on?: string | null;
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
@@ -277,6 +280,7 @@ export type Database = {
           mail_send_enabled?: boolean;
           mail_signature_local?: string;
           mail_workshop_local?: string;
+          overdue_reminders_enabled?: boolean;
           overtime_start?: string;
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
@@ -311,6 +315,7 @@ export type Database = {
           friday_lunch_start?: string;
           id?: boolean;
           label_scan_enabled?: boolean;
+          last_overdue_reminders_on?: string | null;
           late_tolerance?: string;
           lunch_end?: string;
           lunch_start?: string;
@@ -319,6 +324,7 @@ export type Database = {
           mail_send_enabled?: boolean;
           mail_signature_local?: string;
           mail_workshop_local?: string;
+          overdue_reminders_enabled?: boolean;
           overtime_start?: string;
           rest_reference_monday?: string | null;
           roadside_flat_fee?: number;
@@ -892,6 +898,7 @@ export type Database = {
           legacy_key: string | null;
           name: string;
           name_key: string | null;
+          no_auto_reminders: boolean;
           notes: string | null;
           other_phones: NonNullable<Json>;
           phone: string | null;
@@ -923,6 +930,7 @@ export type Database = {
           legacy_key?: string | null;
           name: string;
           name_key?: never;
+          no_auto_reminders?: boolean;
           notes?: string | null;
           other_phones?: NonNullable<Json>;
           phone?: string | null;
@@ -954,6 +962,7 @@ export type Database = {
           legacy_key?: string | null;
           name?: string;
           name_key?: never;
+          no_auto_reminders?: boolean;
           notes?: string | null;
           other_phones?: NonNullable<Json>;
           phone?: string | null;
@@ -2580,18 +2589,21 @@ export type Database = {
       };
       invoice_reminders: {
         Row: {
+          auto_level: number | null;
           id: string;
           invoice_id: string;
           sent_at: string;
           sent_by: string | null;
         };
         Insert: {
+          auto_level?: number | null;
           id?: string;
           invoice_id: string;
           sent_at?: string;
           sent_by?: string | null;
         };
         Update: {
+          auto_level?: number | null;
           id?: string;
           invoice_id?: string;
           sent_at?: string;
@@ -2720,6 +2732,7 @@ export type Database = {
           margin_purchase_price: number | null;
           margin_vat_rate: number | null;
           mileage: number | null;
+          no_auto_reminders: boolean;
           number: string | null;
           pdf_file_id: string | null;
           public_token: string | null;
@@ -2755,6 +2768,7 @@ export type Database = {
           margin_purchase_price?: number | null;
           margin_vat_rate?: number | null;
           mileage?: number | null;
+          no_auto_reminders?: boolean;
           number?: string | null;
           pdf_file_id?: string | null;
           public_token?: string | null;
@@ -2790,6 +2804,7 @@ export type Database = {
           margin_purchase_price?: number | null;
           margin_vat_rate?: number | null;
           mileage?: number | null;
+          no_auto_reminders?: boolean;
           number?: string | null;
           pdf_file_id?: string | null;
           public_token?: string | null;
@@ -6535,6 +6550,7 @@ export type Database = {
           legacy_key: string | null;
           name: string | null;
           name_key: string | null;
+          no_auto_reminders: boolean | null;
           notes: string | null;
           orders_count: number | null;
           other_phones: Json | null;
@@ -8265,6 +8281,10 @@ export type Database = {
         };
         Returns: string;
       };
+      finish_overdue_reminders: {
+        Args: { p_clients: number; p_failed: number; p_total: number };
+        Returns: undefined;
+      };
       fleet_vehicle_block_reason: {
         Args: { p_on: string; p_vehicle: Database['public']['Tables']['fleet_vehicles']['Row'] };
         Returns: string;
@@ -8492,6 +8512,23 @@ export type Database = {
       normalize_key: { Args: { p_value: string }; Returns: string };
       normalize_match_text: { Args: { p_text: string }; Returns: string };
       office_dashboard: { Args: Record<PropertyKey, never>; Returns: Json };
+      overdue_reminder_candidates: {
+        Args: { p_today: string };
+        Returns: {
+          auto_count: number;
+          balance_due: number;
+          client_id: string;
+          client_name: string;
+          due_date: string;
+          email: string;
+          invoice_id: string;
+          issued_at: string;
+          last_sent: string;
+          number: string;
+          vehicle_label: string;
+        }[];
+      };
+      overdue_reminder_grace_days: { Args: { p_account_type: string; p_debit_day: number }; Returns: number };
       package_fits_vehicle: {
         Args: {
           p_category: Database['public']['Enums']['labor_category'];
@@ -8538,6 +8575,7 @@ export type Database = {
         }[];
       };
       prepare_auto_mails: { Args: { p_now?: string }; Returns: Json };
+      prepare_overdue_reminders: { Args: { p_today?: string }; Returns: Json };
       prepare_rental_mails: { Args: { p_now?: string }; Returns: Json };
       profiles_with_roles: {
         Args: { p_roles: Database['public']['Enums']['app_role'][] };
@@ -8623,6 +8661,7 @@ export type Database = {
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
         Returns: {
+          auto_level: number | null;
           id: string;
           invoice_id: string;
           sent_at: string;
@@ -8635,6 +8674,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      record_overdue_reminder: { Args: { p_invoice_ids: string[]; p_level: number }; Returns: number };
       record_push_results: {
         Args: { p_delivered: string[]; p_gone: string[]; p_retry: string[] };
         Returns: undefined;
@@ -8703,6 +8743,7 @@ export type Database = {
         }[];
       };
       run_auto_mails: { Args: Record<PropertyKey, never>; Returns: number };
+      run_overdue_reminders: { Args: Record<PropertyKey, never>; Returns: number };
       save_appointment: {
         Args: {
           p_client_name: string;
@@ -8869,6 +8910,7 @@ export type Database = {
         Returns: number;
       };
       set_inbox_emails_handled: { Args: { p_handled: boolean; p_ids: string[] }; Returns: number };
+      set_invoice_auto_reminders: { Args: { p_enabled: boolean; p_invoice_id: string }; Returns: undefined };
       set_invoice_due_date: { Args: { p_due_date: string; p_invoice_id: string }; Returns: undefined };
       set_invoice_line_employee: {
         Args: { p_line_id: string; p_profile_id?: string; p_technician_id?: string };

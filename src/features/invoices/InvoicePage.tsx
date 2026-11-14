@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { OilChangeSuggestion } from '@/features/repair-orders/OilChangeSuggestion';
 import { SavButton } from '@/features/repair-orders/sav';
 import { AddLineButtons } from '@/features/documents/AddLineButtons';
@@ -39,6 +40,7 @@ import {
   deletePayment,
   issueInvoice,
   rebuildInvoiceDraft,
+  setInvoiceAutoReminders,
   setInvoiceDueDate,
   updateInvoiceDraft,
   reorderInvoiceLines,
@@ -151,6 +153,36 @@ function DraftActions({
         </Button>
       </div>
     </section>
+  );
+}
+
+/** Relance automatique du lundi pour cette facture : coupée en cas de litige ou d'accord de paiement. */
+function AutoRemindersSwitch({ detail }: { detail: InvoiceDetail }) {
+  const { invoiceOff, clientOff } = detail.autoReminders;
+  const toggle = useInvoiceMutation(
+    (enabled: boolean) => setInvoiceAutoReminders(detail.invoice.id, enabled),
+    (_data, enabled) =>
+      enabled ? 'Relance automatique réactivée' : 'Facture exclue de la relance automatique',
+  );
+  return (
+    <div className="row gap-3">
+      <Switch
+        id="invoice-auto-reminders"
+        checked={!invoiceOff && !clientOff}
+        disabled={clientOff || toggle.isPending}
+        onCheckedChange={(checked) => toggle.mutate(checked)}
+      />
+      <span className="col gap-0">
+        <Label htmlFor="invoice-auto-reminders" className="text-[13.5px]">
+          Relance automatique le lundi
+        </Label>
+        <span className="hint">
+          {clientOff
+            ? 'Client exclu des relances automatiques (fiche client).'
+            : 'À couper en cas de litige ou d’accord de paiement.'}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -284,6 +316,7 @@ function IssuedPanel({
               {formatDate(invoice.last_reminder_at)}
             </p>
           )}
+          {canSettle && balance > 0.01 && <AutoRemindersSwitch detail={detail} />}
           {payments.length > 0 && (
             <ul aria-label="Paiements">
               {payments.map((payment) => (
