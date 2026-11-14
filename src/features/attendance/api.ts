@@ -22,6 +22,10 @@ export interface TechnicianDay {
   events: ClockEvent[];
   attendance: DailyAttendance | null;
   leaveType: LeaveType | null;
+  /** Absence de quelques heures : créneau « 09:00-14:00 » (null : journée entière). */
+  leaveHours: string | null;
+  /** Un badgeage du jour tombe dans l'absence validée. */
+  badgedDuringLeave: boolean;
 }
 
 /** Pointages du jour, par technicien actif : présence, anomalies, absences, codes PIN. */
@@ -37,7 +41,7 @@ export async function fetchAttendanceDay(date: string): Promise<TechnicianDay[]>
     supabase.from('v_daily_attendance').select('*').eq('work_date', date),
     supabase
       .from('leave_requests')
-      .select('technician_id, leave_type')
+      .select('technician_id, leave_type, start_time, end_time')
       .eq('status', 'approved')
       .eq('is_deleted', false)
       .lte('starts_on', date)
@@ -49,10 +53,12 @@ export async function fetchAttendanceDay(date: string): Promise<TechnicianDay[]>
 
   return (technicians.data ?? []).map((technician) => {
     const day = (attendance.data ?? []).find((row) => row.technician_id === technician.id);
+    const leave = (leaves.data ?? []).find((row) => row.technician_id === technician.id);
+    const techEvents = (events.data ?? []).filter((event) => event.technician_id === technician.id);
     return {
       ...technician,
       hasPin: withPin.has(technician.id),
-      events: (events.data ?? []).filter((event) => event.technician_id === technician.id),
+      events: techEvents,
       attendance: day
         ? {
             worked_seconds: day.worked_seconds ?? 0,
@@ -62,8 +68,13 @@ export async function fetchAttendanceDay(date: string): Promise<TechnicianDay[]>
             late_minutes: day.late_minutes ?? 0,
           }
         : null,
-      leaveType:
-        (leaves.data ?? []).find((leave) => leave.technician_id === technician.id)?.leave_type ?? null,
+      leaveType: leave?.leave_type ?? null,
+      leaveHours:
+        leave?.start_time && leave.end_time
+          ? `${leave.start_time.slice(0, 5)}-${leave.end_time.slice(0, 5)}`
+          : null,
+      // Marqué par la base au badgeage (créneau de l'absence pour une absence de quelques heures)
+      badgedDuringLeave: techEvents.some((event) => event.during_leave_type !== null),
     };
   });
 }
