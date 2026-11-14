@@ -7775,6 +7775,7 @@ export type Database = {
       assert_direction: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_office: { Args: Record<PropertyKey, never>; Returns: undefined };
       assign_quote_number: { Args: { p_mark_sent?: boolean; p_quote_id: string }; Returns: string };
+      attendance_expected_arrival: { Args: { p_day: string; p_technician_id: string }; Returns: string };
       auto_mail_deadline_item: {
         Args: {
           p_client_id: string;

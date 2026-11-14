@@ -75,6 +75,8 @@ const DAY: TechnicianDay[] = [
       late_minutes: 0,
     },
     leaveType: null,
+    leaveHours: null,
+    badgedDuringLeave: false,
   },
   {
     id: 't2',
@@ -91,6 +93,8 @@ const DAY: TechnicianDay[] = [
       late_minutes: 40,
     },
     leaveType: 'paid_leave',
+    leaveHours: null,
+    badgedDuringLeave: true,
   },
 ];
 
@@ -140,6 +144,23 @@ describe('pointages : écran', () => {
       'Congés payés : a badgé pendant son absence',
     );
     expect(within(bruno).getByRole('link', { name: 'Pas de code PIN' })).toHaveAttribute('href', '/equipe');
+  });
+
+  it('absence de quelques heures : créneau affiché, arrivée après la fin sans alerte rouge', async () => {
+    vi.mocked(fetchAttendanceDay).mockResolvedValue([
+      {
+        ...DAY[1]!,
+        display_name: 'Abbas',
+        attendance: { ...DAY[1]!.attendance!, late_minutes: 25 },
+        leaveHours: '09:00-14:00',
+        badgedDuringLeave: false,
+      },
+    ]);
+    renderPage();
+    const abbas = await screen.findByRole('article', { name: 'Abbas' });
+    expect(within(abbas).getByText(/Congés payés/)).toHaveTextContent(/^Congés payés 09:00-14:00$/);
+    expect(within(abbas).getByText('Retard : 25 min')).toBeInTheDocument();
+    expect(within(abbas).queryByText('a badgé pendant son absence')).toBeNull();
   });
 
   it('photo agrandie', async () => {
