@@ -214,7 +214,8 @@ function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }
           {tech.leaveType && (
             <span className="badge s-warn">
               {LEAVE_LABELS[tech.leaveType]}
-              {tech.events.length > 0 && <span className="sr-only"> : a badgé pendant son absence</span>}
+              {tech.leaveHours && ` ${tech.leaveHours}`}
+              {tech.badgedDuringLeave && <span className="sr-only"> : a badgé pendant son absence</span>}
             </span>
           )}
           {attendance && attendance.late_minutes > 0 && (
@@ -235,7 +236,7 @@ function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }
             ))}
         </span>
         <span className="muted num text-[13px]">
-          {tech.leaveType && tech.events.length > 0 ? (
+          {tech.badgedDuringLeave ? (
             <b className="down">a badgé pendant son absence</b>
           ) : tech.events.length ? (
             <>
