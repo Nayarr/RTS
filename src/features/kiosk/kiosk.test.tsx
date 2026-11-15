@@ -85,6 +85,41 @@ describe('borne : messages', () => {
   });
 });
 
+describe('borne : pause', () => {
+  it('2e badgeage : bonne pause, heure du retour possible', () => {
+    expect(
+      kioskMessage({
+        ok: true,
+        technician_name: 'Alice',
+        event_type: 'out',
+        occurred_at: '2026-10-05T10:01:00Z',
+        during_leave_type: null,
+        pause_until: '2026-10-05T11:00:00Z',
+      }),
+    ).toMatchObject({
+      tone: 'warning',
+      title: 'Bonne pause Alice',
+      detail: 'Départ enregistré à 12:01 · retour badgé possible à 13:00',
+    });
+  });
+
+  it('badgeage pendant la pause : refus affiché avec le temps restant', async () => {
+    vi.mocked(kioskClock).mockResolvedValue({
+      ok: false,
+      message: 'Pause en cours (Alice) : re-badge possible dans 23 min.',
+    });
+    expect(
+      kioskMessage({ ok: false, message: 'Pause en cours (Alice) : re-badge possible dans 23 min.' }),
+    ).toMatchObject({ tone: 'warning', resetAfter: 4000 });
+    renderKiosk();
+    await screen.findByText('RAPID TRUCK SERVICE');
+    await userEvent.keyboard('1234{Enter}');
+    expect(
+      await screen.findByText('Pause en cours (Alice) : re-badge possible dans 23 min.'),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('borne : écran', () => {
   it('le PIN est masqué ; photo envoyée puis pointage', async () => {
     vi.mocked(kioskClock).mockResolvedValue({
