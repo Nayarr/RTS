@@ -1,6 +1,6 @@
 // =============================================================================
 // Edge Function « label-read » : lecture automatique de l'étiquette du contrôle hayon
-// (kind « tailgate »), du contrôle technique (kind « technical_inspection » : échéance et VIN)
+// (kind « tailgate »), du contrôle technique (kind « technical_inspection » : échéance, VIN, marque et modèle)
 // ou d'un permis de conduire (kind « driving_license » : recto et verso, identité et catégories),
 // ou d'une carte grise (kind « registration_card » : fiche d'un véhicule de la flotte).
 //
@@ -21,6 +21,7 @@ import {
   inspectionReadingPrompt,
   validPlate,
   validVin,
+  vehicleText,
 } from './inspection-reading.ts';
 import {
   checkedLicense,
@@ -64,6 +65,8 @@ const readingSchema = z.object({
   confidence: z.enum(['haute', 'moyenne', 'faible']),
   vin: z.string().max(100).optional(),
   plate: z.string().max(40).optional(),
+  brand: z.string().max(200).optional(),
+  model: z.string().max(200).optional(),
 });
 
 const licenseSchema = z.object({
@@ -240,12 +243,14 @@ export default {
       return fail(422, unreadable);
     }
 
-    // Procès-verbal du contrôle technique : échéance, VIN et immatriculation
+    // Procès-verbal du contrôle technique : échéance, VIN, immatriculation, marque et modèle
     return json(200, {
       next_due_date: validDate(reading.next_due_date, today),
       last_control_date: validDate(reading.last_control_date, today),
       vin: validVin(reading.vin ?? ''),
       plate: validPlate(reading.plate ?? ''),
+      brand: vehicleText(reading.brand),
+      model: vehicleText(reading.model),
       label_text: reading.label_text.trim(),
       confidence: reading.confidence,
     });

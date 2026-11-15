@@ -8963,6 +8963,7 @@ export type Database = {
       valid_client_phones: { Args: { p_phones: Json }; Returns: boolean };
       vehicle_history_for_diagnosis: { Args: { p_repair_order_id: string }; Returns: Json };
       verify_kiosk_exit_code: { Args: { p_code: string }; Returns: boolean };
+      vin_brand: { Args: { p_vin: string }; Returns: string };
       workshop_board: { Args: Record<PropertyKey, never>; Returns: Json };
       workshop_workload: { Args: { p_from: string; p_to: string }; Returns: Json };
       workshop_workload_detail: {

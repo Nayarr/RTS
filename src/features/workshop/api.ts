@@ -36,7 +36,11 @@ export interface VehicleDeadlines {
 }
 
 /** Ce que l'OR peut changer sur le véhicule : échéances, et VIN lu sur le contrôle technique. */
-export type VehiclePatch = Partial<VehicleDeadlines> & { vin?: string | null };
+export type VehiclePatch = Partial<VehicleDeadlines> & {
+  vin?: string | null;
+  brand?: string;
+  model?: string;
+};
 
 export async function fetchVehicleDeadlines(vehicleId: string): Promise<VehicleDeadlines | null> {
   const { data, error } = await supabase
@@ -123,6 +127,9 @@ export interface TechnicalInspectionReading {
   vin: string | null;
   /** Immatriculation lue, ou null. */
   plate?: string | null;
+  /** Marque (D.1) et modèle (D.3, sinon D.2) lus sur le procès-verbal, ou null (vignette). */
+  brand?: string | null;
+  model?: string | null;
   label_text: string;
   confidence: 'haute' | 'moyenne' | 'faible';
 }

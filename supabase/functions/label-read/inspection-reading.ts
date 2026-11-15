@@ -24,13 +24,32 @@ export const INSPECTION_READING_SCHEMA = {
       type: 'string',
       description: 'Immatriculation du véhicule (ex. AB-123-CD), ou chaîne vide si illisible ou absente.',
     },
+    brand: {
+      type: 'string',
+      description:
+        'Marque du véhicule (rubrique D.1, ex. RENAULT TRUCKS), ou chaîne vide si illisible ou absente.',
+    },
+    model: {
+      type: 'string',
+      description:
+        'Modèle : dénomination commerciale (rubrique D.3, ex. T 480), sinon type (D.2), ou chaîne vide si illisible ou absent.',
+    },
     label_text: {
       type: 'string',
       description: 'Texte utile lu sur le document (résultat, dates, immatriculation), en une ligne courte.',
     },
     confidence: { type: 'string', enum: ['haute', 'moyenne', 'faible'] },
   },
-  required: ['last_control_date', 'next_due_date', 'vin', 'plate', 'label_text', 'confidence'],
+  required: [
+    'last_control_date',
+    'next_due_date',
+    'vin',
+    'plate',
+    'brand',
+    'model',
+    'label_text',
+    'confidence',
+  ],
   additionalProperties: false,
 } as const;
 
@@ -41,7 +60,8 @@ export function inspectionReadingPrompt(today: string): string {
     'procès-verbal de contrôle technique, ou vignette collée sur le pare-brise.',
     'Le « numéro de série » (ou « N° de série ») et le numéro de châssis sont le VIN : numéro d’identification du véhicule, 17 caractères (rubrique E du certificat).',
     'Vignette collée sur le pare-brise : lis uniquement l’immatriculation et le VIN, et laisse les deux dates vides.',
-    'Procès-verbal : lis aussi la date du contrôle et la date limite du prochain contrôle (souvent « à présenter avant le … »).',
+    'Procès-verbal : lis aussi la date du contrôle et la date limite du prochain contrôle (souvent « à présenter avant le … »),',
+    'ainsi que la marque (rubrique D.1) et le modèle (dénomination commerciale D.3, sinon type D.2) du véhicule.',
     `Nous sommes le ${today}.`,
     'Donne les dates au format AAAA-MM-JJ et le VIN sans espace ; laisse une chaîne vide pour ce qui est illisible ou absent, sans l’inventer.',
     'confidence : « haute » si tout est net, « moyenne » si une partie est déduite, « faible » si la photo est floue ou ambiguë.',
@@ -61,4 +81,10 @@ export function validPlate(value: string): string | null {
 export function validVin(value: string): string | null {
   const vin = value.replace(/[\s-]/g, '').toUpperCase();
   return /^[A-HJ-NPR-Z0-9]{17}$/.test(vin) ? vin : null;
+}
+
+/** Marque ou modèle lu : espaces réduits, 60 caractères au plus ; vide → null. */
+export function vehicleText(value: string | undefined): string | null {
+  const text = (value ?? '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  return text || null;
 }

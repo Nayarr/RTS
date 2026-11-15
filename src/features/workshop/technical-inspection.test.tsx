@@ -60,6 +60,8 @@ describe('contrôle technique lu sur la photo', () => {
       expect(updateDeadlines).toHaveBeenCalledWith('ro1', {
         ct_due_date: '2027-09-30',
         vin: 'VF612345678901234',
+        // Marque non lue : déduite du VIN (VF6)
+        brand: 'Renault Trucks',
       }),
     );
     expect(onClose).toHaveBeenCalled();
