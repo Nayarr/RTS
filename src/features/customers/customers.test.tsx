@@ -406,6 +406,31 @@ describe('clients et véhicules : écrans', () => {
     expect(within(dialog).getByLabelText('Client')).toHaveValue('Transports Martin');
   });
 
+  it('fiche véhicule : VIN saisi, marque vide déduite du code constructeur', async () => {
+    vi.mocked(fetchVehicle).mockResolvedValue({
+      ...VEHICLE_DETAIL,
+      vehicle: vehicle({ brand: null, model: null }),
+    });
+    vi.mocked(updateVehicle).mockClear();
+    renderAs('reception', '/vehicules/v1', <VehiclePage />, '/vehicules/:id');
+    await userEvent.type(await screen.findByLabelText('N° de série (VIN)'), 'ys2r4x20005123456');
+    expect(screen.getByLabelText('Marque')).toHaveValue('Scania');
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() =>
+      expect(updateVehicle).toHaveBeenCalledWith(
+        'v1',
+        expect.objectContaining({ vin: 'YS2R4X20005123456', brand: 'Scania', model: null }),
+      ),
+    );
+  });
+
+  it('fiche véhicule : marque déjà saisie, le VIN ne la remplace pas', async () => {
+    vi.mocked(fetchVehicle).mockResolvedValue(VEHICLE_DETAIL);
+    renderAs('reception', '/vehicules/v1', <VehiclePage />, '/vehicules/:id');
+    await userEvent.type(await screen.findByLabelText('N° de série (VIN)'), 'YS2R4X20005123456');
+    expect(screen.getByLabelText('Marque')).toHaveValue('Renault Trucks');
+  });
+
   it('fiche véhicule : transfert à un autre client, propriétaires et client de chaque passage', async () => {
     vi.mocked(transferVehicle).mockResolvedValue(undefined);
     vi.mocked(searchClients).mockResolvedValue([

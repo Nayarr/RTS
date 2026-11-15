@@ -67,6 +67,59 @@ describe('contrôle technique lu sur la photo', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('procès-verbal : marque et modèle lus, modifiables, envoyés avec le VIN', async () => {
+    vi.mocked(readTechnicalInspection).mockResolvedValue({
+      next_due_date: '2027-09-30',
+      last_control_date: '2026-09-28',
+      vin: 'YS2R4X20005123456',
+      brand: 'SCANIA',
+      model: 'R 450',
+      label_text: 'Contrôle favorable',
+      confidence: 'haute',
+    });
+    vi.mocked(updateDeadlines).mockClear();
+    vi.mocked(updateDeadlines).mockResolvedValue();
+    renderDialog();
+
+    const brand = await screen.findByLabelText('Marque');
+    expect(brand).toHaveValue('SCANIA');
+    const model = screen.getByLabelText('Modèle');
+    expect(model).toHaveValue('R 450');
+    await userEvent.clear(model);
+    await userEvent.type(model, 'R 500');
+    await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
+    await waitFor(() =>
+      expect(updateDeadlines).toHaveBeenCalledWith('ro1', {
+        ct_due_date: '2027-09-30',
+        vin: 'YS2R4X20005123456',
+        brand: 'SCANIA',
+        model: 'R 500',
+      }),
+    );
+  });
+
+  it('vignette : VIN seul, marque proposée depuis le VIN, modèle laissé vide', async () => {
+    vi.mocked(readTechnicalInspection).mockResolvedValue({
+      next_due_date: null,
+      last_control_date: null,
+      vin: 'XLRTE47MS0E123456',
+      brand: null,
+      model: null,
+      label_text: '',
+      confidence: 'haute',
+    });
+    vi.mocked(updateDeadlines).mockClear();
+    vi.mocked(updateDeadlines).mockResolvedValue();
+    renderDialog();
+
+    expect(await screen.findByLabelText('Marque')).toHaveValue('DAF');
+    expect(screen.getByLabelText('Modèle')).toHaveValue('');
+    await userEvent.click(screen.getByRole('button', { name: 'Valider' }));
+    await waitFor(() =>
+      expect(updateDeadlines).toHaveBeenCalledWith('ro1', { vin: 'XLRTE47MS0E123456', brand: 'DAF' }),
+    );
+  });
+
   it('VIN mal lu : corrigé à la main, refusé tant qu’il est invalide', async () => {
     vi.mocked(readTechnicalInspection).mockResolvedValue({
       next_due_date: null,
