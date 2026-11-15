@@ -30,7 +30,7 @@ set local session_replication_role = origin;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');  -- réception
 
--- Dépannage : le déplacement rejoint la facture émise
+-- Dépannage : le déplacement rejoint le brouillon de facture
 select (public.settle_pre_quote_work('50000000-0000-0000-0000-000000001271',
   '[{"line_id": "51000000-0000-0000-0000-000000001271", "decision": "billed", "price": 60}]'::jsonb)) ->> 'invoice_id' as invoice \gset
 select results_eq(
@@ -40,8 +40,8 @@ select results_eq(
   'Facture : le forfait de la zone 3, avec le lieu');
 select is((select sum(net_ht) from public.invoice_lines where invoice_id = :'invoice'), 190.00::numeric,
           'Facture : diagnostic et déplacement');
-select is((select status::text from public.repair_orders where id = '50000000-0000-0000-0000-000000001271'), 'invoiced',
-          'OR facturé');
+select is((select status::text from public.invoices where id = :'invoice'), 'draft',
+          'Brouillon : la direction l''émet elle-même');
 select is((select count(*)::int from public.invoice_lines l
             join public.invoice_repair_orders iro on iro.invoice_id = l.invoice_id
             where iro.repair_order_id = '50000000-0000-0000-0000-000000001271' and l.line_type = 'travel'), 1,

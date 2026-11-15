@@ -41,7 +41,7 @@ select results_eq(
 -- Sans décision du bureau : la règle s'applique, l'expertise est facturée moins 1 h
 select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000043', '[]') as settled \gset
 select results_eq(
-  format($$ select total_ht from public.invoices where id = %L $$, :'settled'::jsonb ->> 'invoice_id'),
+  format($$ select total_ht from public.v_invoice_totals where invoice_id = %L $$, :'settled'::jsonb ->> 'invoice_id'),
   $$ values (135.00::numeric) $$,
   'Facturé : 2,5 h − 1 h = 1,5 h × 90 €/h');
 select results_eq(
@@ -63,7 +63,7 @@ select is((public.pre_quote_work('50000000-0000-0000-0000-000000000044') -> 'lin
           90.00, 'Prix proposé : 1 h × 90 €/h');
 select public.settle_pre_quote_work('50000000-0000-0000-0000-000000000044',
   '[{"line_id": "51000000-0000-0000-0000-000000000441", "decision": "offered", "price": 90}]') as settled_44 \gset
-select is((select total_ttc from public.invoices where id = (:'settled_44'::jsonb ->> 'invoice_id')::uuid), 0.00::numeric, 'Le bureau choisit d''offrir l''expertise : facture à 0 € avec le geste commercial');
+select is((select total_ttc from public.v_invoice_totals where invoice_id = (:'settled_44'::jsonb ->> 'invoice_id')::uuid), 0.00::numeric, 'Le bureau choisit d''offrir l''expertise : facture à 0 € avec le geste commercial');
 
 select * from finish();
 rollback;

@@ -135,10 +135,11 @@ export async function settlePreQuoteWork(repairOrderId: string, choices: PreQuot
 export const lineTitle = (description: string) => description.split('\n')[0] ?? '';
 
 /** Message de confirmation après la décision (la facture est émise dans tous les cas). */
+/** Brouillon préparé : jamais émis ni envoyé, la direction le relit avant de l'émettre. */
 export function settlementMessage(result: PreQuoteResult) {
-  const number = result.invoice_number ?? '';
-  if (result.billed === 0) return `Facture ${number} émise à 0 € : tout est offert, mention sur la facture`;
+  if (result.billed === 0)
+    return 'Brouillon de facture à 0 € préparé : tout est offert, à relire avant d’émettre';
   return result.offered > 0
-    ? `Facture ${number} émise (travaux offerts inclus avec 100 % de remise)`
-    : `Facture ${number} émise`;
+    ? 'Brouillon de facture préparé (travaux offerts inclus avec 100 % de remise), à relire avant d’émettre'
+    : 'Brouillon de facture préparé, à relire avant d’émettre';
 }

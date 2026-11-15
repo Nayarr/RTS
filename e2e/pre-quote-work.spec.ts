@@ -91,26 +91,24 @@ test('devis accepté : le bureau facture le diagnostic et offre le contrôle', a
   await expect(dialog.getByLabel('Prix HT de « Diagnostic freinage »')).toHaveValue('45,00');
   await dialog.getByLabel('Prix HT de « Diagnostic freinage »').fill('80');
   await dialog.getByLabel('Décision pour « Contrôle géométrie »').selectOption('offered');
-  await dialog.getByRole('button', { name: 'Valider et envoyer la facture' }).click();
+  await dialog.getByRole('button', { name: 'Préparer la facture' }).click();
 
-  // Facture émise et ouverte : ligne offerte visible avec 100 % de remise
-  await expect(page.getByText(/Facture F\d+ émise \(travaux offerts inclus/)).toBeVisible();
+  // Brouillon ouvert, pas émis : ligne offerte visible avec 100 % de remise
+  await expect(page.getByText(/Brouillon de facture préparé \(travaux offerts inclus/)).toBeVisible();
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
   await expect(
     page.getByLabel('Lignes de la facture').getByText('Contrôle géométrie · offert (geste commercial)'),
   ).toBeVisible();
-  // Envoi au client lancé tout seul (sans envoi par l'appli : message prêt, PDF de la facture)
-  const send = page.getByRole('dialog', { name: /^Envoyer la facture F\d+/ });
-  await expect(send).toBeVisible();
-  await send.getByRole('button', { name: 'Fermer' }).first().click();
+  // Rien n'est envoyé au client : la direction relit le brouillon et l'émet elle-même
+  await expect(page.getByRole('dialog', { name: /^Envoyer la facture/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Émettre/ }).first()).toBeVisible();
 
-  // L'OR de diagnostic est facturé, plus de bandeau
+  // Décision prise : plus de bandeau sur l'OR de diagnostic
   await page.goto(`/or/${order.id}`);
-  await expect(page.getByText('Facturé').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Facturer / offrir ces travaux' })).toHaveCount(0);
 });
 
-test('« Plus tard » laisse le bandeau sur l’OR ; tout offert : facture à 0 € envoyée quand même', async ({
+test('« Plus tard » laisse le bandeau sur l’OR ; tout offert : brouillon à 0 €, non envoyé', async ({
   page,
 }, testInfo) => {
   const plate = `AO${String(Date.now()).slice(-6)}${testInfo.project.name.includes('mobile') ? 'M' : 'D'}`;
@@ -127,15 +125,14 @@ test('« Plus tard » laisse le bandeau sur l’OR ; tout offert : facture à 0 
   await page.goto(`/or/${order.id}`);
   await page.getByRole('button', { name: 'Facturer / offrir ces travaux' }).click();
   await dialog.getByRole('button', { name: 'Tout offrir' }).click();
-  await dialog.getByRole('button', { name: 'Valider et envoyer la facture' }).click();
-  await expect(page.getByText(/Facture F\d+ émise à 0 € : tout est offert/)).toBeVisible();
+  await dialog.getByRole('button', { name: 'Préparer la facture' }).click();
+  await expect(page.getByText(/Brouillon de facture à 0 € préparé : tout est offert/)).toBeVisible();
   await expect(page).toHaveURL(/\/factures\/[0-9a-f-]+$/);
   await expect(
     page.getByLabel('Lignes de la facture').getByText('Diagnostic freinage · offert (geste commercial)'),
   ).toBeVisible();
-  await expect(page.getByRole('dialog', { name: /^Envoyer la facture F\d+/ })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /^Envoyer la facture/ })).toHaveCount(0);
 
   await page.goto(`/or/${order.id}`);
-  await expect(page.getByText('Facturé').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Facturer / offrir ces travaux' })).toHaveCount(0);
 });
