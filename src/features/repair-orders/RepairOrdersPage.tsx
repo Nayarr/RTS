@@ -17,6 +17,7 @@ import {
   type RepairOrderCategory,
 } from './constants';
 import { useRepairOrders } from './hooks';
+import { SavBadge } from './sav';
 import { StatusBadge } from './StatusBadge';
 import { taskSummary } from './tasks';
 
@@ -184,6 +185,7 @@ export function RepairOrdersPage() {
                             technicianId={order.technician_id}
                             quoteSent={order.quote_sent}
                           />
+                          <SavBadge order={order} />
                           <PartsBadge order={order} />
                         </span>
                       </td>
@@ -242,7 +244,10 @@ export function RepairOrdersPage() {
                           {order.number} · {formatDuration(order.worked_seconds)}
                         </span>
                       </div>
-                      <PartsBadge order={order} />
+                      <span className="row gap-1.5">
+                        <SavBadge order={order} />
+                        <PartsBadge order={order} />
+                      </span>
                     </Link>
                   </li>
                 ))}

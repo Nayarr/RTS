@@ -238,6 +238,27 @@ export async function updateRepairOrder(id: string, patch: TablesUpdate<'repair_
   if (!data.length) throw new Error('Modification non autorisée');
 }
 
+/** OR d'origine d'un SAV : de quoi préremplir le nouvel OR. */
+export async function fetchSavOrigin(id: string) {
+  const { data, error } = await supabase
+    .from('v_repair_orders_overview')
+    .select('id, number, plate, vehicle_type, client_name, technician_id, technician_name')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** Marque l'OR comme SAV de l'OR d'origine (même véhicule), responsable au choix (sinon son technicien). */
+export async function markRepairOrderSav(id: string, originId: string, responsibleId: string | null) {
+  const { error } = await supabase.rpc('mark_repair_order_sav', {
+    p_repair_order_id: id,
+    p_origin_repair_order_id: originId,
+    p_responsible_technician_id: responsibleId ?? undefined,
+  });
+  if (error) throw error;
+}
+
 /** Copie de l'OR (mêmes véhicule, client et tâches à faire, non assigné) ; renvoie son identifiant. */
 export async function duplicateRepairOrder(id: string): Promise<string> {
   const { data, error } = await supabase.rpc('duplicate_repair_order', { p_repair_order_id: id });

@@ -15,6 +15,7 @@ import type { SignatureChannel } from '@/features/signature/api';
 import { SignatureRequestPanel } from '@/features/signature/SignatureRequestPanel';
 import type { RepairOrderOverview } from '../api';
 import { formatDate, VEHICLE_TYPES } from '../constants';
+import { SavBadge } from '../sav';
 import { StatusBadge } from '../StatusBadge';
 import { TaskList } from '../TaskList';
 
@@ -68,6 +69,7 @@ export function OrderHeader({
                 quoteSent={order.quote_sent}
                 className="lg solid"
               />
+              <SavBadge order={order} className="h-7" />
             </div>
           </div>
 

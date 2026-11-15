@@ -133,6 +133,11 @@ export const realHourlyRate = ({ labor_ht, worked_hours }: ProfitabilityFigures)
 export const technicianRevenue = (row: Pick<TechnicianPerformanceRow, 'labor_ht' | 'sales_margin_ht'>) =>
   row.labor_ht + row.sales_margin_ht;
 
+/** CA net : CA total moins le coût des SAV causés (temps du collègue au taux horaire, pièces). */
+export const technicianNetRevenue = (
+  row: Pick<TechnicianPerformanceRow, 'labor_ht' | 'sales_margin_ht' | 'sav_cost_ht'>,
+) => technicianRevenue(row) - row.sav_cost_ht;
+
 export interface TechnicianScore extends TechnicianPerformanceRow {
   /** Heures facturées ÷ heures badgées, en %. */
   efficiency: number | null;
@@ -149,7 +154,7 @@ const clamp = (value: number) => Math.max(0, Math.min(100, value));
  * CA relatif au meilleur 25 %, précision d'estimation 15 % (critères absents ignorés).
  */
 export function scoreTechnicians(rows: TechnicianPerformanceRow[]): TechnicianScore[] {
-  const bestRevenue = Math.max(0, ...rows.map(technicianRevenue));
+  const bestRevenue = Math.max(0, ...rows.map(technicianNetRevenue));
   return rows
     .map((row) => {
       const efficiency = row.worked_hours > 0 ? (row.billed_hours / row.worked_hours) * 100 : null;
@@ -161,7 +166,7 @@ export function scoreTechnicians(rows: TechnicianPerformanceRow[]): TechnicianSc
         { value: efficiency === null ? null : clamp(efficiency), weight: 0.35 },
         { value: occupancy === null ? null : clamp(occupancy), weight: 0.25 },
         {
-          value: bestRevenue > 0 ? clamp((technicianRevenue(row) / bestRevenue) * 100) : null,
+          value: bestRevenue > 0 ? clamp((technicianNetRevenue(row) / bestRevenue) * 100) : null,
           weight: 0.25,
         },
         {
