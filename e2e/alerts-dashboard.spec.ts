@@ -88,8 +88,8 @@ test('le tableau de bord mène aux OR qui attendent des pièces', async ({ page 
   const tile = orders.getByRole('link', { name: /Pièces à commander/ });
   await expect(tile).not.toHaveText(/^0/);
   await tile.click();
-  await expect(page).toHaveURL(/\/or\?filtre=parts$/);
-  await expect(page.getByRole('button', { name: /^Pièces en attente/ })).toHaveAttribute(
+  await expect(page).toHaveURL(/\/or\?filtre=a-commander$/);
+  await expect(page.getByRole('button', { name: /^Pièces à commander/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
