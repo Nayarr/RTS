@@ -27,8 +27,11 @@ test('mission de l’OR : chaque ligne dans les travaux effectués du technicien
   await page.goto('/or/nouveau');
   await page.getByLabel('Immatriculation').fill(plate);
   await page.getByLabel('Client', { exact: true }).fill('Transports E2E');
-  await page.getByLabel('Tâche à faire').fill('Contrôle complet\nVidange moteur');
-  await expect(page.getByText(/chacune arrive dans les travaux effectués du technicien/)).toBeVisible();
+  // Une ligne par tâche : Entrée passe à la suivante
+  await page.getByLabel('Tâche à faire').fill('Contrôle complet');
+  await page.getByLabel('Tâche à faire').press('Enter');
+  await page.getByLabel('Tâche 2', { exact: true }).fill('Vidange moteur');
+  await expect(page.getByText(/chacune arrive dans les travaux effectués/)).toBeVisible();
   await page.getByRole('combobox', { name: 'Assigner à' }).click();
   await page.getByRole('option', { name: 'Alice' }).click();
   await page.getByRole('button', { name: 'Créer l’OR' }).click();

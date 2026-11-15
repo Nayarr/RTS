@@ -27,6 +27,7 @@ import type { NewClientValues } from '@/features/customers/domain';
 import { uploadFile } from '@/features/files/api';
 import { useSettings } from '@/features/settings/hooks';
 import { createRepairOrder, updateRepairOrder } from './api';
+import { TaskLinesInput } from './TaskLinesInput';
 import { NO_ROADSIDE, roadsidePatch, roadsideProblem, roadsideSummary, type RoadsideValue } from './roadside';
 import { RoadsideSummary } from './RoadsideSummary';
 import { RoadsideFields } from './RoadsideFields';
@@ -377,18 +378,24 @@ ${task}`
                 <Label htmlFor="requested_work" className="sr-only">
                   Tâche à faire
                 </Label>
-                <Textarea
-                  id="requested_work"
-                  rows={4}
-                  placeholder="Description de l’intervention demandée"
-                  aria-invalid={errors.requested_work ? true : undefined}
-                  aria-describedby={errors.requested_work ? 'requested_work-error' : 'requested_work-hint'}
-                  {...register('requested_work')}
+                <Controller
+                  control={control}
+                  name="requested_work"
+                  render={({ field }) => (
+                    <TaskLinesInput
+                      id="requested_work"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      invalid={Boolean(errors.requested_work)}
+                      describedBy={errors.requested_work ? 'requested_work-error' : 'requested_work-hint'}
+                    />
+                  )}
                 />
                 {!errors.requested_work && (
                   <p id="requested_work-hint" className="hint">
-                    Une tâche par ligne : chacune arrive dans les travaux effectués du technicien, qui donne
-                    son temps.
+                    Une ligne par tâche (Entrée passe à la suivante) : chacune arrive dans les travaux
+                    effectués du technicien, qui donne son temps.
                   </p>
                 )}
                 {errors.requested_work && (

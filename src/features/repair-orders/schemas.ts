@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { emptyNewClient, newClientSchema, type NewClientValues } from '@/features/customers/domain';
 import type { NewRepairOrderInput } from './api';
 import { normalizeKey } from './constants';
+import { taskLines } from './tasks';
 
 const time = z.union([z.literal(''), z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide')]);
 
@@ -95,7 +96,8 @@ export const toNewRepairOrderInput = (
   plate: values.plate.trim(),
   vehicle_type: values.vehicle_type,
   client_name: values.client_name.trim(),
-  requested_work: values.requested_work.trim(),
+  // Une tâche par ligne, sans ligne vide
+  requested_work: taskLines(values.requested_work).join('\n'),
   mileage: values.mileage ? Number(values.mileage) : null,
   technician_id: values.technician_id || null,
   planned_date: values.planned_date || null,
