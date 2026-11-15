@@ -61,6 +61,8 @@ export interface InvoiceDetail {
   vehicleType: VehicleType;
   laborRate: number;
   clientDiscount: number;
+  /** Relance automatique du lundi : coupée sur la facture ou sur la fiche du client. */
+  autoReminders: { invoiceOff: boolean; clientOff: boolean };
 }
 
 export type CreditNoteOverview = CreditNote & {
@@ -96,7 +98,7 @@ export async function fetchRepairOrderInvoices(repairOrderId: string): Promise<I
 }
 
 export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
-  const [invoice, lines, payments, paymentEvents, creditNotes, dueDates] = await Promise.all([
+  const [invoice, lines, payments, paymentEvents, creditNotes, dueDates, reminders] = await Promise.all([
     supabase.from('v_invoices_overview').select('*').eq('id', id).maybeSingle(),
     supabase.from('invoice_lines').select('*').eq('invoice_id', id).order('position'),
     supabase
@@ -118,8 +120,9 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
       )
       .eq('invoice_id', id)
       .order('changed_at'),
+    supabase.from('invoices').select('no_auto_reminders').eq('id', id).maybeSingle(),
   ]);
-  for (const result of [invoice, lines, payments, paymentEvents, creditNotes, dueDates])
+  for (const result of [invoice, lines, payments, paymentEvents, creditNotes, dueDates, reminders])
     if (result.error) throw result.error;
   if (!invoice.data) return null;
   const overview = invoice.data as InvoiceOverview;
@@ -127,7 +130,9 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
   const [client, order] = await Promise.all([
     supabase
       .from('clients')
-      .select('name, billing_address, siret, email, discount_percent, account_type, direct_debit_day')
+      .select(
+        'name, billing_address, siret, email, discount_percent, account_type, direct_debit_day, no_auto_reminders',
+      )
       .eq('id', overview.client_id)
       .single(),
     overview.repair_order_ids[0]
@@ -142,7 +147,7 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
   });
   if (rate.error) throw rate.error;
 
-  const { discount_percent, account_type, direct_debit_day, ...billing } = client.data;
+  const { discount_percent, account_type, direct_debit_day, no_auto_reminders, ...billing } = client.data;
   return {
     invoice: overview,
     lines: lines.data ?? [],
@@ -155,6 +160,10 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
     vehicleType: order.data.vehicle_type,
     laborRate: rate.data,
     clientDiscount: discount_percent ?? 0,
+    autoReminders: {
+      invoiceOff: reminders.data?.no_auto_reminders ?? false,
+      clientOff: no_auto_reminders,
+    },
   };
 }
 
@@ -296,6 +305,15 @@ export async function deletePayment(paymentId: string, reason: string | null) {
 }
 
 /** Déplace l'échéance de la facture (même émise : le changement est gardé). */
+/** Relance automatique du lundi pour cette facture (coupée en cas de litige ou d'accord de paiement). */
+export async function setInvoiceAutoReminders(invoiceId: string, enabled: boolean) {
+  const { error } = await supabase.rpc('set_invoice_auto_reminders', {
+    p_invoice_id: invoiceId,
+    p_enabled: enabled,
+  });
+  if (error) throw error;
+}
+
 export async function setInvoiceDueDate(invoiceId: string, dueDate: string) {
   const { error } = await supabase.rpc('set_invoice_due_date', {
     p_invoice_id: invoiceId,

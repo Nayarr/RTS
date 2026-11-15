@@ -140,6 +140,7 @@ export const clientSchema = z
       .max(MAX_OTHER_PHONES),
     billing_address: z.string().trim().max(300),
     account_type: z.enum(ACCOUNT_CHOICE_VALUES),
+    no_auto_reminders: z.boolean(),
     siret: siretField,
     discount_percent: cappedDecimal('Remise', 100),
     hourly_rate: decimalField(),
@@ -162,6 +163,7 @@ export const clientToForm = (client: ClientOverview): ClientValues => ({
   other_phones: otherPhones(client.other_phones),
   billing_address: client.billing_address ?? '',
   account_type: accountChoice(client),
+  no_auto_reminders: client.no_auto_reminders ?? false,
   siret: formatSiret(client.siret),
   discount_percent: decimalText(client.discount_percent),
   hourly_rate: decimalText(client.hourly_rate),
@@ -182,6 +184,7 @@ export function clientFromForm(values: ClientValues, withPricing: boolean): Tabl
     })),
     billing_address: text(values.billing_address),
     ...accountFromChoice(values.account_type),
+    no_auto_reminders: values.no_auto_reminders,
     siret: siretValue(values.siret),
     notes: text(values.notes),
     ...(withPricing

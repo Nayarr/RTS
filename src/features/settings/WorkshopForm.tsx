@@ -281,6 +281,27 @@ export function WorkshopForm({ app }: { app: AppSettings }) {
             </div>
           )}
         />
+        <Controller
+          control={control}
+          name="overdue_reminders_enabled"
+          render={({ field }) => (
+            <div className="row gap-3 rounded-xl border px-3.5 py-3">
+              <Switch id="overdue_reminders_enabled" checked={field.value} onCheckedChange={field.onChange} />
+              <span className="col gap-0">
+                <Label htmlFor="overdue_reminders_enabled" className="text-sm font-bold">
+                  Relance des factures impayées le lundi à 9 h
+                </Label>
+                <span className="hint">
+                  Un e-mail par client depuis l’adresse facturation, avec ses factures en retard et leur lien.
+                  Comptant : dès l’échéance passée ; prélèvement : 5 jours après la date du prélèvement ;
+                  quinzaine : 3 jours après. Une relance par semaine au plus, 3 au total (cordiale, ferme,
+                  dernier rappel), puis la direction est prévenue pour appeler. Avec l’envoi depuis l’appli
+                  activé.
+                </span>
+              </span>
+            </div>
+          )}
+        />
         <FormField
           id="mail_domain"
           label="Domaine d’envoi"

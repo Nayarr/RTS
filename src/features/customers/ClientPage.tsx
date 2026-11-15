@@ -348,6 +348,10 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                   ))}
                 </select>
               </div>
+              <label className="row gap-2 text-[13.5px]">
+                <input type="checkbox" className="size-4" {...register('no_auto_reminders')} />
+                Ne pas relancer automatiquement ses factures impayées (litige, accord de paiement)
+              </label>
               {isDirection && (
                 <div className="grid gap-3.5 sm:grid-cols-2">
                   <FormField

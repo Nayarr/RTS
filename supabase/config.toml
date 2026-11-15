@@ -545,6 +545,14 @@ verify_jwt = false
 import_map = "./functions/auto-mails/deno.json"
 entrypoint = "./functions/auto-mails/index.ts"
 
+[functions.relances]
+enabled = true
+# Relance automatique des factures impayées (lundi 9 h), appelée par la tâche planifiée
+# run_overdue_reminders() : secret partagé vérifié dans la fonction. Secret APP_URL : lien des factures.
+verify_jwt = false
+import_map = "./functions/relances/deno.json"
+entrypoint = "./functions/relances/index.ts"
+
 [functions.knowledge-ingest]
 enabled = true
 # Découpe un PDF de la documentation technique en passages (direction seulement).

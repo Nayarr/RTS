@@ -216,6 +216,7 @@ export const workshopSchema = z
       .max(500000, '500 000 au plus (niveau gratuit)'),
     mail_send_enabled: z.boolean(),
     auto_mails_enabled: z.boolean(),
+    overdue_reminders_enabled: z.boolean(),
     mail_domain: z
       .string()
       .trim()
@@ -285,6 +286,7 @@ export const workshopToForm = (a: AppSettings): WorkshopValues => ({
   tts_monthly_limit: a.tts_monthly_limit,
   mail_send_enabled: a.mail_send_enabled,
   auto_mails_enabled: a.auto_mails_enabled,
+  overdue_reminders_enabled: a.overdue_reminders_enabled,
   mail_domain: a.mail_domain ?? '',
   mail_billing_local: a.mail_billing_local,
   mail_workshop_local: a.mail_workshop_local,
