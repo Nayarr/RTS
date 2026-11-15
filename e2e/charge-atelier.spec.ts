@@ -58,6 +58,9 @@ test('charge de travail atelier : jour, semaine, mois, navigation, déclaré par
   await loginAs(page, 'reception@rts.local');
   await page.goto('/');
   const card = page.getByRole('region', { name: 'Charge de travail atelier' });
+  // Jour affiché par défaut ; la semaine sur demande
+  await expect(card.getByRole('tab', { name: 'Jour' })).toHaveAttribute('aria-selected', 'true');
+  await card.getByRole('tab', { name: 'Semaine' }).click();
   await expect(card.getByText(/^Semaine du /)).toBeVisible();
   await expect(card.getByText(/déclarées sur .* disponibles · \d+ % · .* planifiées/)).toBeVisible();
 

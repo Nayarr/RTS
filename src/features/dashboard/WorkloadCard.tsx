@@ -157,7 +157,7 @@ function TechnicianRow({ row, onOpen }: { row: TechnicianWorkload; onOpen: () =>
  */
 export function WorkloadCard() {
   const today = todayIso();
-  const [period, setPeriod] = useState<WorkloadPeriod>('week');
+  const [period, setPeriod] = useState<WorkloadPeriod>('day');
   const [anchor, setAnchor] = useState(today);
   const [opened, setOpened] = useState<TechnicianWorkload | null>(null);
   const range = periodRange(period, anchor);

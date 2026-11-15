@@ -67,10 +67,15 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 const setup = () => renderRoutes([{ path: '/', element: <WorkloadCard /> }]);
+/** Charge affichée du jour par défaut : passage à la semaine. */
+const setupWeek = async () => {
+  setup();
+  await userEvent.click(await screen.findByRole('tab', { name: 'Semaine' }));
+};
 
 describe('charge de travail atelier', () => {
   it('semaine en cours : atelier, techniciens, absents, OR à planifier', async () => {
-    setup();
+    await setupWeek();
     const card = await screen.findByRole('region', { name: 'Charge de travail atelier' });
     expect(fetchWorkshopWorkload).toHaveBeenCalledWith('2026-09-28', '2026-10-04');
     expect(within(card).getByText('Semaine du 28 sept. au 4 oct.')).toBeInTheDocument();
@@ -135,7 +140,7 @@ describe('charge de travail atelier', () => {
         { repair_order_id: 'ro2', number: 'OR00013', plate: 'EF-456-GH', day: '2026-10-02', hours: 3 },
       ],
     });
-    setup();
+    await setupWeek();
     await userEvent.click(await screen.findByRole('button', { name: 'Détail des heures de Alice' }));
     const dialog = await screen.findByRole('dialog', { name: 'Heures de Alice' });
     expect(fetchWorkloadDetail).toHaveBeenCalledWith('a', '2026-09-28', '2026-10-04');
@@ -175,7 +180,7 @@ describe('charge de travail atelier', () => {
   });
 
   it('jour, mois, période précédente et retour à la période en cours', async () => {
-    setup();
+    await setupWeek();
     await screen.findByText('Semaine du 28 sept. au 4 oct.');
     expect(screen.queryByRole('button', { name: 'Cette semaine' })).toBeNull();
 
