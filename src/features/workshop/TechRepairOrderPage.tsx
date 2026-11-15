@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { ArrowLeft, Lock, MapPin } from 'lucide-react';
+import { ArrowLeft, Lock, MapPin, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { OPEN_STATUSES, VEHICLE_TYPES } from '@/features/repair-orders/constants';
@@ -99,6 +99,14 @@ export function TechRepairOrderPage() {
         <p className="alert s-grey">
           <Lock className="i s shrink-0" />
           <span>Cet OR est terminé : consultation seulement.</span>
+        </p>
+      )}
+
+      {order.technician_note && (
+        // Consigne du bureau (pas une tâche) : lue avant de commencer
+        <p className="alert s-blue" role="note" aria-label="Note du bureau">
+          <StickyNote className="i s shrink-0" />
+          <span className="whitespace-pre-line">{order.technician_note}</span>
         </p>
       )}
 

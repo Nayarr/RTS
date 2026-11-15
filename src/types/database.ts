@@ -4653,6 +4653,7 @@ export type Database = {
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
+          technician_note: string | null;
           updated_at: string;
           vehicle_id: string;
           vehicle_type: Database['public']['Enums']['vehicle_type'];
@@ -4687,6 +4688,7 @@ export type Database = {
           roadside_travel_hours?: number | null;
           status?: Database['public']['Enums']['repair_order_status'];
           technician_id?: string | null;
+          technician_note?: string | null;
           updated_at?: string;
           vehicle_id: string;
           vehicle_type: Database['public']['Enums']['vehicle_type'];
@@ -4721,6 +4723,7 @@ export type Database = {
           roadside_travel_hours?: number | null;
           status?: Database['public']['Enums']['repair_order_status'];
           technician_id?: string | null;
+          technician_note?: string | null;
           updated_at?: string;
           vehicle_id?: string;
           vehicle_type?: Database['public']['Enums']['vehicle_type'];
@@ -7260,6 +7263,7 @@ export type Database = {
           technician_color: string | null;
           technician_id: string | null;
           technician_name: string | null;
+          technician_note: string | null;
           updated_at: string | null;
           vehicle_id: string | null;
           vehicle_type: Database['public']['Enums']['vehicle_type'] | null;
@@ -7856,6 +7860,7 @@ export type Database = {
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
+          technician_note: string | null;
           updated_at: string;
           vehicle_id: string;
           vehicle_type: Database['public']['Enums']['vehicle_type'];
@@ -7960,6 +7965,7 @@ export type Database = {
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
+          technician_note: string | null;
           updated_at: string;
           vehicle_id: string;
           vehicle_type: Database['public']['Enums']['vehicle_type'];
@@ -8309,6 +8315,7 @@ export type Database = {
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
+          technician_note: string | null;
           updated_at: string;
           vehicle_id: string;
           vehicle_type: Database['public']['Enums']['vehicle_type'];
@@ -8866,6 +8873,7 @@ export type Database = {
           roadside_travel_hours: number | null;
           status: Database['public']['Enums']['repair_order_status'];
           technician_id: string | null;
+          technician_note: string | null;
           updated_at: string;
           vehicle_id: string;
           vehicle_type: Database['public']['Enums']['vehicle_type'];

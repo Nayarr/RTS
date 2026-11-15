@@ -18,6 +18,7 @@ const hhmm = (time: string | null) => time?.slice(0, 5) ?? '';
 
 const toForm = (order: RepairOrderOverview): EditRepairOrderValues => ({
   requested_work: order.requested_work,
+  technician_note: order.technician_note ?? '',
   vehicle_type: order.vehicle_type,
   mileage: order.mileage === null ? '' : String(order.mileage),
   planned_date: order.planned_date ?? '',
@@ -36,9 +37,11 @@ function toPatch({
   planned_end,
   planned_end_date,
   technician_id,
+  technician_note,
   ...rest
 }: Partial<EditRepairOrderValues>) {
   const patch: TablesUpdate<'repair_orders'> = rest;
+  if (technician_note !== undefined) patch.technician_note = technician_note.trim() || null;
   if (mileage !== undefined) patch.mileage = mileage ? Number(mileage) : null;
   if (planned_date !== undefined) patch.planned_date = planned_date || null;
   if (planned_start !== undefined) patch.planned_start = planned_start || null;
@@ -89,17 +92,30 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
       compact
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
-        <div className="field">
-          <Label htmlFor="edit-requested_work">Tâche à faire</Label>
-          <Textarea
-            id="edit-requested_work"
-            rows={5}
-            className="h-full"
-            disabled={invoiced}
-            aria-invalid={errors.requested_work ? true : undefined}
-            {...register('requested_work')}
-          />
-          {errors.requested_work && <p className="err">{errors.requested_work.message}</p>}
+        <div className="col gap-3">
+          <div className="field">
+            <Label htmlFor="edit-requested_work">Tâche à faire</Label>
+            <Textarea
+              id="edit-requested_work"
+              rows={5}
+              disabled={invoiced}
+              aria-invalid={errors.requested_work ? true : undefined}
+              {...register('requested_work')}
+            />
+            {errors.requested_work && <p className="err">{errors.requested_work.message}</p>}
+          </div>
+          <div className="field">
+            <Label htmlFor="edit-technician_note">Note pour le technicien</Label>
+            <Textarea
+              id="edit-technician_note"
+              rows={2}
+              disabled={invoiced}
+              placeholder="Consigne affichée en haut de sa fiche (pas une tâche)"
+              aria-invalid={errors.technician_note ? true : undefined}
+              {...register('technician_note')}
+            />
+            {errors.technician_note && <p className="err">{errors.technician_note.message}</p>}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
