@@ -141,9 +141,11 @@ select lives_ok($$ select public.attendance_alerts() $$, 'Tâche relancée : pas
 -- (heure d'arrivée attendue placée juste après minuit pour que le test tourne à toute heure de la journée)
 reset role;
 select (now() at time zone 'Europe/Paris')::time - interval '25 minutes' as leave_end \gset
-select (now() at time zone 'Europe/Paris')::time > time '01:00' as daytime \gset
 update public.app_settings set expected_arrival = '00:01', late_tolerance = '00:06';
 insert into public.technicians (id, display_name) values ('10000000-0000-0000-0000-000000000346', 'Ines');
+-- Jouable de jour, un jour travaillé (pas de retard un dimanche ou un samedi fermé)
+select (now() at time zone 'Europe/Paris')::time > time '01:00'
+       and not public.attendance_day_off('10000000-0000-0000-0000-000000000346', public.paris_date(now())) as daytime \gset
 insert into public.leave_requests (technician_id, leave_type, starts_on, ends_on, start_time, end_time, status)
 values ('10000000-0000-0000-0000-000000000346', 'paid_leave', public.paris_date(now()), public.paris_date(now()),
         '00:00', :'leave_end', 'approved');
@@ -153,7 +155,7 @@ select case when :'daytime'::boolean
   then ok((select body from public.notifications
            where dedupe_key = 'late-10000000-0000-0000-0000-000000000346-' || public.paris_date(now())) ~ '\(25 min\)$',
           'Arrivée 25 min après la fin de l''absence : retard de 25 min notifié')
-  else skip('Juste après minuit : cas non jouable', 1) end;
+  else skip('Juste après minuit ou jour non travaillé : cas non jouable', 1) end;
 
 select * from finish();
 rollback;
