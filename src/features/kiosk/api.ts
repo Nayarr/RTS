@@ -12,6 +12,8 @@ export type KioskClockResult =
       event_type: ClockEventType;
       occurred_at: string;
       during_leave_type: LeaveType | null;
+      /** Début de pause (2e badgeage du jour) : heure à partir de laquelle on peut re-badger. */
+      pause_until?: string | null;
     };
 
 /** Pointage : le PIN désigne le technicien, arrivée ou départ selon son dernier pointage du jour. */

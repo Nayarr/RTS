@@ -35,15 +35,25 @@ export function kioskMessage(result: KioskClockResult): KioskMessage {
           detail: `Arrivée enregistrée à ${time(result.occurred_at)}`,
           resetAfter: 3500,
         }
-      : {
-          tone: 'warning',
-          title: `Au revoir ${result.technician_name}`,
-          detail: `Départ enregistré à ${time(result.occurred_at)}`,
-          resetAfter: 3500,
-        };
+      : result.pause_until
+        ? {
+            tone: 'warning',
+            title: `Bonne pause ${result.technician_name}`,
+            detail: `Départ enregistré à ${time(result.occurred_at)} · retour badgé possible à ${time(result.pause_until)}`,
+            resetAfter: 4000,
+          }
+        : {
+            tone: 'warning',
+            title: `Au revoir ${result.technician_name}`,
+            detail: `Départ enregistré à ${time(result.occurred_at)}`,
+            resetAfter: 3500,
+          };
   }
   if (result.message === 'Code incorrect') return { tone: 'error', title: result.message, resetAfter: 1800 };
   if (result.message.startsWith('Déjà pointé'))
     return { tone: 'warning', title: result.message, resetAfter: 2500 };
+  // Pause de 59 minutes : refus avec le temps restant, laissé le temps de le lire
+  if (result.message.startsWith('Pause en cours'))
+    return { tone: 'warning', title: result.message, resetAfter: 4000 };
   return { tone: 'error', title: result.message, resetAfter: 3500 };
 }
