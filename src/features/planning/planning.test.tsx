@@ -284,6 +284,15 @@ describe('planning : écran', () => {
     expect(await screen.findByRole('heading', { name: 'Mercredi 14/10' })).toBeInTheDocument();
   });
 
+  it('sans vue demandée : la journée par défaut, la semaine à un clic', async () => {
+    renderPlanning('?date=2026-10-06');
+    expect(await screen.findByRole('heading', { name: 'Mardi 06/10' })).toBeInTheDocument();
+    expect(fetchPlanning).toHaveBeenLastCalledWith('2026-10-06', '2026-10-06');
+    expect(screen.getByRole('button', { name: 'Jour' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Semaine' }));
+    expect(await screen.findByRole('heading', { name: 'Semaine du 05/10 au 11/10' })).toBeInTheDocument();
+  });
+
   it('jour : une colonne par technicien, rendez-vous à assigner, technicien absent', async () => {
     renderPlanning('?vue=jour&date=2026-10-06');
     expect(await screen.findByRole('heading', { name: 'Mardi 06/10' })).toBeInTheDocument();

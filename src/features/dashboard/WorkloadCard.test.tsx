@@ -74,6 +74,14 @@ const setupWeek = async () => {
 };
 
 describe('charge de travail atelier', () => {
+  it('par défaut : la charge du jour', async () => {
+    setup();
+    const card = await screen.findByRole('region', { name: 'Charge de travail atelier' });
+    expect(within(card).getByRole('tab', { name: 'Jour' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(card).getByText('Jeudi 1 octobre')).toBeInTheDocument();
+    expect(fetchWorkshopWorkload).toHaveBeenCalledWith('2026-10-01', '2026-10-01');
+  });
+
   it('semaine en cours : atelier, techniciens, absents, OR à planifier', async () => {
     await setupWeek();
     const card = await screen.findByRole('region', { name: 'Charge de travail atelier' });
