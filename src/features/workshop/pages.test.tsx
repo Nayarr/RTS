@@ -293,6 +293,22 @@ describe('fiche OR technicien', () => {
     expect(screen.getAllByText(/Fiche complète exigée par la direction/)).toHaveLength(1);
   });
 
+  it('note du bureau : affichée juste au-dessus des tâches', async () => {
+    setup('/atelier/or/ro1', {
+      order: order({ technician_note: ['Clés au bureau', 'Client sur place'].join('\n') }),
+    });
+    const tasks = await screen.findByRole('region', { name: 'Travaux demandés' });
+    const note = screen.getByRole('note', { name: 'Note du bureau' });
+    expect(note).toHaveTextContent('Clés au bureau Client sur place');
+    expect(note.nextElementSibling).toBe(tasks);
+  });
+
+  it('sans note : pas de bloc vide', async () => {
+    setup('/atelier/or/ro1', { order: order({ technician_note: null }) });
+    await screen.findByRole('region', { name: 'Travaux demandés' });
+    expect(screen.queryByRole('note', { name: 'Note du bureau' })).toBeNull();
+  });
+
   it('fiche de contrôle : un choix est enregistré automatiquement', async () => {
     vi.mocked(saveInspection).mockResolvedValue();
     setup('/atelier/or/ro1', { order: order() });

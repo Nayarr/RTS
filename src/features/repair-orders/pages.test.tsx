@@ -228,6 +228,27 @@ describe('nouvel OR', () => {
     expect(await screen.findByText('OR introuvable')).toBeInTheDocument(); // fiche ouverte (/or/ro9)
   });
 
+  it('note pour le technicien : enregistrée sur l’OR créé', async () => {
+    vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
+    vi.mocked(findVehicleByPlate).mockResolvedValue(null);
+    vi.mocked(createRepairOrder).mockResolvedValue({ id: 'ro9', number: 'OR00009' } as never);
+    vi.mocked(updateRepairOrder).mockResolvedValue();
+    vi.mocked(fetchRepairOrder).mockResolvedValue(null);
+    render('/or/nouveau');
+
+    await userEvent.type(await screen.findByLabelText('Immatriculation'), 'gh512rt');
+    await userEvent.type(screen.getByLabelText('Client'), 'Transports Martin');
+    await userEvent.type(screen.getByLabelText('Tâche à faire'), 'Freins');
+    await userEvent.type(screen.getByLabelText('Note pour le technicien (optionnel)'), '  Clés au bureau ');
+    await userEvent.click(screen.getByRole('button', { name: 'Créer l’OR' }));
+
+    await waitFor(() =>
+      expect(updateRepairOrder).toHaveBeenCalledWith('ro9', { technician_note: 'Clés au bureau' }),
+    );
+    // La note ne remplace pas les tâches
+    expect(vi.mocked(createRepairOrder).mock.calls[0]?.[0]).toMatchObject({ requested_work: 'Freins' });
+  });
+
   it('propose les véhicules connus : la plaque choisie reprend le type et le client', async () => {
     vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
     vi.mocked(findVehicleByPlate).mockResolvedValue(null);
