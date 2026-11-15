@@ -18,6 +18,7 @@ import { saveTechnician, setTechnicianActive, updateProfile } from './api';
 import { useTeamMutation } from './hooks';
 import { RoleSelect } from './RoleSelect';
 import {
+  badgesOnly,
   editAccountSchema,
   isKioskRole,
   mustBeTechnician,
@@ -84,7 +85,10 @@ export function EditAccountDialog({ member, onOpenChange }: EditAccountDialogPro
 
   useEffect(() => {
     if (role && mustBeTechnician(role)) setValue('is_technician', true);
-  }, [role, setValue]);
+    // Passage en réception sans fiche : fiche créée hors planning (la direction peut la cocher ensuite)
+    if (role === 'reception' && member && !member.technician?.is_active)
+      setValue('exclude_from_planning', true);
+  }, [role, member, setValue]);
 
   if (!member) return null;
 
@@ -120,6 +124,9 @@ export function EditAccountDialog({ member, onOpenChange }: EditAccountDialogPro
               errors={errors}
               isTechnician={isTechnician}
               locked={Boolean(role) && mustBeTechnician(role)}
+              hint={
+                role && badgesOnly(role) ? 'Obligatoire : pointe sur la borne avec son code PIN.' : undefined
+              }
             />
           )}
 

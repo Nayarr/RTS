@@ -26,6 +26,8 @@ interface TechnicianFieldsProps<T extends TechnicianFieldValues> {
   isTechnician: boolean;
   /** Rôle Technicien : la fiche est obligatoire, la case est donc verrouillée. */
   locked: boolean;
+  /** Explication sous la case (par défaut : planning, OR et badgeage). */
+  hint?: string;
 }
 
 /** Fiche technicien (partagée par la création et la modification d'un compte). */
@@ -35,6 +37,7 @@ export function TechnicianFields<T extends TechnicianFieldValues>({
   errors,
   isTechnician,
   locked,
+  hint = 'Apparaît au planning, reçoit des OR et pointe sur la borne.',
 }: TechnicianFieldsProps<T>) {
   const displayNameError = errors.display_name?.message;
 
@@ -53,9 +56,7 @@ export function TechnicianFields<T extends TechnicianFieldValues>({
             />
             <div className="space-y-1">
               <Label htmlFor="is_technician">Intervient à l’atelier (fiche technicien)</Label>
-              <p className="text-xs text-muted-foreground">
-                Apparaît au planning, reçoit des OR et pointe sur la borne.
-              </p>
+              <p className="text-xs text-muted-foreground">{hint}</p>
             </div>
           </div>
         )}

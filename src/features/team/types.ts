@@ -14,7 +14,7 @@ export interface CreateAccountInput {
   email: string;
   full_name: string;
   role: AppRole;
-  technician: { display_name: string; color: string | null } | null;
+  technician: { display_name: string; color: string | null; exclude_from_planning?: boolean } | null;
   /** Absent : invitation par e-mail (la personne choisit son mot de passe). */
   password?: string;
 }
