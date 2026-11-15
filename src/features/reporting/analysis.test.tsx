@@ -11,6 +11,7 @@ import {
   realHourlyRate,
   scoreTechnicians,
   scoreTone,
+  technicianRevenue,
 } from './analysis';
 import {
   fetchProfitability,
@@ -129,6 +130,29 @@ describe('rentabilité : règles', () => {
     ]);
     expect(realHourlyRate(row())).toBe(75);
     expect(realHourlyRate(row({ worked_hours: 0 }))).toBeNull();
+  });
+});
+
+describe('performance : ventes du salarié', () => {
+  it('CA total = main d’œuvre + marge des ventes, compté dans la note', () => {
+    expect(technicianRevenue({ labor_ht: 270, sales_margin_ht: 40 })).toBe(310);
+    // Même main d'œuvre : celui qui a vendu passe devant
+    const [first, second] = scoreTechnicians([
+      tech({ technician_id: 't1', name: 'Alice', sales_margin_ht: 0 }),
+      tech({ technician_id: 't2', name: 'Bruno', sales_margin_ht: 500 }),
+    ]);
+    expect(first?.name).toBe('Bruno');
+    expect(second?.score ?? 0).toBeLessThan(first?.score ?? 0);
+  });
+
+  it('écran : ventes et CA total sur la carte', async () => {
+    vi.mocked(fetchTechnicianPerformance).mockResolvedValue([tech({ labor_ht: 1000, sales_margin_ht: 45 })]);
+    renderRoutes([{ path: '/pilotage/performance', element: <PerformancePage /> }], {
+      initialPath: '/pilotage/performance',
+    });
+    const alice = await screen.findByRole('article', { name: 'Alice' });
+    expect(alice).toHaveTextContent(/Ventes \(marge\)45\s€/);
+    expect(alice).toHaveTextContent(/CA total1\s045\s€/);
   });
 });
 
