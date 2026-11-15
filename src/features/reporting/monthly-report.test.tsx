@@ -86,6 +86,7 @@ const technicians = scoreTechnicians([
     name: 'Alice',
     color: null,
     labor_ht: 2000,
+    sales_margin_ht: 0,
     ro_count: 3,
     billed_hours: 18,
     worked_hours: 20,

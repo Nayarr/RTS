@@ -3,7 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { initials } from '@/app/nav';
 import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
-import { periodRange, scoreTechnicians, scoreTone, type Period, type TechnicianScore } from './analysis';
+import {
+  periodRange,
+  scoreTechnicians,
+  scoreTone,
+  technicianRevenue,
+  type Period,
+  type TechnicianScore,
+} from './analysis';
 import { fetchTechnicianPerformance } from './api';
 import { formatEuroRounded } from './domain';
 import { PeriodFilter } from './PeriodFilter';
@@ -42,6 +49,8 @@ function TechnicianCard({ tech }: { tech: TechnicianScore }) {
       </div>
       <div className="card-b grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         <Figure label="CA MO" value={formatEuroRounded(tech.labor_ht)} />
+        <Figure label="Ventes (marge)" value={formatEuroRounded(tech.sales_margin_ht)} />
+        <Figure label="CA total" value={formatEuroRounded(technicianRevenue(tech))} />
         <Figure label="OR facturés" value={String(tech.ro_count)} />
         <Figure label="Rendement" value={percent(tech.efficiency)} />
         <Figure label="Occupation" value={percent(tech.occupancy)} />
@@ -93,9 +102,12 @@ export function PerformancePage() {
         ))}
       </ul>
       <p className="hint">
-        Rendement = heures facturées ÷ heures badgées. Occupation = heures badgées ÷ heures de présence
-        (pointage). Précision = écart moyen entre l’estimation et le temps badgé. Délai = de l’ouverture de
-        l’OR à sa facture. Note : rendement 35 %, occupation 25 %, CA 25 %, précision 15 %.
+        Chaque ligne de facture compte pour le salarié indiqué dessus : main d’œuvre dans le CA MO, pièces,
+        fournitures et recyclage, sous-traitance pour leur marge (vente − achat) dans les ventes. CA total =
+        CA MO + ventes. Rendement = heures facturées ÷ heures badgées. Occupation = heures badgées ÷ heures de
+        présence (pointage). Précision = écart moyen entre l’estimation et le temps badgé. Délai = de
+        l’ouverture de l’OR à sa facture. Note : rendement 35 %, occupation 25 %, CA total 25 %, précision 15
+        %.
       </p>
     </>
   );
