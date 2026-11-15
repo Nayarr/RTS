@@ -20,6 +20,7 @@ import {
   issueInvoice,
   recordInvoiceReminder,
   reorderInvoiceLines,
+  setInvoiceAutoReminders,
   setInvoiceDueDate,
   shareInvoice,
   updateInvoiceLine,
@@ -68,6 +69,7 @@ vi.mock('./api', async (importOriginal) => ({
   recordInvoiceReminder: vi.fn(),
   reorderInvoiceLines: vi.fn(),
   setInvoiceDueDate: vi.fn(),
+  setInvoiceAutoReminders: vi.fn(),
 }));
 vi.mock('@/features/documents/client-contact', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -646,6 +648,23 @@ describe('facture émise', () => {
       expect(await screen.findByText(/La direction peut le supprimer/)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Supprimer le paiement/ })).toBeNull();
     });
+  });
+
+  it('relance automatique : coupée sur la facture, bloquée quand le client est exclu', async () => {
+    vi.mocked(setInvoiceAutoReminders).mockResolvedValue();
+    setupInvoice({ invoice: issued() });
+    const toggle = await screen.findByRole('switch', { name: 'Relance automatique le lundi' });
+    expect(toggle).toBeChecked();
+    await userEvent.click(toggle);
+    await waitFor(() => expect(setInvoiceAutoReminders).toHaveBeenCalledWith('i1', false));
+  });
+
+  it('relance automatique : client exclu sur sa fiche', async () => {
+    setupInvoice({ invoice: issued(), autoReminders: { invoiceOff: false, clientOff: true } });
+    const toggle = await screen.findByRole('switch', { name: 'Relance automatique le lundi' });
+    expect(toggle).not.toBeChecked();
+    expect(toggle).toBeDisabled();
+    expect(screen.getByText('Client exclu des relances automatiques (fiche client).')).toBeInTheDocument();
   });
 
   it('échéance déplacée : jamais avant l’émission, changement gardé', async () => {
