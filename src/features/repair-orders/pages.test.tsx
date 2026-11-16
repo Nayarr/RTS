@@ -228,6 +228,14 @@ describe('nouvel OR', () => {
     expect(await screen.findByText('OR introuvable')).toBeInTheDocument(); // fiche ouverte (/or/ro9)
   });
 
+  it('note pour le technicien : placée au-dessus des tâches à faire', async () => {
+    vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
+    render('/or/nouveau');
+    const note = await screen.findByLabelText('Note pour le technicien (optionnel)');
+    const tasks = screen.getByLabelText('Tâche à faire');
+    expect(note.compareDocumentPosition(tasks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('note pour le technicien : enregistrée sur l’OR créé', async () => {
     vi.mocked(fetchActiveTechnicians).mockResolvedValue([]);
     vi.mocked(findVehicleByPlate).mockResolvedValue(null);
