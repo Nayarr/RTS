@@ -41,6 +41,7 @@ const DATA: TimesheetData = {
   ],
   // Du samedi 10 au lundi 12 : 2 jours (dimanche non compté)
   leaves: [{ technician_id: 't1', starts_on: '2026-10-10', ends_on: '2026-10-12' }],
+  schedule: [],
 };
 
 describe('relevé : calculs', () => {
@@ -72,6 +73,7 @@ describe('relevé : calculs', () => {
       lates: 1,
       lateMinutes: 20,
       absenceDays: 2,
+      unexcusedDays: 0,
       anomalies: 1,
     });
   });

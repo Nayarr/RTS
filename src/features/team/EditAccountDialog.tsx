@@ -23,8 +23,10 @@ import {
   isKioskRole,
   mustBeTechnician,
   TECHNICIAN_COLORS,
+  WORK_DAYS,
   type EditAccountValues,
 } from './schemas';
+import { ScheduleExceptionsField } from './ScheduleExceptionsField';
 import { TechnicianFields } from './TechnicianFields';
 import type { TeamMember } from './types';
 
@@ -38,6 +40,10 @@ function toFormValues(member: TeamMember): EditAccountValues {
     color: technician?.color ?? TECHNICIAN_COLORS[0],
     exclude_from_planning: technician?.exclude_from_planning ?? false,
     rest_group: technician?.rest_group ?? 'none',
+    work_days: technician?.work_days ?? [1, 2, 3, 4, 5, 6],
+    alternance:
+      technician?.alternance === 'A' || technician?.alternance === 'B' ? technician.alternance : 'none',
+    clock_required: technician?.clock_required ?? true,
   };
 }
 
@@ -50,6 +56,9 @@ async function saveMember({ member, values }: { member: TeamMember; values: Edit
       color: values.color,
       exclude_from_planning: values.exclude_from_planning,
       rest_group: values.rest_group === 'none' ? null : values.rest_group,
+      work_days: [...values.work_days].sort(),
+      alternance: values.alternance === 'none' ? null : values.alternance,
+      clock_required: values.clock_required,
     });
     if (member.technician && !member.technician.is_active)
       await setTechnicianActive(member.technician.id, true);
@@ -166,6 +175,84 @@ export function EditAccountDialog({ member, onOpenChange }: EditAccountDialogPro
                   </div>
                 )}
               />
+            </fieldset>
+          )}
+
+          {isTechnician && (
+            <fieldset className="space-y-4 rounded-lg border p-4">
+              <legend className="px-1 text-sm font-semibold">Jours de présence</legend>
+              <Controller
+                control={control}
+                name="work_days"
+                render={({ field }) => (
+                  <div className="space-y-2">
+                    <Label id="work_days-label">Jours travaillés</Label>
+                    <div role="group" aria-labelledby="work_days-label" className="flex flex-wrap gap-3">
+                      {WORK_DAYS.map(([day, label]) => (
+                        <label key={day} className="flex items-center gap-1.5 text-sm">
+                          <Checkbox
+                            checked={field.value.includes(day)}
+                            onCheckedChange={(checked) =>
+                              field.onChange(
+                                checked === true
+                                  ? [...field.value, day]
+                                  : field.value.filter((value) => value !== day),
+                              )
+                            }
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                    {errors.work_days && <p className="err">{errors.work_days.message}</p>}
+                  </div>
+                )}
+              />
+              <Controller
+                control={control}
+                name="alternance"
+                render={({ field }) => (
+                  <div className="space-y-2">
+                    <Label htmlFor="alternance">Présence</Label>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="alternance" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Toutes les semaines</SelectItem>
+                        <SelectItem value="A">Alternant, semaine A</SelectItem>
+                        <SelectItem value="B">Alternant, semaine B</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="hint">
+                      Semaine A : celle du lundi de référence des repos (carte « Repos tournant »), puis une
+                      semaine sur deux.
+                    </p>
+                  </div>
+                )}
+              />
+              <Controller
+                control={control}
+                name="clock_required"
+                render={({ field }) => (
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="clock_required"
+                      checked={field.value}
+                      onCheckedChange={(checked) => field.onChange(checked === true)}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="clock_required">Badge à la borne</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Décoché : ni absence, ni retard, ni alerte de pointage pour ce compte.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              />
+              {member.technician?.is_active && (
+                <ScheduleExceptionsField technicianId={member.technician.id} />
+              )}
             </fieldset>
           )}
         </form>

@@ -211,6 +211,11 @@ function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }
           <span className="av">{initials(tech.display_name)}</span>
           <b className="text-[15px]">{tech.display_name}</b>
           {present && <span className="badge s-ok dot">Présent</span>}
+          {tech.absent && <span className="badge s-bad">Absent</span>}
+          {!tech.scheduled && tech.events.length === 0 && !tech.leaveType && (
+            <span className="badge s-grey">Repos</span>
+          )}
+          {!tech.clockRequired && <span className="badge s-grey">Ne badge pas</span>}
           {tech.leaveType && (
             <span className="badge s-warn">
               {LEAVE_LABELS[tech.leaveType]}
@@ -227,6 +232,7 @@ function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }
             </span>
           )}
           {!tech.hasPin &&
+            tech.clockRequired &&
             (canEdit ? (
               <Link to="/equipe" className="text-[13px] font-semibold text-destructive hover:underline">
                 Pas de code PIN

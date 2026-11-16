@@ -38,7 +38,14 @@ export function TimesheetPage() {
   const sheets = (data.data?.technicians ?? []).map((technician) => ({
     id: technician.id,
     name: technician.display_name,
-    timesheet: computeTimesheet(technician.id, month, data.data?.days ?? [], data.data?.leaves ?? []),
+    timesheet: computeTimesheet(
+      technician.id,
+      month,
+      data.data?.days ?? [],
+      data.data?.leaves ?? [],
+      data.data?.schedule ?? [],
+      todayIso(),
+    ),
   }));
   const totals = sheets.reduce(
     (sum, { timesheet: { total } }) => ({

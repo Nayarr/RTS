@@ -5584,8 +5584,55 @@ export type Database = {
           },
         ];
       };
+      technician_schedule_exceptions: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          ends_on: string;
+          id: string;
+          note: string | null;
+          starts_on: string;
+          technician_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          ends_on: string;
+          id?: string;
+          note?: string | null;
+          starts_on: string;
+          technician_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          ends_on?: string;
+          id?: string;
+          note?: string | null;
+          starts_on?: string;
+          technician_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'technician_schedule_exceptions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'technician_schedule_exceptions_technician_id_fkey';
+            columns: ['technician_id'];
+            isOneToOne: false;
+            referencedRelation: 'technicians';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       technicians: {
         Row: {
+          alternance: string | null;
+          clock_required: boolean;
           color: string | null;
           created_at: string;
           display_name: string;
@@ -5597,8 +5644,11 @@ export type Database = {
           rest_group: Database['public']['Enums']['rest_group'] | null;
           sort_order: number;
           updated_at: string;
+          work_days: number[];
         };
         Insert: {
+          alternance?: string | null;
+          clock_required?: boolean;
           color?: string | null;
           created_at?: string;
           display_name: string;
@@ -5610,8 +5660,11 @@ export type Database = {
           rest_group?: Database['public']['Enums']['rest_group'] | null;
           sort_order?: number;
           updated_at?: string;
+          work_days?: number[];
         };
         Update: {
+          alternance?: string | null;
+          clock_required?: boolean;
           color?: string | null;
           created_at?: string;
           display_name?: string;
@@ -5623,6 +5676,7 @@ export type Database = {
           rest_group?: Database['public']['Enums']['rest_group'] | null;
           sort_order?: number;
           updated_at?: string;
+          work_days?: number[];
         };
         Relationships: [
           {
@@ -9099,6 +9153,16 @@ export type Database = {
           technician_id: string;
         }[];
       };
+      technician_schedule: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          clock_required: boolean;
+          day: string;
+          scheduled: boolean;
+          technician_id: string;
+        }[];
+      };
+      technician_scheduled: { Args: { p_day: string; p_technician_id: string }; Returns: boolean };
       tire_line_alert: { Args: { p_line_id: string }; Returns: undefined };
       tire_reserved_quantities: {
         Args: { p_line_id?: string };

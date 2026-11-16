@@ -71,6 +71,9 @@ export const editAccountSchema = z
     ...technicianFields,
     exclude_from_planning: z.boolean(),
     rest_group: z.enum(['none', 'A', 'B']),
+    work_days: z.array(z.number().int().min(1).max(6)).min(1, 'Coche au moins un jour travaillé'),
+    alternance: z.enum(['none', 'A', 'B']),
+    clock_required: z.boolean(),
   })
   .superRefine(requireDisplayName);
 export type EditAccountValues = z.infer<typeof editAccountSchema>;
@@ -97,6 +100,16 @@ export const badgesOnly = (role: (typeof ROLE_VALUES)[number]) =>
 /** Comptes de borne (tablettes de pointage et de signature) : pas de fiche technicien. */
 export const isKioskRole = (role: (typeof ROLE_VALUES)[number]) =>
   role === 'kiosk' || role === 'kiosk_signature';
+
+/** Jours de la semaine proposés (ISO), l'atelier est fermé le dimanche. */
+export const WORK_DAYS = [
+  [1, 'Lun'],
+  [2, 'Mar'],
+  [3, 'Mer'],
+  [4, 'Jeu'],
+  [5, 'Ven'],
+  [6, 'Sam'],
+] as const;
 
 /** Valeurs du formulaire -> données envoyées à l'Edge Function. */
 export function toCreateAccountInput(values: CreateAccountValues): CreateAccountInput {
