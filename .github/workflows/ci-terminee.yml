@@ -1,0 +1,32 @@
+# Fin de CI d'une PR : commentaire « CI terminée » sur la PR, pour être prévenu sans surveiller la CI.
+# Provisoire (fusion d'une pile de PR) : à supprimer ensuite.
+#
+# Sécurité : aucun code de la PR n'est exécuté ; seuls le nom, la conclusion et le numéro de PR
+# fournis par GitHub sont utilisés, passés par variables d'environnement.
+name: CI terminée
+
+on:
+  workflow_run:
+    workflows: [Application, Base de données]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  commentaire:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0] != null
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Commenter la PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          WORKFLOW: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          gh pr comment "$PR" --repo "$REPO" \
+            --body "CI terminée : « $WORKFLOW » ($CONCLUSION) sur ${SHA:0:7}."
