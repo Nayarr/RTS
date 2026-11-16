@@ -1,7 +1,7 @@
 import { invokeFunction } from '@/lib/functions';
 import { supabase } from '@/lib/supabase';
 import type { AppRole } from '@/features/auth/roles';
-import type { CreateAccountInput, TeamMember, TechnicianSettings } from './types';
+import type { CreateAccountInput, ScheduleException, TeamMember, TechnicianSettings } from './types';
 
 /** Appelle l'Edge Function admin-users (gestion des comptes, clé secrète côté serveur). */
 const invokeAdminUsers = <T>(body: Record<string, unknown>) => invokeFunction<T>('admin-users', body);
@@ -53,6 +53,32 @@ export async function saveTechnician(
   const { error } = technicianId
     ? await supabase.from('technicians').update(settings).eq('id', technicianId)
     : await supabase.from('technicians').insert({ ...settings, profile_id: profileId });
+  if (error) throw error;
+}
+
+/** Présences en plus d'un technicien (alternant pendant les vacances…), à venir et en cours d'abord. */
+export async function fetchScheduleExceptions(technicianId: string): Promise<ScheduleException[]> {
+  const { data, error } = await supabase
+    .from('technician_schedule_exceptions')
+    .select('*')
+    .eq('technician_id', technicianId)
+    .order('starts_on', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addScheduleException(input: {
+  technician_id: string;
+  starts_on: string;
+  ends_on: string;
+  note: string | null;
+}) {
+  const { error } = await supabase.from('technician_schedule_exceptions').insert(input);
+  if (error) throw error;
+}
+
+export async function deleteScheduleException(id: string) {
+  const { error } = await supabase.from('technician_schedule_exceptions').delete().eq('id', id);
   if (error) throw error;
 }
 

@@ -24,4 +24,12 @@ export interface TechnicianSettings {
   color: string | null;
   exclude_from_planning: boolean;
   rest_group: RestGroup | null;
+  /** Jours travaillés (ISO : 1 = lundi … 6 = samedi). */
+  work_days: number[];
+  /** Alternant : présent seulement les semaines A ou B. */
+  alternance: 'A' | 'B' | null;
+  /** Badge à la borne (sinon ni absence, ni retard, ni alerte). */
+  clock_required: boolean;
 }
+
+export type ScheduleException = Database['public']['Tables']['technician_schedule_exceptions']['Row'];

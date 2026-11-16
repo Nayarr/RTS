@@ -77,6 +77,9 @@ const DAY: TechnicianDay[] = [
     leaveType: null,
     leaveHours: null,
     badgedDuringLeave: false,
+    scheduled: true,
+    clockRequired: true,
+    absent: false,
   },
   {
     id: 't2',
@@ -95,6 +98,9 @@ const DAY: TechnicianDay[] = [
     leaveType: 'paid_leave',
     leaveHours: null,
     badgedDuringLeave: true,
+    scheduled: true,
+    clockRequired: true,
+    absent: false,
   },
 ];
 

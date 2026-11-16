@@ -88,6 +88,9 @@ describe('editAccountSchema', () => {
       color: null,
       exclude_from_planning: false,
       rest_group: 'B',
+      work_days: [1, 2, 3, 4, 5],
+      alternance: 'A',
+      clock_required: true,
     });
     expect(result.success).toBe(true);
   });

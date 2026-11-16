@@ -16,6 +16,14 @@ export interface LeaveRange {
   ends_on: string;
 }
 
+/** Jour travaillé d'une fiche (technician_schedule) : sert aux absences non justifiées. */
+export interface ScheduleDay {
+  technician_id: string;
+  day: string;
+  scheduled: boolean;
+  clock_required: boolean;
+}
+
 export interface WeekTotal {
   week: string;
   seconds: number;
@@ -28,7 +36,10 @@ export interface MonthTotal {
   daysWorked: number;
   lates: number;
   lateMinutes: number;
+  /** Congés validés, plus les jours travaillés sans badgeage ni congé (absences non justifiées). */
   absenceDays: number;
+  /** Dont jours travaillés sans badgeage ni congé. */
+  unexcusedDays: number;
   anomalies: number;
 }
 
@@ -64,12 +75,16 @@ export function monthDays(month: string): string[] {
 /**
  * Relevé mensuel d'un technicien : heures et heures sup. (après 18h30) par semaine,
  * jours travaillés, retards, jours d'absence (hors dimanche), oublis de badge.
+ * Avec les jours travaillés de la fiche : un jour travaillé passé sans badgeage ni congé compte aussi
+ * comme une absence (compte qui badge seulement).
  */
 export function computeTimesheet(
   technicianId: string,
   month: string,
   rows: AttendanceDayRow[],
   leaves: LeaveRange[],
+  schedule: ScheduleDay[] = [],
+  today = '9999-12-31',
 ): Timesheet {
   const weeks = new Map<string, WeekTotal>();
   const total: MonthTotal = {
@@ -79,8 +94,12 @@ export function computeTimesheet(
     lates: 0,
     lateMinutes: 0,
     absenceDays: 0,
+    unexcusedDays: 0,
     anomalies: 0,
   };
+  const scheduled = new Map(
+    schedule.filter((item) => item.technician_id === technicianId).map((item) => [item.day, item]),
+  );
   const byDay = new Map(
     rows.filter((row) => row.technician_id === technicianId).map((row) => [row.work_date, row]),
   );
@@ -103,11 +122,14 @@ export function computeTimesheet(
         total.lateMinutes += row.late_minutes;
       }
     }
-    if (
-      parseDay(day).getDay() !== 0 &&
-      myLeaves.some((leave) => leave.starts_on <= day && leave.ends_on >= day)
-    ) {
+    const onLeave = myLeaves.some((leave) => leave.starts_on <= day && leave.ends_on >= day);
+    if (parseDay(day).getDay() !== 0 && onLeave) {
       total.absenceDays += 1;
+    }
+    const plan = scheduled.get(day);
+    if (!row && !onLeave && day < today && plan?.scheduled && plan.clock_required) {
+      total.absenceDays += 1;
+      total.unexcusedDays += 1;
     }
   }
   return { weeks: [...weeks.values()], total };
