@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Camera, ChevronLeft, ChevronRight, Plus, Tablet, Trash2, TriangleAlert } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, Pencil, Plus, Tablet, Trash2, TriangleAlert } from 'lucide-react';
 import { initials } from '@/app/nav';
 import { PageHeader } from '@/app/PageHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -16,7 +16,7 @@ import { todayIso } from '@/features/repair-orders/schemas';
 import { cn } from '@/lib/utils';
 import { AttendanceTabs } from './AttendanceTabs';
 import { deleteManualClockEvent, updatePhotoRetention, type ClockEvent, type TechnicianDay } from './api';
-import { ClockPhotoDialog, ExitCodeDialog, ManualClockDialog } from './dialogs';
+import { ClockPhotoDialog, EditClockEventDialog, ExitCodeDialog, ManualClockDialog } from './dialogs';
 import { clockTime, formatHoursMinutes, formatLate, workedSeconds } from './domain';
 import { useAttendanceDay, useAttendanceMutation, useKioskSettings } from './hooks';
 
@@ -24,7 +24,8 @@ type OpenDialog =
   | { kind: 'manual' }
   | { kind: 'exit-code' }
   | { kind: 'photo'; title: string; fileId: string }
-  | { kind: 'delete'; event: ClockEvent; name: string };
+  | { kind: 'delete'; event: ClockEvent; name: string }
+  | { kind: 'edit'; event: ClockEvent; name: string };
 
 const eventLabel = (event: ClockEvent) => (event.event_type === 'in' ? 'arrivée' : 'départ');
 
@@ -129,6 +130,7 @@ export function AttendancePage() {
                       })
                     }
                     onDelete={(event) => setDialog({ kind: 'delete', event, name: tech.display_name })}
+                    onEdit={(event) => setDialog({ kind: 'edit', event, name: tech.display_name })}
                   />
                 </li>
               ))}
@@ -142,6 +144,9 @@ export function AttendancePage() {
         <ManualClockDialog date={date} technicians={day.data} onClose={() => setDialog(null)} />
       )}
       {dialog?.kind === 'exit-code' && <ExitCodeDialog onClose={() => setDialog(null)} />}
+      {dialog?.kind === 'edit' && (
+        <EditClockEventDialog event={dialog.event} name={dialog.name} onClose={() => setDialog(null)} />
+      )}
       {dialog?.kind === 'photo' && (
         <ClockPhotoDialog title={dialog.title} fileId={dialog.fileId} onClose={() => setDialog(null)} />
       )}
@@ -169,6 +174,8 @@ interface TechnicianCardProps {
   photoUrls: Record<string, string>;
   onPhoto: (event: ClockEvent) => void;
   onDelete: (event: ClockEvent) => void;
+  /** Rectifier l'heure ou le sens d'un badgeage (direction). */
+  onEdit: (event: ClockEvent) => void;
 }
 
 /** Plages de présence de la journée (arrivée → départ), en % d'une journée de 6 h à 20 h. */
@@ -199,7 +206,15 @@ function presenceSpans(events: ClockEvent[], isToday: boolean) {
     }));
 }
 
-function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }: TechnicianCardProps) {
+function TechnicianCard({
+  tech,
+  canEdit,
+  isToday,
+  photoUrls,
+  onPhoto,
+  onDelete,
+  onEdit,
+}: TechnicianCardProps) {
   const present = isToday && tech.events[tech.events.length - 1]?.event_type === 'in';
   const attendance = tech.attendance;
   const spans = presenceSpans(tech.events, isToday);
@@ -293,8 +308,17 @@ function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }
               );
               const chip =
                 'inline-flex h-10 items-center gap-2 rounded-[7px] border bg-card pr-3 pl-1 text-[13px] font-medium';
+              // Badgeage rectifié par la direction : heure d'origine et motif au survol
+              const edited = event.edited_at ? (
+                <span
+                  className="tag"
+                  title={`Heure d’origine ${clockTime(event.original_occurred_at ?? event.occurred_at)}${event.edit_reason ? ` · ${event.edit_reason}` : ''}`}
+                >
+                  Modifié
+                </span>
+              ) : null;
               return (
-                <li key={event.id}>
+                <li key={event.id} className="row gap-1">
                   {url && !event.photo_purged_at ? (
                     <button
                       type="button"
@@ -304,12 +328,14 @@ function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }
                     >
                       {thumb}
                       {label}
+                      {edited}
                     </button>
                   ) : (
                     <span className={chip} title={event.reason ?? undefined}>
                       {thumb}
                       {label}
                       {event.source === 'manual' && <span className="tag">Manuel</span>}
+                      {edited}
                       {event.photo_purged_at && <span className="tag">Photo supprimée</span>}
                       {canEdit && event.source === 'manual' && (
                         <button
@@ -322,6 +348,17 @@ function TechnicianCard({ tech, canEdit, isToday, photoUrls, onPhoto, onDelete }
                         </button>
                       )}
                     </span>
+                  )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="ibtn sm ghost size-7!"
+                      aria-label={`Modifier le pointage : ${label}`}
+                      title="Modifier l’heure du badgeage"
+                      onClick={() => onEdit(event)}
+                    >
+                      <Pencil className="i xs" />
+                    </button>
                   )}
                 </li>
               );

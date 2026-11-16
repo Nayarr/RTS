@@ -147,6 +147,22 @@ export async function addManualClockEvent(input: ManualClockInput) {
   if (error) throw error;
 }
 
+/** Badgeage existant rectifié par la direction (heure, sens) : heure d'origine gardée, motif obligatoire. */
+export async function updateClockEvent(input: {
+  id: string;
+  event_type: ClockEventType;
+  time: string;
+  reason: string;
+}) {
+  const { error } = await supabase.rpc('update_clock_event', {
+    p_event_id: input.id,
+    p_event_type: input.event_type,
+    p_time: input.time,
+    p_reason: input.reason,
+  });
+  if (error) throw error;
+}
+
 /** Seules les corrections manuelles se suppriment (la base refuse pour la borne). */
 export async function deleteManualClockEvent(id: string) {
   const { data, error } = await supabase.from('clock_events').delete().eq('id', id).select('id');

@@ -15,7 +15,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { useFileUrl } from '@/features/files/hooks';
 import { dayLabel } from '@/features/planning/domain';
-import { addManualClockEvent, setKioskExitCode, type TechnicianDay } from './api';
+import {
+  addManualClockEvent,
+  setKioskExitCode,
+  updateClockEvent,
+  type ClockEvent,
+  type TechnicianDay,
+} from './api';
+import { clockTime } from './domain';
 import { useAttendanceMutation } from './hooks';
 
 const selectClass = 'inp';
@@ -107,6 +114,92 @@ export function ManualClockDialog({
             Annuler
           </Button>
           <Button type="submit" form="manual-clock" disabled={save.isPending}>
+            Enregistrer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const editSchema = z.object({
+  event_type: z.enum(['in', 'out']),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide'),
+  reason: z.string().trim().min(1, 'Indique le motif').max(300),
+});
+type EditValues = z.infer<typeof editSchema>;
+
+/** Rectifier un badgeage existant (borne ou correction) : heure d'origine gardée, marqué « modifié ». */
+export function EditClockEventDialog({
+  event,
+  name,
+  onClose,
+}: {
+  event: ClockEvent;
+  name: string;
+  onClose: () => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<EditValues>({
+    resolver: zodResolver(editSchema),
+    defaultValues: { event_type: event.event_type, time: clockTime(event.occurred_at), reason: '' },
+  });
+  const save = useAttendanceMutation(
+    (values: EditValues) => updateClockEvent({ id: event.id, ...values, reason: values.reason.trim() }),
+    'Badgeage modifié',
+  );
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Modifier le badgeage</DialogTitle>
+          <DialogDescription>
+            {name} · {dayLabel(event.work_date)}
+            {event.original_occurred_at
+              ? ` · heure d’origine ${clockTime(event.original_occurred_at)}`
+              : ` · badgé à ${clockTime(event.occurred_at)}`}
+            . La photo et l’heure d’origine sont gardées, le badgeage est marqué « modifié ».
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          id="edit-clock"
+          noValidate
+          className="space-y-4"
+          onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: onClose }))}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="edit-clock-type">Type</Label>
+              <select id="edit-clock-type" className={selectClass} {...register('event_type')}>
+                <option value="in">Arrivée</option>
+                <option value="out">Départ</option>
+              </select>
+            </div>
+            <FormField
+              id="edit-clock-time"
+              label="Heure"
+              type="time"
+              error={errors.time?.message}
+              {...register('time')}
+            />
+          </div>
+          <FormField
+            id="edit-clock-reason"
+            label="Motif"
+            placeholder="Ex : badge oublié, arrivé à l’heure"
+            error={errors.reason?.message}
+            {...register('reason')}
+          />
+        </form>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" form="edit-clock" disabled={save.isPending}>
             Enregistrer
           </Button>
         </DialogFooter>
