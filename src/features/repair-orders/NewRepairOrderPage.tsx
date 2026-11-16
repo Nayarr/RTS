@@ -13,6 +13,7 @@ import {
   Info,
   MapPin,
   PenLine,
+  StickyNote,
   Truck,
 } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
@@ -411,6 +412,38 @@ ${task}`
             />
           )}
 
+          <section data-slot="card" className="card" aria-labelledby="new-ro-note">
+            <div className="card-h">
+              <h2 className="h2" id="new-ro-note">
+                <StickyNote className="i" /> Note pour le technicien
+              </h2>
+            </div>
+            <div className="card-b">
+              <div className="field">
+                <Label htmlFor="technician_note" className="sr-only">
+                  Note pour le technicien (optionnel)
+                </Label>
+                <Textarea
+                  id="technician_note"
+                  rows={2}
+                  placeholder="Ex. : clés au bureau, client qui attend sur place…"
+                  aria-invalid={errors.technician_note ? true : undefined}
+                  aria-describedby={errors.technician_note ? 'technician_note-error' : 'technician_note-hint'}
+                  {...register('technician_note')}
+                />
+                {errors.technician_note ? (
+                  <p id="technician_note-error" className="err">
+                    {errors.technician_note.message}
+                  </p>
+                ) : (
+                  <p id="technician_note-hint" className="hint">
+                    Pas une tâche : une consigne affichée en haut de sa fiche OR.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
           <section data-slot="card" className="card">
             <div className="card-h">
               <h2 className="h2" id="new-ro-task">
@@ -445,26 +478,6 @@ ${task}`
                 {errors.requested_work && (
                   <p id="requested_work-error" className="err">
                     {errors.requested_work.message}
-                  </p>
-                )}
-              </div>
-              <div className="field">
-                <Label htmlFor="technician_note">Note pour le technicien (optionnel)</Label>
-                <Textarea
-                  id="technician_note"
-                  rows={2}
-                  placeholder="Ex. : clés au bureau, client qui attend sur place…"
-                  aria-invalid={errors.technician_note ? true : undefined}
-                  aria-describedby={errors.technician_note ? 'technician_note-error' : 'technician_note-hint'}
-                  {...register('technician_note')}
-                />
-                {errors.technician_note ? (
-                  <p id="technician_note-error" className="err">
-                    {errors.technician_note.message}
-                  </p>
-                ) : (
-                  <p id="technician_note-hint" className="hint">
-                    Pas une tâche : une consigne affichée en haut de sa fiche OR.
                   </p>
                 )}
               </div>

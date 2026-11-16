@@ -94,17 +94,6 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
         <div className="col gap-3">
           <div className="field">
-            <Label htmlFor="edit-requested_work">Tâche à faire</Label>
-            <Textarea
-              id="edit-requested_work"
-              rows={5}
-              disabled={invoiced}
-              aria-invalid={errors.requested_work ? true : undefined}
-              {...register('requested_work')}
-            />
-            {errors.requested_work && <p className="err">{errors.requested_work.message}</p>}
-          </div>
-          <div className="field">
             <Label htmlFor="edit-technician_note">Note pour le technicien</Label>
             <Textarea
               id="edit-technician_note"
@@ -115,6 +104,17 @@ export function OfficeInfoForm({ order }: { order: RepairOrderOverview }) {
               {...register('technician_note')}
             />
             {errors.technician_note && <p className="err">{errors.technician_note.message}</p>}
+          </div>
+          <div className="field">
+            <Label htmlFor="edit-requested_work">Tâche à faire</Label>
+            <Textarea
+              id="edit-requested_work"
+              rows={5}
+              disabled={invoiced}
+              aria-invalid={errors.requested_work ? true : undefined}
+              {...register('requested_work')}
+            />
+            {errors.requested_work && <p className="err">{errors.requested_work.message}</p>}
           </div>
         </div>
 
