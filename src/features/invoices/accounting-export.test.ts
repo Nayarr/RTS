@@ -318,6 +318,38 @@ describe('export comptable : écritures', () => {
       ['BQ', 0, 100],
     ]);
   });
+
+  it('annulation d’un paiement : écriture inverse en montants positifs, toujours équilibrée', () => {
+    const cancelled: AccountingData = {
+      ...base,
+      payments: [
+        ...base.payments,
+        ...base.payments.map((payment) => ({
+          ...payment,
+          id: 'p2',
+          paid_on: '2026-10-22',
+          amount_ttc: -100,
+          note: 'Annulation du paiement du 20/10/2026',
+        })),
+      ],
+    };
+    const entries = entriesSheet(cancelled);
+    const bank = entries.rows
+      .map((_, index) => record(entries, index))
+      .filter((row) => row.JournalCode === 'BQ')
+      .map((row) => [row.EcritureDate, row.CompteNum, row.Debit, row.Credit]);
+    expect(bank).toEqual([
+      ['20261020', '530000', 100, 0],
+      ['20261020', '411000', 0, 100],
+      ['20261022', '530000', 0, 100],
+      ['20261022', '411000', 100, 0],
+    ]);
+    for (const total of balances(cancelled).values()) expect(total).toBe(0);
+    expect(
+      entries.rows.map((_, index) => record(entries, index)).find((row) => row.EcritureDate === '20261022')
+        ?.EcritureLib,
+    ).toMatch(/^Annulation Espèces F1/);
+  });
 });
 
 describe('export comptable : fichiers', () => {
