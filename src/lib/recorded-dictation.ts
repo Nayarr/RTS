@@ -77,29 +77,50 @@ export type SpeechState = 'waiting' | 'speaking' | 'done' | 'no-speech';
  * Fin de la question : la parole est repérée au-dessus du bruit de fond, puis la question part
  * après un silence (comme la dictée de Safari). Rien entendu au bout de quelques secondes : abandon.
  * Question trop longue : envoyée telle quelle à la limite.
+ *
+ * Bruit de fond : le volume le plus bas des dernières secondes (les blancs entre les mots y
+ * redescendent), plafonné à celui d'un atelier bruyant. Ainsi une question dite dès l'appui sur le
+ * micro n'est pas prise pour du bruit, et un moteur qui tourne n'est pas pris pour une question.
  */
 export class SpeechEndDetector {
-  private noise: number | null = null;
+  private recent: { level: number; ms: number }[] = [];
   private elapsed = 0;
   private quiet = 0;
   private heard = false;
 
   constructor(
-    private readonly options = { silenceMs: 1_300, noSpeechMs: 8_000, maxMs: 28_000, minLevel: 0.012 },
+    private readonly options = {
+      silenceMs: 1_300,
+      noSpeechMs: 8_000,
+      maxMs: 28_000,
+      /** Volume au-dessous duquel tout est silence (pièce calme). */
+      minLevel: 0.015,
+      /** Bruit de fond le plus fort pris en compte (atelier, moteur au ralenti). */
+      maxNoise: 0.04,
+      /** Fenêtre où l'on cherche le bruit de fond. */
+      windowMs: 3_000,
+    },
   ) {}
 
   /** Morceau suivant : son volume et sa durée. */
   push(level: number, durationMs: number): SpeechState {
+    const { silenceMs, noSpeechMs, maxMs, minLevel, maxNoise, windowMs } = this.options;
     this.elapsed += durationMs;
-    const { silenceMs, noSpeechMs, maxMs, minLevel } = this.options;
-    this.noise ??= level;
-    const speech = level > Math.max(minLevel, this.noise * 2.5);
+    this.recent.push({ level, ms: durationMs });
+    let kept = 0;
+    for (let index = this.recent.length - 1; index >= 0; index--) {
+      kept += this.recent[index]?.ms ?? 0;
+      if (kept > windowMs) {
+        this.recent = this.recent.slice(index + 1);
+        break;
+      }
+    }
+    const noise = Math.min(maxNoise, ...this.recent.map((item) => item.level));
+    const speech = level > Math.max(minLevel, noise * 2.5);
     if (speech) {
       this.heard = true;
       this.quiet = 0;
     } else {
-      // Bruit de fond suivi doucement (moteur qui tourne, atelier)
-      this.noise = this.noise * 0.95 + level * 0.05;
       this.quiet += durationMs;
     }
     if (this.elapsed >= maxMs) return this.heard ? 'done' : 'no-speech';
