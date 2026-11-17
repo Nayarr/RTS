@@ -5,7 +5,8 @@
 // Resend ; Resend appelle cette fonction (webhook « email.received », signé avec le secret
 // RESEND_WEBHOOK_SECRET). La fonction lit le contenu du mail à l'API Resend, le garde en texte
 // brut (inbox_emails), reconnaît le client par son adresse, puis le fait trier par Claude Haiku
-// (secret ANTHROPIC_AGENT_API_KEY). Ignorés : Agent Direction désactivé, mail adressé à aucune
+// (secret ANTHROPIC_AGENT_API_KEY), pièces jointes PDF et photos comprises : le tri les lit et
+// garde le résumé de chacune (attachments.ts), pas le fichier. Ignorés : Agent Direction désactivé, mail adressé à aucune
 // boîte du domaine de l'atelier (Réglages › Atelier).
 //
 // Un mail qui attend une réponse (devis, intervention, suivi…) reçoit ensuite, en tâche de fond,
@@ -21,6 +22,16 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { withSupabase } from '@supabase/server';
 import { z } from 'zod';
 import { isCronRequest } from '../_shared/cron.ts';
+import {
+  attachmentListSchema,
+  contentBlock,
+  MAX_FILE_BYTES,
+  pickReadable,
+  readableKind,
+  type ReadFile,
+  trustedDownload,
+  withSummaries,
+} from './attachments.ts';
 import {
   atelierDomain,
   atelierMailbox,
@@ -84,13 +95,14 @@ const claude = anthropicKey
 
 interface PendingMail {
   id: string;
+  provider_id: string;
   received_at: string;
   mailbox: string | null;
   from_name: string;
   from_address: string;
   subject: string;
   body: string;
-  attachments: { filename?: string | null }[];
+  attachments: { filename?: string | null; content_type?: string | null }[];
   triage_attempts: number;
   clients: { name: string } | null;
 }
@@ -99,43 +111,98 @@ interface PendingMail {
 const wantsReply = (result: Pick<Triage, 'needs_reply' | 'category'>) =>
   result.needs_reply && REPLY_CATEGORIES.includes(result.category);
 
+/**
+ * PDF et photos joints au mail, téléchargés chez Resend pour le tri (liens signés et temporaires :
+ * relus à chaque essai). Un fichier indisponible est seulement nommé, le tri continue sans lui.
+ */
+async function readAttachments(providerId: string): Promise<ReadFile[]> {
+  if (!resendKey) return [];
+  try {
+    const response = await fetch(
+      `${resendUrl}/emails/receiving/${encodeURIComponent(providerId)}/attachments?limit=20`,
+      { headers: { Authorization: `Bearer ${resendKey}` }, signal: AbortSignal.timeout(15_000) },
+    );
+    if (!response.ok) {
+      console.error('Resend pièces jointes', response.status);
+      return [];
+    }
+    const list = attachmentListSchema.safeParse(await response.json().catch(() => null));
+    if (!list.success) return [];
+    const files = await Promise.all(
+      pickReadable(list.data.data).map(async (file): Promise<ReadFile | null> => {
+        const kind = readableKind(file);
+        if (!kind || !trustedDownload(file.download_url, resendUrl)) return null;
+        const download = await fetch(file.download_url, { signal: AbortSignal.timeout(20_000) });
+        if (!download.ok) return null;
+        const bytes = new Uint8Array(await download.arrayBuffer());
+        if (!bytes.byteLength || bytes.byteLength > MAX_FILE_BYTES) return null;
+        return { filename: file.filename ?? 'fichier', bytes, kind };
+      }),
+    );
+    return files.filter((file): file is ReadFile => file !== null);
+  } catch (err) {
+    console.error('mail-inbox pièces jointes', err);
+    return [];
+  }
+}
+
 /** Trie un mail et enregistre le résultat ; en cas d'échec, il reste en attente pour un nouvel essai. */
 async function triage(admin: SupabaseClient, mail: PendingMail): Promise<Triage | null> {
   if (!claude) return null;
+  const model = claude;
   await admin.from('inbox_emails').update({ triage_attempts: mail.triage_attempts + 1 }).eq('id', mail.id);
-  try {
-    const response = await claude.messages.create({
+  const files = await readAttachments(mail.provider_id);
+  const ask = (joined: readonly ReadFile[]) =>
+    model.messages.create({
       model: TRIAGE_MODEL,
-      max_tokens: 400,
+      max_tokens: 900,
       system: TRIAGE_SYSTEM,
       output_config: { format: { type: 'json_schema', schema: TRIAGE_JSON_SCHEMA } },
       messages: [
         {
           role: 'user',
-          content: triageRequest({
-            receivedOn: parisToday(new Date(mail.received_at)),
-            mailbox: mail.mailbox,
-            fromName: mail.from_name,
-            fromAddress: mail.from_address,
-            clientName: mail.clients?.name ?? null,
-            subject: mail.subject,
-            attachments: mail.attachments.map((file) => file.filename ?? 'fichier'),
-            body: mail.body,
-          }),
+          content: [
+            ...joined.map(contentBlock),
+            {
+              type: 'text',
+              text: triageRequest({
+                receivedOn: parisToday(new Date(mail.received_at)),
+                mailbox: mail.mailbox,
+                fromName: mail.from_name,
+                fromAddress: mail.from_address,
+                clientName: mail.clients?.name ?? null,
+                subject: mail.subject,
+                attachments: mail.attachments.map((file) => file.filename ?? 'fichier'),
+                read: joined.map((file) => file.filename),
+                body: mail.body,
+              }),
+            },
+          ],
         },
       ],
     });
+  try {
+    let response: Anthropic.Message;
+    try {
+      response = await ask(files);
+    } catch (err) {
+      // Fichier refusé par l'API (PDF chiffré ou abîmé, image illisible) : tri sur le texte seul
+      if (!(err instanceof Anthropic.BadRequestError) || !files.length) throw err;
+      console.error('mail-inbox pièces jointes refusées', err.message);
+      response = await ask([]);
+    }
     const text = response.content.map((block) => (block.type === 'text' ? block.text : '')).join('');
     const parsed = parseTriage(text);
     if (!parsed) {
       console.error('mail-inbox tri illisible', response.stop_reason);
       return null;
     }
-    const { renouvellements, ...result } = parsed;
+    const { renouvellements, pieces_jointes, ...result } = parsed;
     const { error } = await admin
       .from('inbox_emails')
       .update({
         ...result,
+        ...(pieces_jointes.length ? { attachments: withSummaries(mail.attachments, pieces_jointes) } : {}),
         triage_status: 'done',
         input_tokens: response.usage.input_tokens,
         output_tokens: response.usage.output_tokens,
@@ -169,11 +236,12 @@ interface ReplyMail {
   subject: string;
   body: string;
   summary: string | null;
+  attachments: { filename?: string | null; summary?: string | null }[] | null;
   reply_attempts: number;
   clients: { name: string } | null;
 }
 const REPLY_COLUMNS =
-  'id, mailbox, from_name, from_address, subject, body, summary, reply_attempts, clients(name)';
+  'id, mailbox, from_name, from_address, subject, body, summary, attachments, reply_attempts, clients(name)';
 
 /**
  * Prépare la réponse d'un mail : l'agent lit les données utiles (outils en lecture seule, client de
@@ -209,6 +277,9 @@ async function prepareReply(admin: SupabaseClient, mailId: string): Promise<bool
       subject: mail.subject,
       body: mail.body,
       summary: mail.summary,
+      attachments: (mail.attachments ?? []).flatMap((file) =>
+        file?.filename && file.summary ? [{ filename: file.filename, summary: file.summary }] : []
+      ),
     }),
   }];
   const used = new Set<string>();
@@ -321,7 +392,7 @@ function inBackground(work: Promise<unknown>) {
 }
 
 const PENDING_COLUMNS =
-  'id, received_at, mailbox, from_name, from_address, subject, body, attachments, triage_attempts, clients(name)';
+  'id, provider_id, received_at, mailbox, from_name, from_address, subject, body, attachments, triage_attempts, clients(name)';
 
 export default {
   fetch: withSupabase({ auth: 'none' }, async (req, ctx) => {

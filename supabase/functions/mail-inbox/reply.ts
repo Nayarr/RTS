@@ -114,6 +114,8 @@ export function replyRequest(mail: {
   subject: string;
   body: string;
   summary: string | null;
+  /** Pièces jointes lues par le tri, avec leur résumé. */
+  attachments?: readonly { filename: string; summary: string }[];
 }): string {
   const from = mail.fromName ? `${mail.fromName} <${mail.fromAddress}>` : mail.fromAddress;
   const lines = [
@@ -125,6 +127,9 @@ export function replyRequest(mail: {
     `Objet : ${mail.subject || '(sans objet)'}`,
   ];
   if (mail.summary) lines.push(`Résumé du tri : ${mail.summary}`);
+  for (const file of mail.attachments ?? []) {
+    lines.push(`Pièce jointe « ${file.filename} » : ${file.summary}`);
+  }
   return `${lines.join('\n')}\n\n<mail>\n${mail.body.slice(0, 8_000) || '(mail vide)'}\n</mail>`;
 }
 

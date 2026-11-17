@@ -155,6 +155,7 @@ Deno.test('tri : réponse vérifiée, tiret cadratin retiré, réponse invalide 
       summary: 'Transports Moreau, devis embrayage pour AB-123-CD',
       needs_reply: true,
       renouvellements: [],
+      pieces_jointes: [],
     },
   );
   // Contrôle renouvelé annoncé : plaque et prochaine échéance ; date illisible rejetée

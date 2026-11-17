@@ -2735,6 +2735,27 @@
     border-radius: 8px;
     background: var(--muted);
   }
+  .mail-files {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: var(--card);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .mail-files li {
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .mail-files svg {
+    flex: none;
+    margin-top: 3px;
+    color: var(--muted-foreground);
+  }
   .mail-text {
     font-size: 13.5px;
     line-height: 1.55;
