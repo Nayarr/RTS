@@ -47,6 +47,11 @@ const event = (overrides: Partial<ClockEvent>): ClockEvent => ({
   entered_by: null,
   legacy_id: null,
   created_at: '2026-09-21T06:57:00Z',
+  original_occurred_at: null,
+  original_event_type: null,
+  edited_at: null,
+  edited_by: null,
+  edit_reason: null,
   ...overrides,
 });
 

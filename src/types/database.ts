@@ -980,11 +980,16 @@ export type Database = {
         Row: {
           created_at: string;
           during_leave_type: Database['public']['Enums']['leave_type'] | null;
+          edit_reason: string | null;
+          edited_at: string | null;
+          edited_by: string | null;
           entered_by: string | null;
           event_type: Database['public']['Enums']['clock_event_type'];
           id: string;
           legacy_id: string | null;
           occurred_at: string;
+          original_event_type: Database['public']['Enums']['clock_event_type'] | null;
+          original_occurred_at: string | null;
           photo_file_id: string | null;
           photo_purged_at: string | null;
           reason: string | null;
@@ -995,11 +1000,16 @@ export type Database = {
         Insert: {
           created_at?: string;
           during_leave_type?: Database['public']['Enums']['leave_type'] | null;
+          edit_reason?: string | null;
+          edited_at?: string | null;
+          edited_by?: string | null;
           entered_by?: string | null;
           event_type: Database['public']['Enums']['clock_event_type'];
           id?: string;
           legacy_id?: string | null;
           occurred_at?: string;
+          original_event_type?: Database['public']['Enums']['clock_event_type'] | null;
+          original_occurred_at?: string | null;
           photo_file_id?: string | null;
           photo_purged_at?: string | null;
           reason?: string | null;
@@ -1010,11 +1020,16 @@ export type Database = {
         Update: {
           created_at?: string;
           during_leave_type?: Database['public']['Enums']['leave_type'] | null;
+          edit_reason?: string | null;
+          edited_at?: string | null;
+          edited_by?: string | null;
           entered_by?: string | null;
           event_type?: Database['public']['Enums']['clock_event_type'];
           id?: string;
           legacy_id?: string | null;
           occurred_at?: string;
+          original_event_type?: Database['public']['Enums']['clock_event_type'] | null;
+          original_occurred_at?: string | null;
           photo_file_id?: string | null;
           photo_purged_at?: string | null;
           reason?: string | null;
@@ -1023,6 +1038,13 @@ export type Database = {
           work_date?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'clock_events_edited_by_fkey';
+            columns: ['edited_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'clock_events_entered_by_fkey';
             columns: ['entered_by'];
@@ -7840,11 +7862,16 @@ export type Database = {
         Returns: {
           created_at: string;
           during_leave_type: Database['public']['Enums']['leave_type'] | null;
+          edit_reason: string | null;
+          edited_at: string | null;
+          edited_by: string | null;
           entered_by: string | null;
           event_type: Database['public']['Enums']['clock_event_type'];
           id: string;
           legacy_id: string | null;
           occurred_at: string;
+          original_event_type: Database['public']['Enums']['clock_event_type'] | null;
+          original_occurred_at: string | null;
           photo_file_id: string | null;
           photo_purged_at: string | null;
           reason: string | null;
@@ -9187,6 +9214,40 @@ export type Database = {
         Returns: string;
       };
       tyre_package_kind: { Args: { p_description: string }; Returns: string };
+      update_clock_event: {
+        Args: {
+          p_event_id: string;
+          p_event_type: Database['public']['Enums']['clock_event_type'];
+          p_reason: string;
+          p_time: string;
+        };
+        Returns: {
+          created_at: string;
+          during_leave_type: Database['public']['Enums']['leave_type'] | null;
+          edit_reason: string | null;
+          edited_at: string | null;
+          edited_by: string | null;
+          entered_by: string | null;
+          event_type: Database['public']['Enums']['clock_event_type'];
+          id: string;
+          legacy_id: string | null;
+          occurred_at: string;
+          original_event_type: Database['public']['Enums']['clock_event_type'] | null;
+          original_occurred_at: string | null;
+          photo_file_id: string | null;
+          photo_purged_at: string | null;
+          reason: string | null;
+          source: Database['public']['Enums']['clock_source'];
+          technician_id: string;
+          work_date: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'clock_events';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       update_vehicle_deadlines: {
         Args: { p_patch: Json; p_repair_order_id: string };
         Returns: {
