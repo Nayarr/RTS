@@ -10,6 +10,20 @@ La direction retrouve les mails dans **Agent Direction › Mails reçus**. Les m
 nombre de mails à traiter apparaissent dans le **point du jour**, et l'agent répond aux questions
 sur les mails (« qu'est-ce que Moreau m'a demandé ? »).
 
+## Pièces jointes
+
+Le tri lit aussi les **PDF et les photos** joints au mail (JPEG, PNG, GIF, WebP) : facture ou devis
+d'un fournisseur, procès-verbal de contrôle technique, photo d'une panne… Pour chaque pièce lue, il
+écrit une phrase qui dit ce que c'est et l'essentiel (numéro, montant TTC, date, plaque). Cette
+phrase s'affiche sous le mail ouvert dans **Mails reçus**, compte dans le résumé du mail, sert à
+la réponse préparée et répond aux questions posées à l'agent. Un contrôle technique ou un rapport
+hayon joint en PDF propose aussi la nouvelle échéance pour la fiche du véhicule.
+
+Limites, pour borner le coût : 3 pièces lues par mail, 5 Mo par fichier et 10 Mo en tout. Ne sont
+pas lus : Word, Excel, archives ZIP, photos HEIC d'iPhone, logos et signatures insérés dans le
+texte. Un fichier que l'API refuse (PDF protégé par mot de passe) est ignoré, le mail est trié
+sur son texte.
+
 ## Réponses préparées
 
 Quand un mail attend une réponse (demande de devis, intervention, suivi, facture, location,
@@ -33,12 +47,14 @@ Rien n'est jamais envoyé sans cette décision. L'envoi passe par l'envoi des e-
 ## Ce qui est gardé, et combien de temps
 
 - Expéditeur, destinataires, objet, texte du mail (20 000 caractères au plus), noms des pièces
-  jointes. Le contenu des pièces jointes n'est pas gardé.
+  jointes et résumé d'une phrase de celles qui ont été lues. Les fichiers ne sont pas gardés : ils
+  sont téléchargés chez Resend le temps du tri, puis oubliés.
 - Copies effacées automatiquement après 90 jours. Le mail d'origine reste dans la boîte o2switch.
 - Lecture réservée à la direction. Personne ne peut modifier ni effacer une copie depuis l'appli.
 - Mails ignorés : Agent Direction désactivé, ou mail qui n'est adressé à aucune adresse du domaine
   d'envoi réglé dans Réglages › Atelier (protection contre les envois directs à l'adresse Resend).
-- Coût : environ 0,13 centime par mail trié (Claude Haiku 4.5).
+- Coût : environ 0,13 centime par mail trié (Claude Haiku 4.5), plus environ 0,3 centime par page
+  de PDF ou par photo lue (estimation, à confirmer sur les premiers mails réels).
 - RGPD : ajouter « tri des mails reçus » au registre des traitements (finalité : gestion de la
   relation client et fournisseurs ; sous-traitants : Resend, Anthropic, Supabase ; durée : 90 jours).
 

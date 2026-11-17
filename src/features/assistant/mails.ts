@@ -127,6 +127,23 @@ export function attachmentNames(attachments: InboxEmail['attachments']): string[
   );
 }
 
+/** Pièces jointes lues par le tri (PDF, photos) avec ce qu'elles contiennent, en une phrase. */
+export function attachmentSummaries(
+  attachments: InboxEmail['attachments'],
+): { filename: string; summary: string }[] {
+  if (!Array.isArray(attachments)) return [];
+  return attachments.flatMap((file) =>
+    file &&
+    typeof file === 'object' &&
+    !Array.isArray(file) &&
+    typeof file.filename === 'string' &&
+    typeof file.summary === 'string' &&
+    file.summary
+      ? [{ filename: file.filename, summary: file.summary }]
+      : [],
+  );
+}
+
 export type InboxWebhookStatus = Database['public']['Tables']['inbox_webhook_status']['Row'];
 
 /**

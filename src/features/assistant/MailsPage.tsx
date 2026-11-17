@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { decideDeadlineUpdates, fetchInboxEmails, fetchInboxWebhookStatus, setMailsHandled } from './api';
 import {
   attachmentNames,
+  attachmentSummaries,
   CATEGORY_META,
   deadlineUpdateLine,
   deadlineUpdates,
@@ -145,6 +146,7 @@ function MailRow({
   const category = mail.category ? CATEGORY_META[mail.category] : undefined;
   const urgency = mail.urgency ? URGENCY_META[mail.urgency] : undefined;
   const files = attachmentNames(mail.attachments);
+  const readFiles = attachmentSummaries(mail.attachments);
   const sender = mail.from_name || mail.from_address;
   const bodyId = `mail-${mail.id}`;
 
@@ -204,6 +206,18 @@ function MailRow({
               {mail.mailbox && ` · reçu sur ${mail.mailbox}`}
               {files.length > 0 && ` · pièces jointes : ${files.join(', ')}`}
             </p>
+            {readFiles.length > 0 && (
+              <ul className="mail-files" aria-label="Pièces jointes lues">
+                {readFiles.map((file) => (
+                  <li key={file.filename}>
+                    <Paperclip className="size-3.5" aria-hidden />
+                    <span>
+                      <b>{file.filename}</b> : {file.summary}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <DeadlineUpdates mail={mail} />
             <p className="mail-text">{mail.body || '(mail vide)'}</p>
           </div>
