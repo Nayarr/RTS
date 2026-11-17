@@ -60,20 +60,20 @@ async function createPaidInvoice(plate: string, clientName: string) {
   return draft.data;
 }
 
-test('réception sans bouton ; la direction annule, puis supprime un paiement avec motif, gardé dans l’historique', async ({
+test('réception sans bouton ; la direction annule un paiement avec motif : écriture inverse, rien n’est effacé', async ({
   page,
 }, testInfo) => {
   test.slow();
   const id = suffix(testInfo);
-  const invoiceId = await createPaidInvoice(`S${id}`, `Client suppression ${id}`);
+  const invoiceId = await createPaidInvoice(`S${id}`, `Client annulation ${id}`);
 
-  // Réception : le paiement se lit, la suppression n'est pas proposée
+  // Réception : le paiement se lit, l'annulation n'est pas proposée
   await loginAs(page, 'reception@rts.local');
   await page.goto(`/factures/${invoiceId}`);
   const rows = page.getByRole('list', { name: 'Paiements' }).getByRole('listitem');
   await expect(rows).toHaveCount(2);
-  await expect(page.getByText('La direction peut le supprimer')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Supprimer le paiement/ })).toHaveCount(0);
+  await expect(page.getByText('La direction peut l’annuler')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Annuler le paiement/ })).toHaveCount(0);
   const history = page.getByRole('list', { name: 'Historique des règlements' }).getByRole('listitem');
   await expect(history).toHaveCount(2);
   await expect(history.first()).toContainText(/Règlement enregistré :\s*300,00\s€/);
@@ -88,35 +88,39 @@ test('réception sans bouton ; la direction annule, puis supprime un paiement av
   await expect(balance).toContainText(/Reste dû\s*0,00\s€/);
   await expect(page.getByRole('button', { name: /Enregistrer un paiement/ })).toHaveCount(0);
 
-  // Annuler : rien ne change
-  const remove = page.getByRole('button', { name: /Supprimer le paiement de 24,00\s€ \(Espèces\)/ });
-  await remove.click();
-  const dialog = page.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+  // « Garder le paiement » : rien ne change
+  const cancel = page.getByRole('button', { name: /Annuler le paiement de 24,00\s€ \(Espèces\)/ });
+  await cancel.click();
+  const dialog = page.getByRole('dialog', { name: 'Annuler ce paiement ?' });
   await expect(dialog).toContainText(/24,00\s€ · Espèces · payé le \d{2}\/\d{2}\/\d{4}/);
-  await dialog.getByRole('button', { name: 'Annuler' }).click();
+  await dialog.getByRole('button', { name: 'Garder le paiement' }).click();
   await expect(dialog).toBeHidden();
   await expect(rows).toHaveCount(2);
   await expect(history).toHaveCount(2);
   await expect(balance).toContainText(/Reste dû\s*0,00\s€/);
 
-  // Confirmer : le paiement part, le solde et l'état suivent, même après rechargement
-  await remove.click();
+  // Confirmer : le paiement reste, marqué annulé, une annulation négative s'ajoute
+  await cancel.click();
   await dialog.getByLabel('Motif (facultatif)').fill('Erreur de mode de règlement');
-  await dialog.getByRole('button', { name: 'Supprimer le paiement' }).click();
+  await dialog.getByRole('button', { name: 'Annuler le paiement' }).click();
   await expect(dialog).toBeHidden();
-  await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText('Carte bancaire');
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(1)).toContainText(/Espèces.*Annulé.*24,00\s€/);
+  await expect(rows.nth(2)).toContainText(
+    /Espèces · annulation.*Motif : Erreur de mode de règlement.*-24,00\s€/,
+  );
   await expect(balance).toContainText(/Reste dû\s*24,00\s€/);
   await expect(balance).toContainText(/Payé\s*300,00\s€/);
   await expect(page.getByRole('button', { name: /Enregistrer un paiement/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Annuler le paiement de 24,00/ })).toHaveCount(0);
 
   await page.reload();
-  await expect(page.getByRole('list', { name: 'Paiements' }).getByRole('listitem')).toHaveCount(1);
+  await expect(page.getByRole('list', { name: 'Paiements' }).getByRole('listitem')).toHaveCount(3);
   await expect(page.getByLabel('Solde')).toContainText(/Reste dû\s*24,00\s€/);
 
-  // L'historique garde les deux saisies et la suppression
+  // L'historique garde les deux saisies et l'annulation
   await expect(history).toHaveCount(3);
-  await expect(history.nth(2)).toContainText(/Règlement supprimé :\s*24,00\s€/);
-  await expect(history.nth(2)).toContainText(/Supprimé le \d{2}\/\d{2}\/\d{4} à \d{2}:\d{2} par Direction/);
+  await expect(history.nth(2)).toContainText(/Règlement annulé :\s*24,00\s€/);
+  await expect(history.nth(2)).toContainText(/Annulé le \d{2}\/\d{2}\/\d{4} à \d{2}:\d{2} par Direction/);
   await expect(history.nth(2)).toContainText('Motif : Erreur de mode de règlement');
 });

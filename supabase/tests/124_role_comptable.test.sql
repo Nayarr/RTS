@@ -91,8 +91,8 @@ select is(count(*), 0::bigint, 'Aucun paiement modifié') from u;
 select lives_ok(format($$ select public.set_invoice_due_date(%L, '2027-01-31') $$, :'invoice'),
                 'Il change l''échéance');
 select throws_ok(
-  $$ select public.delete_payment((select id from public.payments limit 1), 'Essai') $$,
-  'P0001', null, 'La suppression d''un paiement reste à la direction');
+  $$ select public.cancel_payment((select id from public.payments limit 1), 'Essai') $$,
+  '42501', null, 'L''annulation d''un paiement reste à la direction');
 
 -- Client : création et coordonnées de facturation, sans les tarifs
 select lives_ok($$ insert into public.clients (name) values ('Nouveau client comptable') $$, 'Il crée un client');

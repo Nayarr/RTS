@@ -619,19 +619,26 @@ export function entriesSheet(data: AccountingData): AccountingSheet {
     );
   }
   for (const payment of data.payments) {
+    // Annulation d'un paiement (montant négatif) : écriture inverse, montants positifs sens opposé
+    const amount = Math.abs(payment.amount_ttc);
+    const cancellation = payment.amount_ttc < 0;
     add(
       'BQ',
       payment.paid_on,
       payment.invoice_number,
-      `${PAYMENT_METHODS[payment.method]} ${payment.invoice_number ?? ''} ${payment.client_name ?? ''}`.trim(),
+      `${cancellation ? 'Annulation ' : ''}${PAYMENT_METHODS[payment.method]} ${payment.invoice_number ?? ''} ${payment.client_name ?? ''}`.trim(),
       [
-        { account: PAYMENT_ACCOUNTS[payment.method], debit: payment.amount_ttc, credit: 0 },
+        {
+          account: PAYMENT_ACCOUNTS[payment.method],
+          debit: cancellation ? 0 : amount,
+          credit: cancellation ? amount : 0,
+        },
         {
           account: CLIENTS,
           clientId: payment.client_id,
           clientName: payment.client_name,
-          debit: 0,
-          credit: payment.amount_ttc,
+          debit: cancellation ? amount : 0,
+          credit: cancellation ? 0 : amount,
         },
       ],
     );

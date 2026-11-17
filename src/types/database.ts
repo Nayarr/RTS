@@ -1710,6 +1710,91 @@ export type Database = {
           },
         ];
       };
+      fiscal_archives: {
+        Row: {
+          automatic: boolean;
+          content: NonNullable<Json>;
+          created_at: string;
+          created_by: string | null;
+          entries_count: number;
+          first_seq: number | null;
+          id: string;
+          last_seq: number | null;
+          period_from: string;
+          period_to: string;
+          sha256: string;
+        };
+        Insert: {
+          automatic?: boolean;
+          content: NonNullable<Json>;
+          created_at?: string;
+          created_by?: string | null;
+          entries_count: number;
+          first_seq?: number | null;
+          id?: string;
+          last_seq?: number | null;
+          period_from: string;
+          period_to: string;
+          sha256: string;
+        };
+        Update: {
+          automatic?: boolean;
+          content?: NonNullable<Json>;
+          created_at?: string;
+          created_by?: string | null;
+          entries_count?: number;
+          first_seq?: number | null;
+          id?: string;
+          last_seq?: number | null;
+          period_from?: string;
+          period_to?: string;
+          sha256?: string;
+        };
+        Relationships: [];
+      };
+      fiscal_journal: {
+        Row: {
+          actor_id: string | null;
+          amount_ttc: number | null;
+          document_id: string;
+          document_number: string | null;
+          event_type: string;
+          hash: string;
+          occurred_at: string;
+          payload: NonNullable<Json>;
+          prev_hash: string;
+          recorded_at: string;
+          seq: number;
+          fiscal_hash: string | null;
+        };
+        Insert: {
+          actor_id?: string | null;
+          amount_ttc?: number | null;
+          document_id: string;
+          document_number?: string | null;
+          event_type: string;
+          hash: string;
+          occurred_at: string;
+          payload: NonNullable<Json>;
+          prev_hash: string;
+          recorded_at?: string;
+          seq: number;
+        };
+        Update: {
+          actor_id?: string | null;
+          amount_ttc?: number | null;
+          document_id?: string;
+          document_number?: string | null;
+          event_type?: string;
+          hash?: string;
+          occurred_at?: string;
+          payload?: NonNullable<Json>;
+          prev_hash?: string;
+          recorded_at?: string;
+          seq?: number;
+        };
+        Relationships: [];
+      };
       fleet_documents: {
         Row: {
           created_at: string;
@@ -3557,6 +3642,7 @@ export type Database = {
       payments: {
         Row: {
           amount_ttc: number;
+          cancel_reason: string | null;
           created_at: string;
           id: string;
           invoice_id: string;
@@ -3564,9 +3650,11 @@ export type Database = {
           note: string | null;
           paid_on: string;
           recorded_by: string | null;
+          reverses_payment_id: string | null;
         };
         Insert: {
           amount_ttc: number;
+          cancel_reason?: string | null;
           created_at?: string;
           id?: string;
           invoice_id: string;
@@ -3574,9 +3662,11 @@ export type Database = {
           note?: string | null;
           paid_on?: string;
           recorded_by?: string | null;
+          reverses_payment_id?: string | null;
         };
         Update: {
           amount_ttc?: number;
+          cancel_reason?: string | null;
           created_at?: string;
           id?: string;
           invoice_id?: string;
@@ -3584,6 +3674,7 @@ export type Database = {
           note?: string | null;
           paid_on?: string;
           recorded_by?: string | null;
+          reverses_payment_id?: string | null;
         };
         Relationships: [
           {
@@ -3619,6 +3710,13 @@ export type Database = {
             columns: ['recorded_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payments_reverses_payment_id_fkey';
+            columns: ['reverses_payment_id'];
+            isOneToOne: true;
+            referencedRelation: 'payments';
             referencedColumns: ['id'];
           },
         ];
@@ -7942,6 +8040,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      archive_previous_month: { Args: Record<PropertyKey, never>; Returns: string };
       assert_accounting_read: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_billing: { Args: Record<PropertyKey, never>; Returns: undefined };
       assert_confirmed_file: {
@@ -7996,6 +8095,7 @@ export type Database = {
       };
       cancel_agent_action: { Args: { p_action_id: string }; Returns: undefined };
       cancel_fleet_vehicle_sale: { Args: { p_vehicle_id: string }; Returns: undefined };
+      cancel_payment: { Args: { p_payment_id: string; p_reason?: string }; Returns: string };
       cancel_rental: { Args: { p_rental_id: string }; Returns: undefined };
       cancel_signature_request: { Args: { p_request_id: string }; Returns: undefined };
       claim_push_batch: { Args: { p_limit?: number }; Returns: Json };
@@ -8058,6 +8158,7 @@ export type Database = {
         Returns: undefined;
       };
       correct_tire_stock: { Args: { p_counted: number; p_note: string; p_tire_id: string }; Returns: number };
+      create_fiscal_archive: { Args: { p_from: string; p_to: string }; Returns: string };
       create_quote: {
         Args: {
           p_client_name: string;
@@ -8374,6 +8475,18 @@ export type Database = {
         Args: { p_clients: number; p_failed: number; p_total: number };
         Returns: undefined;
       };
+      fiscal_archive_build: { Args: { p_automatic: boolean; p_from: string; p_to: string }; Returns: string };
+      fiscal_archive_content: { Args: { p_id: string }; Returns: string };
+      fiscal_credit_note_snapshot: { Args: { p_id: string }; Returns: Json };
+      fiscal_document_snapshot: { Args: { p_id: string; p_type: string }; Returns: Json };
+      fiscal_hash: {
+        Args: { p_entry: Database['public']['Tables']['fiscal_journal']['Row'] };
+        Returns: string;
+      };
+      fiscal_invoice_snapshot: { Args: { p_id: string }; Returns: Json };
+      fiscal_journal_append: { Args: { p_id: string; p_type: string }; Returns: undefined };
+      fiscal_payment_snapshot: { Args: { p_id: string }; Returns: Json };
+      fiscal_ts: { Args: { p_at: string }; Returns: string };
       fleet_vehicle_block_reason: {
         Args: { p_on: string; p_vehicle: Database['public']['Tables']['fleet_vehicles']['Row'] };
         Returns: string;
@@ -9278,6 +9391,7 @@ export type Database = {
       };
       valid_client_phones: { Args: { p_phones: Json }; Returns: boolean };
       vehicle_history_for_diagnosis: { Args: { p_repair_order_id: string }; Returns: Json };
+      verify_fiscal_journal: { Args: Record<PropertyKey, never>; Returns: Json };
       verify_kiosk_exit_code: { Args: { p_code: string }; Returns: boolean };
       vin_brand: { Args: { p_vin: string }; Returns: string };
       workshop_board: { Args: Record<PropertyKey, never>; Returns: Json };
