@@ -28,15 +28,22 @@ export const formatSiret = (value: string | null | undefined) => {
     : (value ?? '');
 };
 
+/** Erreur d'un SIRET saisi (vide accepté), ou null s'il est bon. */
+export function siretProblem(value: string): string | null {
+  const text = value.trim();
+  if (text === '') return null;
+  if (!/^\d{14}$/.test(text.replace(/[\s.]/g, ''))) return 'SIRET à 14 chiffres';
+  return isValidSiret(text) ? null : 'SIRET invalide : vérifie les chiffres';
+}
+
 /** Champ SIRET d'un formulaire : vide accepté, sinon 14 chiffres et clé de contrôle. */
 export const siretField = z
   .string()
   .trim()
-  .refine((value) => value === '' || /^\d{14}$/.test(value.replace(/[\s.]/g, '')), 'SIRET à 14 chiffres')
-  .refine(
-    (value) => value === '' || !/^\d{14}$/.test(value.replace(/[\s.]/g, '')) || isValidSiret(value),
-    'SIRET invalide : vérifie les chiffres',
-  );
+  .superRefine((value, ctx) => {
+    const problem = siretProblem(value);
+    if (problem) ctx.addIssue({ code: 'custom', message: problem });
+  });
 
 /** Valeur enregistrée : chiffres seuls, ou null. */
 export const siretValue = (value: string) => siretDigits(value) || null;

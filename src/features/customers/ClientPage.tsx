@@ -26,6 +26,7 @@ import { GroupedInvoiceDialog } from '@/features/invoices/GroupedInvoiceDialog';
 import { ClientLicensesCard } from '@/features/rentals/ClientLicensesCard';
 import { ClientPortalButtons } from './ClientPortalButtons';
 import { ClientVatCard } from './ClientVatCard';
+import { CompanyIdFields } from './CompanyIdFields';
 import { ArchiveButton, ArchivedBanner } from './ArchiveControls';
 import { InvoiceStatusBadge } from '@/features/invoices/PaymentStatusBadge';
 import { QuoteStatusBadge } from '@/features/quotes/QuoteStatusBadge';
@@ -70,13 +71,17 @@ function ClientView({ detail }: { detail: ClientDetail }) {
   const [booking, setBooking] = useState(false);
   const billable = orders.filter((order) => BILLABLE.includes(order.status));
 
+  const form = useForm<ClientValues>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: clientToForm(client),
+  });
   const {
     register,
     control,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
-  } = useForm<ClientValues>({ resolver: zodResolver(clientSchema), defaultValues: clientToForm(client) });
+  } = form;
   const phones = useFieldArray({ control, name: 'other_phones' });
   const individual = useWatch({ control, name: 'kind' }) === 'individual';
   const save = useCustomerMutation(
@@ -243,17 +248,7 @@ function ClientView({ detail }: { detail: ClientDetail }) {
                     {...register('name')}
                   />
                 )}
-                {!individual && (
-                  <FormField
-                    id="client-siret"
-                    label="SIRET"
-                    inputMode="numeric"
-                    placeholder="984 989 137 00018"
-                    className="num"
-                    error={errors.siret?.message}
-                    {...register('siret')}
-                  />
-                )}
+                {!individual && <CompanyIdFields form={form} idPrefix="client" />}
                 <FormField
                   id="client-email"
                   label="E-mail"

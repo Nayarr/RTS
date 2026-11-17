@@ -23,7 +23,12 @@ export interface QuoteDetail {
   laborRate: number;
   clientDiscount: number;
   /** Adresse et SIRET du client, imprimés sur le PDF. */
-  clientBilling?: { billing_address: string | null; siret: string | null } | null;
+  clientBilling?: {
+    billing_address: string | null;
+    siret: string | null;
+    country?: string | null;
+    foreign_id?: string | null;
+  } | null;
 }
 
 const NO_CLIENT = '00000000-0000-0000-0000-000000000000';
@@ -69,7 +74,7 @@ export async function fetchQuote(id: string): Promise<QuoteDetail | null> {
     overview.client_id
       ? supabase
           .from('clients')
-          .select('discount_percent, billing_address, siret')
+          .select('discount_percent, billing_address, siret, country, foreign_id')
           .eq('id', overview.client_id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -82,7 +87,12 @@ export async function fetchQuote(id: string): Promise<QuoteDetail | null> {
     laborRate: rate.data,
     clientDiscount: client.data?.discount_percent ?? 0,
     clientBilling: client.data
-      ? { billing_address: client.data.billing_address, siret: client.data.siret }
+      ? {
+          billing_address: client.data.billing_address,
+          siret: client.data.siret,
+          country: client.data.country,
+          foreign_id: client.data.foreign_id,
+        }
       : null,
   };
 }

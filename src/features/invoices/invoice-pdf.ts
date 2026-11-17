@@ -77,6 +77,8 @@ export async function buildInvoicePdf({ invoice, lines, company, logo, proforma 
         name: invoice.client_name ?? '',
         billing_address: invoice.client_address,
         siret: invoice.client_siret,
+        country: invoice.client_country,
+        foreign_id: invoice.client_foreign_id,
         vat_number: vatNumber,
       };
 
