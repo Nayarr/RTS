@@ -78,8 +78,10 @@ export function ScheduleExceptionsField({ technicianId }: { technicianId: string
           ))}
         </ul>
       )}
-      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1.4fr_auto] sm:items-end">
-        <div className="space-y-1">
+      {/* Dates sur une ligne, motif et bouton sur la suivante : en quatre colonnes, les champs de
+          date gardent leur largeur minimale et élargissent la fenêtre (défilement horizontal). */}
+      <div className="grid grid-cols-2 items-end gap-2">
+        <div className="min-w-0 space-y-1">
           <Label htmlFor="exception-from" className="text-xs">
             Du
           </Label>
@@ -90,7 +92,7 @@ export function ScheduleExceptionsField({ technicianId }: { technicianId: string
             onChange={(event) => setFrom(event.target.value)}
           />
         </div>
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <Label htmlFor="exception-to" className="text-xs">
             Au
           </Label>
@@ -102,26 +104,28 @@ export function ScheduleExceptionsField({ technicianId }: { technicianId: string
             onChange={(event) => setTo(event.target.value)}
           />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="exception-note" className="text-xs">
-            Motif (facultatif)
-          </Label>
-          <Input
-            id="exception-note"
-            maxLength={200}
-            placeholder="Vacances scolaires"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-          />
+        <div className="col-span-2 flex items-end gap-2">
+          <div className="min-w-0 flex-1 space-y-1">
+            <Label htmlFor="exception-note" className="text-xs">
+              Motif (facultatif)
+            </Label>
+            <Input
+              id="exception-note"
+              maxLength={200}
+              placeholder="Vacances scolaires"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={invalid || add.isPending}
+            onClick={() => add.mutate()}
+          >
+            <Plus /> Ajouter
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={invalid || add.isPending}
-          onClick={() => add.mutate()}
-        >
-          <Plus /> Ajouter
-        </Button>
       </div>
     </div>
   );
