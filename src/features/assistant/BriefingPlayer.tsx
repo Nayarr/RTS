@@ -98,6 +98,8 @@ export function BriefingPlayer({
       if (decision) decideRef.current(decision);
     },
     onError: () => undefined,
+    // iPhone : réponse enregistrée par l'appli et transcrite par Azure (micro rendu après la lecture)
+    recorded: true,
   });
 
   const current = status === 'idle' || status === 'done' ? undefined : steps[index];
