@@ -122,6 +122,27 @@ describe('Mails reçus', () => {
     ).toBeInTheDocument();
   });
 
+  it('mail ouvert : ce que contient chaque pièce jointe lue par le tri', async () => {
+    vi.mocked(fetchInboxEmails).mockResolvedValue([
+      mail({
+        attachments: [
+          {
+            filename: 'facture-88.pdf',
+            content_type: 'application/pdf',
+            summary: 'Facture Eurorepar n° 88, 450 € TTC',
+          },
+          { filename: 'logo.png', content_type: 'image/png' },
+        ],
+      }),
+    ]);
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /^Jean Moreau/ }));
+    const files = screen.getByRole('list', { name: 'Pièces jointes lues' });
+    expect(within(files).getAllByRole('listitem')).toHaveLength(1);
+    expect(files).toHaveTextContent('facture-88.pdf : Facture Eurorepar n° 88, 450 € TTC');
+    expect(screen.getByText(/pièces jointes : facture-88.pdf, logo.png/)).toBeInTheDocument();
+  });
+
   it('mail marqué traité, puis remis à traiter depuis « Traités »', async () => {
     setup();
     await userEvent.click(
