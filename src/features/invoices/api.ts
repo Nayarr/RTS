@@ -8,7 +8,7 @@ export type VehicleType = Enums<'vehicle_type'>;
 export type InvoiceLine = Tables<'invoice_lines'>;
 /** Paiement avec la personne qui l'a enregistré (horodatage : created_at). */
 export type Payment = Tables<'payments'> & { recorder: { full_name: string } | null };
-/** Ligne de l'historique des règlements : paiement saisi ou supprimé. */
+/** Ligne de l'historique des règlements : paiement saisi, annulé ou (avant novembre 2026) supprimé. */
 export type PaymentEvent = Tables<'payment_events'> & { actor: { full_name: string } | null };
 export type DueDateChange = Pick<
   Tables<'invoice_due_date_changes'>,
@@ -50,7 +50,7 @@ export interface InvoiceDetail {
   invoice: InvoiceOverview;
   lines: InvoiceLine[];
   payments: Payment[];
-  /** Paiements saisis et supprimés, du plus ancien au plus récent. */
+  /** Paiements saisis, annulés ou supprimés, du plus ancien au plus récent. */
   paymentEvents: PaymentEvent[];
   creditNotes: CreditNote[];
   /** Échéances déplacées après l'émission, de la plus ancienne à la plus récente. */
@@ -295,9 +295,12 @@ export async function addPayment(invoiceId: string, input: PaymentInput) {
   if (error) throw error;
 }
 
-/** Supprime un paiement (direction seule) : le solde se recalcule, l'historique garde la suppression. */
-export async function deletePayment(paymentId: string, reason: string | null) {
-  const { error } = await supabase.rpc('delete_payment', {
+/**
+ * Annule un paiement (direction seule) : écriture inverse datée du jour, le paiement d'origine reste
+ * (inaltérabilité exigée par la loi anti-fraude à la TVA). Le solde se recalcule.
+ */
+export async function cancelPayment(paymentId: string, reason: string | null) {
+  const { error } = await supabase.rpc('cancel_payment', {
     p_payment_id: paymentId,
     ...(reason && { p_reason: reason }),
   });

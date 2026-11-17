@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { Archive, Building2, FileText, Timer, Wrench, type LucideIcon } from 'lucide-react';
+import { Archive, Building2, FileText, Landmark, Timer, Wrench, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
 import { cn } from '@/lib/utils';
 import { BillingForm } from './BillingForm';
@@ -9,9 +9,10 @@ import { useSettings } from './hooks';
 import { LaborRatesForm } from './LaborRatesForm';
 import { LogoCard } from './LogoCard';
 import { ArchivesPanel } from './ArchivesPanel';
+import { FiscalPanel } from './FiscalPanel';
 import { WorkshopForm } from './WorkshopForm';
 
-type Section = 'entreprise' | 'facturation' | 'taux' | 'atelier' | 'archives';
+type Section = 'entreprise' | 'facturation' | 'taux' | 'atelier' | 'archives' | 'conformite';
 
 const SECTIONS: { value: Section; label: string; icon: LucideIcon }[] = [
   { value: 'entreprise', label: 'Entreprise', icon: Building2 },
@@ -19,6 +20,7 @@ const SECTIONS: { value: Section; label: string; icon: LucideIcon }[] = [
   { value: 'taux', label: 'Taux horaires', icon: Timer },
   { value: 'atelier', label: 'Atelier', icon: Wrench },
   { value: 'archives', label: 'Archives', icon: Archive },
+  { value: 'conformite', label: 'Conformité fiscale', icon: Landmark },
 ];
 
 const isSection = (value: string): value is Section => SECTIONS.some((section) => section.value === value);
@@ -102,6 +104,7 @@ function SettingsSections({
             {section === 'taux' && <LaborRatesForm rates={settings.data.laborRates} />}
             {section === 'atelier' && <WorkshopForm app={settings.data.app} />}
             {section === 'archives' && <ArchivesPanel />}
+            {section === 'conformite' && <FiscalPanel />}
           </div>
         </div>
       )}

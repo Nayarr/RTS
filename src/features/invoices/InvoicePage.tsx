@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Send,
   Trash2,
+  Undo2,
   Wallet,
 } from 'lucide-react';
 import { PageHeader } from '@/app/PageHeader';
@@ -37,7 +38,7 @@ import {
   addPayment,
   deleteInvoiceDraft,
   deleteInvoiceLine,
-  deletePayment,
+  cancelPayment,
   issueInvoice,
   rebuildInvoiceDraft,
   setInvoiceAutoReminders,
@@ -57,6 +58,7 @@ import { CreditNoteDialog, DueDateDialog, IssueDialog, PaymentDialog } from './d
 import {
   ACCOUNT_TYPES,
   balanceHt,
+  cancelledLabel,
   defaultPaymentMethod,
   deletedLabel,
   issueBlockers,
@@ -77,6 +79,14 @@ import { DuplicateButton } from '@/components/DuplicateButton';
 import { duplicateInvoice } from './api';
 
 type Dialog = 'issue' | 'payment' | 'credit' | 'due_date' | 'rebuild' | 'delete' | null;
+
+/** Historique des règlements : titre et mention de chaque type d'événement. */
+const PAYMENT_EVENTS = {
+  recorded: { title: 'Règlement enregistré', stamp: recordedLabel },
+  cancelled: { title: 'Règlement annulé', stamp: cancelledLabel },
+  // Suppressions d'avant l'annulation par écriture inverse (novembre 2026)
+  deleted: { title: 'Règlement supprimé', stamp: deletedLabel },
+};
 
 function InvoiceLineItem({ line, locked, drag }: { line: InvoiceLine; locked: boolean; drag?: LineDrag }) {
   const update = useInvoiceMutation((patch: LinePatch) => updateInvoiceLine(line.id, patch), null);
@@ -190,31 +200,31 @@ function IssuedPanel({
   detail,
   onDialog,
   pdf,
-  canDeletePayments,
+  canCancelPayments,
 }: {
   detail: InvoiceDetail;
   onDialog: (d: Dialog) => void;
   pdf: ReturnType<typeof useInvoicePdf>;
-  /** Supprimer un paiement : réservé à la direction (règle de la base). */
-  canDeletePayments: boolean;
+  /** Annuler un paiement : réservé à la direction (règle de la base). */
+  canCancelPayments: boolean;
 }) {
   // Paiements, avoirs et relances : le comptable les consulte, le bureau les saisit.
   const { data: profile } = useProfile();
   const canSettle = profile?.role !== 'accountant';
-  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
-  const [deleteReason, setDeleteReason] = useState('');
-  const askDelete = (payment: Payment | null) => {
-    setDeleteReason('');
-    setPaymentToDelete(payment);
+  const [paymentToCancel, setPaymentToCancel] = useState<Payment | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const askCancel = (payment: Payment | null) => {
+    setCancelReason('');
+    setPaymentToCancel(payment);
   };
-  const removePayment = useInvoiceMutation(async (payment: Payment) => {
+  const cancel = useInvoiceMutation(async (payment: Payment) => {
     try {
-      await deletePayment(payment.id, deleteReason.trim() || null);
+      await cancelPayment(payment.id, cancelReason.trim() || null);
     } finally {
       // Fermée dès la réponse de la base, sans attendre le rechargement de la facture
-      askDelete(null);
+      askCancel(null);
     }
-  }, 'Paiement supprimé');
+  }, 'Paiement annulé');
   // « ?envoyer=1 » : facture qui vient d'être émise (travaux avant devis), envoyée au client tout de suite
   const [params, setParams] = useSearchParams();
   const autoSend = params.get('envoyer') === '1';
@@ -222,6 +232,8 @@ function IssuedPanel({
   const balance = invoice.balance_due ?? 0;
   const credited = invoice.credited_ttc ?? 0;
   const paid = invoice.paid_ttc ?? 0;
+  // Paiement annulé : il reste affiché, avec son écriture d'annulation
+  const cancelledIds = new Set(payments.map((payment) => payment.reverses_payment_id).filter(Boolean));
   const settled = invoice.total_ttc > 0 ? Math.min(100, ((paid + credited) / invoice.total_ttc) * 100) : 0;
   return (
     <>
@@ -319,37 +331,48 @@ function IssuedPanel({
           {canSettle && balance > 0.01 && <AutoRemindersSwitch detail={detail} />}
           {payments.length > 0 && (
             <ul aria-label="Paiements">
-              {payments.map((payment) => (
-                <li key={payment.id} className="row between gap-2 border-t py-2.5">
-                  <span className="col min-w-0 gap-0">
-                    <b>{PAYMENT_METHODS[payment.method]}</b>
-                    <span className="hint">
-                      Payé le {formatDate(payment.paid_on)}
-                      {payment.note && ` · ${payment.note}`}
+              {payments.map((payment) => {
+                const reversal = payment.reverses_payment_id !== null;
+                const cancelled = cancelledIds.has(payment.id);
+                return (
+                  <li key={payment.id} className="row between gap-2 border-t py-2.5">
+                    <span className="col min-w-0 gap-0">
+                      <b>
+                        {PAYMENT_METHODS[payment.method]}
+                        {reversal && ' · annulation'}
+                      </b>
+                      <span className="hint">
+                        {reversal ? 'Le' : 'Payé le'} {formatDate(payment.paid_on)}
+                        {payment.note && ` · ${payment.note}`}
+                      </span>
+                      {payment.cancel_reason && <span className="hint">Motif : {payment.cancel_reason}</span>}
+                      <span className="hint">
+                        {recordedLabel(payment.created_at, payment.recorder?.full_name)}
+                      </span>
                     </span>
-                    <span className="hint">
-                      {recordedLabel(payment.created_at, payment.recorder?.full_name)}
+                    <span className="row shrink-0 gap-2">
+                      {cancelled && <span className="badge s-grey">Annulé</span>}
+                      <b className={reversal || cancelled ? 'num muted' : 'num'}>
+                        {formatEuro(payment.amount_ttc)}
+                      </b>
+                      {canCancelPayments && !reversal && !cancelled && (
+                        <button
+                          type="button"
+                          className="ibtn sm ghost text-destructive"
+                          aria-label={`Annuler le paiement de ${formatEuro(payment.amount_ttc)} (${PAYMENT_METHODS[payment.method]}) du ${formatDate(payment.paid_on)}`}
+                          onClick={() => askCancel(payment)}
+                        >
+                          <Undo2 className="i s" />
+                        </button>
+                      )}
                     </span>
-                  </span>
-                  <span className="row shrink-0 gap-2">
-                    <b className="num">{formatEuro(payment.amount_ttc)}</b>
-                    {canDeletePayments && (
-                      <button
-                        type="button"
-                        className="ibtn sm ghost text-destructive"
-                        aria-label={`Supprimer le paiement de ${formatEuro(payment.amount_ttc)} (${PAYMENT_METHODS[payment.method]}) du ${formatDate(payment.paid_on)}`}
-                        onClick={() => askDelete(payment)}
-                      >
-                        <Trash2 className="i s" />
-                      </button>
-                    )}
-                  </span>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
-          {payments.length > 0 && !canDeletePayments && (
-            <p className="hint">Erreur de saisie sur un paiement ? La direction peut le supprimer.</p>
+          {payments.length > 0 && !canCancelPayments && (
+            <p className="hint">Erreur de saisie sur un paiement ? La direction peut l’annuler.</p>
           )}
           {paymentEvents.length > 0 && (
             <div className="col gap-1 border-t pt-2.5">
@@ -358,7 +381,7 @@ function IssuedPanel({
                 {paymentEvents.map((event) => (
                   <li key={event.id} className="col gap-0">
                     <b>
-                      {event.kind === 'deleted' ? 'Règlement supprimé' : 'Règlement enregistré'} :{' '}
+                      {PAYMENT_EVENTS[event.kind as keyof typeof PAYMENT_EVENTS].title} :{' '}
                       <span className="num">{formatEuro(event.amount_ttc)}</span>
                     </b>
                     <span className="hint">
@@ -366,7 +389,7 @@ function IssuedPanel({
                       {event.note && ` · ${event.note}`}
                     </span>
                     <span className="hint">
-                      {(event.kind === 'deleted' ? deletedLabel : recordedLabel)(
+                      {PAYMENT_EVENTS[event.kind as keyof typeof PAYMENT_EVENTS].stamp(
                         event.happened_at,
                         event.actor?.full_name,
                       )}
@@ -411,38 +434,39 @@ function IssuedPanel({
           </ul>
         </section>
       )}
-      {paymentToDelete && (
+      {paymentToCancel && (
         <ConfirmDialog
           open
-          onOpenChange={(open) => !open && askDelete(null)}
-          title="Supprimer ce paiement ?"
+          onOpenChange={(open) => !open && askCancel(null)}
+          title="Annuler ce paiement ?"
           description={
             <>
               <b>
-                {formatEuro(paymentToDelete.amount_ttc)} · {PAYMENT_METHODS[paymentToDelete.method]} · payé le{' '}
-                {formatDate(paymentToDelete.paid_on)}
+                {formatEuro(paymentToCancel.amount_ttc)} · {PAYMENT_METHODS[paymentToCancel.method]} · payé le{' '}
+                {formatDate(paymentToCancel.paid_on)}
               </b>
               <br />
-              Le reste dû de la facture augmente d’autant et le paiement sort des exports comptables et de la
-              trésorerie. La suppression reste visible dans l’historique des règlements. En cas d’erreur,
-              enregistre ensuite le bon paiement.
+              Une annulation de {formatEuro(-paymentToCancel.amount_ttc)} est enregistrée à la date du jour et
+              le reste dû augmente d’autant. Le paiement d’origine reste visible : la loi interdit d’effacer
+              un encaissement. En cas d’erreur, enregistre ensuite le bon paiement.
             </>
           }
-          confirmLabel="Supprimer le paiement"
+          confirmLabel="Annuler le paiement"
+          cancelLabel="Garder le paiement"
           destructive
-          pending={removePayment.isPending}
-          onConfirm={() => removePayment.mutate(paymentToDelete)}
+          pending={cancel.isPending}
+          onConfirm={() => cancel.mutate(paymentToCancel)}
         >
           <div className="space-y-2">
-            <Label htmlFor="payment-delete-reason">Motif (facultatif)</Label>
+            <Label htmlFor="payment-cancel-reason">Motif (facultatif)</Label>
             <textarea
-              id="payment-delete-reason"
+              id="payment-cancel-reason"
               rows={2}
               maxLength={500}
               className="inp"
               placeholder="Ex : erreur de montant, mauvais mode de règlement…"
-              value={deleteReason}
-              onChange={(event) => setDeleteReason(event.target.value)}
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
             />
           </div>
         </ConfirmDialog>
@@ -722,7 +746,7 @@ export function InvoicePage() {
             </>
           ) : (
             <>
-              <IssuedPanel detail={data} onDialog={setDialog} pdf={pdf} canDeletePayments={isDirection} />
+              <IssuedPanel detail={data} onDialog={setDialog} pdf={pdf} canCancelPayments={isDirection} />
               <InvoiceVatCard invoice={invoice} />
             </>
           )}

@@ -13,7 +13,7 @@ import {
   addInvoiceLine,
   addPayment,
   buildInvoiceDraft,
-  deletePayment,
+  cancelPayment,
   fetchInvoice,
   fetchInvoices,
   fetchRepairOrderInvoices,
@@ -63,7 +63,7 @@ vi.mock('./api', async (importOriginal) => ({
   updateInvoiceLine: vi.fn(),
   issueInvoice: vi.fn(),
   addPayment: vi.fn(),
-  deletePayment: vi.fn(),
+  cancelPayment: vi.fn(),
   addCreditNote: vi.fn(),
   shareInvoice: vi.fn(),
   recordInvoiceReminder: vi.fn(),
@@ -476,6 +476,8 @@ describe('facture émise', () => {
           note: null,
           recorded_by: 'u1',
           created_at: '2026-10-01T12:32:00Z',
+          reverses_payment_id: null,
+          cancel_reason: null,
           recorder: { full_name: 'Réception' },
         },
         {
@@ -487,6 +489,8 @@ describe('facture émise', () => {
           note: null,
           recorded_by: null,
           created_at: '2026-10-02T08:05:00Z',
+          reverses_payment_id: null,
+          cancel_reason: null,
           recorder: null,
         },
       ],
@@ -508,7 +512,7 @@ describe('facture émise', () => {
     expect(within(dialog).getByRole('status')).toHaveTextContent('il restera 50,00 € à payer');
   });
 
-  describe('suppression d’un paiement', () => {
+  describe('annulation d’un paiement', () => {
     const payment = {
       id: 'p1',
       invoice_id: 'i1',
@@ -518,91 +522,121 @@ describe('facture émise', () => {
       note: null,
       recorded_by: 'u1',
       created_at: '2026-10-01T12:32:00Z',
+      reverses_payment_id: null,
+      cancel_reason: null,
       recorder: { full_name: 'Réception' },
     } as const;
+    const reversal = {
+      ...payment,
+      id: 'p2',
+      amount_ttc: -50,
+      paid_on: '2026-10-02',
+      note: 'Annulation du paiement du 01/10/2026',
+      recorded_by: 'u2',
+      created_at: '2026-10-02T08:05:00Z',
+      reverses_payment_id: 'p1',
+      cancel_reason: 'Erreur de mode',
+      recorder: { full_name: 'Direction' },
+    } as const;
     const partlyPaid = { invoice: issued({ balance_due: 670, paid_ttc: 50, payment_status: 'partial' }) };
-    const deleteButton = { name: /^Supprimer le paiement de 50,00\s€ \(Carte bancaire\) du 01\/10\/2026$/ };
+    const cancelButton = { name: /^Annuler le paiement de 50,00\s€ \(Carte bancaire\) du 01\/10\/2026$/ };
+    const dialogName = 'Annuler ce paiement ?';
 
-    it('confirmation avec montant, mode et date ; annuler ne supprime rien', async () => {
-      vi.mocked(deletePayment).mockClear();
+    it('confirmation avec montant, mode, date et annulation à venir ; « Garder » ne fait rien', async () => {
+      vi.mocked(cancelPayment).mockClear();
       setupInvoice({ ...partlyPaid, payments: [payment] });
-      await userEvent.click(await screen.findByRole('button', deleteButton));
-      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.click(await screen.findByRole('button', cancelButton));
+      const dialog = screen.getByRole('dialog', { name: dialogName });
       expect(dialog).toHaveTextContent(/50,00\s€ · Carte bancaire · payé le 01\/10\/2026/);
+      expect(dialog).toHaveTextContent(/Une annulation de -50,00\s€ est enregistrée à la date du jour/);
+      expect(dialog).toHaveTextContent('la loi interdit d’effacer un encaissement');
 
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Garder le paiement' }));
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-      expect(deletePayment).not.toHaveBeenCalled();
-      expect(screen.getByRole('list', { name: 'Paiements' })).toHaveTextContent('Carte bancaire');
+      expect(cancelPayment).not.toHaveBeenCalled();
     });
 
-    it('confirmer supprime ce paiement et recharge la facture', async () => {
-      vi.mocked(deletePayment).mockClear().mockResolvedValue();
+    it('confirmer annule ce paiement et recharge la facture : le paiement reste, marqué annulé', async () => {
+      vi.mocked(cancelPayment).mockClear().mockResolvedValue();
       setupInvoice({ ...partlyPaid, payments: [payment] });
-      await userEvent.click(await screen.findByRole('button', deleteButton));
+      await userEvent.click(await screen.findByRole('button', cancelButton));
 
-      // La facture rechargée n'a plus le paiement
       const current = (await fetchInvoice('i1')) as InvoiceDetail;
       vi.mocked(fetchInvoice).mockResolvedValue({
         ...current,
         invoice: issued({ balance_due: 720, paid_ttc: 0, payment_status: 'pending' }),
-        payments: [],
+        payments: [payment, reversal],
       });
-      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
+      const dialog = screen.getByRole('dialog', { name: dialogName });
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler le paiement' }));
 
-      await waitFor(() => expect(deletePayment).toHaveBeenCalledWith('p1', null));
+      await waitFor(() => expect(cancelPayment).toHaveBeenCalledWith('p1', null));
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-      await waitFor(() => expect(screen.queryByRole('list', { name: 'Paiements' })).toBeNull());
+      const list = await screen.findByRole('list', { name: 'Paiements' });
+      await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(2));
       expect(screen.getByLabelText('Solde')).toHaveTextContent(/Reste dû\s*720,00\s€/);
     });
 
-    it('la fenêtre se ferme dès la suppression, sans attendre le rechargement', async () => {
-      vi.mocked(deletePayment).mockClear().mockResolvedValue();
+    it('paiement annulé et son annulation : affichés, sans nouveau bouton d’annulation', async () => {
+      setupInvoice({
+        invoice: issued({ balance_due: 720, paid_ttc: 0, payment_status: 'pending' }),
+        payments: [payment, reversal],
+      });
+      const list = await screen.findByRole('list', { name: 'Paiements' });
+      const rows = within(list).getAllByRole('listitem');
+      expect(rows[0]).toHaveTextContent(/Carte bancaire.*Payé le 01\/10\/2026.*Annulé.*50,00/);
+      expect(rows[1]).toHaveTextContent(
+        /Carte bancaire · annulation.*Le 02\/10\/2026 · Annulation du paiement du 01\/10\/2026.*Motif : Erreur de mode.*par Direction.*-50,00/,
+      );
+      expect(screen.queryByRole('button', { name: /^Annuler le paiement de/ })).toBeNull();
+    });
+
+    it('la fenêtre se ferme dès l’annulation, sans attendre le rechargement', async () => {
+      vi.mocked(cancelPayment).mockClear().mockResolvedValue();
       setupInvoice({ ...partlyPaid, payments: [payment] });
-      await userEvent.click(await screen.findByRole('button', deleteButton));
+      await userEvent.click(await screen.findByRole('button', cancelButton));
 
       vi.mocked(fetchInvoice).mockReturnValue(new Promise(() => {}));
-      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
+      const dialog = screen.getByRole('dialog', { name: dialogName });
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler le paiement' }));
 
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     });
 
     it('refus : le message s’affiche et le paiement reste', async () => {
-      vi.mocked(deletePayment).mockClear().mockRejectedValue(new Error('Refus de la base'));
+      vi.mocked(cancelPayment).mockClear().mockRejectedValue(new Error('Refus de la base'));
       setupInvoice({ ...partlyPaid, payments: [payment] });
-      await userEvent.click(await screen.findByRole('button', deleteButton));
-      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
+      await userEvent.click(await screen.findByRole('button', cancelButton));
+      const dialog = screen.getByRole('dialog', { name: dialogName });
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler le paiement' }));
       await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Refus de la base'));
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
       expect(screen.getByRole('list', { name: 'Paiements' })).toHaveTextContent('Carte bancaire');
     });
 
-    it('le motif facultatif part avec la suppression', async () => {
-      vi.mocked(deletePayment).mockClear().mockResolvedValue();
+    it('le motif facultatif part avec l’annulation', async () => {
+      vi.mocked(cancelPayment).mockClear().mockResolvedValue();
       setupInvoice({ ...partlyPaid, payments: [payment] });
-      await userEvent.click(await screen.findByRole('button', deleteButton));
-      const dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.click(await screen.findByRole('button', cancelButton));
+      const dialog = screen.getByRole('dialog', { name: dialogName });
       await userEvent.type(within(dialog).getByLabelText('Motif (facultatif)'), '  Erreur de mode ');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer le paiement' }));
-      await waitFor(() => expect(deletePayment).toHaveBeenCalledWith('p1', 'Erreur de mode'));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler le paiement' }));
+      await waitFor(() => expect(cancelPayment).toHaveBeenCalledWith('p1', 'Erreur de mode'));
     });
 
-    it('le motif saisi puis annulé ne revient pas', async () => {
+    it('le motif saisi puis abandonné ne revient pas', async () => {
       setupInvoice({ ...partlyPaid, payments: [payment] });
-      await userEvent.click(await screen.findByRole('button', deleteButton));
-      let dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.click(await screen.findByRole('button', cancelButton));
+      let dialog = screen.getByRole('dialog', { name: dialogName });
       await userEvent.type(within(dialog).getByLabelText('Motif (facultatif)'), 'Brouillon');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Garder le paiement' }));
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-      await userEvent.click(screen.getByRole('button', deleteButton));
-      dialog = screen.getByRole('dialog', { name: 'Supprimer ce paiement ?' });
+      await userEvent.click(screen.getByRole('button', cancelButton));
+      dialog = screen.getByRole('dialog', { name: dialogName });
       expect(within(dialog).getByLabelText('Motif (facultatif)')).toHaveValue('');
     });
 
-    it('historique : saisie avec le montant, suppression avec la personne et le motif', async () => {
+    it('historique : saisie, annulation et ancienne suppression, avec la personne et le motif', async () => {
       const event = {
         id: 'e1',
         invoice_id: 'i1',
@@ -624,9 +658,18 @@ describe('facture émise', () => {
           {
             ...event,
             id: 'e2',
-            kind: 'deleted',
+            kind: 'cancelled',
             reason: 'Erreur de mode',
             happened_at: '2026-10-02T08:05:00Z',
+            actor: { full_name: 'Direction' },
+          },
+          {
+            ...event,
+            id: 'e3',
+            payment_id: 'p0',
+            kind: 'deleted',
+            reason: null,
+            happened_at: '2026-09-30T08:05:00Z',
             actor: { full_name: 'Direction' },
           },
         ],
@@ -638,15 +681,18 @@ describe('facture émise', () => {
       );
       expect(rows[0]).not.toHaveTextContent('Motif');
       expect(rows[1]).toHaveTextContent(
-        /Règlement supprimé :\s*50,00\s€.*Supprimé le 02\/10\/2026 à 10:05 par Direction.*Motif : Erreur de mode/,
+        /Règlement annulé :\s*50,00\s€.*Annulé le 02\/10\/2026 à 10:05 par Direction.*Motif : Erreur de mode/,
+      );
+      expect(rows[2]).toHaveTextContent(
+        /Règlement supprimé :\s*50,00\s€.*Supprimé le 30\/09\/2026 à 10:05 par Direction/,
       );
     });
 
     it('réception : pas de bouton, mais elle sait à qui s’adresser', async () => {
       setupInvoice({ ...partlyPaid, payments: [payment] }, 'reception');
       await screen.findByRole('list', { name: 'Paiements' });
-      expect(await screen.findByText(/La direction peut le supprimer/)).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /Supprimer le paiement/ })).toBeNull();
+      expect(await screen.findByText(/La direction peut l’annuler/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Annuler le paiement/ })).toBeNull();
     });
   });
 

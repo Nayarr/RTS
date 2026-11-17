@@ -10,6 +10,8 @@ interface ConfirmDialogProps {
   title: string;
   description: ReactNode;
   confirmLabel: string;
+  /** Bouton qui ferme sans rien faire (« Annuler » par défaut). */
+  cancelLabel?: string;
   destructive?: boolean;
   pending?: boolean;
   onConfirm: () => void;
@@ -24,6 +26,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel = 'Annuler',
   destructive = false,
   pending = false,
   onConfirm,
@@ -52,7 +55,7 @@ export function ConfirmDialog({
         {children}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
+            {cancelLabel}
           </Button>
           <Button variant={destructive ? 'destructive' : 'default'} disabled={pending} onClick={onConfirm}>
             {confirmLabel}

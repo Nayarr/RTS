@@ -202,6 +202,7 @@ function stampLabel(verb: string, at: string, by: string | null | undefined): st
 
 export const recordedLabel = (at: string, by: string | null | undefined) => stampLabel('Enregistré', at, by);
 export const deletedLabel = (at: string, by: string | null | undefined) => stampLabel('Supprimé', at, by);
+export const cancelledLabel = (at: string, by: string | null | undefined) => stampLabel('Annulé', at, by);
 
 /** Facture émise payée en partie : un ou plusieurs paiements, reste encore dû. */
 export const isPartiallyPaid = (invoice: Pick<InvoiceOverview, 'status' | 'paid_ttc' | 'balance_due'>) =>
