@@ -3,13 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   downsample,
   encodeWav,
+  FIRST_SOUND_MS,
   isAppleMobile,
   SpeechEndDetector,
   startRecording,
   transcribe,
 } from './recorded-dictation';
 import type * as Recorded from './recorded-dictation';
-import { useDictation } from './use-dictation';
+import { dictationError, useDictation } from './use-dictation';
 
 vi.mock('./recorded-dictation', async (importOriginal) => ({
   ...(await importOriginal<typeof Recorded>()),
@@ -25,6 +26,8 @@ const FRAME_MS = (FRAME / RATE) * 1000;
 /** Micro simulé : pistes dont on suit l'arrêt (voyant orange allumé tant qu'une piste vit). */
 class FakeTrack {
   live = true;
+  /** iOS reprend le micro (appel, Siri) : la piste se termine d'elle-même. */
+  onended: (() => void) | null = null;
   stop = vi.fn(() => {
     this.live = false;
   });
@@ -32,17 +35,25 @@ class FakeTrack {
 
 const tracks: FakeTrack[] = [];
 let processor: { onaudioprocess: ((event: unknown) => void) | null } | null = null;
-const contexts: { state: string; close: ReturnType<typeof vi.fn> }[] = [];
+const contexts: {
+  state: string;
+  close: ReturnType<typeof vi.fn>;
+  resume: ReturnType<typeof vi.fn>;
+}[] = [];
+/** État du son à sa création (iPhone : « suspended » hors d'un appui). */
+let initialState = 'running';
+/** Relance du son jamais terminée (iPhone hors d'un appui). */
+let resumeHangs = false;
 
 class FakeAudioContext {
   sampleRate = RATE;
-  state = 'running';
+  state = initialState;
   destination = {};
   close = vi.fn(() => {
     this.state = 'closed';
     return Promise.resolve();
   });
-  resume = vi.fn(() => Promise.resolve());
+  resume = vi.fn(() => (resumeHangs ? new Promise<void>(() => undefined) : Promise.resolve()));
   constructor() {
     contexts.push(this);
   }
@@ -70,11 +81,17 @@ const feed = (level: number, frames: number) => {
   for (let index = 0; index < frames; index++) processor?.onaudioprocess?.(frame(level));
 };
 const micOn = () => tracks.some((track) => track.live);
+/** Accès au micro accordé (promesses résolues) sans faire avancer les minuteries simulées. */
+const settle = async () => {
+  for (let step = 0; step < 10; step++) await Promise.resolve();
+};
 
 beforeEach(() => {
   tracks.length = 0;
   contexts.length = 0;
   processor = null;
+  initialState = 'running';
+  resumeHangs = false;
   Object.defineProperty(navigator, 'mediaDevices', {
     configurable: true,
     value: {
@@ -88,6 +105,7 @@ beforeEach(() => {
   (window as unknown as { AudioContext: unknown }).AudioContext = FakeAudioContext;
 });
 afterEach(() => {
+  vi.useRealTimers();
   delete (navigator as unknown as { mediaDevices?: unknown }).mediaDevices;
 });
 
@@ -247,5 +265,109 @@ describe('Agent Direction sur iPhone : deux questions de suite', () => {
       expect(onError).toHaveBeenCalledWith('Dictée indisponible : réessaie ou écris ta question'),
     );
     expect(micOn()).toBe(false);
+  });
+});
+
+describe('micro qui ne répond pas (iPhone, après la première question)', () => {
+  it('son créé et relancé pendant l’appui, avant la demande d’accès au micro', () => {
+    initialState = 'suspended';
+    startRecording({ onReady: vi.fn(), onEnd: vi.fn() });
+    // Tout de suite, sans attendre l'accès au micro : encore dans l'appui sur le bouton
+    expect(contexts).toHaveLength(1);
+    expect(contexts[0]?.resume).toHaveBeenCalled();
+  });
+
+  it('relance du son jamais terminée : l’écoute démarre quand même', async () => {
+    initialState = 'suspended';
+    resumeHangs = true;
+    const onReady = vi.fn();
+    startRecording({ onReady, onEnd: vi.fn() });
+    await waitFor(() => expect(processor).not.toBeNull());
+    feed(0.3, 1);
+    expect(onReady).toHaveBeenCalledOnce();
+  });
+
+  it('aucun son en 3 s : micro rendu, « silent », plus d’écoute bloquée', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const onEnd = vi.fn();
+    startRecording({ onReady: vi.fn(), onEnd });
+    await settle();
+    expect(processor).not.toBeNull();
+    expect(micOn()).toBe(true);
+    vi.advanceTimersByTime(FIRST_SOUND_MS - 1);
+    expect(onEnd).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(micOn()).toBe(false);
+    expect(contexts[0]?.close).toHaveBeenCalled();
+    expect(onEnd).toHaveBeenCalledWith({ error: 'silent' });
+  });
+
+  it('le micro capte à temps : pas d’abandon après 3 s', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const onEnd = vi.fn();
+    startRecording({ onReady: vi.fn(), onEnd });
+    await settle();
+    expect(processor).not.toBeNull();
+    feed(0.001, 1);
+    vi.advanceTimersByTime(FIRST_SOUND_MS * 2);
+    expect(onEnd).not.toHaveBeenCalled();
+    expect(micOn()).toBe(true);
+  });
+
+  it('micro repris par iOS : rien dit, « silent » ; question commencée, elle part', async () => {
+    const onEnd = vi.fn();
+    startRecording({ onReady: vi.fn(), onEnd });
+    await waitFor(() => expect(processor).not.toBeNull());
+    feed(0.001, 1);
+    tracks[0]?.onended?.();
+    expect(onEnd).toHaveBeenCalledWith({ error: 'silent' });
+    expect(micOn()).toBe(false);
+
+    processor = null;
+    const sent = vi.fn();
+    startRecording({ onReady: vi.fn(), onEnd: sent });
+    await waitFor(() => expect(processor).not.toBeNull());
+    feed(0.3, 10);
+    tracks[1]?.onended?.();
+    const end = sent.mock.calls[0]?.[0] as { audio: Uint8Array };
+    expect(String.fromCharCode(...end.audio.subarray(0, 4))).toBe('RIFF');
+  });
+
+  it('message affiché, puis la question suivante est entendue', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.mocked(transcribe).mockResolvedValueOnce({ text: 'et pour Martin', alternatives: [] });
+    const onFinal = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() => useDictation({ onFinal, onError, recorded: true }));
+
+    // Première écoute : le micro ne donne aucun son
+    act(() => result.current.start());
+    await settle();
+    expect(processor).not.toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(FIRST_SOUND_MS);
+    });
+    expect(onError).toHaveBeenCalledWith(dictationError('silent'));
+    expect(result.current.listening).toBe(false);
+    expect(micOn()).toBe(false);
+
+    // Appui suivant : micro rouvert de zéro, question entendue
+    processor = null;
+    act(() => result.current.start());
+    await settle();
+    expect(processor).not.toBeNull();
+    act(() => {
+      feed(0.3, 10);
+      feed(0.001, Math.ceil(1300 / FRAME_MS) + 1);
+    });
+    await vi.waitFor(() => expect(onFinal).toHaveBeenCalledWith('Et pour Martin', []));
+    expect(tracks).toHaveLength(2);
+    expect(micOn()).toBe(false);
+  });
+
+  it('message clair : réessayer, sinon fermer et rouvrir l’appli', () => {
+    expect(dictationError('silent')).toBe(
+      'Le micro ne répond pas : appuie de nouveau. Si ça recommence, ferme l’appli et rouvre-la.',
+    );
   });
 });
