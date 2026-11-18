@@ -103,6 +103,23 @@ describe('borne : pause', () => {
     });
   });
 
+  it('départ en pause à 13:00 : retour possible affiché à 13:55 (fin de pause 14:00 - 5 min)', () => {
+    expect(
+      kioskMessage({
+        ok: true,
+        technician_name: 'Alice',
+        event_type: 'out',
+        occurred_at: '2026-11-18T12:00:00Z',
+        during_leave_type: null,
+        pause_until: '2026-11-18T12:55:00Z',
+      }),
+    ).toMatchObject({
+      tone: 'warning',
+      title: 'Bonne pause Alice',
+      detail: 'Départ enregistré à 13:00 · retour badgé possible à 13:55',
+    });
+  });
+
   it('badgeage pendant la pause : refus affiché avec le temps restant', async () => {
     vi.mocked(kioskClock).mockResolvedValue({
       ok: false,
