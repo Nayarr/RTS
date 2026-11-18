@@ -91,6 +91,9 @@ export function dictationError(code: string, keyboard = 'saisis la tâche au cla
   }
   if (code === 'network') return `Dictée impossible sans réseau : ${keyboard}.`;
   if (code === 'no-speech') return 'Rien entendu : appuie sur le micro et parle près du téléphone.';
+  if (code === 'silent') {
+    return 'Le micro ne répond pas : appuie de nouveau. Si ça recommence, ferme l’appli et rouvre-la.';
+  }
   return `Dictée interrompue : réessaie ou ${keyboard}.`;
 }
 

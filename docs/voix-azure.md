@@ -81,6 +81,16 @@ n'utilisent donc plus la dictée de Safari :
 Ordinateur et Android gardent la dictée du navigateur, ainsi que la dictée des travaux sur la
 fiche OR.
 
+Micro qui ne répond pas : le son est créé pendant l'appui sur le bouton (sur iPhone, un son créé
+après coup peut rester suspendu et l'écoute ne recevait plus rien). Si aucun son n'arrive dans les
+3 s, ou si iOS reprend le micro (appel, Siri), le micro est rendu et l'appli affiche « Le micro ne
+répond pas » : l'appui suivant repart de zéro au lieu de rester bloqué en écoute.
+
+Autorisation du micro redemandée : une appli installée sur l'écran d'accueil d'un iPhone ne garde
+l'autorisation que tant qu'elle reste ouverte. Quand iOS la ferme (après un moment en arrière-plan,
+ou balayée vers le haut), il la redemande à la question suivante. C'est une règle d'iOS : l'appli ne
+peut ni l'éviter ni la retenir.
+
 Même clé et même région que la voix : rien à ajouter. Le niveau gratuit (F0) donne 5 heures de
 reconnaissance par mois (à vérifier sur le portail Azure) et n'est jamais facturé ; au-delà, Azure
 refuse et l'appli propose d'écrire la question. Une question dure quelques secondes : plusieurs
