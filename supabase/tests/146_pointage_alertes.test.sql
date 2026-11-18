@@ -10,7 +10,10 @@ select plan(21);
 
 -- Jours ouvrés de test : samedi travaillé, tolérance à minuit passé (tout badgeage est en retard)
 update public.app_settings set saturday_hours = 4, expected_arrival = '00:00', late_tolerance = '00:00:01',
-                               rest_reference_monday = '2026-11-09';
+                               rest_reference_monday = '2026-11-09',
+                               -- Fin de pause à 00:05 : le retour possible à 5 minutes de la reprise
+                               -- (160_retour_pause) ne raccourcit pas les 59 minutes testées ici
+                               lunch_end = '00:05';
 -- Les vérifications « jour travaillé » dépendent du jour où le test tourne : le dimanche est fermé
 select extract(isodow from public.paris_date(now())) <> 7 as open_today \gset
 
