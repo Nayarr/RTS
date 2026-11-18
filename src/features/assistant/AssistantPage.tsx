@@ -179,6 +179,8 @@ export function AssistantPage() {
     keyboard: 'pose ta question au clavier',
     // Plusieurs versions entendues : l'agent choisit celle qui a un sens dans un atelier
     alternatives: 3,
+    // iPhone : question enregistrée par l'appli et transcrite par Azure (micro rendu à chaque fois)
+    recorded: true,
   });
 
   const refreshBriefing = useMutation({
@@ -223,10 +225,11 @@ export function AssistantPage() {
     send(draft, false);
   };
 
-  const showBriefing = briefingShown && !lastTurn && !pending && !dictation.listening;
+  const showBriefing =
+    briefingShown && !lastTurn && !pending && !dictation.listening && !dictation.transcribing;
   const phase: OrbState = dictation.listening
     ? 'listening'
-    : ask.isPending
+    : ask.isPending || dictation.transcribing
       ? 'thinking'
       : speakingId
         ? 'speaking'
@@ -343,6 +346,12 @@ export function AssistantPage() {
                 {dictation.interim ? `« ${dictation.interim} »` : 'Pose ta question…'}
               </p>
             </div>
+          ) : dictation.transcribing ? (
+            <div className="agent-text">
+              <p className="agent-big" role="status">
+                Je transcris ta question…
+              </p>
+            </div>
           ) : pending ? (
             <div className="agent-text">
               <Question text={pending.question} spoken={pending.spoken} />
@@ -421,7 +430,7 @@ export function AssistantPage() {
                 className={cn('rbtn big', dictation.listening && 'stop')}
                 aria-pressed={dictation.listening}
                 aria-label={dictation.listening ? 'Arrêter l’écoute' : 'Poser la question à la voix'}
-                disabled={ask.isPending}
+                disabled={ask.isPending || dictation.transcribing}
                 onClick={() => (dictation.listening ? dictation.stop() : listen())}
               >
                 {dictation.listening ? <Square className="size-6" /> : <Mic className="size-7" />}
