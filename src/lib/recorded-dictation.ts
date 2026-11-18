@@ -133,7 +133,8 @@ export class SpeechEndDetector {
   }
 }
 
-export type RecordingEnd = { audio: Uint8Array } | { error: 'no-speech' | 'not-allowed' | 'start' };
+export type RecordingEnd =
+  { audio: Uint8Array } | { error: 'no-speech' | 'not-allowed' | 'start' | 'silent' };
 
 export interface Recording {
   /** Fin demandée (bouton) : la question part si quelque chose a été dit. */
@@ -145,9 +146,27 @@ export interface Recording {
 type AudioContextConstructor = typeof AudioContext;
 
 /**
+ * Délai laissé au micro pour donner ses premiers sons. Au-delà, l'iPhone ne l'a pas vraiment ouvert
+ * (son suspendu, micro repris par iOS) : on le rend et on le dit, au lieu de rester en écoute.
+ */
+export const FIRST_SOUND_MS = 3_000;
+
+function audioContextConstructor(): AudioContextConstructor | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return (
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: AudioContextConstructor }).webkitAudioContext
+  );
+}
+
+/**
  * Ouvre le micro et enregistre une question. `onReady` : le micro capte vraiment ; `onEnd` : la
  * question terminée (WAV 16 kHz) ou la raison de l'échec. Le micro est coupé (pistes arrêtées,
  * voyant éteint) dès la fin, avant tout envoi.
+ *
+ * À appeler pendant l'appui sur le bouton : sur iPhone, un son créé ou relancé hors d'un appui
+ * reste suspendu ; le traitement du son est donc créé et relancé tout de suite, avant la demande
+ * d'accès au micro, et jamais attendu (un iPhone qui ne le relance pas ne bloque plus l'écoute).
  */
 export function startRecording({
   onReady,
@@ -160,16 +179,22 @@ export function startRecording({
   let context: AudioContext | null = null;
   let processor: ScriptProcessorNode | null = null;
   let source: MediaStreamAudioSourceNode | null = null;
+  let watchdog: ReturnType<typeof setTimeout> | null = null;
   let finished = false;
   const chunks: Float32Array[] = [];
   const detector = new SpeechEndDetector();
 
   /** Micro coupé et son libéré : rien ne reste ouvert après la question. */
   const release = () => {
+    if (watchdog) clearTimeout(watchdog);
+    watchdog = null;
     processor?.disconnect();
     source?.disconnect();
     if (processor) processor.onaudioprocess = null;
-    stream?.getTracks().forEach((track) => track.stop());
+    stream?.getTracks().forEach((track) => {
+      track.onended = null;
+      track.stop();
+    });
     if (context && context.state !== 'closed') void context.close().catch(() => undefined);
     processor = null;
     source = null;
@@ -197,12 +222,28 @@ export function startRecording({
     onEnd({ audio: encodeWav(downsample(samples, rate)) });
   };
 
-  const fail = (error: 'not-allowed' | 'start') => {
+  const fail = (error: 'not-allowed' | 'start' | 'silent') => {
     if (finished) return;
     finished = true;
     release();
     onEnd({ error });
   };
+
+  /** Micro repris par iOS (appel, Siri, autre appli) : ce qui a été dit part, sinon on le signale. */
+  const lost = () => {
+    if (detector.speechHeard) finish(true);
+    else fail('silent');
+  };
+
+  const Context = audioContextConstructor();
+  try {
+    if (Context) {
+      context = new Context();
+      if (context.state === 'suspended') void context.resume().catch(() => undefined);
+    }
+  } catch {
+    context = null;
+  }
 
   void (async () => {
     try {
@@ -215,12 +256,12 @@ export function startRecording({
         return;
       }
       stream = media;
-      const Context =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: AudioContextConstructor }).webkitAudioContext;
-      if (!Context) throw new Error('AudioContext indisponible');
-      context = new Context();
-      if (context.state === 'suspended') await context.resume();
+      if (!context) throw new Error('AudioContext indisponible');
+      // Demande d'accès affichée : l'appui est passé, on retente la relance sans l'attendre
+      if (context.state === 'suspended') void context.resume().catch(() => undefined);
+      for (const track of media.getTracks()) track.onended = lost;
+      // Aucun son au bout de quelques secondes : micro rendu, l'appui suivant repart de zéro
+      watchdog = setTimeout(() => fail('silent'), FIRST_SOUND_MS);
       source = context.createMediaStreamSource(media);
       processor = context.createScriptProcessor(4096, 1, 1);
       // Sortie muette : le traitement ne tourne que relié à la sortie
@@ -235,6 +276,8 @@ export function startRecording({
         chunks.push(new Float32Array(input));
         if (!ready) {
           ready = true;
+          if (watchdog) clearTimeout(watchdog);
+          watchdog = null;
           onReady();
         }
         const state = detector.push(rms(input), (input.length / context.sampleRate) * 1000);
