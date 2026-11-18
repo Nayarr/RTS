@@ -52,7 +52,8 @@ export function kioskMessage(result: KioskClockResult): KioskMessage {
   if (result.message === 'Code incorrect') return { tone: 'error', title: result.message, resetAfter: 1800 };
   if (result.message.startsWith('Déjà pointé'))
     return { tone: 'warning', title: result.message, resetAfter: 2500 };
-  // Pause de 59 minutes : refus avec le temps restant, laissé le temps de le lire
+  // Pause (59 minutes, retour possible dès 5 minutes avant la fin de pause des Réglages) : refus avec le
+  // temps restant, laissé le temps de le lire
   if (result.message.startsWith('Pause en cours'))
     return { tone: 'warning', title: result.message, resetAfter: 4000 };
   return { tone: 'error', title: result.message, resetAfter: 3500 };
