@@ -8560,6 +8560,7 @@ export type Database = {
       kiosk_change_pin: { Args: { p_current: string; p_new: string }; Returns: Json };
       kiosk_clock: { Args: { p_photo_file_id: string; p_pin: string }; Returns: Json };
       kiosk_exit_code_is_set: { Args: Record<PropertyKey, never>; Returns: boolean };
+      kiosk_pause_until: { Args: { p_pause_start: string; p_work_date: string }; Returns: string };
       kiosk_pending_signature: { Args: Record<PropertyKey, never>; Returns: Json };
       kiosk_pending_signatures: { Args: Record<PropertyKey, never>; Returns: Json };
       kiosk_ping: { Args: Record<PropertyKey, never>; Returns: undefined };
