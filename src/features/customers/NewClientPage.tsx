@@ -23,6 +23,7 @@ import { LicenseEditor } from '@/features/rentals/LicenseEditor';
 import { cn } from '@/lib/utils';
 import { accountOptions } from '@/lib/account-type';
 import { createClient } from './api';
+import { CompanyIdFields } from './CompanyIdFields';
 import { emptyNewClient, newClientFromForm, newClientSchema, type NewClientValues } from './domain';
 
 /** Le permis n'est enregistré que s'il a été scanné ou saisi. */
@@ -221,15 +222,7 @@ export function NewClientPage() {
                       {...register('name')}
                     />
                   </div>
-                  <FormField
-                    id="new-client-siret"
-                    label="SIRET"
-                    inputMode="numeric"
-                    placeholder="984 989 137 00018"
-                    className="num"
-                    error={errors.siret?.message}
-                    {...register('siret')}
-                  />
+                  <CompanyIdFields form={form} idPrefix="new-client" />
                   <div className="sm:col-span-2">
                     <FormField
                       id="new-client-contact"

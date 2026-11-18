@@ -886,11 +886,13 @@ export type Database = {
           birth_place: string | null;
           civility: string | null;
           contact_name: string | null;
+          country: string;
           created_at: string;
           direct_debit_day: number | null;
           discount_percent: number | null;
           email: string | null;
           first_name: string | null;
+          foreign_id: string | null;
           hourly_rate: number | null;
           id: string;
           kind: Database['public']['Enums']['client_kind'];
@@ -918,11 +920,13 @@ export type Database = {
           birth_place?: string | null;
           civility?: string | null;
           contact_name?: string | null;
+          country?: string;
           created_at?: string;
           direct_debit_day?: number | null;
           discount_percent?: number | null;
           email?: string | null;
           first_name?: string | null;
+          foreign_id?: string | null;
           hourly_rate?: number | null;
           id?: string;
           kind?: Database['public']['Enums']['client_kind'];
@@ -950,11 +954,13 @@ export type Database = {
           birth_place?: string | null;
           civility?: string | null;
           contact_name?: string | null;
+          country?: string;
           created_at?: string;
           direct_debit_day?: number | null;
           discount_percent?: number | null;
           email?: string | null;
           first_name?: string | null;
+          foreign_id?: string | null;
           hourly_rate?: number | null;
           id?: string;
           kind?: Database['public']['Enums']['client_kind'];
@@ -2822,7 +2828,9 @@ export type Database = {
       invoices: {
         Row: {
           client_address: string | null;
+          client_country: string | null;
           client_email: string | null;
+          client_foreign_id: string | null;
           client_id: string;
           client_name: string | null;
           client_siret: string | null;
@@ -2858,7 +2866,9 @@ export type Database = {
         };
         Insert: {
           client_address?: string | null;
+          client_country?: string | null;
           client_email?: string | null;
+          client_foreign_id?: string | null;
           client_id: string;
           client_name?: string | null;
           client_siret?: string | null;
@@ -2894,7 +2904,9 @@ export type Database = {
         };
         Update: {
           client_address?: string | null;
+          client_country?: string | null;
           client_email?: string | null;
+          client_foreign_id?: string | null;
           client_id?: string;
           client_name?: string | null;
           client_siret?: string | null;
@@ -6717,11 +6729,13 @@ export type Database = {
           birth_place: string | null;
           civility: string | null;
           contact_name: string | null;
+          country: string | null;
           created_at: string | null;
           direct_debit_day: number | null;
           discount_percent: number | null;
           email: string | null;
           first_name: string | null;
+          foreign_id: string | null;
           hourly_rate: number | null;
           id: string | null;
           kind: Database['public']['Enums']['client_kind'] | null;
@@ -6977,6 +6991,8 @@ export type Database = {
         Row: {
           balance_due: number | null;
           client_address: string | null;
+          client_country: string | null;
+          client_foreign_id: string | null;
           client_id: string | null;
           client_name: string | null;
           client_siret: string | null;

@@ -23,7 +23,12 @@ export interface QuotePdfInput {
   company: CompanySettings;
   logo: string | null;
   /** Coordonnées du client (adresse et SIRET dans le cadre « Devis pour »). */
-  client?: { billing_address: string | null; siret: string | null } | null;
+  client?: {
+    billing_address: string | null;
+    siret: string | null;
+    country?: string | null;
+    foreign_id?: string | null;
+  } | null;
   /** Date de génération (« Établi le »). */
   now?: Date;
 }
@@ -68,6 +73,8 @@ export async function buildQuotePdf({
     name: quote.client_name ?? '-',
     billing_address: client?.billing_address,
     siret: client?.siret,
+    country: client?.country,
+    foreign_id: client?.foreign_id,
   });
 
   const { done, planned } = printedSections(lines);

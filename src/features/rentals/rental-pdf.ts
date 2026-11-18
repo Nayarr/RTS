@@ -13,6 +13,7 @@ import {
   pdfText,
 } from '@/lib/pdf';
 import { drawFooter, ensureSpace } from '@/lib/pdf-document';
+import { countryName, isForeign } from '@/lib/countries';
 import { formatSiret } from '@/lib/siret';
 import { CATEGORY_META, hasEngine, vehicleTitle } from './fleet-domain';
 import type { RentalDetail } from './rental-api';
@@ -101,6 +102,12 @@ export async function buildRentalPdf(detail: RentalDetail): Promise<PdfFile> {
     box(loan ? 'BÉNÉFICIAIRE' : 'LOCATAIRE', [
       ['Nom', client.name],
       ...optional('SIRET', client.siret && formatSiret(client.siret)),
+      ...optional(
+        'N° d’entreprise',
+        isForeign(client.country) && client.foreign_id
+          ? `${client.foreign_id} (${countryName(client.country)})`
+          : null,
+      ),
       ...optional('N° TVA', client.vat_number),
       ['Adresse', client.billing_address ?? '-'],
       ['Téléphone', client.phone ?? '-'],

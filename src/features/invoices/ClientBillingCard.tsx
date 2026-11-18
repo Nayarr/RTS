@@ -7,11 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { updateClientBilling, type ClientBilling } from './api';
 import { useInvoiceMutation } from './hooks';
+import { countryName, foreignIdField, isForeign } from '@/lib/countries';
 import { formatSiret, siretField, siretValue } from '@/lib/siret';
 
 const billingSchema = z.object({
   billing_address: z.string().trim().max(300),
   siret: siretField,
+  foreign_id: foreignIdField,
   email: z.union([z.literal(''), z.email('Adresse e-mail invalide')]),
 });
 type BillingValues = z.infer<typeof billingSchema>;
@@ -19,11 +21,14 @@ type BillingValues = z.infer<typeof billingSchema>;
 const toForm = (client: ClientBilling): BillingValues => ({
   billing_address: client.billing_address ?? '',
   siret: formatSiret(client.siret),
+  foreign_id: client.foreign_id ?? '',
   email: client.email ?? '',
 });
 
 /** Coordonnées de facturation du client (mentions obligatoires), reprises à l'émission. */
 export function ClientBillingCard({ clientId, client }: { clientId: string; client: ClientBilling }) {
+  // Client étranger : n° d'entreprise de son pays à la place du SIRET
+  const foreign = isForeign(client.country);
   const {
     register,
     handleSubmit,
@@ -35,7 +40,7 @@ export function ClientBillingCard({ clientId, client }: { clientId: string; clie
     (values: BillingValues) =>
       updateClientBilling(clientId, {
         billing_address: values.billing_address || null,
-        siret: siretValue(values.siret),
+        ...(foreign ? { foreign_id: values.foreign_id || null } : { siret: siretValue(values.siret) }),
         email: values.email.toLowerCase() || null,
       }),
     'Coordonnées du client enregistrées',
@@ -45,7 +50,7 @@ export function ClientBillingCard({ clientId, client }: { clientId: string; clie
     <SectionCard
       id="client-billing"
       title={`Client : ${client.name}`}
-      description="Adresse et SIRET figurent sur la facture ; ils sont enregistrés sur la fiche du client."
+      description={`Adresse et ${foreign ? 'n° d’entreprise' : 'SIRET'} figurent sur la facture ; ils sont enregistrés sur la fiche du client.`}
       onSubmit={handleSubmit((values) => save.mutate(values))}
       dirty={isDirty}
       pending={save.isPending}
@@ -61,15 +66,25 @@ export function ClientBillingCard({ clientId, client }: { clientId: string; clie
             {...register('billing_address')}
           />
         </div>
-        <FormField
-          id="billing-siret"
-          label="SIRET"
-          inputMode="numeric"
-          placeholder="984 989 137 00018"
-          className="num"
-          error={errors.siret?.message}
-          {...register('siret')}
-        />
+        {foreign ? (
+          <FormField
+            id="billing-foreign-id"
+            label={`N° d’entreprise (${countryName(client.country)})`}
+            placeholder="BE 0123.456.789"
+            error={errors.foreign_id?.message}
+            {...register('foreign_id')}
+          />
+        ) : (
+          <FormField
+            id="billing-siret"
+            label="SIRET"
+            inputMode="numeric"
+            placeholder="984 989 137 00018"
+            className="num"
+            error={errors.siret?.message}
+            {...register('siret')}
+          />
+        )}
         <FormField
           id="billing-email"
           label="E-mail"

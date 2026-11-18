@@ -229,6 +229,8 @@ describe('clients et véhicules : règles', () => {
       direct_debit_day: null,
       no_auto_reminders: false,
       siret: '12345678900015',
+      country: 'FR',
+      foreign_id: null,
       notes: null,
     });
     expect(clientFromForm(values, true)).toMatchObject({ discount_percent: 5.5, hourly_rate: 85 });
