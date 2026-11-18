@@ -466,6 +466,14 @@ verify_jwt = false
 import_map = "./functions/mail-send/deno.json"
 entrypoint = "./functions/mail-send/index.ts"
 
+[functions.stt]
+enabled = true
+# Dictée Azure de l'Agent Direction sur iPhone (mêmes secrets que la voix : AZURE_SPEECH_KEY et
+# AZURE_SPEECH_REGION). Le jeton de l'appelant est vérifié dans la fonction elle-même.
+verify_jwt = false
+import_map = "./functions/stt/deno.json"
+entrypoint = "./functions/stt/index.ts"
+
 [functions.tts]
 enabled = true
 # Voix naturelle d'Azure pour l'Agent Direction (secrets AZURE_SPEECH_KEY et AZURE_SPEECH_REGION).

@@ -62,3 +62,37 @@ Le texte lu (noms de clients, montants) est envoyé à Microsoft, en région Fra
 européenne) ; Azure ne garde pas le texte envoyé à la synthèse vocale. À ajouter au registre des
 traitements (sous-traitant : Microsoft Azure, finalité : lecture à voix haute des réponses de
 l'Agent Direction).
+
+## Dictée sur iPhone (Edge Function `stt`)
+
+Sur iPhone, la dictée de Safari ne rend plus le micro après la lecture d'une réponse à voix haute :
+la première question passe, la suivante n'est jamais entendue et le voyant orange du micro reste
+allumé (bug de WebKit, pas de l'appli). Sur iPhone et iPad, l'Agent Direction et le point du jour
+n'utilisent donc plus la dictée de Safari :
+
+- l'appli ouvre elle-même le micro et enregistre la question ;
+- la question part après une pause d'environ 1,3 s (8 s sans rien entendre : abandon, 30 s au
+  plus), ou à l'appui sur le bouton ;
+- le micro est coupé aussitôt (voyant éteint), avant l'envoi ;
+- l'enregistrement (WAV 16 kHz, quelques centaines de Ko) passe par l'Edge Function `stt`, réservée
+  au bureau, Agent Direction activé, qui le fait transcrire par Azure en français et renvoie les
+  autres versions entendues (l'agent choisit celle qui a un sens dans un atelier).
+
+Ordinateur et Android gardent la dictée du navigateur, ainsi que la dictée des travaux sur la
+fiche OR.
+
+Même clé et même région que la voix : rien à ajouter. Le niveau gratuit (F0) donne 5 heures de
+reconnaissance par mois (à vérifier sur le portail Azure) et n'est jamais facturé ; au-delà, Azure
+refuse et l'appli propose d'écrire la question. Une question dure quelques secondes : plusieurs
+milliers de questions par mois tiennent dans le niveau gratuit.
+
+Déploiement :
+
+```bash
+npx supabase functions deploy stt --project-ref liwvhqihlrupmtymfjtk
+```
+
+RGPD : l'enregistrement de la question est envoyé à Microsoft (France Central). Microsoft indique
+ne pas garder l'audio de la reconnaissance en temps réel : à vérifier dans la page « Data, privacy
+and security » d'Azure Speech avant la mise en service. Même sous-traitant que la voix, finalité à compléter :
+transcription des questions posées à la voix à l'Agent Direction.

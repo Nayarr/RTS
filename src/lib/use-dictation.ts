@@ -1,4 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import {
+  isAppleMobile,
+  recordingSupported,
+  startRecording,
+  transcribe,
+  type Recording,
+} from './recorded-dictation';
 
 /** Reconnaissance vocale du navigateur (Chrome / Android, Safari / iPhone) : pas de type fourni par TypeScript. */
 interface SpeechRecognitionLike {
@@ -94,6 +101,9 @@ export function dictationError(code: string, keyboard = 'saisis la tâche au cla
  * `alternatives` : nombre de versions entendues demandées au navigateur ; `onFinal` reçoit les
  * autres versions en second paramètre (utile pour corriger un mot mal compris).
  * `beep` : bip joué quand le micro est réellement ouvert (`ready` passe alors à vrai).
+ * `recorded` : sur iPhone, l'appli enregistre elle-même la question et la fait transcrire par Azure
+ * (fonction « stt ») au lieu de la dictée de Safari, qui ne rend plus le micro après la lecture d'une
+ * réponse à voix haute. Pas de texte en direct : `transcribing` vaut vrai pendant la transcription.
  */
 export function useDictation({
   onFinal,
@@ -101,14 +111,22 @@ export function useDictation({
   keyboard,
   alternatives = 1,
   beep = false,
+  recorded = false,
 }: {
   onFinal: (text: string, alternatives: string[]) => void;
   onError: (message: string) => void;
   keyboard?: string;
   alternatives?: number;
   beep?: boolean;
+  recorded?: boolean;
 }) {
+  // Choix fait une fois : il ne change pas tant que la page est ouverte
+  const [byRecording] = useState(() => recorded && isAppleMobile() && recordingSupported());
   const [listening, setListening] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const recording = useRef<Recording | null>(null);
+  /** Enregistrement en cours : un résultat d'un enregistrement abandonné est ignoré. */
+  const run = useRef(0);
   const [ready, setReady] = useState(false);
   const [interim, setInterim] = useState('');
   const recognition = useRef<SpeechRecognitionLike | null>(null);
@@ -148,9 +166,20 @@ export function useDictation({
     }, RELEASE_DELAY_MS);
   };
 
+  /** Enregistrement abandonné : micro coupé, rien n'est envoyé. */
+  const dropRecording = () => {
+    run.current++;
+    recording.current?.cancel();
+    recording.current = null;
+    setListening(false);
+    setReady(false);
+    setTranscribing(false);
+  };
+
   // Fiche quittée en pleine dictée, ou appli passée en arrière-plan : on coupe le micro.
   useEffect(() => {
     const abandon = () => {
+      if (recording.current) dropRecording();
       const rec = recognition.current;
       if (!rec) return;
       cancelled.current = true;
@@ -173,7 +202,53 @@ export function useDictation({
     };
   }, []);
 
+  const startRecorded = () => {
+    dropRecording();
+    const mine = ++run.current;
+    const fail = (message: string) => handlers.current.onError(message);
+    setListening(true);
+    recording.current = startRecording({
+      onReady: () => {
+        if (mine !== run.current) return;
+        setReady(true);
+        if (beep) playListenBeep();
+      },
+      onEnd: (end) => {
+        if (mine !== run.current) return;
+        recording.current = null;
+        setListening(false);
+        setReady(false);
+        if ('error' in end) {
+          fail(dictationError(end.error, handlers.current.keyboard));
+          return;
+        }
+        setTranscribing(true);
+        transcribe(end.audio)
+          .then(({ text, alternatives: others }) => {
+            if (mine !== run.current) return;
+            const final = dictatedText(text);
+            if (!final) {
+              fail(dictationError('no-speech', handlers.current.keyboard));
+              return;
+            }
+            const variants = others.map(dictatedText).filter((variant) => variant && variant !== final);
+            handlers.current.onFinal(final, variants);
+          })
+          .catch((error: unknown) => {
+            if (mine === run.current) fail(error instanceof Error ? error.message : 'Dictée indisponible');
+          })
+          .finally(() => {
+            if (mine === run.current) setTranscribing(false);
+          });
+      },
+    });
+  };
+
   const start = () => {
+    if (byRecording) {
+      startRecorded();
+      return;
+    }
     const Recognition = recognitionConstructor();
     if (!Recognition) return;
     // Écoute précédente jamais terminée (iPhone) : on la coupe au lieu d'ignorer l'appui
@@ -236,13 +311,24 @@ export function useDictation({
   };
 
   const stop = () => {
+    recording.current?.stop();
     if (recognition.current) close(recognition.current, 'stop');
   };
   /** Arrête l'écoute sans rien envoyer. */
   const cancel = () => {
+    if (byRecording) dropRecording();
     cancelled.current = true;
     if (recognition.current) close(recognition.current, 'abort');
   };
 
-  return { supported: dictationSupported(), listening, ready, interim, start, stop, cancel };
+  return {
+    supported: byRecording || dictationSupported(),
+    listening,
+    ready,
+    interim,
+    transcribing,
+    start,
+    stop,
+    cancel,
+  };
 }
