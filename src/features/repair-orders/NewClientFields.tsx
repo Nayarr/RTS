@@ -2,6 +2,7 @@ import { Controller, useWatch, type UseFormReturn } from 'react-hook-form';
 import { UserPlus } from 'lucide-react';
 import { FormField } from '@/components/FormField';
 import { Label } from '@/components/ui/label';
+import { CompanyIdFields } from '@/features/customers/CompanyIdFields';
 import type { NewClientValues } from '@/features/customers/domain';
 import { cn } from '@/lib/utils';
 
@@ -90,15 +91,7 @@ export function NewClientFields({
           </>
         ) : (
           <>
-            <FormField
-              id="new-ro-client-siret"
-              label="SIRET *"
-              inputMode="numeric"
-              placeholder="984 989 137 00018"
-              className="num"
-              error={errors.siret?.message}
-              {...register('siret')}
-            />
+            <CompanyIdFields form={form} idPrefix="new-ro-client" siretRequired />
             <div className="sm:col-span-2">
               <FormField
                 id="new-ro-client-contact"

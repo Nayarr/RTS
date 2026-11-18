@@ -44,6 +44,9 @@ export interface ClientBilling {
   billing_address: string | null;
   siret: string | null;
   email: string | null;
+  /** Client étranger : pays (code ISO) et n° d'entreprise à la place du SIRET. */
+  country?: string;
+  foreign_id?: string | null;
 }
 
 export interface InvoiceDetail {
@@ -131,7 +134,7 @@ export async function fetchInvoice(id: string): Promise<InvoiceDetail | null> {
     supabase
       .from('clients')
       .select(
-        'name, billing_address, siret, email, discount_percent, account_type, direct_debit_day, no_auto_reminders',
+        'name, billing_address, siret, country, foreign_id, email, discount_percent, account_type, direct_debit_day, no_auto_reminders',
       )
       .eq('id', overview.client_id)
       .single(),
@@ -268,7 +271,7 @@ export async function deleteInvoiceLine(id: string) {
 /** Coordonnées de facturation gardées sur la fiche client (reprises à l'émission). */
 export async function updateClientBilling(
   clientId: string,
-  billing: Pick<ClientBilling, 'billing_address' | 'siret' | 'email'>,
+  billing: Partial<Pick<ClientBilling, 'billing_address' | 'siret' | 'foreign_id' | 'email'>>,
 ) {
   const { error } = await supabase.from('clients').update(billing).eq('id', clientId);
   if (error) throw error;

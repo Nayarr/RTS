@@ -1,6 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import type { CellHookData, RowInput } from 'jspdf-autotable';
 import type { CompanySettings } from '@/features/settings/api';
+import { foreignIdLine } from './countries';
 import { formatSiret } from './siret';
 import { MARGIN, PAGE_W, pdfMoney, pdfText, type PdfKit } from './pdf';
 
@@ -152,6 +153,9 @@ export function drawClientBox(
     billing_address?: string | null;
     siret?: string | null;
     vat_number?: string | null;
+    /** Client étranger : pays et n° d'entreprise à la place du SIRET. */
+    country?: string | null;
+    foreign_id?: string | null;
   },
   top = 37,
 ) {
@@ -170,8 +174,14 @@ export function drawClientBox(
   const name = clientNameLines(doc, client.name || '-', width - 10);
   doc.setFont('helvetica', 'normal');
   const nameExtra = name.lines.length * name.lineHeight - NAME_LINE_HEIGHT;
+  const foreign = foreignIdLine(client.country, client.foreign_id);
   const height =
-    21 + nameExtra + address.length * 3.8 + (client.siret ? 4.5 : 0) + (client.vat_number ? 4.5 : 0);
+    21 +
+    nameExtra +
+    address.length * 3.8 +
+    (client.siret ? 4.5 : 0) +
+    (foreign ? 4.5 : 0) +
+    (client.vat_number ? 4.5 : 0);
 
   doc.setFillColor(...PANEL);
   doc.roundedRect(x, top, width, height, 3, 3, 'F');
@@ -193,6 +203,12 @@ export function drawClientBox(
     doc.setFontSize(7.3);
     color(doc, MUTED);
     doc.text(`SIRET ${formatSiret(client.siret)}`, inner, y + 0.7);
+    y += 4.5;
+  }
+  if (foreign) {
+    doc.setFontSize(7.3);
+    color(doc, MUTED);
+    doc.text(pdfText(foreign), inner, y + 0.7);
     y += 4.5;
   }
   if (client.vat_number) {

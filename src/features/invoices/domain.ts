@@ -1,3 +1,4 @@
+import { isForeign } from '@/lib/countries';
 import { lineNet } from '@/features/documents/lines';
 import { todayIso } from '@/features/repair-orders/schemas';
 import type {
@@ -37,7 +38,8 @@ export function issueWarnings(lines: InvoiceLine[], client: ClientBilling): stri
   ).length;
   const warnings: string[] = [];
   if (unpriced) warnings.push(`${unpriced} ligne${unpriced > 1 ? 's' : ''} sans prix`);
-  if (!client.siret?.trim()) warnings.push('SIRET du client manquant');
+  // Client étranger : pas de SIRET (n° d'entreprise de son pays, facultatif)
+  if (!client.siret?.trim() && !isForeign(client.country)) warnings.push('SIRET du client manquant');
   return warnings;
 }
 

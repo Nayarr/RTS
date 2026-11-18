@@ -3,7 +3,8 @@ import { formatPlate, normalizeKey } from '@/features/repair-orders/constants';
 import { decimalField, decimalText, decimalValue } from '@/lib/numbers';
 import type { TablesInsert, TablesUpdate } from '@/types/database';
 import type { ClientOverview, VehicleOverview } from './api';
-import { formatSiret, siretField, siretValue } from '@/lib/siret';
+import { formatSiret, siretProblem, siretValue } from '@/lib/siret';
+import { foreignIdField, isForeign } from '@/lib/countries';
 import { monthEnd } from '@/lib/month';
 import { ACCOUNT_CHOICE_VALUES, accountChoice, accountFromChoice } from '@/lib/account-type';
 
@@ -123,6 +124,43 @@ function requireIdentity(
   }
 }
 
+/**
+ * Identifiant de l'entreprise : SIRET d'un client français (14 chiffres et clé), ou pays et n°
+ * d'entreprise libre d'un client étranger (pas de SIRET hors de France).
+ */
+const companyIdFields = {
+  siret: z.string().trim(),
+  foreign: z.boolean(),
+  country: z.string(),
+  foreign_id: foreignIdField,
+};
+
+function checkCompanyId(
+  values: { kind: 'pro' | 'individual'; siret: string; foreign: boolean; country: string },
+  ctx: z.RefinementCtx,
+) {
+  if (values.kind === 'pro' && values.foreign) {
+    if (!values.country) ctx.addIssue({ code: 'custom', path: ['country'], message: 'Choisis le pays' });
+    return;
+  }
+  const problem = siretProblem(values.siret);
+  if (problem) ctx.addIssue({ code: 'custom', path: ['siret'], message: problem });
+}
+
+/** Client étranger : pays et n° d'entreprise ; sinon France et SIRET. */
+export function companyIdFromForm(values: {
+  kind: 'pro' | 'individual';
+  siret: string;
+  foreign: boolean;
+  country: string;
+  foreign_id: string;
+}): { siret: string | null; country: string; foreign_id: string | null } {
+  if (values.kind === 'pro' && values.foreign && values.country) {
+    return { siret: null, country: values.country, foreign_id: values.foreign_id.trim() || null };
+  }
+  return { siret: siretValue(values.siret), country: 'FR', foreign_id: null };
+}
+
 export const clientSchema = z
   .object({
     ...identityFields,
@@ -141,12 +179,13 @@ export const clientSchema = z
     billing_address: z.string().trim().max(300),
     account_type: z.enum(ACCOUNT_CHOICE_VALUES),
     no_auto_reminders: z.boolean(),
-    siret: siretField,
+    ...companyIdFields,
     discount_percent: cappedDecimal('Remise', 100),
     hourly_rate: decimalField(),
     notes: z.string().max(2000),
   })
-  .superRefine(requireIdentity);
+  .superRefine(requireIdentity)
+  .superRefine(checkCompanyId);
 export type ClientValues = z.infer<typeof clientSchema>;
 
 export const clientToForm = (client: ClientOverview): ClientValues => ({
@@ -165,6 +204,9 @@ export const clientToForm = (client: ClientOverview): ClientValues => ({
   account_type: accountChoice(client),
   no_auto_reminders: client.no_auto_reminders ?? false,
   siret: formatSiret(client.siret),
+  foreign: isForeign(client.country),
+  country: isForeign(client.country) ? (client.country ?? '') : '',
+  foreign_id: client.foreign_id ?? '',
   discount_percent: decimalText(client.discount_percent),
   hourly_rate: decimalText(client.hourly_rate),
   notes: client.notes ?? '',
@@ -185,7 +227,7 @@ export function clientFromForm(values: ClientValues, withPricing: boolean): Tabl
     billing_address: text(values.billing_address),
     ...accountFromChoice(values.account_type),
     no_auto_reminders: values.no_auto_reminders,
-    siret: siretValue(values.siret),
+    ...companyIdFromForm(values),
     notes: text(values.notes),
     ...(withPricing
       ? {
@@ -277,14 +319,15 @@ export const newClientSchema = z
     ...identityFields,
     name: z.string().trim().max(120),
     contact_name: z.string().trim().max(120),
-    siret: siretField,
+    ...companyIdFields,
     phone: z.string().trim().max(30),
     email: z.union([z.literal(''), z.string().trim().email('E-mail invalide')]),
     billing_address: z.string().trim().max(300),
     account_type: z.enum(ACCOUNT_CHOICE_VALUES),
     notes: z.string().max(2000),
   })
-  .superRefine(requireIdentity);
+  .superRefine(requireIdentity)
+  .superRefine(checkCompanyId);
 export type NewClientValues = z.infer<typeof newClientSchema>;
 
 export const emptyNewClient = (kind: 'pro' | 'individual'): NewClientValues => ({
@@ -297,6 +340,9 @@ export const emptyNewClient = (kind: 'pro' | 'individual'): NewClientValues => (
   name: '',
   contact_name: '',
   siret: '',
+  foreign: false,
+  country: '',
+  foreign_id: '',
   phone: '',
   email: '',
   billing_address: '',
@@ -311,7 +357,7 @@ export function newClientFromForm(values: NewClientValues): TablesInsert<'client
     ...identity,
     name: identity.name ?? values.name.trim(),
     contact_name: values.kind === 'pro' ? text(values.contact_name) : null,
-    siret: values.kind === 'pro' ? siretValue(values.siret) : null,
+    ...(values.kind === 'pro' ? companyIdFromForm(values) : { siret: null, country: 'FR', foreign_id: null }),
     phone: text(values.phone),
     email: text(values.email),
     billing_address: text(values.billing_address),
