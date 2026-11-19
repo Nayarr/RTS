@@ -54,8 +54,16 @@ export function docxText(bytes: Uint8Array): string | null {
     (table) =>
       (table.match(/<w:tr[\s>][\s\S]*?<\/w:tr>/g) ?? [])
         .map((row) => {
+          // Morceaux d'un paragraphe collés (Word coupe parfois un mot), paragraphes d'une cellule espacés
           const cells = (row.match(/<w:tc[\s>][\s\S]*?<\/w:tc>/g) ?? []).map((cell) =>
-            [...cell.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)].map((match) => match[1]).join(' ')
+            (cell.match(/<w:p[\s>][\s\S]*?<\/w:p>/g) ?? [])
+              .map((paragraph) =>
+                [...paragraph.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)].map((match) => match[1]).join(
+                  '',
+                )
+              )
+              .join(' ')
+              .replace(/\s+/g, ' ')
               .trim()
           );
           return `<w:p><w:r><w:t>${cells.join(' | ')}</w:t></w:r></w:p>`;
