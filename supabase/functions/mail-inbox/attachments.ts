@@ -1,10 +1,12 @@
 // Pièces jointes d'un mail reçu : choisies, téléchargées chez Resend et lues par le tri (Haiku).
 //
-// Seuls les PDF et les photos sont lus (facture, devis, contrôle technique, photo d'une panne…),
-// dans une limite de taille qui borne le coût du tri. Les images insérées dans le texte (logo,
+// Sont lus les PDF et les photos (facture, devis, contrôle technique, photo d'une panne…), et le
+// texte des Word, Excel et CSV (extrait ici : office.ts), dans une limite de taille qui borne le
+// coût du tri. Les images insérées dans le texte (logo,
 // signature) sont ignorées. Les fichiers ne sont pas gardés : seul le résumé de chacun l'est.
 import { encodeBase64 } from '@std/encoding';
 import { z } from 'zod';
+import { docxText, plainText, xlsxText } from './office.ts';
 
 /** Pièces jointes lues par mail au plus (les suivantes sont seulement nommées au tri). */
 export const MAX_READ_FILES = 3;
@@ -34,15 +36,44 @@ export const attachmentListSchema = z.object({
 });
 export type ListedAttachment = z.infer<typeof attachmentListSchema>['data'][number];
 
-/** Type lisible par le tri : PDF ou image, d'après le type annoncé puis l'extension du fichier. */
+/** Fichiers dont le texte est extrait par la fonction (l'API ne les lit pas). */
+export type TextKind = 'docx' | 'xlsx' | 'text';
+
+const TEXT_TYPES: Record<string, TextKind> = {
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'text/csv': 'text',
+  'application/csv': 'text',
+  'text/plain': 'text',
+};
+const TEXT_EXTENSIONS: [RegExp, TextKind][] = [
+  [/\.docx$/, 'docx'],
+  [/\.xlsx$/, 'xlsx'],
+  [/\.(csv|txt)$/, 'text'],
+];
+
+/**
+ * Type lisible par le tri, d'après le type annoncé puis l'extension du fichier : PDF ou image (lus
+ * par l'API), Word, Excel ou CSV (texte extrait par la fonction).
+ */
 export function readableKind(file: Pick<ListedAttachment, 'filename' | 'content_type'>):
   | { kind: 'pdf' }
   | { kind: 'image'; mediaType: ImageType }
+  | { kind: TextKind }
   | null {
   const type = (file.content_type ?? '').toLowerCase().split(';')[0].trim();
   const name = (file.filename ?? '').toLowerCase();
   if (type === 'application/pdf' || (!type.startsWith('image/') && name.endsWith('.pdf'))) {
     return { kind: 'pdf' };
+  }
+  const textKind = TEXT_TYPES[type];
+  if (textKind) {
+    // Texte annoncé : CSV ou .txt seulement (pas de page HTML enregistrée en texte)
+    if (textKind !== 'text' || /\.(csv|txt)$/.test(name) || type !== 'text/plain') return { kind: textKind };
+  }
+  if (!type.startsWith('image/')) {
+    const found = TEXT_EXTENSIONS.find(([pattern]) => pattern.test(name));
+    if (found) return { kind: found[1] };
   }
   if ((IMAGE_TYPES as readonly string[]).includes(type)) {
     return { kind: 'image', mediaType: type as ImageType };
@@ -85,16 +116,36 @@ export interface ReadFile {
   filename: string;
   bytes: Uint8Array;
   kind: NonNullable<ReturnType<typeof readableKind>>;
+  /** Word, Excel, CSV : texte extrait du fichier. */
+  text?: string;
 }
 
-/** Bloc de contenu de l'API Anthropic pour un fichier (document PDF ou image, en base64). */
+/** Texte d'un Word, d'un Excel ou d'un CSV ; null si le fichier est illisible ou vide. */
+export function extractText(kind: TextKind, bytes: Uint8Array): string | null {
+  if (kind === 'docx') return docxText(bytes);
+  if (kind === 'xlsx') return xlsxText(bytes);
+  return plainText(bytes);
+}
+
+/**
+ * Bloc de contenu de l'API Anthropic pour un fichier : document PDF ou image en base64, ou document
+ * texte pour un Word, un Excel ou un CSV.
+ */
 export function contentBlock(file: ReadFile) {
+  const title = file.filename.slice(0, 200);
+  if (file.kind.kind !== 'pdf' && file.kind.kind !== 'image') {
+    return {
+      type: 'document' as const,
+      source: { type: 'text' as const, media_type: 'text/plain' as const, data: file.text ?? '' },
+      title,
+    };
+  }
   const data = encodeBase64(file.bytes);
   return file.kind.kind === 'pdf'
     ? {
       type: 'document' as const,
       source: { type: 'base64' as const, media_type: 'application/pdf' as const, data },
-      title: file.filename.slice(0, 200),
+      title,
     }
     : {
       type: 'image' as const,

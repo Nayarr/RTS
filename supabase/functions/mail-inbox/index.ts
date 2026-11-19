@@ -25,6 +25,7 @@ import { isCronRequest } from '../_shared/cron.ts';
 import {
   attachmentListSchema,
   contentBlock,
+  extractText,
   MAX_FILE_BYTES,
   pickReadable,
   readableKind,
@@ -136,7 +137,11 @@ async function readAttachments(providerId: string): Promise<ReadFile[]> {
         if (!download.ok) return null;
         const bytes = new Uint8Array(await download.arrayBuffer());
         if (!bytes.byteLength || bytes.byteLength > MAX_FILE_BYTES) return null;
-        return { filename: file.filename ?? 'fichier', bytes, kind };
+        const filename = file.filename ?? 'fichier';
+        if (kind.kind === 'pdf' || kind.kind === 'image') return { filename, bytes, kind };
+        // Word, Excel, CSV : texte extrait ici ; fichier illisible ou vide, seulement nommé au tri
+        const text = extractText(kind.kind, bytes);
+        return text ? { filename, bytes, kind, text } : null;
       }),
     );
     return files.filter((file): file is ReadFile => file !== null);

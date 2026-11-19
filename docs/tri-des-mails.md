@@ -12,16 +12,24 @@ sur les mails (« qu'est-ce que Moreau m'a demandé ? »).
 
 ## Pièces jointes
 
-Le tri lit aussi les **PDF et les photos** joints au mail (JPEG, PNG, GIF, WebP) : facture ou devis
-d'un fournisseur, procès-verbal de contrôle technique, photo d'une panne… Pour chaque pièce lue, il
+Le tri lit aussi les pièces jointes au mail : facture ou devis d'un fournisseur, procès-verbal de
+contrôle technique, photo d'une panne, tarifs ou relevé en tableur…
+
+- **PDF et photos** (JPEG, PNG, GIF, WebP) : lus tels quels par Claude.
+- **Word (.docx), Excel (.xlsx), CSV et .txt** : la fonction en extrait d'abord le texte (paragraphes
+  et tableaux du Word, chaque feuille Excel ligne par ligne, cellules séparées par « | »), puis le
+  joint au tri. 30 000 caractères par fichier au plus et 500 lignes par feuille : la suite n'est pas
+  lue. Dans un Excel, une date reste un nombre de jours (format interne d'Excel).
+
+Pour chaque pièce lue, il
 écrit une phrase qui dit ce que c'est et l'essentiel (numéro, montant TTC, date, plaque). Cette
 phrase s'affiche sous le mail ouvert dans **Mails reçus**, compte dans le résumé du mail, sert à
 la réponse préparée et répond aux questions posées à l'agent. Un contrôle technique ou un rapport
 hayon joint en PDF propose aussi la nouvelle échéance pour la fiche du véhicule.
 
 Limites, pour borner le coût : 3 pièces lues par mail, 5 Mo par fichier et 10 Mo en tout. Ne sont
-pas lus : Word, Excel, archives ZIP, photos HEIC d'iPhone, logos et signatures insérés dans le
-texte. Un fichier que l'API refuse (PDF protégé par mot de passe) est ignoré, le mail est trié
+pas lus : anciens formats Word et Excel (.doc, .xls), archives ZIP, photos HEIC d'iPhone, logos et
+signatures insérés dans le texte. Un Word ou un Excel illisible ou vide est seulement nommé. Un fichier que l'API refuse (PDF protégé par mot de passe) est ignoré, le mail est trié
 sur son texte.
 
 ## Réponses préparées
@@ -54,7 +62,8 @@ Rien n'est jamais envoyé sans cette décision. L'envoi passe par l'envoi des e-
 - Mails ignorés : Agent Direction désactivé, ou mail qui n'est adressé à aucune adresse du domaine
   d'envoi réglé dans Réglages › Atelier (protection contre les envois directs à l'adresse Resend).
 - Coût : environ 0,13 centime par mail trié (Claude Haiku 4.5), plus environ 0,3 centime par page
-  de PDF ou par photo lue (estimation, à confirmer sur les premiers mails réels).
+  de PDF ou par photo lue, et environ 0,15 centime par tranche de 1 000 mots d'un Word, d'un Excel
+  ou d'un CSV (estimations, à confirmer sur les premiers mails réels).
 - RGPD : ajouter « tri des mails reçus » au registre des traitements (finalité : gestion de la
   relation client et fournisseurs ; sous-traitants : Resend, Anthropic, Supabase ; durée : 90 jours).
 
