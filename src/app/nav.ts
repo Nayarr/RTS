@@ -91,6 +91,7 @@ export const GROUPS: NavGroup[] = [
       { to: '/factures', label: 'Factures', count: (data) => data.overdue_invoices.count, hot: true },
       { to: '/factures/avoirs', label: 'Avoirs' },
       { to: '/garanties', label: 'Garanties et retours', roles: ['direction', 'reception'] },
+      { to: '/consignes', label: 'Consignes', roles: ['direction', 'reception'] },
     ],
   },
   {

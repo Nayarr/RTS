@@ -71,12 +71,15 @@ async function partRow({ supplier_name, ...input }: PartLineInput) {
   return { ...input, line_type: 'part' as const, supplier_id: await ensureSupplier(supplier_name) };
 }
 
-/** Pièce fournie pour l'intervention (travaux effectués : facturée avec l'OR). */
+/** Pièce fournie pour l'intervention (travaux effectués : facturée avec l'OR). Renvoie son id. */
 export async function addPartLine(repairOrderId: string, position: number, input: PartLineInput) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('ro_lines')
-    .insert({ repair_order_id: repairOrderId, kind: 'done', position, ...(await partRow(input)) });
+    .insert({ repair_order_id: repairOrderId, kind: 'done', position, ...(await partRow(input)) })
+    .select('id')
+    .single();
   if (error) throw error;
+  return data.id;
 }
 
 /**

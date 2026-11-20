@@ -11,7 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { addPartCore, deletePartCore, setPartCoreAmount, type PartCore } from '@/features/consignes/api';
+import { partCoresKey } from '@/features/consignes/hooks';
+import { decimalField, decimalText, decimalValue } from '@/lib/numbers';
 import { fetchPart, saveCatalogPart } from '@/features/catalogs/api';
 import { MarginField } from '@/features/catalogs/MarginField';
 import { PartSuggestions } from '@/features/catalogs/PartSuggestions';
@@ -35,6 +39,8 @@ interface PartLineDialogProps {
   /** Pièce modifiée, ou `null` pour en ajouter une. */
   line: RoLine | null;
   supplierName: string | null;
+  /** Consigne de l'ancienne pièce, s'il y en a une. */
+  core?: PartCore | null;
   nextPosition: number;
   onClose: () => void;
 }
@@ -43,9 +49,16 @@ export function PartLineDialog({
   repairOrderId,
   line,
   supplierName,
+  core = null,
   nextPosition,
   onClose,
 }: PartLineDialogProps) {
+  // Consigne : case et montant gardés à part du formulaire de la pièce
+  const [hasCore, setHasCore] = useState(core !== null);
+  const [coreAmount, setCoreAmount] = useState(decimalText(core?.amount_ht ?? null));
+  const coreAmountError = hasCore
+    ? decimalField().safeParse(coreAmount).error?.issues[0]?.message
+    : undefined;
   const {
     control,
     register,
@@ -66,6 +79,15 @@ export function PartLineDialog({
     control,
     name: ['description', 'quantity', 'unit_price', 'purchase_price'],
   });
+
+  const saveCore = async (lineId: string) => {
+    const amount = decimalValue(coreAmount);
+    if (hasCore && !core) await addPartCore(repairOrderId, lineId, amount);
+    else if (hasCore && core && amount !== core.amount_ht) await setPartCoreAmount(core.id, amount);
+    else if (!hasCore && core) await deletePartCore(core.id);
+    else return;
+    await queryClient.invalidateQueries({ queryKey: partCoresKey });
+  };
 
   const save = useRepairOrderMutation(
     async (values: PartLineValues) => {
@@ -90,7 +112,10 @@ export function PartLineDialog({
       // Nouvelle pièce ou nouveaux prix : proposés tout de suite à la prochaine saisie
       await queryClient.invalidateQueries({ queryKey: partsKey });
       const withPart = { ...input, part_id: partId };
-      return line ? updatePartLine(line.id, withPart) : addPartLine(repairOrderId, nextPosition, withPart);
+      const lineId = line
+        ? (await updatePartLine(line.id, withPart), line.id)
+        : await addPartLine(repairOrderId, nextPosition, withPart);
+      await saveCore(lineId);
     },
     line ? 'Pièce mise à jour' : 'Pièce ajoutée',
   );
@@ -107,7 +132,7 @@ export function PartLineDialog({
           id="part-line-form"
           noValidate
           className="space-y-4"
-          onSubmit={handleSubmit((values) => save.mutate(values, { onSuccess: onClose }))}
+          onSubmit={handleSubmit((values) => !coreAmountError && save.mutate(values, { onSuccess: onClose }))}
         >
           <div className="space-y-2">
             <FormField
@@ -210,6 +235,32 @@ export function PartLineDialog({
               </div>
             )}
           />
+          <div className="space-y-3 rounded-lg border p-3">
+            <label className="row cursor-pointer gap-2.5 text-sm font-medium">
+              <Checkbox
+                checked={hasCore}
+                onCheckedChange={(checked) => setHasCore(checked === true)}
+                aria-describedby="part-line-core-hint"
+              />
+              Ancienne pièce en consigne
+            </label>
+            <p id="part-line-core-hint" className="hint">
+              Échange standard : l’ancienne pièce est à renvoyer au fournisseur pour le remboursement de la
+              consigne. Suivi dans la page Consignes.
+            </p>
+            {hasCore && (
+              <FormField
+                id="part-line-core-amount"
+                label="Consigne HT (€)"
+                inputMode="decimal"
+                className="num sm:max-w-[10rem]"
+                hint="Facultatif"
+                error={coreAmountError}
+                value={coreAmount}
+                onChange={(event) => setCoreAmount(event.target.value)}
+              />
+            )}
+          </div>
         </form>
 
         <DialogFooter>

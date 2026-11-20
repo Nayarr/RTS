@@ -176,7 +176,7 @@ export function TechRepairOrderPage() {
         </div>
       )}
       <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
-      <PartsSection lines={lines} />
+      <PartsSection repairOrderId={order.id} lines={lines} locked={locked} />
       {ctScan && (
         <TechnicalInspectionDialog
           key={ctScan}
