@@ -40,31 +40,30 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
 
-const core = (overrides: Partial<PartCore> = {}): PartCore =>
-  ({
-    id: 'k1',
-    ro_line_id: 'l1',
-    repair_order_id: 'ro1',
-    repair_order_number: 'OR00012',
-    vehicle_id: 'v1',
-    vehicle_plate: 'GH-512-RT',
-    supplier_id: 's1',
-    supplier_name: 'Truck Parts Lyon',
-    part_name: 'Alternateur 28V',
-    brand: 'Bosch',
-    reference: '0124655',
-    quantity: 1,
-    amount_ht: 120,
-    status: 'to_return',
-    returned_on: null,
-    refunded_on: null,
-    refunded_amount_ht: null,
-    notes: null,
-    created_by: null,
-    created_at: daysAgo(2),
-    updated_at: daysAgo(2),
-    ...overrides,
-  });
+const core = (overrides: Partial<PartCore> = {}): PartCore => ({
+  id: 'k1',
+  ro_line_id: 'l1',
+  repair_order_id: 'ro1',
+  repair_order_number: 'OR00012',
+  vehicle_id: 'v1',
+  vehicle_plate: 'GH-512-RT',
+  supplier_id: 's1',
+  supplier_name: 'Truck Parts Lyon',
+  part_name: 'Alternateur 28V',
+  brand: 'Bosch',
+  reference: '0124655',
+  quantity: 1,
+  amount_ht: 120,
+  status: 'to_return',
+  returned_on: null,
+  refunded_on: null,
+  refunded_amount_ht: null,
+  notes: null,
+  created_by: null,
+  created_at: daysAgo(2),
+  updated_at: daysAgo(2),
+  ...overrides,
+});
 
 const cores = [
   core(),
