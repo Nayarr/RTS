@@ -271,7 +271,7 @@ describe('fiche OR : pièces', () => {
 
   it('ajout depuis le catalogue : champs repris, quantité modifiable', async () => {
     vi.mocked(fetchParts).mockResolvedValue([catalogPart]);
-    vi.mocked(addPartLine).mockResolvedValue();
+    vi.mocked(addPartLine).mockResolvedValue('l9');
     setup({ lines: [partLine, { ...partLine, id: 'l0', line_type: 'labor', position: 3 }] });
 
     await userEvent.click(await screen.findByRole('button', { name: /Ajouter une pièce/ }));

@@ -1,8 +1,12 @@
 import { useState, type CSSProperties } from 'react';
-import { ChevronDown, CircleDot, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
+import { ChevronDown, CircleDot, Pencil, Plus, Recycle, Trash2, Undo2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { TirePickDialog } from '@/features/tires/TirePickDialog';
+import { addPartCore, type PartCore } from '@/features/consignes/api';
+import { PART_CORE_META } from '@/features/consignes/domain';
+import { usePartCoreMutation, useRepairOrderCores } from '@/features/consignes/hooks';
+import { PartCoreDialog } from '@/features/consignes/PartCoreDialog';
 import { WarrantyDialog } from '@/features/warranties/WarrantyDialog';
 import type { Enums } from '@/types/database';
 import { formatEuro, formatQuantity } from '@/lib/numbers';
@@ -18,18 +22,26 @@ const firstLine = (text: string) => text.split('\n')[0] ?? '';
 function PartRow({
   line,
   supplierName,
+  core,
   editable,
   onEdit,
   onDelete,
   onReturn,
+  onCore,
 }: {
   line: RoLine;
   supplierName: string | undefined;
+  core: PartCore | undefined;
   editable: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onReturn: () => void;
+  onCore: () => void;
 }) {
+  const addCore = usePartCoreMutation(
+    () => addPartCore(line.repair_order_id, line.id),
+    `${firstLine(line.description)} : ancienne pièce en consigne`,
+  );
   const status = line.order_status ?? 'to_order';
   const setStatus = useRepairOrderMutation(
     (next: PartOrderStatus) => setPartOrderStatus(line.id, next),
@@ -50,6 +62,28 @@ function PartRow({
         </span>
       </div>
       <b className="num">{formatEuro(partLineTotal(line))}</b>
+      {core ? (
+        <button
+          type="button"
+          className="badge h-8 cursor-pointer px-3"
+          style={{ '--c': PART_CORE_META[core.status].color } as CSSProperties}
+          aria-label={`Consigne de ${firstLine(line.description)} : ${PART_CORE_META[core.status].label}`}
+          onClick={onCore}
+        >
+          <Recycle className="size-3.5" /> Consigne · {PART_CORE_META[core.status].label.toLowerCase()}
+          {core.amount_ht !== null && ` · ${formatEuro(core.amount_ht)}`}
+        </button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={`Mettre l’ancienne pièce en consigne : ${firstLine(line.description)}`}
+          disabled={addCore.isPending}
+          onClick={() => addCore.mutate(undefined)}
+        >
+          <Recycle /> Consigne
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -102,7 +136,7 @@ function PartRow({
   );
 }
 
-/** Pièces de l'OR avec leur suivi de commande (À commander → Commandée → Reçue). */
+/** Pièces de l'OR avec leur suivi de commande (À commander → Commandée → Reçue) et leur consigne. */
 export function PartsCard({
   repairOrderId,
   repairOrderNumber,
@@ -122,6 +156,9 @@ export function PartsCard({
   const [editing, setEditing] = useState<RoLine | 'new' | null>(null);
   const [deleting, setDeleting] = useState<RoLine | null>(null);
   const [returning, setReturning] = useState<RoLine | null>(null);
+  const [coreLine, setCoreLine] = useState<string | null>(null);
+  const cores = useRepairOrderCores(repairOrderId).data ?? {};
+  const openCore = coreLine ? cores[coreLine] : undefined;
   const [pickingTires, setPickingTires] = useState(false);
   const remove = useRepairOrderMutation((line: RoLine) => deletePartLine(line.id), 'Pièce retirée');
   const nextPosition =
@@ -161,10 +198,12 @@ export function PartsCard({
                 key={line.id}
                 line={line}
                 supplierName={partSuppliers[line.id]}
+                core={cores[line.id]}
                 editable={editable}
                 onEdit={() => setEditing(line)}
                 onDelete={() => setDeleting(line)}
                 onReturn={() => setReturning(line)}
+                onCore={() => setCoreLine(line.id)}
               />
             ))}
           </ul>
@@ -184,6 +223,7 @@ export function PartsCard({
           repairOrderId={repairOrderId}
           line={editing === 'new' ? null : editing}
           supplierName={editing === 'new' ? null : (partSuppliers[editing.id] ?? null)}
+          core={editing === 'new' ? null : (cores[editing.id] ?? null)}
           nextPosition={nextPosition}
           onClose={() => setEditing(null)}
         />
@@ -198,6 +238,7 @@ export function PartsCard({
           onClose={() => setPickingTires(false)}
         />
       )}
+      {openCore && <PartCoreDialog core={openCore} onClose={() => setCoreLine(null)} />}
       {returning && (
         <WarrantyDialog
           claim={null}

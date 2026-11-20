@@ -3499,6 +3499,97 @@ export type Database = {
           },
         ];
       };
+      part_cores: {
+        Row: {
+          amount_ht: number | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          notes: string | null;
+          refunded_amount_ht: number | null;
+          refunded_on: string | null;
+          repair_order_id: string;
+          returned_on: string | null;
+          ro_line_id: string;
+          status: Database['public']['Enums']['part_core_status'];
+          supplier_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          amount_ht?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          notes?: string | null;
+          refunded_amount_ht?: number | null;
+          refunded_on?: string | null;
+          repair_order_id: string;
+          returned_on?: string | null;
+          ro_line_id: string;
+          status?: Database['public']['Enums']['part_core_status'];
+          supplier_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          amount_ht?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          notes?: string | null;
+          refunded_amount_ht?: number | null;
+          refunded_on?: string | null;
+          repair_order_id?: string;
+          returned_on?: string | null;
+          ro_line_id?: string;
+          status?: Database['public']['Enums']['part_core_status'];
+          supplier_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'part_cores_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'part_cores_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_ro_line_id_fkey';
+            columns: ['ro_line_id'];
+            isOneToOne: true;
+            referencedRelation: 'ro_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_supplier_id_fkey';
+            columns: ['supplier_id'];
+            isOneToOne: false;
+            referencedRelation: 'suppliers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       parts: {
         Row: {
           brand: string | null;
@@ -7097,6 +7188,96 @@ export type Database = {
           },
         ];
       };
+      v_part_cores: {
+        Row: {
+          amount_ht: number | null;
+          brand: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          id: string | null;
+          notes: string | null;
+          part_name: string | null;
+          quantity: number | null;
+          reference: string | null;
+          refunded_amount_ht: number | null;
+          refunded_on: string | null;
+          repair_order_id: string | null;
+          repair_order_number: string | null;
+          returned_on: string | null;
+          ro_line_id: string | null;
+          status: Database['public']['Enums']['part_core_status'] | null;
+          supplier_id: string | null;
+          supplier_name: string | null;
+          updated_at: string | null;
+          vehicle_id: string | null;
+          vehicle_plate: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'part_cores_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'part_cores_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_ro_line_id_fkey';
+            columns: ['ro_line_id'];
+            isOneToOne: true;
+            referencedRelation: 'ro_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'part_cores_supplier_id_fkey';
+            columns: ['supplier_id'];
+            isOneToOne: false;
+            referencedRelation: 'suppliers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'repair_orders_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       v_part_stats: {
         Row: {
           brand: string | null;
@@ -9471,6 +9652,7 @@ export type Database = {
         | 'vehicle';
       margin_kind: 'amount' | 'percent';
       message_channel: 'email' | 'sms' | 'other';
+      part_core_status: 'to_return' | 'returned' | 'refunded' | 'refused';
       part_order_status: 'to_order' | 'ordered' | 'received';
       payment_method: 'bank_transfer' | 'check' | 'card' | 'cash' | 'bill_of_exchange' | 'direct_debit';
       quote_section: 'done' | 'planned';
@@ -9658,6 +9840,7 @@ export const Constants = {
       ],
       margin_kind: ['amount', 'percent'],
       message_channel: ['email', 'sms', 'other'],
+      part_core_status: ['to_return', 'returned', 'refunded', 'refused'],
       part_order_status: ['to_order', 'ordered', 'received'],
       payment_method: ['bank_transfer', 'check', 'card', 'cash', 'bill_of_exchange', 'direct_debit'],
       quote_section: ['done', 'planned'],
