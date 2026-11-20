@@ -60,6 +60,11 @@ vi.mock('@/features/leave/api', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   fetchLeaveRequests: vi.fn().mockResolvedValue([]),
 }));
+// Consignes des pièces : pas d'appel réseau (rechargées après chaque action du mécano)
+vi.mock('@/features/consignes/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  fetchRepairOrderCores: vi.fn().mockResolvedValue({}),
+}));
 vi.mock('@/features/files/hooks', () => ({ useFileUrls: () => ({ data: {}, isPending: false }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
