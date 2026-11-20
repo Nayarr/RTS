@@ -427,7 +427,9 @@ describe('fiche OR technicien', () => {
     await waitFor(() =>
       expect(addLine).toHaveBeenCalledWith('ro1', 'done', 1, 'Remplacement des plaquettes avant'),
     );
-    expect(toast.success).toHaveBeenCalledWith('Tâche ajoutée : Remplacement des plaquettes avant');
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Tâche ajoutée : Remplacement des plaquettes avant'),
+    );
     vi.unstubAllGlobals();
   });
 
