@@ -11,6 +11,8 @@ import {
   type Part,
 } from '@/features/catalogs/api';
 import type * as CatalogApi from '@/features/catalogs/api';
+import { addPartCore, fetchRepairOrderCores, type PartCore } from '@/features/consignes/api';
+import type * as ConsignesApi from '@/features/consignes/api';
 import { saveWarrantyClaim } from '@/features/warranties/api';
 import type * as WarrantiesApi from '@/features/warranties/api';
 import { fakeSession, renderRoutes } from '@/test/render';
@@ -74,6 +76,11 @@ vi.mock('@/features/quotes/api', async (importOriginal) => ({
 vi.mock('@/features/warranties/api', async (importOriginal) => ({
   ...(await importOriginal<typeof WarrantiesApi>()),
   saveWarrantyClaim: vi.fn(),
+}));
+vi.mock('@/features/consignes/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof ConsignesApi>()),
+  fetchRepairOrderCores: vi.fn().mockResolvedValue({}),
+  addPartCore: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -313,6 +320,30 @@ describe('fiche OR : pièces', () => {
         sale_price: 32,
       }),
     );
+  });
+
+  it('consigne : cochée dans la fenêtre de la pièce, badge sur la ligne', async () => {
+    vi.mocked(addPartLine).mockResolvedValue('l9');
+    vi.mocked(addPartCore).mockResolvedValue();
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: /Ajouter une pièce/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Ajouter une pièce' });
+    await userEvent.type(within(dialog).getByLabelText('Désignation'), 'Alternateur');
+    expect(within(dialog).queryByLabelText('Consigne HT (€)')).toBeNull();
+    await userEvent.click(within(dialog).getByRole('checkbox', { name: 'Ancienne pièce en consigne' }));
+    await userEvent.type(within(dialog).getByLabelText('Consigne HT (€)'), '120,5');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(addPartCore).toHaveBeenCalledWith('ro1', 'l9', 120.5));
+  });
+
+  it('consigne : badge avec son statut, ou bouton pour la déclarer', async () => {
+    vi.mocked(fetchRepairOrderCores).mockResolvedValueOnce({
+      l1: { id: 'k1', ro_line_id: 'l1', status: 'returned', amount_ht: 85 } as PartCore,
+    });
+    setup({ overrides: { status: 'invoiced' } });
+    expect(
+      await screen.findByRole('button', { name: 'Consigne de Plaquettes avant : Renvoyée' }),
+    ).toHaveTextContent('Consigne · renvoyée · 85,00 €');
   });
 
   it('retour d’une pièce au fournisseur, même sur un OR facturé', async () => {
