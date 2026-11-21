@@ -215,6 +215,23 @@ describe('signature : borne de signature', () => {
     expect(await screen.findByText('Merci, votre signature est enregistrée.')).toBeInTheDocument();
   });
 
+  it('nom obligatoire : validation impossible sans nom (espaces compris)', async () => {
+    vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([pending]);
+    renderKiosk();
+    await openSignature('Ordre de réparation OR00512');
+
+    const dialog = await screen.findByRole('dialog', { name: 'Signature de l’ordre de réparation OR00512' });
+    const name = within(dialog).getByLabelText('Votre nom');
+    const submit = within(dialog).getByRole('button', { name: 'Valider ma signature' });
+    expect(name).toBeRequired();
+    expect(submit).toBeDisabled();
+    await userEvent.type(name, '   ');
+    expect(submit).toBeDisabled();
+    await userEvent.type(name, 'Paul');
+    expect(submit).toBeEnabled();
+    expect(kioskSign).not.toHaveBeenCalled();
+  });
+
   it('devis à signer : titre du devis, travaux et total TTC', async () => {
     vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([
       {
