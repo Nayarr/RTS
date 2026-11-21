@@ -8248,6 +8248,7 @@ export type Database = {
       assert_office: { Args: Record<PropertyKey, never>; Returns: undefined };
       assign_quote_number: { Args: { p_mark_sent?: boolean; p_quote_id: string }; Returns: string };
       attendance_alerts: { Args: Record<PropertyKey, never>; Returns: number };
+      attendance_day_end: { Args: { p_day: string }; Returns: string };
       attendance_day_off: { Args: { p_day: string; p_technician_id: string }; Returns: boolean };
       attendance_expected_arrival: { Args: { p_day: string; p_technician_id: string }; Returns: string };
       attendance_partial_leave_at: {

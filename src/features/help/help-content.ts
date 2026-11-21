@@ -171,7 +171,7 @@ export const DIRECTION_TOPICS: HelpTopic[] = [
     title: 'Équipe',
     items: [
       '« Équipe » : ajoute les techniciens et les comptes, définis le code PIN de pointage, exclus un technicien du planning si besoin.',
-      '« Pointages » : présences du jour avec photos, corrections, validation des congés, relevé d’heures mensuel pour la paie.',
+      '« Pointages » : présences du jour avec photos, corrections, validation des congés, relevé d’heures mensuel pour la paie. La direction est prévenue de chaque badgeage, des retards, de qui n’est pas encore arrivé (toutes les fiches actives, même sans code PIN), des pauses dépassées et de qui n’a pas badgé son départ 15 minutes après la fermeture (avec le chrono d’OR resté en cours).',
       '« Pilotage », onglet « Performance » : note sur 100 par technicien (rendement, occupation, CA, précision des estimations).',
     ],
   },
