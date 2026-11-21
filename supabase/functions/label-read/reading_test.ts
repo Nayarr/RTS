@@ -83,9 +83,9 @@ Deno.test('contrôle technique : marque (D.1) et modèle (D.3, sinon D.2) demand
   assertEquals(vehicleText('x'.repeat(80))?.length, 60);
 });
 
-Deno.test('vignette : immatriculation et VIN seulement, « numéro de série » = VIN', () => {
+Deno.test('vignette : immatriculation et VIN, « numéro de série » = VIN', () => {
   const prompt = inspectionReadingPrompt(TODAY);
-  assertEquals(prompt.includes('lis uniquement l’immatriculation et le VIN'), true);
+  assertEquals(prompt.includes('lis l’immatriculation et le VIN'), true);
   assertEquals(prompt.includes('« numéro de série »'), true);
   assertEquals(validPlate('ab 123 cd'), 'AB-123-CD');
   assertEquals(validPlate('1234 AB 95'), '1234AB95');

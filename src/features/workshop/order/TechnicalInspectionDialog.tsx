@@ -24,7 +24,7 @@ const errorMessage = (error: unknown) =>
 
 /**
  * Lecture automatique du contrôle technique qui vient d'être photographié : VIN, marque et modèle
- * proposés (et date du prochain contrôle sur un procès-verbal), modifiables, puis enregistrés sur la
+ * proposés (et date du prochain contrôle, sur un procès-verbal ou écrite sur la vignette), modifiables, puis enregistrés sur la
  * fiche véhicule (marque et modèle seulement s'ils y manquent).
  * La plaque lue est comparée à celle de l'OR.
  */
@@ -124,7 +124,7 @@ export function TechnicalInspectionDialog({
               </p>
             ) : (
               !reading.data.next_due_date && (
-                <p className="hint">Date d’échéance non lue (vignette) : saisis-la à la main si besoin.</p>
+                <p className="hint">Date du prochain contrôle non lue : saisis-la à la main si besoin.</p>
               )
             )}
             {(reading.data.next_due_date || reading.data.vin) && reading.data.confidence !== 'haute' && (
