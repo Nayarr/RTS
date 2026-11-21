@@ -3,7 +3,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(14);
 
 \ir helpers/fixtures.psql
 
@@ -27,6 +27,14 @@ select results_eq(
   $$ values ('AB-123-CD', true), ('IJ-789-KL', true) $$,
   'Chaque demande avec son véhicule et sa minute');
 select pg_temp.fake_file('signature') as sig \gset
+-- Nom obligatoire, comme sur le lien par e-mail
+select throws_ok(format($$ select public.kiosk_sign_repair_order(%L, '', %L) $$, :'second'::jsonb ->> 'id', :'sig'),
+  '22023', 'Indiquez votre nom', 'Signature sans nom refusée');
+select throws_ok(format($$ select public.kiosk_sign_repair_order(%L, '   ', %L) $$, :'second'::jsonb ->> 'id', :'sig'),
+  '22023', 'Indiquez votre nom', 'Nom fait d''espaces refusé');
+select ok(exists (select 1 from jsonb_array_elements(public.kiosk_pending_signatures()) x
+                  where x ->> 'id' = :'second'::jsonb ->> 'id'),
+          'Signature refusée : la demande reste à signer');
 select lives_ok(format($$ select public.kiosk_sign_repair_order(%L, 'Client 2', %L) $$, :'second'::jsonb ->> 'id', :'sig'),
   'Le deuxième client signe le sien sans attendre le premier');
 select ok(not exists (select 1 from jsonb_array_elements(public.kiosk_pending_signatures()) x
