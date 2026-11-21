@@ -37,8 +37,9 @@ select public.workshop_board() as board \gset
 
 select is(jsonb_path_query_array(:'board'::jsonb, '$.technicians[*].name') @> '["Alice", "Bruno"]'::jsonb, true,
           'Une colonne par technicien actif');
-select is(jsonb_path_query_array(:'board'::jsonb,
-            '$.orders[*] ? (@.technician_id == "10000000-0000-0000-0000-0000000000a1").plate'),
+-- Ordre des OR non garanti par la fonction : plaques comparées triées
+select is((select jsonb_agg(p order by p) from jsonb_array_elements(jsonb_path_query_array(:'board'::jsonb,
+            '$.orders[*] ? (@.technician_id == "10000000-0000-0000-0000-0000000000a1").plate')) p),
           '["AB-123-CD", "EF-456-GH"]'::jsonb,
           'OR en cours et assignés aujourd''hui ; pas ceux prévus demain');
 select is(jsonb_path_query_first(:'board'::jsonb, '$.orders[*] ? (@.plate == "AB-123-CD")') - 'id' - 'technician_id',
