@@ -46,7 +46,7 @@ from (values ('10000000-0000-0000-0000-0000000000a1'::uuid, '1111'), ('10000000-
              ('10000000-0000-0000-0000-000000000c46', '3333'), ('10000000-0000-0000-0000-000000000d46', '4444'),
              ('10000000-0000-0000-0000-000000000e46', '5555'), ('10000000-0000-0000-0000-000000000f46', '6666'),
              ('10000000-0000-0000-0000-000000000146', '7777')) as p(id, pin);
--- (Hugo n'a pas de code : il ne badge pas, il n'est pas surveillé)
+-- (Hugo n'a pas de code : surveillé quand même, voir 164_alertes_pointage)
 
 -- Journées déjà commencées (heures forcées, sans déclencheur)
 set local session_replication_role = replica;
@@ -136,7 +136,7 @@ select is(exists (select 1 from public.notifications where type = 'not_arrived' 
           :'open_today'::boolean, 'Pas de badgeage à l''heure de tolérance : direction notifiée');
 select is((select count(*)::int from public.notifications where type = 'not_arrived'
            and (title like '%Frank%' or title like '%Carl%' or title like '%Hugo%')), 0,
-          'Déjà arrivés, ou sans code PIN : pas d''alerte');
+          'Déjà arrivés (badge ou saisie) : pas d''alerte');
 select lives_ok($$ select public.attendance_alerts() $$, 'Tâche relancée : pas de doublon (dedupe)');
 
 -- ---------------------------------------------------------------- Absence le matin puis arrivée
