@@ -46,7 +46,7 @@ export const TECHNICIAN_TOPICS: HelpTopic[] = [
   {
     title: 'Pointage et congés',
     items: [
-      'Chaque jour, pointe ton arrivée et ton départ sur la borne avec ton code PIN (la borne te prend en photo).',
+      'Chaque jour, pointe ton arrivée et ton départ sur la borne avec ton code PIN (la borne te prend en photo). Au départ (pause ou fin de journée), le chrono de ton OR en cours se met en pause tout seul : tu le relances au retour.',
       'Pour changer ton code PIN : « Changer mon code » sous le clavier de la borne, tape ton code actuel puis le nouveau deux fois. Code oublié : demande à la direction (Équipe).',
       'Pour un congé, ouvre l’onglet « Congés » en bas, puis « Demander un congé » : jours entiers, matin, après-midi ou quelques heures. La direction valide ou refuse.',
     ],
