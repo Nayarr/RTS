@@ -78,6 +78,7 @@ function SignatureForm({
 
   const sign = useMutation({
     mutationFn: async () => {
+      if (!name.trim()) throw new Error('Indiquez votre nom.');
       const blob = await pad.toBlob();
       if (!blob) throw new Error('Signez dans le cadre ci-dessous.');
       const fileId = await uploadFile(blob, { category: 'signature', name: 'signature-client.png' });
@@ -125,10 +126,11 @@ function SignatureForm({
         )}
       </div>
       <div className="field">
-        <Label htmlFor="kiosk-signer">Votre nom (facultatif)</Label>
+        <Label htmlFor="kiosk-signer">Votre nom</Label>
         <Input
           id="kiosk-signer"
           autoComplete="off"
+          required
           className="h-12 text-base!"
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -168,7 +170,7 @@ function SignatureForm({
         <Button
           size="lg"
           className="h-14! text-base"
-          disabled={pad.isEmpty || sign.isPending}
+          disabled={pad.isEmpty || !name.trim() || sign.isPending}
           onClick={() => {
             setError(null);
             sign.mutate();

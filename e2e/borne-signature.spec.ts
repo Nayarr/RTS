@@ -71,6 +71,7 @@ test('borne de signature : deux clients, deux demandes listées, chacun signe la
   await secondCard.getByRole('button', { name: /^Signer : Ordre de réparation / }).click();
   const dialog = page.getByRole('dialog', { name: /Signature de l’ordre de réparation / });
   await expect(dialog).toContainText(second);
+  await dialog.getByLabel('Votre nom').fill('Client 2');
   await drawSignature(page, dialog.getByRole('img', { name: 'Signature du client' }));
   await dialog.getByRole('button', { name: 'Valider ma signature' }).click();
   await expect(page.getByText('Merci, votre signature est enregistrée.')).toBeVisible();

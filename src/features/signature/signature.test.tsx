@@ -204,7 +204,7 @@ describe('signature : borne de signature', () => {
         .getAllByRole('listitem')
         .map((item) => item.textContent),
     ).toEqual(['Freins avant', 'Vidange']);
-    await userEvent.type(within(dialog).getByLabelText('Votre nom (facultatif)'), 'Paul Dupont');
+    await userEvent.type(within(dialog).getByLabelText('Votre nom'), 'Paul Dupont');
     vi.mocked(fetchKioskPendingSignatures).mockResolvedValue([]);
     await userEvent.click(within(dialog).getByRole('button', { name: 'Valider ma signature' }));
     await waitFor(() => expect(kioskSign).toHaveBeenCalledWith('sr1', 'Paul Dupont', 'file1'));

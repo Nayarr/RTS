@@ -112,7 +112,7 @@ test('client sur place : devis signé sur la borne, accepté au bureau', async (
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Remplacement plaquettes avant');
   await expect(dialog).toContainText(/204,00\s€/);
-  await dialog.getByLabel('Votre nom (facultatif)').fill('Paul Client');
+  await dialog.getByLabel('Votre nom').fill('Paul Client');
   await drawSignature(kiosk.page, dialog.getByRole('img', { name: 'Signature du client' }));
   await dialog.getByRole('button', { name: 'Valider ma signature' }).click();
   await expect(kiosk.page.getByText('Merci, votre signature est enregistrée.')).toBeVisible();

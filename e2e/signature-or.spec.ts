@@ -97,7 +97,7 @@ test('client sur place : signature demandée sur la borne, reçue sur la fiche O
   await expect(dialog).toContainText(plate);
   await expect(dialog.getByRole('timer')).toHaveAccessibleName(/Temps restant : \d+ secondes/);
   await expect(dialog.getByRole('listitem')).toHaveText(['Freins avant', 'Vidange']);
-  await dialog.getByLabel('Votre nom (facultatif)').fill('Paul Client');
+  await dialog.getByLabel('Votre nom').fill('Paul Client');
   await drawSignature(kiosk.page, dialog.getByRole('img', { name: 'Signature du client' }));
   await dialog.getByRole('button', { name: 'Valider ma signature' }).click();
   await expect(kiosk.page.getByText('Merci, votre signature est enregistrée.')).toBeVisible();
