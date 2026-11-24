@@ -1,11 +1,18 @@
-import { Camera, FileUp } from 'lucide-react';
+import { Camera, Check, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MonthYearField } from '@/components/MonthYearField';
 import { cn } from '@/lib/utils';
-import { updateDeadlines, type VehicleDeadlines } from '../api';
-import { CT_PHOTO_LABEL } from '../domain';
+import { updateDeadlines, type DeadlineRenewal, type VehicleDeadlines } from '../api';
+import {
+  CT_PHOTO_LABEL,
+  hasCtPhoto,
+  RENEWAL_LABELS,
+  RENEWAL_PHOTO_LABELS,
+  renewalDueLabel,
+  type RenewalKind,
+} from '../domain';
 import { useVehicleDeadlines, useWorkshopMutation } from '../hooks';
 import type { PhotoCapture } from './use-photo-capture';
 
@@ -22,6 +29,7 @@ export function DeadlinesSection({
   capture,
   photoLabels,
   ctRequired,
+  renewals,
 }: {
   repairOrderId: string;
   vehicleId: string;
@@ -31,8 +39,10 @@ export function DeadlinesSection({
   photoLabels: string[];
   /** Photo du contrôle technique exigée (pas pour une remorque). */
   ctRequired: boolean;
+  /** Échéances renouvelées sur l'OR, avec leur enregistrement quand la nouvelle étiquette est prise. */
+  renewals: { kind: RenewalKind; done: DeadlineRenewal | undefined }[];
 }) {
-  const ctTaken = photoLabels.includes(CT_PHOTO_LABEL);
+  const ctTaken = hasCtPhoto(photoLabels);
   const deadlines = useVehicleDeadlines(vehicleId);
   const save = useWorkshopMutation(
     repairOrderId,
@@ -48,6 +58,72 @@ export function DeadlinesSection({
       <span className="hint">Relevées sur le véhicule (contrôle technique, étiquette du hayon).</span>
       {ctRequired && !ctTaken && !locked && (
         <p className="err">Photo du contrôle technique obligatoire avant de terminer l’OR.</p>
+      )}
+      {renewals.length > 0 && (
+        <div
+          className={cn(
+            'col rounded-lg border px-3 pt-2.5 pb-1',
+            renewals.every((renewal) => renewal.done)
+              ? 'border-success/35 bg-success/5'
+              : 'border-destructive/35 bg-destructive/5',
+          )}
+          role="group"
+          aria-label="À renouveler sur cet OR"
+        >
+          <b className="text-[13px]">À renouveler sur cet OR</b>
+          {renewals.map(({ kind, done }) => {
+            const photoLabel = RENEWAL_PHOTO_LABELS[kind];
+            return (
+              <div key={kind} className="row gap-2.5 border-t py-2.5 first-of-type:border-t-0">
+                <div className="col min-w-0 flex-1 gap-0.5">
+                  <span className="font-medium">{RENEWAL_LABELS[kind]}</span>
+                  {done ? (
+                    <span className="text-xs text-success">
+                      Renouvelé : prochain {renewalDueLabel(kind, done.new_due)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-destructive">
+                      Photo de la nouvelle étiquette obligatoire
+                    </span>
+                  )}
+                </div>
+                {done && (
+                  <span className="badge s-ok shrink-0">
+                    <Check className="size-3" /> Photo
+                  </span>
+                )}
+                {!locked && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className={cn('shrink-0', !done && 'border-destructive text-destructive')}
+                      aria-label={`Photo de la nouvelle étiquette : ${RENEWAL_LABELS[kind]}${done ? ' (reprendre)' : ''}`}
+                      disabled={capture.uploadingLabel === photoLabel}
+                      onClick={() => capture.openCamera(photoLabel)}
+                    >
+                      <Camera className="size-5" />
+                    </Button>
+                    {!done && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0"
+                        aria-label={`Importer la nouvelle étiquette (photo ou PDF) : ${RENEWAL_LABELS[kind]}`}
+                        disabled={capture.uploadingLabel === photoLabel}
+                        onClick={() => capture.openDocument(photoLabel)}
+                      >
+                        <FileUp className="size-5" />
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
       {/* Sur téléphone, l'une sous l'autre : les libellés longs ne décalent plus les dates */}
       <div className="grid gap-3 sm:grid-cols-2 sm:items-end sm:gap-2">

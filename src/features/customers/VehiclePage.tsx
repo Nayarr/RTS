@@ -1,4 +1,5 @@
 import { DeclaredOilChangesCard } from './DeclaredOilChangesCard';
+import { DeadlineRenewalsCard } from './DeadlineRenewalsCard';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -338,6 +339,7 @@ function VehicleView({ detail }: { detail: VehicleDetail }) {
               </div>
             )}
           </section>
+          <DeadlineRenewalsCard vehicleId={vehicle.id} />
           {vehicle.vehicle_type !== 'remorque' && <DeclaredOilChangesCard vehicleId={vehicle.id} />}
         </div>
 

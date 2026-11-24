@@ -6319,6 +6319,99 @@ export type Database = {
         };
         Relationships: [];
       };
+      vehicle_deadline_renewals: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          file_id: string | null;
+          id: string;
+          kind: string;
+          new_due: string;
+          previous_due: string | null;
+          repair_order_id: string | null;
+          vehicle_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          file_id?: string | null;
+          id?: string;
+          kind: string;
+          new_due: string;
+          previous_due?: string | null;
+          repair_order_id?: string | null;
+          vehicle_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          file_id?: string | null;
+          id?: string;
+          kind?: string;
+          new_due?: string;
+          previous_due?: string | null;
+          repair_order_id?: string | null;
+          vehicle_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_file_id_fkey';
+            columns: ['file_id'];
+            isOneToOne: false;
+            referencedRelation: 'files';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'repair_orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_order_time';
+            referencedColumns: ['repair_order_id'];
+          },
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_repair_order_id_fkey';
+            columns: ['repair_order_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_repair_orders_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicle_deadlines';
+            referencedColumns: ['vehicle_id'];
+          },
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_vehicles_overview';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'vehicle_deadline_renewals_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       vehicle_oil_changes: {
         Row: {
           created_at: string;
@@ -8480,6 +8573,7 @@ export type Database = {
         Returns: Database['public']['Enums']['app_role'];
       };
       current_technician_id: { Args: Record<PropertyKey, never>; Returns: string };
+      deadline_kind_label: { Args: { p_kind: string }; Returns: string };
       deadline_recently_reminded: {
         Args: { p_kind: string; p_now?: string; p_vehicle_id: string };
         Returns: boolean;
@@ -9059,6 +9153,26 @@ export type Database = {
         Returns: undefined;
       };
       record_deadline_reminders: { Args: { p_items: Json; p_source?: string }; Returns: number };
+      record_deadline_renewal: {
+        Args: { p_file_id: string; p_kind: string; p_new_due: string; p_repair_order_id: string };
+        Returns: {
+          created_at: string;
+          created_by: string | null;
+          file_id: string | null;
+          id: string;
+          kind: string;
+          new_due: string;
+          previous_due: string | null;
+          repair_order_id: string | null;
+          vehicle_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'vehicle_deadline_renewals';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       record_invoice_reminder: {
         Args: { p_invoice_id: string };
         Returns: {
@@ -9098,6 +9212,7 @@ export type Database = {
         Returns: undefined;
       };
       renew_overdue_rentals: { Args: { p_now?: string }; Returns: number };
+      renewal_kinds_of: { Args: { p_texts: string[] }; Returns: string[] };
       rental_missing: {
         Args: { p_phase: Database['public']['Enums']['rental_phase']; p_rental_id: string };
         Returns: string[];
@@ -9116,6 +9231,7 @@ export type Database = {
       reorder_invoice_lines: { Args: { p_invoice_id: string; p_line_ids: string[] }; Returns: undefined };
       reorder_quote_lines: { Args: { p_line_ids: string[]; p_quote_id: string }; Returns: undefined };
       repair_order_planned_hours: { Args: { p_end: string; p_id: string; p_start: string }; Returns: number };
+      repair_order_renewal_kinds: { Args: { p_repair_order_id: string }; Returns: string[] };
       repair_order_signature_request: { Args: { p_repair_order_id: string }; Returns: Json };
       repair_order_status_label: {
         Args: { p_status: Database['public']['Enums']['repair_order_status'] };

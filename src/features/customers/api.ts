@@ -2,6 +2,7 @@ import type { InvoiceOverview } from '@/features/invoices/api';
 import type { RepairOrderOverview } from '@/features/repair-orders/api';
 import { fetchAllRows } from '@/lib/all-rows';
 import { supabase } from '@/lib/supabase';
+import type { RenewalKind } from '@/features/workshop/domain';
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
 type ClientRow = Tables<'v_clients_overview'>;
@@ -307,4 +308,29 @@ export async function fetchDeadlines(): Promise<VehicleDeadline[]> {
 export async function recordDeadlineReminders(items: { vehicle_id: string; kind: string }[]): Promise<void> {
   const { error } = await supabase.rpc('record_deadline_reminders', { p_items: items });
   if (error) throw error;
+}
+
+export interface VehicleRenewal {
+  id: string;
+  kind: RenewalKind;
+  previous_due: string | null;
+  new_due: string;
+  file_id: string | null;
+  created_at: string;
+  repair_order_id: string | null;
+  repair_orders: { number: string } | null;
+  profiles: { full_name: string | null } | null;
+}
+
+/** Échéances renouvelées à l'atelier sur ce véhicule, de la plus récente à la plus ancienne. */
+export async function fetchVehicleRenewals(vehicleId: string): Promise<VehicleRenewal[]> {
+  const { data, error } = await supabase
+    .from('vehicle_deadline_renewals')
+    .select(
+      'id, kind, previous_due, new_due, file_id, created_at, repair_order_id, repair_orders(number), profiles(full_name)',
+    )
+    .eq('vehicle_id', vehicleId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as VehicleRenewal[];
 }
