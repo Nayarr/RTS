@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  deadlineRows,
   mileageValue,
   oilChangeStatus,
   upcomingWork,
@@ -139,5 +140,84 @@ describe('vidange : 40 000 km (PL), 15 000 km (utilitaire), ou plus d’un an', 
   it('kilométrage saisi avec espaces', () => {
     expect(mileageValue('412 000')).toBe(412_000);
     expect(mileageValue('')).toBeNull();
+  });
+});
+
+describe('création d’OR : état de chaque échéance', () => {
+  const vul: UpcomingInput = {
+    vehicleType: 'vul',
+    ctDueDate: '2027-02-26',
+    tailgateDueMonth: '2026-10-01',
+    antipollutionDueDate: null,
+    mileage: 128_400,
+    currentLines: ['Contrôle des extincteurs'],
+    history: [{ date: '2026-02-02T09:00:00Z', mileage: 105_000, lines: ['Contrôle extincteurs'] }],
+    oilChanges: [{ date: '2026-06-03', mileage: 112_000 }],
+  };
+  const state = (rows: ReturnType<typeof deadlineRows>) =>
+    Object.fromEntries(rows.map((row) => [row.kind, row.state]));
+
+  it('OK, à proposer, prévu : toutes les échéances connues, dans l’ordre du bloc', () => {
+    const rows = deadlineRows(vul, TODAY);
+    expect(rows.map((row) => row.kind)).toEqual(['ct', 'tailgate', 'oil', 'extinguisher']);
+    expect(state(rows)).toEqual({ ct: 'ok', tailgate: 'due', oil: 'due', extinguisher: 'planned' });
+    expect(rows[0]!.detail).toEqual(['prochain le 26/02/2027, dans 110 jours']);
+    expect(rows[1]!.detail).toEqual(['échéance octobre 2026, dépassée']);
+    expect(rows[2]!.detail).toEqual([
+      '16 400 km depuis la dernière (112 000 km le 03/06/2026)',
+      'seuil utilitaire : 15 000 km',
+    ]);
+    expect(rows[3]!.detail.at(-1)).toBe('déjà dans les travaux demandés');
+  });
+
+  it('vidange recalculée sur le kilométrage saisi : 15 000 km utilitaire, 40 000 km poids lourd', () => {
+    expect(state(deadlineRows({ ...vul, mileage: 126_999 }, TODAY)).oil).toBe('ok');
+    expect(state(deadlineRows({ ...vul, mileage: 127_000 }, TODAY)).oil).toBe('due');
+    const pl = { ...vul, vehicleType: 'pl', oilChanges: [{ date: '2026-06-03', mileage: 380_500 }] };
+    const ok = deadlineRows({ ...pl, mileage: 412_300 }, TODAY).find((row) => row.kind === 'oil')!;
+    expect(ok.state).toBe('ok');
+    expect(ok.detail).toContain('seuil poids lourd : 40 000 km');
+    expect(state(deadlineRows({ ...pl, mileage: 420_500 }, TODAY)).oil).toBe('due');
+  });
+
+  it('kilométrage absent ou inférieur à la dernière vidange : pas d’écart, seule la règle d’un an', () => {
+    const none = deadlineRows({ ...vul, mileage: null }, TODAY).find((row) => row.kind === 'oil')!;
+    expect(none.state).toBe('ok');
+    expect(none.detail[1]).toMatch(/kilométrage à saisir/);
+    const lower = deadlineRows({ ...vul, mileage: 90_000 }, TODAY).find((row) => row.kind === 'oil')!;
+    expect(lower.state).toBe('ok');
+    expect(lower.detail[1]).toMatch(/vérifier le compteur/);
+    const old = deadlineRows(
+      { ...vul, mileage: 90_000, oilChanges: [{ date: '2025-10-01', mileage: 112_000 }] },
+      TODAY,
+    ).find((row) => row.kind === 'oil')!;
+    expect(old.state).toBe('due');
+    expect(old.detail.at(-1)).toMatch(/il y a plus d’un an/);
+  });
+
+  it('sans donnée : non renseigné ; hayon et antipollution absents sans date ; remorque sans vidange ni extincteurs', () => {
+    const empty: UpcomingInput = {
+      ...vul,
+      ctDueDate: null,
+      tailgateDueMonth: null,
+      currentLines: [],
+      history: [],
+      oilChanges: [],
+    };
+    expect(state(deadlineRows(empty, TODAY))).toEqual({
+      ct: 'unknown',
+      oil: 'unknown',
+      extinguisher: 'unknown',
+    });
+    const trailer = deadlineRows(
+      { ...empty, vehicleType: 'remorque', antipollutionDueDate: '2027-09-30' },
+      TODAY,
+    );
+    expect(state(trailer)).toEqual({ ct: 'unknown', antipollution: 'ok' });
+  });
+
+  it('tâche tapée à la main ou ajoutée : prévue, quel que soit l’état', () => {
+    const rows = deadlineRows({ ...vul, currentLines: ['CT', 'Vidange moteur', 'Contrôle hayon'] }, TODAY);
+    expect(state(rows)).toMatchObject({ ct: 'planned', tailgate: 'planned', oil: 'planned' });
   });
 });
