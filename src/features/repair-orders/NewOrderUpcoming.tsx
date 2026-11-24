@@ -1,28 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
-import { CalendarClock, Droplet, Plus } from 'lucide-react';
+import { CalendarClock, Check, ClipboardCheck, Droplet, Plus } from 'lucide-react';
 import { FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
 import { todayIso } from './schemas';
 import { taskLines } from './tasks';
 import {
+  deadlineRows,
   mileageValue,
-  upcomingWork,
   UPCOMING_LABELS,
+  type DeadlineState,
   type DeclaredOil,
   type UpcomingInput,
-  type UpcomingItem,
 } from './upcoming-work';
 import { fetchUpcomingInput } from './upcoming-work-api';
 
-const badge = (item: UpcomingItem) => {
-  if (item.days === null) return null;
-  if (item.days < 0) return { text: 'Dépassé', className: 's-bad' };
-  return { text: `Dans ${item.days} j`, className: 's-warn' };
+const BADGES: Record<DeadlineState, { text: string; className: string }> = {
+  ok: { text: 'OK', className: 's-ok' },
+  due: { text: 'À proposer', className: 's-bad' },
+  planned: { text: 'Prévu', className: 's-blue' },
+  unknown: { text: 'Non renseigné', className: 's-grey' },
 };
 
 /**
- * Création d'OR : ce qui arrive à échéance sur le véhicule (contrôle technique, hayon, extincteurs,
- * vidange), avec « Ajouter aux tâches » ; et, sans vidange connue, la dernière vidange dite par le client.
+ * Création d'OR : toutes les échéances du véhicule (contrôle technique, hayon, antipollution,
+ * extincteurs, vidange) avec leur état ; « Ajouter aux prévus » sur celles à proposer ou sans donnée.
+ * La vidange se recalcule sur le kilométrage saisi. Sans vidange connue, la dernière dite par le client.
  */
 export function NewOrderUpcoming({
   vehicleId,
@@ -51,8 +53,8 @@ export function NewOrderUpcoming({
     ? [{ date: declaredOil.date, mileage: mileageValue(declaredOil.mileage) }]
     : [];
   const input = known.data;
-  const items = input
-    ? upcomingWork(
+  const rows = input
+    ? deadlineRows(
         {
           ...input,
           vehicleType,
@@ -63,10 +65,11 @@ export function NewOrderUpcoming({
         todayIso(),
       )
     : [];
+  const due = rows.filter((row) => row.state === 'due').length;
   // Dernière vidange à demander : nouveau véhicule, ou véhicule sans vidange connue (pas une remorque)
   const askOil = vehicleType !== 'remorque' && (!vehicleId || (input !== undefined && !hasOilChange(input)));
 
-  if (!items.length && !askOil) return null;
+  if (!rows.length && !askOil) return null;
 
   return (
     <section data-slot="card" className="card" aria-labelledby="new-ro-upcoming">
@@ -74,30 +77,53 @@ export function NewOrderUpcoming({
         <h2 className="h2" id="new-ro-upcoming">
           <CalendarClock className="i" /> Échéances du véhicule
         </h2>
+        {rows.length > 0 && (
+          <span className={`badge ${due ? 's-bad' : 's-ok'}`} role="status">
+            {due ? `${due} à proposer` : 'Rien à proposer'}
+          </span>
+        )}
       </div>
       <div className="card-b col gap-3">
-        {items.length > 0 && (
-          <ul className="col gap-2" aria-label="Échéances à proposer">
-            {items.map((item) => {
-              const status = badge(item);
+        {rows.length > 0 && (
+          <p className="hint">
+            Toutes les échéances connues du véhicule. La vidange se recalcule à chaque saisie du kilométrage.
+          </p>
+        )}
+        {rows.length > 0 && (
+          <ul className="col" aria-label="Échéances du véhicule">
+            {rows.map((row) => {
+              const badge = BADGES[row.state];
               return (
-                <li key={item.kind} className="row top gap-2.5">
+                <li
+                  key={row.kind}
+                  className="row top gap-2.5 border-t py-2.5 first:border-t-0 first:pt-0"
+                  aria-label={`${row.label} : ${badge.text}`}
+                >
                   <div className="col min-w-0 flex-1 gap-0.5">
-                    <span className="row flex-wrap gap-2">
-                      <b>{item.label}</b>
-                      {status && <span className={`badge ${status.className}`}>{status.text}</span>}
-                    </span>
-                    <span className="hint">{item.detail}</span>
+                    <b>{row.label}</b>
+                    {row.detail.map((line) => (
+                      <span key={line} className="hint">
+                        {line.charAt(0).toUpperCase() + line.slice(1)}
+                      </span>
+                    ))}
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label={`Ajouter aux tâches : ${item.label}`}
-                    onClick={() => onAddTask(UPCOMING_LABELS[item.kind])}
-                  >
-                    <Plus /> Ajouter aux tâches
-                  </Button>
+                  <span className={`badge ${badge.className} shrink-0`}>
+                    {row.state === 'ok' && <Check className="size-3" />}
+                    {row.state === 'planned' && <ClipboardCheck className="size-3" />}
+                    {badge.text}
+                  </span>
+                  {(row.state === 'due' || row.state === 'unknown') && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      aria-label={`Ajouter aux prévus : ${row.label}`}
+                      onClick={() => onAddTask(UPCOMING_LABELS[row.kind])}
+                    >
+                      <Plus /> Ajouter aux prévus
+                    </Button>
+                  )}
                 </li>
               );
             })}

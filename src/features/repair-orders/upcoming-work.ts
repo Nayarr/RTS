@@ -155,6 +155,119 @@ export function upcomingWork(input: UpcomingInput, today: string): UpcomingItem[
   return items.sort((a, b) => rank(a) - rank(b));
 }
 
+/** État d'une échéance à la création d'OR : à jour, à proposer, déjà prévue, ou sans donnée. */
+export type DeadlineState = 'ok' | 'due' | 'planned' | 'unknown';
+
+export interface DeadlineRow {
+  kind: UpcomingKind;
+  label: string;
+  /** Lignes de détail (date, kilomètres, seuil). */
+  detail: string[];
+  state: DeadlineState;
+}
+
+const OIL_TYPE_LABEL: Partial<Record<string, string>> = { pl: 'poids lourd', vul: 'utilitaire' };
+/** Ordre d'affichage du bloc. */
+const ROW_ORDER: UpcomingKind[] = ['ct', 'tailgate', 'antipollution', 'oil', 'extinguisher'];
+
+const inDays = (days: number) => (days === 0 ? 'aujourd’hui' : `dans ${days} jour${days > 1 ? 's' : ''}`);
+const nextText = (due: string) => (days: number) =>
+  days < 0 ? `dépassé depuis le ${frenchDate(due)}` : `prochain le ${frenchDate(due)}, ${inDays(days)}`;
+
+/**
+ * Toutes les échéances connues du véhicule à la création d'OR, chacune avec son état : à proposer
+ * dans les 60 jours ou dépassée (vidange au-delà du seuil ou de plus d'un an), prévue si déjà dans
+ * les travaux demandés, sans donnée sinon. Hayon et antipollution seulement quand une date est
+ * connue ; ni vidange ni extincteurs pour une remorque.
+ */
+export function deadlineRows(input: UpcomingInput, today: string): DeadlineRow[] {
+  const rows: DeadlineRow[] = [];
+  const row = (kind: UpcomingKind, state: DeadlineState, detail: string[]) => {
+    const planned = covers(input.currentLines, kind);
+    rows.push({
+      kind,
+      label: UPCOMING_LABELS[kind],
+      state: planned ? 'planned' : state,
+      detail: planned ? [...detail, 'déjà dans les travaux demandés'] : detail,
+    });
+  };
+  const dated = (kind: UpcomingKind, due: string, text: (days: number) => string) => {
+    const days = daysBetween(today, due);
+    row(kind, days <= UPCOMING_DAYS ? 'due' : 'ok', [text(days)]);
+  };
+
+  if (input.ctDueDate) dated('ct', input.ctDueDate, nextText(input.ctDueDate));
+  else row('ct', 'unknown', ['aucune date enregistrée']);
+  if (input.tailgateDueMonth) {
+    const month = input.tailgateDueMonth;
+    dated(
+      'tailgate',
+      monthEnd(month),
+      (days) => `échéance ${frenchMonth(month)}${days < 0 ? ', dépassée' : ''}`,
+    );
+  }
+  if (input.antipollutionDueDate) {
+    dated('antipollution', input.antipollutionDueDate, nextText(input.antipollutionDueDate));
+  }
+
+  if (input.vehicleType !== 'remorque') {
+    const last = input.history
+      .filter((visit) => covers(visit.lines, 'extinguisher'))
+      .map((visit) => visit.date.slice(0, 10))
+      .sort()
+      .at(-1);
+    if (!last) row('extinguisher', 'unknown', ['aucun contrôle enregistré à l’atelier']);
+    else {
+      const due = addMonths(last, EXTINGUISHER_MONTHS);
+      dated(
+        'extinguisher',
+        due,
+        (days) =>
+          `dernier le ${frenchDate(last)}, à refaire ${days < 0 ? 'depuis' : 'avant'} le ${frenchDate(due)}`,
+      );
+    }
+  }
+
+  const interval = OIL_INTERVAL_KM[input.vehicleType];
+  if (interval) {
+    const changes = oilChangesOf(input).sort((a, b) => b.date.localeCompare(a.date));
+    const last = changes[0];
+    if (!last) row('oil', 'unknown', ['aucune vidange enregistrée pour ce véhicule']);
+    else {
+      const detail: string[] = [];
+      const old = addMonths(last.date, OIL_MONTHS) <= today;
+      let due = old;
+      const withKm = changes.find((change) => change.mileage !== null);
+      const lastKm = withKm?.mileage ?? null;
+      if (withKm && lastKm !== null && input.mileage !== null && input.mileage >= lastKm) {
+        const driven = input.mileage - lastKm;
+        due ||= driven >= interval;
+        detail.push(
+          `${km(driven)} depuis la dernière (${km(lastKm)} le ${frenchDate(withKm.date)})`,
+          `seuil ${OIL_TYPE_LABEL[input.vehicleType]} : ${km(interval)}`,
+        );
+      } else if (old) {
+        const at = lastKm !== null && withKm?.date === last.date ? ` (à ${km(lastKm)})` : '';
+        detail.push(`dernière vidange le ${frenchDate(last.date)}${at}, il y a plus d’un an`);
+      } else if (withKm && lastKm !== null) {
+        detail.push(
+          `dernière à ${km(lastKm)} le ${frenchDate(withKm.date)}`,
+          input.mileage === null
+            ? `kilométrage à saisir pour comparer au seuil (${km(interval)})`
+            : 'kilométrage saisi inférieur à celui de la dernière vidange : vérifier le compteur',
+        );
+      } else {
+        detail.push(`dernière le ${frenchDate(last.date)}`);
+      }
+      if (old && detail.length > 1)
+        detail.push(`dernière vidange le ${frenchDate(last.date)}, il y a plus d’un an`);
+      row('oil', due ? 'due' : 'ok', detail);
+    }
+  }
+
+  return rows.sort((a, b) => ROW_ORDER.indexOf(a.kind) - ROW_ORDER.indexOf(b.kind));
+}
+
 /** Vidanges connues : passages à l'atelier avec une ligne de vidange, et vidanges déclarées. */
 export function oilChangesOf(input: Pick<UpcomingInput, 'history' | 'oilChanges'>): OilChange[] {
   return [
