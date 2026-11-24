@@ -38,7 +38,9 @@ vi.mock('./api', async (importOriginal) => ({
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+// Compté depuis le jour de Paris (comme l'appli), à midi : stable entre minuit et 1 h du matin
+const daysAgo = (days: number) =>
+  new Date(Date.parse(`${todayIso()}T12:00:00Z`) - days * 86_400_000).toISOString();
 
 const core = (overrides: Partial<PartCore> = {}): PartCore => ({
   id: 'k1',
