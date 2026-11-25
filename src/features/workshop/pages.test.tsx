@@ -20,9 +20,11 @@ import {
   completeRepairOrder,
   deleteLine,
   fetchMyRepairOrders,
+  fetchRenewals,
   fetchSeen,
   fetchVehicleDeadlines,
   markSeen,
+  recordRenewal,
   saveInspection,
   startTimer,
   updateLine,
@@ -54,6 +56,10 @@ vi.mock('./api', async (importOriginal) => ({
   updateLine: vi.fn(),
   deleteLine: vi.fn(),
   completeRepairOrder: vi.fn(),
+  // Aucun renouvellement enregistré, sauf test qui en fixe un
+  fetchRenewals: vi.fn().mockResolvedValue([]),
+  recordRenewal: vi.fn(),
+  fetchLabelScanEnabled: vi.fn().mockResolvedValue(false),
 }));
 // Congés du technicien (section de l'accueil) : aucun.
 vi.mock('@/features/leave/api', async (importOriginal) => ({
@@ -109,7 +115,14 @@ const line = (overrides: Partial<RoLine>): RoLine =>
 
 const setup = (
   path: string,
-  detail?: { order: RepairOrderOverview; lines?: RoLine[]; inspection?: InspectionData; photos?: string[] },
+  detail?: {
+    order: RepairOrderOverview;
+    lines?: RoLine[];
+    inspection?: InspectionData;
+    photos?: string[];
+    /** Prochain contrôle hayon sur la fiche du véhicule. */
+    tailgateDue?: string;
+  },
 ) => {
   vi.mocked(fetchProfile).mockResolvedValue({
     id: '00000000-0000-0000-0000-0000000000a1',
@@ -122,7 +135,10 @@ const setup = (
   });
   vi.mocked(fetchSeen).mockResolvedValue({});
   vi.mocked(markSeen).mockResolvedValue();
-  vi.mocked(fetchVehicleDeadlines).mockResolvedValue({ ct_due_date: null, tailgate_due_date: null });
+  vi.mocked(fetchVehicleDeadlines).mockResolvedValue({
+    ct_due_date: null,
+    tailgate_due_date: detail?.tailgateDue ?? null,
+  });
   if (detail) {
     vi.mocked(fetchRepairOrder).mockResolvedValue({
       order: detail.order,
@@ -535,6 +551,76 @@ describe('fiche OR technicien', () => {
     expect(within(parts).getByText('Reçue')).toBeInTheDocument();
     expect(within(parts).queryByText(/138/)).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Description de la tâche' })).toBeNull();
+  });
+
+  it('renouvellement du hayon : nouvelle étiquette obligatoire, date vérifiée puis enregistrée', async () => {
+    vi.mocked(addPhoto).mockResolvedValue('f-hayon');
+    vi.mocked(recordRenewal).mockResolvedValue();
+    setup('/atelier/or/ro1', {
+      order: order({ status: 'in_progress', requested_work: '- Contrôle hayon\n- Freins avant' }),
+      tailgateDue: '2026-11-01',
+      // Réparation à prévoir : pour plus tard, pas un renouvellement sur cet OR
+      lines: [line({ kind: 'planned', description: 'Contrôle technique', estimated_hours: 0.5 })],
+    });
+
+    const group = await screen.findByRole('group', { name: 'À renouveler sur cet OR' });
+    expect(within(group).getByText('Contrôle hayon')).toBeInTheDocument();
+    expect(within(group).queryByText('Contrôle technique')).toBeNull();
+    expect(within(group).getByText('Photo de la nouvelle étiquette obligatoire')).toBeInTheDocument();
+    const blockers = await screen.findByRole('status', { name: 'À compléter avant de terminer' });
+    expect(blockers).toHaveTextContent('Photo de la nouvelle étiquette obligatoire : contrôle hayon');
+
+    await userEvent.click(
+      within(group).getByRole('button', {
+        name: 'Importer la nouvelle étiquette (photo ou PDF) : Contrôle hayon',
+      }),
+    );
+    const pdf = new File(['%PDF-1.7'], 'hayon.pdf', { type: 'application/pdf' });
+    await userEvent.upload(screen.getByTestId('photo-document'), pdf);
+    await waitFor(() =>
+      expect(addPhoto).toHaveBeenCalledWith('ro1', pdf, 'Nouvelle étiquette contrôle hayon'),
+    );
+
+    const dialog = await screen.findByRole('dialog', { name: 'Nouvelle étiquette : contrôle hayon' });
+    expect(await within(dialog).findByText('Avant : 11/2026')).toBeInTheDocument();
+    const [month, year] = within(dialog).getAllByRole('combobox');
+    await userEvent.selectOptions(month!, '11');
+    await userEvent.selectOptions(year!, '2026');
+    // Même mois que l'ancienne étiquette : avertissement
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('c’est bien la nouvelle étiquette ?');
+    await userEvent.selectOptions(month!, '05');
+    await userEvent.selectOptions(year!, '2027');
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+    expect(within(dialog).getByText('Après : 05/2027')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Valider' }));
+    await waitFor(() =>
+      expect(recordRenewal).toHaveBeenCalledWith({
+        repairOrderId: 'ro1',
+        kind: 'tailgate',
+        newDue: '2027-05-01',
+        fileId: 'f-hayon',
+      }),
+    );
+  });
+
+  it('renouvellement enregistré : en vert, plus de blocage', async () => {
+    vi.mocked(fetchMyRepairOrders).mockResolvedValue([]);
+    vi.mocked(fetchRenewals).mockResolvedValueOnce([
+      {
+        id: 'r1',
+        kind: 'extinguisher',
+        previous_due: null,
+        new_due: '2027-11-01',
+        file_id: 'f1',
+        created_at: '2026-11-24T10:00:00Z',
+      },
+    ]);
+    setup('/atelier/or/ro1', {
+      order: order({ status: 'in_progress', requested_work: 'Contrôle des extincteurs' }),
+    });
+    const group = await screen.findByRole('group', { name: 'À renouveler sur cet OR' });
+    expect(await within(group).findByText('Renouvelé : prochain 11/2027')).toBeInTheDocument();
+    expect(screen.queryByText(/Photo de la nouvelle étiquette obligatoire/)).toBeNull();
   });
 
   it('OR terminé : consultation seulement', async () => {

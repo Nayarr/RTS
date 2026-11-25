@@ -5,6 +5,11 @@ import {
   CT_PHOTO_LABEL,
   finishBlockers,
   formatTireSize,
+  hasCtPhoto,
+  renewalBlocker,
+  renewalDueLabel,
+  renewalKinds,
+  renewalTexts,
   parseTimeOption,
   planMyDay,
   seenState,
@@ -266,5 +271,50 @@ describe('journée du technicien', () => {
       now,
     );
     expect(ids(day.recentlyDone)).toEqual(['done-later', 'done']);
+  });
+});
+
+describe('renouvellement d’échéance sur l’OR', () => {
+  it('détecté sur la demande et les travaux effectués (même règle que la base)', () => {
+    expect(renewalKinds(['- Contrôle hayon', 'CT', 'Contrôle des extincteurs', 'Opacité'])).toEqual([
+      'ct',
+      'tailgate',
+      'antipollution',
+      'extinguisher',
+    ]);
+    expect(
+      renewalKinds([
+        'Réparation hayon',
+        'Préparation au contrôle technique',
+        'Pré-contrôle technique',
+        'Remplacement extincteur 1 kg cabine',
+      ]),
+    ).toEqual([]);
+  });
+
+  it('réparations à prévoir et lignes de texte : pas un renouvellement sur cet OR', () => {
+    const lines = [
+      { kind: 'planned', line_type: 'labor', description: 'Contrôle technique' },
+      { kind: 'done', line_type: 'text', description: 'Contrôle hayon à revoir' },
+      { kind: 'done', line_type: 'package', description: 'Forfait contrôle extincteurs' },
+    ] as RoLine[];
+    expect(renewalKinds(renewalTexts('Freins', lines))).toEqual(['extinguisher']);
+  });
+
+  it('fin d’OR : nouvelle étiquette manquante listée comme la base ; photo du nouveau CT acceptée', () => {
+    expect(renewalBlocker(['tailgate', 'extinguisher'])).toBe(
+      'Photo de la nouvelle étiquette obligatoire : contrôle des extincteurs, contrôle hayon',
+    );
+    expect(renewalBlocker([])).toBeNull();
+    expect(finishBlockers([], null, [CT_PHOTO_LABEL], false, 'vul', ['tailgate'])).toEqual([
+      'Photo de la nouvelle étiquette obligatoire : contrôle hayon',
+    ]);
+    expect(hasCtPhoto(['Nouveau contrôle technique'])).toBe(true);
+    expect(finishBlockers([], null, ['Nouveau contrôle technique'], false, 'vul')).toEqual([]);
+  });
+
+  it('échéance affichée au mois pour le hayon et les extincteurs', () => {
+    expect(renewalDueLabel('tailgate', '2027-05-01')).toBe('05/2027');
+    expect(renewalDueLabel('ct', '2027-12-10')).toBe('10/12/2027');
   });
 });
