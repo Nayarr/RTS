@@ -86,7 +86,7 @@ test('camion à l’atelier : échéances proposées sur l’OR, mail modèle mo
   ).toBeVisible();
 });
 
-test('création d’OR : échéances du véhicule connu ajoutées aux tâches', async ({ page }, testInfo) => {
+test('création d’OR : échéances du véhicule connu ajoutées aux prévus', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Création d’OR au bureau');
   const id = String(Date.now()).slice(-6);
   const plate = `CO-${id}`;
@@ -103,19 +103,26 @@ test('création d’OR : échéances du véhicule connu ajoutées aux tâches', 
   await page.goto('/or/nouveau');
   await page.getByLabel('Immatriculation').fill(plate);
   const upcoming = page.getByRole('region', { name: 'Échéances du véhicule' });
-  const items = upcoming.getByRole('list', { name: 'Échéances à proposer' });
-  await expect(items).toContainText('Contrôle technique');
-  await expect(items).toContainText(/dernière vidange le .*, il y a plus d’un an/);
+  const items = upcoming.getByRole('list', { name: 'Échéances du véhicule' });
+  await expect(items.getByRole('listitem', { name: 'Contrôle technique : À proposer' })).toBeVisible();
+  await expect(items.getByRole('listitem', { name: 'Vidange : À proposer' })).toContainText(
+    /dernière vidange le .*, il y a plus d’un an/i,
+  );
+  await expect(upcoming.getByRole('status')).toHaveText('2 à proposer');
 
   await page.getByLabel('Tâche à faire').fill('Disques et plaquettes avant');
-  await upcoming.getByRole('button', { name: 'Ajouter aux tâches : Contrôle technique' }).click();
-  await upcoming.getByRole('button', { name: 'Ajouter aux tâches : Vidange' }).click();
+  await upcoming.getByRole('button', { name: 'Ajouter aux prévus : Contrôle technique' }).click();
+  await upcoming.getByRole('button', { name: 'Ajouter aux prévus : Vidange' }).click();
   // Chaque échéance ajoutée prend sa ligne
   await expect(page.getByLabel('Tâche à faire')).toHaveValue('Disques et plaquettes avant');
   await expect(page.getByLabel('Tâche 2', { exact: true })).toHaveValue('Contrôle technique');
   await expect(page.getByLabel('Tâche 3', { exact: true })).toHaveValue('Vidange');
-  // Déjà dans les tâches : plus proposées
-  await expect(items).not.toContainText('Contrôle technique');
+  // Déjà dans les tâches : prévues, sans bouton
+  await expect(items.getByRole('listitem', { name: 'Contrôle technique : Prévu' })).toBeVisible();
+  await expect(items.getByRole('listitem', { name: 'Vidange : Prévu' })).toBeVisible();
+  await expect(
+    upcoming.getByRole('button', { name: /Ajouter aux prévus : (Contrôle technique|Vidange)/ }),
+  ).toHaveCount(0);
 });
 
 test('création d’OR d’un nouveau véhicule : vidange dite par le client notée sur la fiche', async ({
