@@ -4,6 +4,7 @@ import type { Json } from '@/types/database';
 import { uploadFile } from '@/features/files/api';
 import type { RepairOrderOverview, RoLine } from '@/features/repair-orders/api';
 import type { InspectionData } from '@/features/repair-orders/inspection';
+import type { RenewalKind } from './domain';
 
 /** OR du technicien connecté (le RLS ne renvoie que les siens). */
 export async function fetchMyRepairOrders(): Promise<RepairOrderOverview[]> {
@@ -33,6 +34,7 @@ export async function markSeen(repairOrderId: string, profileId: string) {
 export interface VehicleDeadlines {
   ct_due_date: string | null;
   tailgate_due_date: string | null;
+  antipollution_due_date?: string | null;
 }
 
 /** Ce que l'OR peut changer sur le véhicule : échéances, et VIN lu sur le contrôle technique. */
@@ -45,7 +47,7 @@ export type VehiclePatch = Partial<VehicleDeadlines> & {
 export async function fetchVehicleDeadlines(vehicleId: string): Promise<VehicleDeadlines | null> {
   const { data, error } = await supabase
     .from('vehicles')
-    .select('ct_due_date, tailgate_due_date')
+    .select('ct_due_date, tailgate_due_date, antipollution_due_date')
     .eq('id', vehicleId)
     .maybeSingle();
   if (error) throw error;
@@ -185,4 +187,39 @@ export async function deleteLine(lineId: string) {
   const { data, error } = await supabase.from('ro_lines').delete().eq('id', lineId).select('id');
   if (error) throw error;
   if (!data.length) throw new Error('Cette ligne ne peut pas être supprimée.');
+}
+
+export interface DeadlineRenewal {
+  id: string;
+  kind: RenewalKind;
+  previous_due: string | null;
+  new_due: string;
+  file_id: string | null;
+  created_at: string;
+}
+
+/** Échéances déjà renouvelées sur l'OR (nouvelle étiquette photographiée et date enregistrée). */
+export async function fetchRenewals(repairOrderId: string): Promise<DeadlineRenewal[]> {
+  const { data, error } = await supabase
+    .from('vehicle_deadline_renewals')
+    .select('id, kind, previous_due, new_due, file_id, created_at')
+    .eq('repair_order_id', repairOrderId);
+  if (error) throw error;
+  return data as DeadlineRenewal[];
+}
+
+/** Nouvelle échéance lue sur l'étiquette photographiée : échéance du véhicule et historique mis à jour. */
+export async function recordRenewal(input: {
+  repairOrderId: string;
+  kind: RenewalKind;
+  newDue: string;
+  fileId: string;
+}) {
+  const { error } = await supabase.rpc('record_deadline_renewal', {
+    p_repair_order_id: input.repairOrderId,
+    p_kind: input.kind,
+    p_new_due: input.newDue,
+    p_file_id: input.fileId,
+  });
+  if (error) throw error;
 }

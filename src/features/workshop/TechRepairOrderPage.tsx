@@ -10,8 +10,17 @@ import { StatusBadge } from '@/features/repair-orders/StatusBadge';
 import { DiagnosticHelp } from '@/features/knowledge/DiagnosticHelp';
 import { DIAGNOSTIC_HELP_ENABLED } from '@/features/knowledge/flags';
 import { TaskList } from '@/features/repair-orders/TaskList';
-import { fetchLabelScanEnabled, markSeen } from './api';
-import { CT_PHOTO_LABEL, ctPhotoRequired, finishBlockers, TAILGATE_PHOTO_LABEL } from './domain';
+import { fetchLabelScanEnabled, fetchRenewals, markSeen } from './api';
+import {
+  CT_PHOTO_LABEL,
+  ctPhotoRequired,
+  finishBlockers,
+  renewalKindOfPhoto,
+  renewalKinds,
+  renewalTexts,
+  TAILGATE_PHOTO_LABEL,
+  type RenewalKind,
+} from './domain';
 import { seenKey } from './hooks';
 import { DeadlinesSection } from './order/DeadlinesSection';
 import { TechnicalInspectionDialog } from './order/TechnicalInspectionDialog';
@@ -20,6 +29,7 @@ import { InspectionEditor } from './order/InspectionEditor';
 import { PartsSection } from './order/PartsSection';
 import { InspectionRequiredBanner } from './order/InspectionRequiredBanner';
 import { PhotosSection } from './order/PhotosSection';
+import { RenewalDialog } from './order/RenewalDialog';
 import { TimerSection } from './order/TimerSection';
 import { usePhotoCapture } from './order/use-photo-capture';
 import { WorkLinesSection } from './order/WorkLinesSection';
@@ -41,8 +51,13 @@ export function TechRepairOrderPage() {
   const [tailgateScan, setTailgateScan] = useState<string | null>(null);
   // Contrôle technique photographié : échéance et VIN lus (même réglage).
   const [ctScan, setCtScan] = useState<string | null>(null);
+  // Nouvelle étiquette photographiée après un renouvellement : date à vérifier puis enregistrée.
+  const [renewalPhoto, setRenewalPhoto] = useState<{ kind: RenewalKind; fileId: string } | null>(null);
+  const renewalsDone = useQuery({ queryKey: ['renewals', id], queryFn: () => fetchRenewals(id) });
   const capture = usePhotoCapture(id, {
     onUploaded: (label, fileId) => {
+      const renewal = renewalKindOfPhoto(label);
+      if (renewal) setRenewalPhoto({ kind: renewal, fileId });
       if (label === TAILGATE_PHOTO_LABEL && labelScan.data) setTailgateScan(fileId);
       if (label === CT_PHOTO_LABEL && labelScan.data) setCtScan(fileId);
     },
@@ -71,6 +86,11 @@ export function TechRepairOrderPage() {
   const { order, lines, photos, inspection } = detail.data;
   const locked = !OPEN_STATUSES.includes(order.status);
   // Pas de photo du tableau de bord sur une remorque (même règle que la base).
+  // Échéances renouvelées par les tâches de l'OR, et celles dont la nouvelle étiquette est enregistrée
+  const renewals = renewalKinds(renewalTexts(order.requested_work, lines)).map((kind) => ({
+    kind,
+    done: renewalsDone.data?.find((renewal) => renewal.kind === kind),
+  }));
   const requiredLabels = REQUIRED_PHOTOS.filter(
     (label) => order.vehicle_type !== 'remorque' || label !== 'Tableau de bord',
   );
@@ -165,6 +185,7 @@ export function TechRepairOrderPage() {
         capture={capture}
         photoLabels={photos.map((photo) => photo.label)}
         ctRequired={ctPhotoRequired(order.vehicle_type)}
+        renewals={renewals}
       />
       {/* Comme l'ancienne appli : kilométrage, photos, fiche de contrôle, puis travaux. */}
       {!locked && DIAGNOSTIC_HELP_ENABLED && (
@@ -174,6 +195,18 @@ export function TechRepairOrderPage() {
       )}
       <WorkLinesSection repairOrderId={order.id} lines={lines} locked={locked} />
       <PartsSection repairOrderId={order.id} lines={lines} locked={locked} />
+      {renewalPhoto && (
+        <RenewalDialog
+          key={renewalPhoto.fileId}
+          kind={renewalPhoto.kind}
+          fileId={renewalPhoto.fileId}
+          repairOrderId={order.id}
+          vehicleId={order.vehicle_id}
+          done={renewals.find((renewal) => renewal.kind === renewalPhoto.kind)?.done}
+          scan={labelScan.data === true}
+          onClose={() => setRenewalPhoto(null)}
+        />
+      )}
       {ctScan && (
         <TechnicalInspectionDialog
           key={ctScan}
@@ -193,6 +226,10 @@ export function TechRepairOrderPage() {
             photos.map((photo) => photo.label),
             order.inspection_required === true,
             order.vehicle_type,
+            // Tant que la liste n'est pas chargée, rien n'est compté comme manquant (la base vérifie)
+            renewalsDone.isSuccess
+              ? renewals.filter((renewal) => !renewal.done).map((renewal) => renewal.kind)
+              : [],
           )}
         />
       )}

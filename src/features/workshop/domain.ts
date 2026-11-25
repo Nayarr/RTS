@@ -1,5 +1,5 @@
 import type { RepairOrderOverview, RoLine } from '@/features/repair-orders/api';
-import { OPEN_STATUSES } from '@/features/repair-orders/constants';
+import { formatDate, OPEN_STATUSES } from '@/features/repair-orders/constants';
 import {
   inspectionMissingPoints,
   trailerAxles,
@@ -7,7 +7,7 @@ import {
   type InspectionData,
 } from '@/features/repair-orders/inspection';
 import { todayIso } from '@/features/repair-orders/schemas';
-import { monthEnd } from '@/lib/month';
+import { monthEnd, monthLabel } from '@/lib/month';
 
 /** Estimations proposées au technicien (comme l'ancienne appli, plus 0,5 h) ; « 12h+ » = au moins 12 h. */
 export const TIME_OPTIONS = [
@@ -59,6 +59,10 @@ export const timeOptionLabel = (option: string) =>
 /** Photo du contrôle technique (procès-verbal ou vignette), prise depuis les échéances du véhicule. */
 export const CT_PHOTO_LABEL = 'Contrôle technique';
 
+/** Photo du contrôle technique prise : celle des échéances, ou celle du nouveau contrôle (renouvellement). */
+export const hasCtPhoto = (photoLabels: string[]) =>
+  photoLabels.includes(CT_PHOTO_LABEL) || photoLabels.includes('Nouveau contrôle technique');
+
 /** Photo du contrôle technique exigée pour terminer l'OR : facultative pour une remorque. */
 export const ctPhotoRequired = (vehicleType: 'pl' | 'vul' | 'remorque') => vehicleType !== 'remorque';
 
@@ -83,6 +87,79 @@ export function formatTireSize(value: string) {
 /** Photo exigée quand l'étiquette du contrôle hayon est HS (même libellé que le bouton photo). */
 export const TAILGATE_PHOTO_LABEL = 'Étiquette contrôle hayon';
 
+// ---------------------------------------------------------------- Renouvellement d'échéance
+
+/** Échéance renouvelée sur l'OR : la nouvelle étiquette doit être photographiée. */
+export type RenewalKind = 'ct' | 'tailgate' | 'antipollution' | 'extinguisher';
+
+export const RENEWAL_KINDS: RenewalKind[] = ['ct', 'tailgate', 'antipollution', 'extinguisher'];
+
+export const RENEWAL_LABELS: Record<RenewalKind, string> = {
+  ct: 'Contrôle technique',
+  tailgate: 'Contrôle hayon',
+  antipollution: 'Contrôle antipollution',
+  extinguisher: 'Contrôle des extincteurs',
+};
+
+/** Libellé de la photo de la nouvelle étiquette (distinct des photos d'état des lieux). */
+export const RENEWAL_PHOTO_LABELS: Record<RenewalKind, string> = {
+  ct: 'Nouveau contrôle technique',
+  tailgate: 'Nouvelle étiquette contrôle hayon',
+  antipollution: 'Nouvelle étiquette antipollution',
+  extinguisher: 'Nouvelle étiquette extincteurs',
+};
+
+/** Hayon et extincteurs : mois et année seulement, comme sur l'étiquette. */
+export const renewalByMonth = (kind: RenewalKind) => kind === 'tailgate' || kind === 'extinguisher';
+
+/** Échéance affichée : « 11/2027 » au mois (hayon, extincteurs), « 14/03/2027 » sinon. */
+export const renewalDueLabel = (kind: RenewalKind, iso: string) =>
+  renewalByMonth(kind) ? monthLabel(iso) : formatDate(iso);
+
+export const renewalKindOfPhoto = (label: string) =>
+  RENEWAL_KINDS.find((kind) => RENEWAL_PHOTO_LABELS[kind] === label) ?? null;
+
+const loose = (value: string) =>
+  value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-'’]/g, ' ');
+
+const RENEWAL_RULES: Record<RenewalKind, (text: string) => boolean> = {
+  ct: (text) => /controle technique|\bct\b/.test(text) && !/pre ?controle|preparation/.test(text),
+  tailgate: (text) => /hayon/.test(text) && /controle|vgp|visite/.test(text),
+  antipollution: (text) => /antipollution|anti pollution|opacite/.test(text),
+  extinguisher: (text) => /extincteur/.test(text) && /controle|verification|visite|recharge/.test(text),
+};
+
+/**
+ * Échéances renouvelées par les tâches de l'OR (même règle que la base) : « Contrôle technique » ou
+ * « CT » (pas une préparation ni un pré-contrôle), contrôle ou visite du hayon, antipollution ou
+ * opacité, contrôle des extincteurs (pas un remplacement seul).
+ */
+export function renewalKinds(texts: string[]): RenewalKind[] {
+  const lines = texts.map(loose);
+  return RENEWAL_KINDS.filter((kind) => lines.some(RENEWAL_RULES[kind]));
+}
+
+/**
+ * Tâches de l'OR lues pour les renouvellements : demande (une par ligne) et travaux effectués (les
+ * réparations à prévoir sont pour plus tard).
+ */
+export const renewalTexts = (
+  requestedWork: string | null,
+  lines: Pick<RoLine, 'description' | 'line_type' | 'kind'>[],
+) => [
+  ...(requestedWork ?? '').split('\n'),
+  ...lines
+    .filter((line) => line.kind === 'done' && line.line_type !== 'text')
+    .map((line) => line.description),
+];
+
+/** Message de la base quand une nouvelle étiquette manque (ordre alphabétique des codes, comme elle). */
+export function renewalBlocker(missing: RenewalKind[]): string | null {
+  if (!missing.length) return null;
+  const labels = [...missing].sort().map((kind) => RENEWAL_LABELS[kind].toLowerCase());
+  return `Photo de la nouvelle étiquette obligatoire : ${labels.join(', ')}`;
+}
+
 /** Temps estimé par le technicien, à l'aveugle (le barème reste réservé au bureau). */
 const hasTime = (line: RoLine) => line.estimated_hours !== null;
 
@@ -91,7 +168,8 @@ const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? '
 /**
  * Ce qu'il reste à compléter avant « Travaux terminés » (mêmes règles que la base) : temps estimé de
  * chaque tâche, taille des pneus à 50 % ou HS, photo du contrôle technique (sauf remorque), photo de l'étiquette du
- * contrôle hayon HS, et tous les points de la fiche quand la direction l'exige.
+ * contrôle hayon HS, nouvelle étiquette de chaque échéance renouvelée, et tous les points de la fiche
+ * quand la direction l'exige.
  */
 export function finishBlockers(
   lines: RoLine[],
@@ -100,6 +178,8 @@ export function finishBlockers(
   /** Fiche de contrôle complète exigée par la direction. */
   inspectionRequired = false,
   vehicleType: 'pl' | 'vul' | 'remorque' = 'pl',
+  /** Échéances renouvelées sur l'OR dont la nouvelle étiquette n'est pas encore enregistrée. */
+  missingRenewals: RenewalKind[] = [],
 ): string[] {
   const blockers: string[] = [];
   const timed = (kind: RoLine['kind']) =>
@@ -137,12 +217,14 @@ export function finishBlockers(
       blockers.push(`Taille des pneus ${label} obligatoire (${etat === 'HS' ? 'HS' : '50 %'})`);
     }
   }
-  if (ctPhotoRequired(vehicleType) && !photoLabels.includes(CT_PHOTO_LABEL)) {
+  if (ctPhotoRequired(vehicleType) && !hasCtPhoto(photoLabels)) {
     blockers.push('Photo du contrôle technique obligatoire');
   }
   if (inspection?.controles?.hayon === 'HS' && !photoLabels.includes(TAILGATE_PHOTO_LABEL)) {
     blockers.push('Photo de l’étiquette contrôle hayon obligatoire (HS)');
   }
+  const renewal = renewalBlocker(missingRenewals);
+  if (renewal) blockers.push(renewal);
   const missingPoints = inspectionRequired ? inspectionMissingPoints(inspection, vehicleType) : 0;
   if (missingPoints) {
     blockers.push(
