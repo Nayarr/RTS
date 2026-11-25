@@ -308,6 +308,16 @@ describe('fiche OR technicien', () => {
     expect(note.nextElementSibling).toBe(tasks);
   });
 
+  it('OR de SAV : affiché comme un OR normal, sans pastille SAV', async () => {
+    setup('/atelier/or/ro1', {
+      order: order({ sav_of_repair_order_id: 'ro0', sav_of_number: 'OR00012' }),
+    });
+    await screen.findByRole('region', { name: 'Travaux demandés' });
+    expect(screen.queryByText('SAV')).toBeNull();
+    expect(screen.queryByTitle(/SAV de/)).toBeNull();
+    expect(screen.queryByText(/OR00012/)).toBeNull();
+  });
+
   it('sans note : pas de bloc vide', async () => {
     setup('/atelier/or/ro1', { order: order({ technician_note: null }) });
     await screen.findByRole('region', { name: 'Travaux demandés' });
