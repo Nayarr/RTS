@@ -55,6 +55,13 @@ export async function fetchRepairOrderQuotes(repairOrderId: string): Promise<Quo
   return data as QuoteOverview[];
 }
 
+/** Numéro d'un devis (bouton « Devis D… » de l'OR créé depuis ce devis) ; null s'il n'en a pas. */
+export async function fetchQuoteNumber(id: string): Promise<string | null> {
+  const { data, error } = await supabase.from('quotes').select('number').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data?.number ?? null;
+}
+
 export async function fetchQuote(id: string): Promise<QuoteDetail | null> {
   const [quote, lines] = await Promise.all([
     supabase.from('v_quotes_overview').select('*').eq('id', id).maybeSingle(),

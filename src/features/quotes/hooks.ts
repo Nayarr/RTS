@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { repairOrdersKey } from '@/features/repair-orders/hooks';
-import { fetchQuote, fetchQuotes, fetchRepairOrderQuotes } from './api';
+import { fetchQuote, fetchQuoteNumber, fetchQuotes, fetchRepairOrderQuotes } from './api';
 
 export const quotesKey = ['quotes'] as const;
 export const quoteKey = (id: string) => ['quotes', id] as const;
@@ -12,6 +12,14 @@ export function useQuotes() {
 
 export function useQuote(id: string) {
   return useQuery({ queryKey: quoteKey(id), queryFn: () => fetchQuote(id) });
+}
+
+export function useQuoteNumber(id: string | null) {
+  return useQuery({
+    queryKey: [...quotesKey, 'number', id],
+    queryFn: () => fetchQuoteNumber(id!),
+    enabled: id !== null,
+  });
 }
 
 export function useRepairOrderQuotes(repairOrderId: string) {
