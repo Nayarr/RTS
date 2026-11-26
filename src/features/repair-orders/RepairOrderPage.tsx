@@ -5,6 +5,7 @@ import { PageHeader } from '@/app/PageHeader';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/features/auth/useProfile';
 import { RepairOrderInvoiceCard } from '@/features/invoices/RepairOrderInvoiceCard';
+import { OriginQuoteButton } from '@/features/quotes/OriginQuoteButton';
 import { PrepareQuoteButton, RepairOrderQuotesCard } from '@/features/quotes/RepairOrderQuotesCard';
 import { RepairOrderLoanCard } from '@/features/rentals/RepairOrderLoanCard';
 import { updateRepairOrder, type RepairOrderOverview } from './api';
@@ -114,6 +115,7 @@ export function RepairOrderPage() {
       {header(
         order.number,
         <>
+          <OriginQuoteButton quoteId={order.origin_quote_id} />
           {canOpenSav(order.status) && <SavButton orders={[{ id: order.id, number: order.number }]} />}
           {editable && <PrepareQuoteButton order={order} variant="outline" />}
           <DuplicateButton
