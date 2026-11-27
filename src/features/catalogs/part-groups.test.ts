@@ -62,3 +62,31 @@ describe('références des pièces', () => {
     },
   );
 });
+
+describe('recherche par référence avec ou sans espaces', () => {
+  const collee = part({ id: 'e', designation: 'Filtre gasoil', manufacturer_ref: 'Rx9767BF' });
+  const espacee = part({ id: 'f', designation: 'Filtre à air', oem_ref: 'RX 9767 BF' });
+  const enDesignation = part({ id: 'g', designation: 'Joint RX-9767.BF/2 de culasse' });
+  const enVehicule = part({ id: 'h', designation: 'Durite', vehicle_ref: 'Renault T 480 / réf. DU 55-12' });
+  const autre = part({ id: 'i', designation: 'Filtre gasoil', manufacturer_ref: 'K-77' });
+  const all = [collee, espacee, enDesignation, enVehicule, autre];
+  const found = (search: string) =>
+    filterGroups(groupParts(all), search).flatMap((group) => group.variants.map((variant) => variant.id));
+
+  it.each(['Rx9767 BF', 'Rx9767BF', 'rx-9767.bf', 'RX 9767/BF'])(
+    '« %s » trouve la référence, collée ou espacée, et dans la désignation',
+    (search) => {
+      expect(found(search).sort()).toEqual(['e', 'f', 'g']);
+    },
+  );
+
+  it('référence dans la référence véhicule', () => {
+    expect(found('du5512')).toEqual(['h']);
+  });
+
+  it('recherche par nom inchangée', () => {
+    expect(found('filtre gasoil').sort()).toEqual(['e', 'i']);
+    expect(found('à air')).toEqual(['f']);
+    expect(found('egas')).toEqual([]);
+  });
+});
