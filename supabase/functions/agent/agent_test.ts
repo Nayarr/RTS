@@ -235,6 +235,7 @@ const ALLOWED_FUNCTIONS = new Set([
   'workshop_workload',
   'global_search',
   'technician_performance',
+  'search_parts',
 ]);
 /** Jamais lu par l'agent : secrets, liens publics, signatures, données d'identité. */
 const FORBIDDEN = /token|pin|secret|password|signature|birth|license|kiosk|push_|portal|legacy|\*/i;

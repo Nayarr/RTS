@@ -44,11 +44,18 @@ export function groupParts(parts: PartStats[]): PartGroup[] {
   return [...byOem].map(([key, variants]) => partGroup(key, variants));
 }
 
-/** Désignation, marque, véhicule, fournisseur ou référence (avec ou sans séparateurs). */
+/**
+ * Désignation, marque, véhicule, fournisseur ou référence (sans casse, espaces, tirets, points ni barres :
+ * « Rx9767 BF » trouve « RX9767BF »). Une saisie qui ressemble à une référence (au moins un chiffre) est
+ * aussi cherchée ainsi dans la désignation et la référence véhicule, comme dans la base (search_parts).
+ */
 export function partMatches(part: PartStats, search: string) {
   const term = plainText(search.trim());
   if (!term) return true;
   const key = refKey(search);
+  const refFields = /[0-9]/.test(key)
+    ? [part.manufacturer_ref, part.oem_ref, part.designation, part.vehicle_ref]
+    : [part.manufacturer_ref, part.oem_ref];
   return (
     [
       part.designation,
@@ -58,7 +65,7 @@ export function partMatches(part: PartStats, search: string) {
       part.manufacturer_ref,
       part.oem_ref,
     ].some((value) => plainText(value).includes(term)) ||
-    (key !== '' && [part.manufacturer_ref, part.oem_ref].some((value) => refKey(value).includes(key)))
+    (key !== '' && refFields.some((value) => refKey(value).includes(key)))
   );
 }
 
