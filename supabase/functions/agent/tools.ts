@@ -959,14 +959,12 @@ export const TOOLS: AgentTool[] = [
     run: async (db, { texte }) => {
       const pattern = like(texte);
       const [parts, packages] = await Promise.all([
+        // Même recherche que l'appli : référence sans casse ni espaces, tirets, points ou barres
         read(
-          db.from('parts')
+          db.rpc('search_parts', { p_term: texte, p_limit: 15 })
             .select(
               'designation, brand, manufacturer_ref, oem_ref, purchase_price, sale_price, suppliers(name)',
-            )
-            .eq('is_active', true)
-            .or(`designation.ilike.${pattern},manufacturer_ref.ilike.${pattern},oem_ref.ilike.${pattern}`)
-            .limit(15),
+            ),
         ),
         read(
           db.from('service_packages')
