@@ -1,0 +1,128 @@
+# Mise en production : migrations et Edge Functions sur le projet Supabase de production, puis
+# build et envoi du site chez o2switch (FTP explicite sur TLS). La recette reste sur Vercel.
+#
+# Déclenchement : tag vX.Y.Z (git tag v1.0.0 && git push origin v1.0.0) ou « Run workflow ».
+# Validation obligatoire dans l'environnement GitHub « production », qui porte les secrets
+# et la variable APP_URL (adresse du site). Mise en place : docs/production.md.
+name: Production
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploiement:
+    name: Supabase puis o2switch
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer le CLI Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+
+      # Le serveur FTP d'o2switch n'envoie que son propre certificat, sans l'intermédiaire de
+      # Let's Encrypt (voir docs/sauvegarde.md). La vérification TLS reste active.
+      - name: Installer rclone et les intermédiaires de Let's Encrypt
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq rclone
+          sudo cp scripts/certificats-lets-encrypt/*.crt /usr/local/share/ca-certificates/
+          sudo update-ca-certificates
+
+      - name: Vérifier la configuration
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "::error::Variable APP_URL absente de l'environnement production"
+            exit 1
+          fi
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Types et tests unitaires
+        run: |
+          npm run typecheck
+          npm test
+
+      # 1. Base : migrations en attente uniquement (jamais seed.sql). Avant le front et les
+      #    fonctions, qui supposent le nouveau schéma.
+      - name: Migrations de la base
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase link --project-ref "$PROJECT_REF"
+          supabase db push
+
+      # 2. Edge Functions : toutes, avec les réglages (verify_jwt) de supabase/config.toml.
+      - name: Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: supabase functions deploy --project-ref "$PROJECT_REF"
+
+      # 3. Build avec les valeurs publiques du projet de production.
+      - name: Build de production
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+        run: npm run build
+
+      - name: Préparer l'accès FTP
+        env:
+          O2_DEPLOY_FTP_PASSWORD: ${{ secrets.O2_DEPLOY_FTP_PASSWORD }}
+        run: |
+          # rclone attend un mot de passe « obscurci » : masqué dans les journaux.
+          ftp_pass="$(rclone obscure "$O2_DEPLOY_FTP_PASSWORD")"
+          echo "::add-mask::$ftp_pass"
+          echo "RCLONE_CONFIG_O2_PASS=$ftp_pass" >> "$GITHUB_ENV"
+
+      # 4. Envoi : d'abord les assets (nouveaux noms hachés), ensuite index.html et le service
+      #    worker. Les anciens assets restent en place : un onglet ouvert sur la version précédente
+      #    continue de fonctionner jusqu'à la mise à jour proposée par src/lib/app-update.ts.
+      #    Ceux de plus de 30 jours absents du build sont ensuite retirés.
+      - name: Envoi chez o2switch
+        env:
+          RCLONE_CONFIG_O2_TYPE: ftp
+          # Nom du serveur o2switch : celui du certificat TLS
+          RCLONE_CONFIG_O2_HOST: pendragon.o2switch.net
+          RCLONE_CONFIG_O2_USER: ${{ secrets.O2_DEPLOY_FTP_USER }}
+          RCLONE_CONFIG_O2_EXPLICIT_TLS: 'true'
+        run: |
+          rclone copy dist/assets o2:assets --checksum --stats-one-line
+          rclone copy dist o2: --exclude '/assets/**' --checksum --stats-one-line
+          (cd dist/assets && ls -A) | sed 's|^|/|' > "$RUNNER_TEMP/assets-actuels.txt"
+          rclone delete o2:assets --min-age 30d --exclude-from "$RUNNER_TEMP/assets-actuels.txt"
+
+      - name: Vérifier le site en ligne
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          curl -fsS "$APP_URL/" | grep -q '<div id="root"'
+          # Route de l'appli rechargée directement : servie par index.html (.htaccess)
+          curl -fsS "$APP_URL/connexion-test-route" | grep -q '<div id="root"'
+          curl -fsSI "$APP_URL/" | grep -qi '^x-content-type-options: nosniff'

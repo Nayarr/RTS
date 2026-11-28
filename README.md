@@ -11,7 +11,7 @@ dans `legacy/` comme référence fonctionnelle ; elle n'est pas versionnée.
 - **Front** : React + Vite + TypeScript, Tailwind CSS + shadcn/ui, PWA (site sur PC, app sur mobile / tablette)
 - **Back** : Supabase (Postgres, Auth, Realtime, Edge Functions, pg_cron)
 - **Fichiers** : Cloudflare R2 (URL signées)
-- **Hébergement** : Vercel (recette), puis o2switch (production)
+- **Hébergement** : Vercel (recette), o2switch (production)
 
 ## Structure
 
@@ -73,11 +73,12 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
 
 ## Intégration continue
 
-| Workflow              | Déclenchement                     | Vérifie                                                                                                                                                                                                                                  |
-| --------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Base de données**   | PR vers `main`, push sur `main`   | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP                                                                                                                                                                             |
-| **Conventions de PR** | Ouverture / modification d'une PR | Titre Conventional Commits, description conforme au modèle                                                                                                                                                                               |
-| **Application**       | PR vers `main`, push sur `main`   | Formatage, lint, types, tests unitaires, build ; Edge Functions (`deno fmt`, `lint`, `check`, `test`) ; types de la base à jour ; tests end-to-end (desktop + mobile) sur Supabase local, Edge Functions et stockage de fichiers compris |
+| Workflow              | Déclenchement                                  | Vérifie                                                                                                                                                                                                                                  |
+| --------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Base de données**   | PR vers `main`, push sur `main`                | Migrations rejouées depuis zéro, lint du schéma, tests pgTAP                                                                                                                                                                             |
+| **Conventions de PR** | Ouverture / modification d'une PR              | Titre Conventional Commits, description conforme au modèle                                                                                                                                                                               |
+| **Application**       | PR vers `main`, push sur `main`                | Formatage, lint, types, tests unitaires, build ; Edge Functions (`deno fmt`, `lint`, `check`, `test`) ; types de la base à jour ; tests end-to-end (desktop + mobile) sur Supabase local, Edge Functions et stockage de fichiers compris |
+| **Production**        | Tag `v*` ou lancement manuel, après validation | Types et tests unitaires, puis migrations, Edge Functions, build et envoi du site chez o2switch ; vérifie ensuite que le site répond                                                                                                     |
 
 ## Déploiement
 
@@ -104,7 +105,10 @@ Comptes de test (base locale uniquement, mot de passe `atelier-dev-2026`) :
   de signature). Les réponses du client reviennent sur l’adresse qui a envoyé le message. Sans domaine
   réglé, l’adresse unique du secret `MAIL_FROM` est utilisée. Sans clé ou sans réglage, l’appli ouvre
   la messagerie de l’ordinateur avec le message prêt.
-- **Production : o2switch** (plus tard).
+- **Production : o2switch**. Un tag `vX.Y.Z` (ou « Run workflow ») lance la tâche GitHub
+  « Production », après validation : migrations et Edge Functions sur le projet Supabase de
+  production, build, envoi du site par FTP chez o2switch. Le fichier `public/.htaccess` y remplace
+  `vercel.json`. Mise en place, secrets et retour arrière : [`docs/production.md`](docs/production.md).
 
 ## Reprise des forfaits de l’ancienne appli
 

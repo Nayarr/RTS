@@ -1,0 +1,35 @@
+# Production o2switch (Apache) : équivalent de vercel.json (routes de l'appli, cache, en-têtes).
+# Copié tel quel dans dist/ par Vite ; ignoré par Vercel (recette).
+Options -Indexes
+AddType application/manifest+json .webmanifest
+AddType text/javascript .mjs
+
+RewriteEngine On
+
+# HTTPS obligatoire (PWA, service worker, caméra, notifications push)
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Fichier ou dossier existant : servi tel quel
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Routes de l'appli (React Router) -> index.html, sauf /assets/ : un fichier manquant y reste en 404
+RewriteCond %{REQUEST_URI} !^/assets/
+RewriteRule ^ /index.html [L]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(self), microphone=(self), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai"
+  Header always set tdm-reservation "1"
+
+  # Jamais en cache : une nouvelle version est vue dès sa mise en ligne
+  <FilesMatch "^(index\.html|sw\.js|registerSW\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
